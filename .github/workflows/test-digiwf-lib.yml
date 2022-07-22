@@ -1,0 +1,22 @@
+name: Test digiwf-lib
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - "libs/digiwf-lib"
+jobs:
+  test-digiwf-lib:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout sources
+          uses: actions/checkout@v3
+        - name: Setup NodeJS 16
+          uses: actions/setup-node@v3
+          with:
+            node-version: '16'
+        - name: Install dependencies
+          run: npm install
+        - name: Lint
+          run: npm run digiwf-lib-lint
+        - name: Test
+          run: npm run digiwf-lib-test
