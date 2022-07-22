@@ -1,11 +1,9 @@
 name: Test digiwf-lib
 on:
   push:
-    branches:
-      - '**'        # matches every branch
-      - '!master'   # excludes master
-    paths:
-      - "libs/digiwf-lib"
+    branches-ignore: [main]
+#    paths:
+#      - "libs/digiwf-lib"
 jobs:
   test-digiwf-lib:
     runs-on: ubuntu-latest
