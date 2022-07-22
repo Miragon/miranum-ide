@@ -3,12 +3,15 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "scripts": {
+    "graph": "npx nx graph",
     "cli": "npx nx serve miragon-process-ide-cli",
     "cli-test": "npx nx test miragon-process-ide-cli",
     "cli-lint": "npx nx lint miragon-process-ide-cli",
     "cli-build": "npx nx build miragon-process-ide-cli",
     "digiwf-lib-test": "npx nx test digiwf-lib",
-    "digiwf-lib-lint": "npx nx lint digiwf-lib"
+    "digiwf-lib-lint": "npx nx lint digiwf-lib",
+    "digiwf-deployment-plugin-rest-test": "npx nx test digiwf-deployment-plugin-rest",
+    "digiwf-deployment-plugin-rest-lint": "npx nx lint digiwf-deployment-plugin-rest"
   },
   "private": true,
   "devDependencies": {
