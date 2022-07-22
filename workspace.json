@@ -4,6 +4,7 @@
   "projects": {
     "digiwf-deployment-plugin-rest": "libs/digiwf-deployment-plugin-rest",
     "digiwf-lib": "libs/digiwf-lib",
-    "miragon-process-ide-cli": "apps/miragon-process-ide-cli"
+    "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
+    "vscode-digiwf-deployment": "apps/vscode-digiwf-deployment"
   }
 }
