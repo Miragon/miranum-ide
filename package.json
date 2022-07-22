@@ -5,7 +5,10 @@
   "scripts": {
     "cli": "npx nx serve miragon-process-ide-cli",
     "cli-test": "npx nx test miragon-process-ide-cli",
-    "cli-build": "npx nx build miragon-process-ide-cli"
+    "cli-lint": "npx nx lint miragon-process-ide-cli",
+    "cli-build": "npx nx build miragon-process-ide-cli",
+    "digiwf-lib-test": "npx nx test digiwf-lib",
+    "digiwf-lib-lint": "npx nx lint digiwf-lib"
   },
   "private": true,
   "devDependencies": {

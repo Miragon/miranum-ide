@@ -13,8 +13,10 @@
     "lib": ["es2017", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": "./miragon-process-ide",
-    "paths": {}
+    "baseUrl": "./",
+    "paths": {
+      "@miragon-process-ide/digiwf-lib": ["libs/digiwf-lib/src/index.ts"]
+    }
   },
   "exclude": ["miragon-process-ide/node_modules", "tmp"]
 }
