@@ -1,7 +1,9 @@
 name: Test digiwf-lib
 on:
   push:
-    branches-ignore: [main]
+    branches:
+      - '**'        # matches every branch
+      - '!master'   # excludes master
     paths:
       - "libs/digiwf-lib"
 jobs:
