@@ -1,0 +1,5 @@
+# IDE
+.vscode
+.idea
+.project
+.DS_Store
