@@ -2,10 +2,8 @@ name: Test digiwf-lib
 on:
   push:
     branches-ignore: [main]
-#    paths:
-#      - "libs/digiwf-lib"
 jobs:
-  test-digiwf-lib:
+  test:
     runs-on: ubuntu-latest
     steps:
         - name: Checkout sources
@@ -17,6 +15,6 @@ jobs:
         - name: Install dependencies
           run: npm install
         - name: Lint
-          run: npm run digiwf-lib-lint
+          run: npm run lint
         - name: Test
-          run: npm run digiwf-lib-test
+          run: npm run test

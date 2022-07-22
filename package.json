@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "scripts": {
+    "build": "npx nx build",
+    "test": "npx nx test",
+    "lint": "npx nx lint",
+    "publish": "echo 'not implemented'",
     "graph": "npx nx graph",
     "cli": "npx nx serve miragon-process-ide-cli",
     "cli-test": "npx nx test miragon-process-ide-cli",
