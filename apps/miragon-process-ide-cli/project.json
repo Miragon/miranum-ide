@@ -1,0 +1,57 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/miragon-process-ide-cli/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miragon-process-ide-cli",
+        "main": "apps/miragon-process-ide-cli/src/main.ts",
+        "tsConfig": "apps/miragon-process-ide-cli/tsconfig.app.json",
+        "assets": ["apps/miragon-process-ide-cli/src/assets"]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/miragon-process-ide-cli/src/environments/environment.ts",
+              "with": "apps/miragon-process-ide-cli/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/node:node",
+      "options": {
+        "buildTarget": "miragon-process-ide-cli:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "miragon-process-ide-cli:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miragon-process-ide-cli/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/miragon-process-ide-cli"],
+      "options": {
+        "jestConfig": "apps/miragon-process-ide-cli/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

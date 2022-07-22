@@ -1,16 +1,35 @@
 {
   "name": "miragon-process-ide",
-  "version": "0.0.0",
-  "license": "MIT",
-  "scripts": {},
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "scripts": {
+    "cli": "npx nx serve miragon-process-ide-cli",
+    "cli-test": "npx nx test miragon-process-ide-cli",
+    "cli-build": "npx nx build miragon-process-ide-cli"
+  },
   "private": true,
-  "dependencies": {},
   "devDependencies": {
     "@nrwl/cli": "14.4.3",
+    "@nrwl/eslint-plugin-nx": "14.4.3",
+    "@nrwl/jest": "14.4.3",
     "@nrwl/js": "14.4.3",
+    "@nrwl/linter": "14.4.3",
+    "@nrwl/node": "^14.4.3",
     "@nrwl/workspace": "14.4.3",
+    "@types/jest": "27.4.1",
+    "@types/node": "16.11.7",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "eslint": "~8.15.0",
+    "eslint-config-prettier": "8.1.0",
+    "jest": "27.5.1",
     "nx": "14.4.3",
     "prettier": "^2.6.2",
+    "ts-jest": "27.1.4",
+    "ts-node": "~10.8.0",
     "typescript": "~4.7.2"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
   }
 }

@@ -16,6 +16,5 @@
     "baseUrl": "./miragon-process-ide",
     "paths": {}
   },
-  "exclude": [
-    "miragon-process-ide/node_modules", "tmp"]
+  "exclude": ["miragon-process-ide/node_modules", "tmp"]
 }
