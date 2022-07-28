@@ -43,7 +43,6 @@
     "typescript": "~4.7.4"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "vscode": "^1.1.37"
+    "tslib": "^2.3.0"
   }
 }

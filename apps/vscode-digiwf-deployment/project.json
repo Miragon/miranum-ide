@@ -10,7 +10,8 @@
         "outputPath": "dist/apps/vscode-digiwf-deployment",
         "main": "apps/vscode-digiwf-deployment/src/main.ts",
         "tsConfig": "apps/vscode-digiwf-deployment/tsconfig.app.json",
-        "assets": ["apps/vscode-digiwf-deployment/src/assets", "apps/vscode-digiwf-deployment/src/package.json"]
+        "assets": ["apps/vscode-digiwf-deployment/src/assets", "apps/vscode-digiwf-deployment/src/package.json"],
+        "webpackConfig": "apps/vscode-digiwf-deployment/custom-webpack.config.js"
       },
       "configurations": {
         "production": {
