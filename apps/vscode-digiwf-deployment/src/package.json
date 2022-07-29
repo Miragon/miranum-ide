@@ -1,0 +1,24 @@
+{
+  "name": "vscode-digiwf-deployment",
+	"displayName": "vscode-digiwf-deployment",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.69.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+        "onCommand:vscode-digiwf-deployment.helloWorld"
+	],
+	"main": "../../../dist/apps/vscode-digiwf-deployment/main.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "vscode-digiwf-deployment.helloWorld",
+				"title": "Hello World"
+			}
+		]
+	}
+}

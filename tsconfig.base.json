@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2020",
+    "module": "esnext",
+    "lib": ["ES2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "@miragon-process-ide/digiwf-deployment-plugin-rest": [
+        "libs/digiwf-deployment-plugin-rest/src/index.ts"
+      ],
+      "@miragon-process-ide/digiwf-lib": ["libs/digiwf-lib/src/index.ts"]
+    }
+  },
+  "exclude": ["miragon-process-ide/node_modules", "tmp"]
+}

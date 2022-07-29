@@ -1,0 +1,48 @@
+{
+  "name": "miragon-process-ide",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "npx nx run-many --target build --all",
+    "test": "npx nx run-many --target test --all",
+    "lint": "npx nx run-many --target lint --all",
+    "publish": "echo 'not implemented'",
+    "graph": "npx nx graph",
+    "cli": "npx nx serve miragon-process-ide-cli",
+    "cli-test": "npx nx test miragon-process-ide-cli",
+    "cli-lint": "npx nx lint miragon-process-ide-cli",
+    "vscode-deployment-test": "npx nx test vscode-digiwf-deployment",
+    "vscode-deployment-lint": "npx nx lint vscode-digiwf-deployment",
+    "digiwf-lib-test": "npx nx test digiwf-lib",
+    "digiwf-lib-lint": "npx nx lint digiwf-lib",
+    "digiwf-deployment-plugin-rest-test": "npx nx test digiwf-deployment-plugin-rest",
+    "digiwf-deployment-plugin-rest-lint": "npx nx lint digiwf-deployment-plugin-rest"
+  },
+  "private": true,
+  "devDependencies": {
+    "@nrwl/cli": "14.4.3",
+    "@nrwl/eslint-plugin-nx": "14.4.3",
+    "@nrwl/jest": "14.4.3",
+    "@nrwl/js": "14.4.3",
+    "@nrwl/linter": "14.4.3",
+    "@nrwl/node": "^14.4.3",
+    "@nrwl/workspace": "14.4.3",
+    "@types/jest": "27.4.1",
+    "@types/node": "16.11.7",
+    "@types/vscode": "^1.69.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "@vscode/test-electron": "^2.1.5",
+    "eslint": "~8.15.0",
+    "eslint-config-prettier": "8.1.0",
+    "jest": "27.5.1",
+    "nx": "14.4.3",
+    "prettier": "^2.6.2",
+    "ts-jest": "27.1.4",
+    "ts-node": "~10.8.0",
+    "typescript": "~4.7.4"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}
