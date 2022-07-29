@@ -5,7 +5,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const lib = digiwfLib();
 
-    let disposable = vscode.commands.registerCommand("vscode-digiwf-deployment.helloWorld", () => {
+    const disposable = vscode.commands.registerCommand("vscode-digiwf-deployment.helloWorld", () => {
         console.log(lib);
         vscode.window.showInformationMessage("Hello World from vscode-digiwf-deployment!");
     });
@@ -13,4 +13,5 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 }
 
+// eslint-disable-next-line
 export function deactivate() { }
