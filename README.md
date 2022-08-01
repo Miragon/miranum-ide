@@ -38,7 +38,9 @@
 
 The documentation project is built with technologies we use in our projects:
 
-* *write here the list of used technologies*
+* Typescript
+* Nx
+* Vscode
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
