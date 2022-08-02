@@ -9,7 +9,7 @@ export function deployFileCommand(): Command {
         .requiredOption("-t, --target <target>", "specify the target environment")
         .requiredOption("--type <type>", "specify the file type")
         .option("-p, --project <project>", "specify the project")
-        .hook("preAction", (thisCommand, actionCommand) => {
+        .hook("preAction", (thisCommand) => {
             // validate inputs before action is called
             const type = thisCommand.opts()["type"];
             if (!(type === "bpmn" || type === "dmn" || type === "form" || type === "config")) {

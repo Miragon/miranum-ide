@@ -8,6 +8,7 @@ export function digiwfLib(): string {
 
 
 export function deployArtifact(file: string, type: string, project: string | undefined, target: string) {
+    // dummy implementation
     console.log(file);
     console.log(type);
     console.log(project);
@@ -15,6 +16,7 @@ export function deployArtifact(file: string, type: string, project: string | und
 }
 
 export function deployAllArtifacts(path: string, project: string | undefined, target: string) {
+    // dummy implementation
     console.log(path);
     console.log(project);
     console.log(target);
