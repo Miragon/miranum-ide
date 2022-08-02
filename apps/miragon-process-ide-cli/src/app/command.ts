@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { deployAllArtifacts, deployArtifact } from "@miragon-process-ide/digiwf-lib";
 
 export function deployFileCommand(): Command {
@@ -9,6 +9,13 @@ export function deployFileCommand(): Command {
         .requiredOption("-t, --target <target>", "specify the target environment")
         .requiredOption("--type <type>", "specify the file type")
         .option("-p, --project <project>", "specify the project")
+        .hook("preAction", (thisCommand, actionCommand) => {
+            // validate inputs before action is called
+            const type = thisCommand.opts()["type"];
+            if (!(type === "bpmn" || type === "dmn" || type === "form" || type === "config")) {
+                throw new InvalidArgumentError("type must be either bpmn, dmn, form or config");
+            }
+        })
         .action((options) => {
             deployArtifact(options.file, options.type, options.project, options.target);
         });
