@@ -1,5 +1,4 @@
 import { digiwfDeploymentPluginRest } from "@miragon-process-ide/digiwf-deployment-plugin-rest";
-import { Artifact, DeployArtifact } from "./types/Artifact";
 
 export function digiwfLib(): string {
     const plugins = digiwfDeploymentPluginRest();
@@ -8,6 +7,15 @@ export function digiwfLib(): string {
 }
 
 
-export function deployFile(deployArtifact: DeployArtifact) {
-    console.log(deployArtifact);
+export function deployArtifact(file: string, type: string, project: string | undefined, target: string) {
+    console.log(file);
+    console.log(type);
+    console.log(project);
+    console.log(target);
+}
+
+export function deployAllArtifacts(path: string, project: string | undefined, target: string) {
+    console.log(path);
+    console.log(project);
+    console.log(target);
 }
