@@ -18,7 +18,8 @@ export function deployFileCommand(): Command {
         })
         .action((options) => {
             deployArtifact(options.file, options.type, options.project, options.target)
-                .then(artifact => console.log(artifact));
+                .then(artifact => console.log(artifact))
+                .catch(err => console.error(err));
         });
 }
 
@@ -32,5 +33,6 @@ export function deployAllFiles(): Command {
         .action((options) => {
             deployAllArtifacts(options.directory, options.project, options.target)
                 .then(artifacts => console.log(artifacts))
+                .catch(err => console.error(err));
         });
 }
