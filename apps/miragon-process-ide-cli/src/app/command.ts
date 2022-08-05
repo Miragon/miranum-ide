@@ -17,7 +17,8 @@ export function deployFileCommand(): Command {
             }
         })
         .action((options) => {
-            deployArtifact(options.file, options.type, options.project, options.target);
+            deployArtifact(options.file, options.type, options.project, options.target)
+                .then(artifact => console.log(artifact));
         });
 }
 
@@ -29,6 +30,7 @@ export function deployAllFiles(): Command {
         .requiredOption("-t, --target <target>", "specify the target environment")
         .option("-p, --project <project>", "specify the project")
         .action((options) => {
-            deployAllArtifacts(options.directory, options.project, options.target);
+            deployAllArtifacts(options.directory, options.project, options.target)
+                .then(artifacts => console.log(artifacts))
         });
 }

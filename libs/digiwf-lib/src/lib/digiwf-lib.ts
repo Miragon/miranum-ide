@@ -1,4 +1,6 @@
 import { digiwfDeploymentPluginRest } from "@miragon-process-ide/digiwf-deployment-plugin-rest";
+import { getFile, getFiles } from "./read-fs";
+import { Artifact } from "./types";
 
 export function digiwfLib(): string {
     const plugins = digiwfDeploymentPluginRest();
@@ -7,17 +9,26 @@ export function digiwfLib(): string {
 }
 
 
-export function deployArtifact(file: string, type: string, project: string | undefined, target: string) {
-    // dummy implementation
-    console.log(file);
-    console.log(type);
-    console.log(project);
-    console.log(target);
+export async function deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<Artifact> {
+    const file = await getFile(path);
+
+    return {
+        "type": file.extension.replace(".", "").toUpperCase(),
+        "project": project ?? "",
+        "path": path,
+        "file": file
+    };
 }
 
-export function deployAllArtifacts(path: string, project: string | undefined, target: string) {
-    // dummy implementation
-    console.log(path);
-    console.log(project);
-    console.log(target);
+export async function deployAllArtifacts(path: string, project: string | undefined, target: string): Promise<Artifact[]> {
+    const files = await getFiles(path);
+
+    return files.map(file => {
+        return {
+            "type": file.extension.replace(".", "").toUpperCase(),
+            "project": project ?? "",
+            "path": path,
+            "file": file
+        }
+    });
 }
