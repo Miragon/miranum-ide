@@ -26,6 +26,19 @@
         }
       }
     },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-all -d Dokumente/process-ide-test/ -t http://localhost:8080 -p test-project"
+          },
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-file -f Dokumente/process-ide-test/test.bpmn -t http://localhost:8080 --type bpmn -p test-project"
+          }
+        ]
+      }
+    },
     "serve": {
       "executor": "@nrwl/node:node",
       "options": {
