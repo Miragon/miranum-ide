@@ -8,7 +8,6 @@ export function digiwfLib(): string {
     return "digiwf-lib";
 }
 
-
 export async function deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<Artifact> {
     const file = await getFile(path);
 
