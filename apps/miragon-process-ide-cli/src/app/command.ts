@@ -1,5 +1,7 @@
 import { Command, InvalidArgumentError } from "commander";
-import { deployAllArtifacts, deployArtifact } from "@miragon-process-ide/digiwf-lib";
+import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
+
+const digiwfLib = new DigiwfLib();
 
 export function deployFileCommand(): Command {
     return new Command()
@@ -17,7 +19,7 @@ export function deployFileCommand(): Command {
             }
         })
         .action((options) => {
-            deployArtifact(options.file, options.type, options.project, options.target)
+            digiwfLib.deployArtifact(options.file, options.type, options.project, options.target)
                 .then(artifact => console.log(artifact))
                 .catch(err => console.error(err));
         });
@@ -31,7 +33,7 @@ export function deployAllFiles(): Command {
         .requiredOption("-t, --target <target>", "specify the target environment")
         .option("-p, --project <project>", "specify the project")
         .action((options) => {
-            deployAllArtifacts(options.directory, options.project, options.target)
+            digiwfLib.deployAllArtifacts(options.directory, options.project, options.target)
                 .then(artifacts => console.log(artifacts))
                 .catch(err => console.error(err));
         });

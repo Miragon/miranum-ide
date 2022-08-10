@@ -1,6 +1,6 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { FileDetails } from "./types";
+import { FileDetails } from "../types";
 
 const supportedFiles = [".bpmn", ".dmn", ".config", ".json"]
 

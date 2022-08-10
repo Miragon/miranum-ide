@@ -1,33 +1,63 @@
-import { digiwfDeploymentPluginRest } from "@miragon-process-ide/digiwf-deployment-plugin-rest";
-import { getFile, getFiles } from "./read-fs";
-import { Artifact } from "./types";
+import { getFile, getFiles } from "./read-fs/read-fs";
+import { Artifact, DeploymentSuccess, DigiWFDeploymentPlugin } from "./types";
 
-export function digiwfLib(): string {
-    const plugins = digiwfDeploymentPluginRest();
-    console.log(plugins);
-    return "digiwf-lib";
+export interface DigiwfConfig {
+    deploymentPlugins: DigiWFDeploymentPlugin[];
 }
 
-export async function deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<Artifact> {
-    const file = await getFile(path);
+// observer pattern
+// https://en.wikipedia.org/wiki/Observer_pattern#Java
+export class DigiwfLib {
+    deploymentPlugins: DigiWFDeploymentPlugin[] = [];
 
-    return {
-        "type": file.extension.replace(".", "").toUpperCase(),
-        "project": project ?? "",
-        "path": path,
-        "file": file
-    };
-}
+    constructor(config?: DigiwfConfig) {
+        if (config) {
+            config.deploymentPlugins.forEach(plugin => {
+                this.deploymentPlugins.push(plugin);
+            });
+        }
+    }
 
-export async function deployAllArtifacts(path: string, project: string | undefined, target: string): Promise<Artifact[]> {
-    const files = await getFiles(path);
+    private async deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess> {
+        try {
+            await Promise.all(
+                this.deploymentPlugins.map(plugin => plugin.deploy(target, artifact))
+            );
+            return {
+                success: true,
+                message: "Everything is deployed successfully"
+            };
+        } catch (err) {
+            return {
+                success: false,
+                message: "Deployment failed"
+            }
+        }
+    }
 
-    return files.map(file => {
-        return {
+    public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<DeploymentSuccess> {
+        const file = await getFile(path);
+        const artifact = {
             "type": file.extension.replace(".", "").toUpperCase(),
             "project": project ?? "",
             "path": path,
             "file": file
+        };
+        return this.deploy(target, artifact);
+    }
+
+    public async deployAllArtifacts(path: string, project: string | undefined, target: string): Promise<DeploymentSuccess[]> {
+        const deployments = [];
+        const files = await getFiles(path);
+        for (const file of files) {
+            const artifact = {
+                "type": file.extension.replace(".", "").toUpperCase(),
+                "project": project ?? "",
+                "path": path,
+                "file": file
+            }
+            deployments.push(await this.deploy(target, artifact));
         }
-    });
+        return deployments;
+    }
 }
