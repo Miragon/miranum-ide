@@ -1,6 +1,5 @@
 import { Command, InvalidArgumentError } from "commander";
-import { DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
-import { DeploymentSuccess } from "../../../../libs/digiwf-lib/src/lib/types";
+import { DigiwfConfig, DigiwfLib, DeploymentSuccess } from "@miragon-process-ide/digiwf-lib";
 
 const config: DigiwfConfig = {
     deploymentPlugins: [
