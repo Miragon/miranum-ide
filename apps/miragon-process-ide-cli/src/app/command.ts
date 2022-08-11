@@ -1,5 +1,22 @@
 import { Command, InvalidArgumentError } from "commander";
-import { deployAllArtifacts, deployArtifact } from "@miragon-process-ide/digiwf-lib";
+import { DigiwfConfig, DigiwfLib, DeploymentSuccess } from "@miragon-process-ide/digiwf-lib";
+
+const config: DigiwfConfig = {
+    deploymentPlugins: [
+        {
+            name: "rest",
+            deploy: function(target: string) {
+                console.log(target);
+                return new Promise<DeploymentSuccess>(resolve => resolve({
+                    success: true,
+                    message: `Deployed to ${target}`
+                }));
+            }
+        }
+    ]
+};
+const digiwfLib = new DigiwfLib(config);
+
 
 export function deployFileCommand(): Command {
     return new Command()
@@ -17,8 +34,8 @@ export function deployFileCommand(): Command {
             }
         })
         .action((options) => {
-            deployArtifact(options.file, options.type, options.project, options.target)
-                .then(artifact => console.log(artifact))
+            digiwfLib.deployArtifact(options.file, options.type, options.project, options.target)
+                .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });
 }
@@ -31,8 +48,8 @@ export function deployAllFiles(): Command {
         .requiredOption("-t, --target <target>", "specify the target environment")
         .option("-p, --project <project>", "specify the project")
         .action((options) => {
-            deployAllArtifacts(options.directory, options.project, options.target)
-                .then(artifacts => console.log(artifacts))
+            digiwfLib.deployAllArtifacts(options.directory, options.project, options.target)
+                .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });
 }

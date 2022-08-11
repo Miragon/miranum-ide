@@ -11,3 +11,13 @@ export interface FileDetails {
     content: string
     size: number
 }
+
+export interface DigiWFDeploymentPlugin {
+    name: string;
+    deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess>;
+}
+
+export interface DeploymentSuccess {
+    success: boolean;
+    message: string;
+}
