@@ -12,7 +12,6 @@ export interface FileDetails {
     size: number
 }
 
-
 export interface DigiWFDeploymentPlugin {
     name: string;
     deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess>;
