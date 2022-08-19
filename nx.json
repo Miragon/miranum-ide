@@ -15,18 +15,28 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "e2e"]
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test",
+          "e2e"
+        ]
       }
     }
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   },
   "workspaceLayout": {
     "appsDir": "apps",
     "libsDir": "libs"
   },
-  "defaultProject": "miragon-process-ide-cli"
+  "defaultProject": "miragon-process-ide-cli",
+  "plugins": [
+    "@nxrocks/nx-spring-boot"
+  ]
 }
