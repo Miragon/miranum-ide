@@ -1,4 +1,4 @@
-package java.io.miragon.digiwf.digiwfdeploymentproxy;
+package io.miragon.digiwf.digiwfdeploymentproxy;
 
 
 class ExampleTest {
