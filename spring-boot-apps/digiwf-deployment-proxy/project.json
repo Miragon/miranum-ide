@@ -6,7 +6,7 @@
     "build": {
       "executor": "@nxrocks/nx-spring-boot:build",
       "options": {
-        "root": "libs/digiwf-deployment-proxy-lib"
+        "root": "spring-boot-apps/digiwf-deployment-proxy"
       }
     },
     "test": {
