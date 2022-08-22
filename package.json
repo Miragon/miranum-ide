@@ -7,16 +7,6 @@
     "test": "npx nx run-many --target test --all",
     "lint": "npx nx run-many --target lint --all",
     "publish": "echo 'not implemented'",
-    "graph": "npx nx graph",
-    "cli": "npx nx run miragon-process-ide-cli:deploy",
-    "cli-test": "npx nx test miragon-process-ide-cli",
-    "cli-lint": "npx nx lint miragon-process-ide-cli",
-    "vscode-deployment-test": "npx nx test vscode-digiwf-deployment",
-    "vscode-deployment-lint": "npx nx lint vscode-digiwf-deployment",
-    "digiwf-lib-test": "npx nx test digiwf-lib",
-    "digiwf-lib-lint": "npx nx lint digiwf-lib",
-    "digiwf-deployment-plugin-rest-test": "npx nx test digiwf-deployment-plugin-rest",
-    "digiwf-deployment-plugin-rest-lint": "npx nx lint digiwf-deployment-plugin-rest"
   },
   "private": true,
   "devDependencies": {
