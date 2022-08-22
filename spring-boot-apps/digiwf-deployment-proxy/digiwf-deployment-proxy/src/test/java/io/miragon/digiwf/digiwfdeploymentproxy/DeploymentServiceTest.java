@@ -43,11 +43,11 @@ class DeploymentServiceTest {
     @Test
     void successfulDeploymentTest() {
         this.artifacts.forEach(artifact -> {
-            final DeploymentDto deployment = DeploymentDto.builder().target(this.target).artifactDto(artifact).build();
+            final DeploymentDto deployment = DeploymentDto.builder().target(this.target).artifact(artifact).build();
             final DeploymentSuccessDto result = this.deploymentService.deploy(deployment);
             Assertions.assertTrue(result.isSuccess());
             Assertions.assertEquals(deployment, result.getDeployment());
-            Assertions.assertNull(result.getError());
+            Assertions.assertNotNull(result.getMessage());
         });
     }
 
@@ -57,13 +57,13 @@ class DeploymentServiceTest {
         Assertions.assertThrows(ConstraintViolationException.class, () -> this.deploymentService.deploy(invalidDeployment));
 
         final ArtifactDto invalidArtifact = ArtifactDto.builder().build();
-        final DeploymentDto deployment = DeploymentDto.builder().target(this.target).artifactDto(invalidArtifact).build();
+        final DeploymentDto deployment = DeploymentDto.builder().target(this.target).artifact(invalidArtifact).build();
         Assertions.assertThrows(ConstraintViolationException.class, () -> this.deploymentService.deploy(deployment));
     }
 
     @Test
     void handlerNotFoundTest() {
-        final DeploymentDto deploymentWithoutHandler = DeploymentDto.builder().target("invalid-target").artifactDto(this.artifacts.get(0)).build();
+        final DeploymentDto deploymentWithoutHandler = DeploymentDto.builder().target("invalid-target").artifact(this.artifacts.get(0)).build();
         final Exception ex = Assertions.assertThrows(RuntimeException.class, () -> this.deploymentService.deploy(deploymentWithoutHandler));
         Assertions.assertTrue(ex.getMessage().contains(deploymentWithoutHandler.getTarget()));
     }

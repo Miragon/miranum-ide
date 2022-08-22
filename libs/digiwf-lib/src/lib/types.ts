@@ -19,5 +19,5 @@ export interface DigiWFDeploymentPlugin {
 
 export interface DeploymentSuccess {
     success: boolean;
-    message: string;
+    message: string | undefined;
 }

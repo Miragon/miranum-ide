@@ -9,7 +9,12 @@ public class DryHandler implements DeploymentHandler {
 
     @Override
     public DeploymentSuccessDto deploy(final DeploymentDto deploymentDto) {
-        log.info("Deploy artifact {} to target {}", deploymentDto.getArtifactDto().getArtifactName(), deploymentDto.getTarget());
-        return DeploymentSuccessDto.builder().success(true).deployment(deploymentDto).build();
+        final String message = String.format("Dry run! Deploy artifact %s to target %s", deploymentDto.getArtifact().getArtifactName(), deploymentDto.getTarget());
+        log.info(message);
+        return DeploymentSuccessDto.builder()
+            .success(true)
+            .deployment(deploymentDto)
+            .message(message)
+            .build();
     }
 }

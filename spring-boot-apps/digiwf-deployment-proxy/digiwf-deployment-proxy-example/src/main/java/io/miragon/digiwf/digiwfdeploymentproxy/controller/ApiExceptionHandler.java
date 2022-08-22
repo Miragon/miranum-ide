@@ -13,7 +13,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<DeploymentSuccessDto> handleRuntimeExceptions(final RuntimeException exception) {
         final DeploymentSuccessDto deploymentSuccessDto =  DeploymentSuccessDto.builder()
             .success(false)
-            .error(exception.getMessage())
+            .message(exception.getMessage())
             .build();
         return new ResponseEntity<>(deploymentSuccessDto, HttpStatus.BAD_REQUEST);
     }

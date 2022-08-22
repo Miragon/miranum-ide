@@ -31,10 +31,10 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-all -d resources/my-process-automation-project/ -t http://localhost:8080 -p test-project"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-all -d resources/my-process-automation-project/ -t dev -p test-project"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-file -f resources/my-process-automation-project/my-process.bpmn -t http://localhost:8080 --type bpmn -p test-project"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn -p test-project"
           }
         ]
       }

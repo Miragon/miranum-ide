@@ -6,7 +6,8 @@
     "build": "npx nx run-many --target build --all",
     "test": "npx nx run-many --target test --all",
     "lint": "npx nx run-many --target lint --all",
-    "publish": "echo 'not implemented'"
+    "publish": "echo 'not implemented'",
+    "generate-api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o libs/digiwf-deployment-plugin-rest/src/lib/openapi --additional-properties=supportsES6=true,withInterfaces=true"
   },
   "private": true,
   "devDependencies": {
@@ -18,12 +19,14 @@
     "@nrwl/node": "14.5.1",
     "@nrwl/workspace": "14.5.1",
     "@nxrocks/nx-spring-boot": "^4.1.0",
+    "@openapitools/openapi-generator-cli": "^2.5.1",
     "@types/jest": "27.4.1",
     "@types/node": "16.11.7",
     "@types/vscode": "^1.69.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "@vscode/test-electron": "^2.1.5",
+    "axios": "^0.27.2",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "jest": "27.5.1",

@@ -18,5 +18,5 @@ public class DeploymentDto {
     @NotBlank
     private String target;
     @Valid
-    private ArtifactDto artifactDto;
+    private ArtifactDto artifact;
 }

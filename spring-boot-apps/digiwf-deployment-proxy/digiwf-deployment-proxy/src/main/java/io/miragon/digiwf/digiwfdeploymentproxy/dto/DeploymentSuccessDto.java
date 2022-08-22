@@ -16,6 +16,5 @@ public class DeploymentSuccessDto {
     private boolean success;
     @Nullable
     private DeploymentDto deployment;
-    @Nullable
-    private String error;
+    private String message;
 }
