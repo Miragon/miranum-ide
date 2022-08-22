@@ -6,7 +6,7 @@
     "build": "npx nx run-many --target build --all",
     "test": "npx nx run-many --target test --all",
     "lint": "npx nx run-many --target lint --all",
-    "publish": "echo 'not implemented'",
+    "publish": "echo 'not implemented'"
   },
   "private": true,
   "devDependencies": {
