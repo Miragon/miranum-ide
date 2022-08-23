@@ -28,7 +28,7 @@ public class DeploymentProxyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DeploymentService provideAutoconfiguration() {
-        final List<DeploymentHandler> availableHandlers = List.of(new DryHandler(), new RestHandler());
+        final List<DeploymentHandler> availableHandlers = List.of(new DryHandler(), new RestHandler(properties.getTargets()));
 
         // env, handler
         final Map<String, DeploymentHandler> handlers = new HashMap<>();

@@ -11,4 +11,5 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "io.miragon.digiwf.digiwf-deployment-proxy")
 public class DeploymentProxyProperties {
     private Map<String, String> deploymentHandlers;
+    private Map<String, String> targets;
 }

@@ -2,6 +2,7 @@ package io.miragon.digiwf.digiwfdeploymentproxy.handler;
 
 import io.miragon.digiwf.digiwfdeploymentproxy.dto.DeploymentDto;
 import io.miragon.digiwf.digiwfdeploymentproxy.dto.DeploymentSuccessDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
@@ -11,16 +12,19 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
 
+@RequiredArgsConstructor
 @Slf4j
 public class RestHandler implements DeploymentHandler {
 
     private final HttpClient client = HttpClient.newBuilder().build();
+    private final Map<String, String> targetEnvs;
 
     @Override
     public DeploymentSuccessDto deploy(final DeploymentDto deploymentDto) {
         try {
-            final String baseUrl = "http://localhost:39146/rest/";
+            final String baseUrl = targetEnvs.get(deploymentDto.getTarget()) + "/rest/";
             HttpRequest.Builder request = HttpRequest.newBuilder();
             switch (deploymentDto.getArtifact().getType()) {
                 case "bpmn":
