@@ -2,6 +2,7 @@ package io.miragon.digiwf.digiwfdeploymentproxy.configuration;
 
 import io.miragon.digiwf.digiwfdeploymentproxy.handler.DeploymentHandler;
 import io.miragon.digiwf.digiwfdeploymentproxy.handler.DryHandler;
+import io.miragon.digiwf.digiwfdeploymentproxy.handler.RestHandler;
 import io.miragon.digiwf.digiwfdeploymentproxy.properties.DeploymentProxyProperties;
 import io.miragon.digiwf.digiwfdeploymentproxy.service.DeploymentService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class DeploymentProxyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DeploymentService provideAutoconfiguration() {
-        final List<DeploymentHandler> availableHandlers = List.of(new DryHandler());
+        final List<DeploymentHandler> availableHandlers = List.of(new DryHandler(), new RestHandler());
 
         // env, handler
         final Map<String, DeploymentHandler> handlers = new HashMap<>();

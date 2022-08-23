@@ -38,7 +38,7 @@ export class DigiwfLib {
     public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<DeploymentSuccess> {
         const file = await getFile(path);
         const artifact = {
-            "type": file.extension.replace(".", "").toUpperCase(),
+            "type": type,
             "project": project ?? "",
             "path": path,
             "file": file
@@ -50,8 +50,12 @@ export class DigiwfLib {
         const deployments = [];
         const files = await getFiles(path);
         for (const file of files) {
+            let type = file.extension.replace(".", "").toLowerCase();
+            if (type === "json") {
+                path.includes("schema.json") ? type = "form" : type = "config";
+            }
             const artifact = {
-                "type": file.extension.replace(".", "").toUpperCase(),
+                "type": type,
                 "project": project ?? "",
                 "path": path,
                 "file": file
