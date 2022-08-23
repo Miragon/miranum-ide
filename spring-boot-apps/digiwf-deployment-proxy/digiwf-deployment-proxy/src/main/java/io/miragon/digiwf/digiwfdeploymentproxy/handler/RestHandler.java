@@ -58,7 +58,6 @@ public class RestHandler implements DeploymentHandler {
             request = request
                 .setHeader("Content-Type", "application/json");
             final HttpResponse<String> response = client.send(request.build(), HttpResponse.BodyHandlers.ofString());
-            System.out.println(response);
             log.debug(response.toString());
 
             final String message = String.format("Deploy artifact %s to target %s with http status %s", deploymentDto.getArtifact().getArtifactName(), deploymentDto.getTarget(), response.statusCode());
