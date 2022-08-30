@@ -1,3 +1,40 @@
-export function digiwfDeploymentPluginRest(): string {
-    return "digiwf-deployment-plugin-rest";
+import { Configuration, DeploymentAPIApi } from "./openapi";
+import {
+    Artifact,
+    DeploymentSuccess,
+    DigiWFDeploymentPlugin,
+    DigiWFDeploymentTarget
+} from "@miragon-process-ide/digiwf-lib";
+
+export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin{
+    name: string;
+    targetEnvironments: DigiWFDeploymentTarget[];
+
+    constructor(name: string, targetEnvironments: DigiWFDeploymentTarget[]) {
+        this.name = name;
+        this.targetEnvironments = targetEnvironments;
+    }
+
+    async deploy(target : string, artifact : Artifact) : Promise<DeploymentSuccess> {
+        const targetEnv = this.targetEnvironments.filter(env => env.name === target);
+        if (targetEnv.length === 0) {
+            return {
+                success: false,
+                message: `No target configured for ${target}`
+            };
+        }
+
+        const deployment = {
+            target: target,
+            artifact: {
+                ...artifact,
+            }
+        };
+        const response = await new DeploymentAPIApi(new Configuration({basePath: targetEnv[0].url})).deployArtifact(deployment);
+        return {
+            success: !!response.data.success,
+            message: response.data.message
+        };
+    }
+
 }

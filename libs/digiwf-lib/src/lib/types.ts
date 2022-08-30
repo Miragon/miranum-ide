@@ -14,10 +14,16 @@ export interface FileDetails {
 
 export interface DigiWFDeploymentPlugin {
     name: string;
+    targetEnvironments: DigiWFDeploymentTarget[];
     deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess>;
+}
+
+export interface DigiWFDeploymentTarget {
+    name: string;
+    url: string;
 }
 
 export interface DeploymentSuccess {
     success: boolean;
-    message: string;
+    message: string | undefined;
 }

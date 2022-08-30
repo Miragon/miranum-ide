@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  io.miragon.digiwf.digiwfdeploymentproxy.configuration.DeploymentProxyAutoConfiguration

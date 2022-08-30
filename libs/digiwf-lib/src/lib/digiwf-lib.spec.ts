@@ -9,6 +9,7 @@ const config: DigiwfConfig = {
     deploymentPlugins: [
         {
             name: "rest",
+            targetEnvironments: [],
             deploy: function(target: string) {
                 console.log(target);
                 return new Promise<DeploymentSuccess>(resolve => resolve({
