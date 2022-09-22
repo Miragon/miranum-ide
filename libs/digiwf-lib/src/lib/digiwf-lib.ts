@@ -64,4 +64,8 @@ export class DigiwfLib {
         }
         return deployments;
     }
+
+    public async generateArtifact(type: string, name: string, path: string, base: string | undefined){
+        console.log(type, name, path, base);
+    }
 }

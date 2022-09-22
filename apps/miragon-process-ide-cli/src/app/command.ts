@@ -80,7 +80,7 @@ export function generate(): Command {
         .requiredOption("-p, --path <filepath>", "specify the targeted path")
         .option("-b, --base <filepath>", "specify the template it's based on")
         .action((options) => {
-            digiwfLib.deployAllArtifacts(options.type, options.name, options.path)
+            digiwfLib.generateArtifact(options.type, options.name, options.path, options.base)
                 .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });
