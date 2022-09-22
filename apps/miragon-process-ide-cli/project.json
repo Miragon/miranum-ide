@@ -44,7 +44,7 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type bpmn --name test.bpmn  --path /path/to/my-file"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type bpmn --name test.bpmn  --path /Users/jakobmertl/Desktop"
           }
         ]
       }
