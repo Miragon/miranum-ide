@@ -39,7 +39,7 @@
         ]
       }
     },
-    "generate": {
+    "create": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [

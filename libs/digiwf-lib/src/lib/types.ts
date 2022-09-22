@@ -27,3 +27,8 @@ export interface DeploymentSuccess {
     success: boolean;
     message: string | undefined;
 }
+
+export interface GeneratorSuccess {
+    success: boolean;
+    message: string | undefined;
+}

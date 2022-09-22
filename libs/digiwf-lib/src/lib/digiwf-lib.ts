@@ -1,5 +1,5 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { Artifact, DeploymentSuccess, DigiWFDeploymentPlugin } from "./types";
+import {Artifact, DeploymentSuccess, DigiWFDeploymentPlugin, GeneratorSuccess} from "./types";
 
 export interface DigiwfConfig {
     deploymentPlugins: DigiWFDeploymentPlugin[];
@@ -65,7 +65,12 @@ export class DigiwfLib {
         return deployments;
     }
 
-    public async generateArtifact(type: string, name: string, path: string, base: string | undefined){
+    public async generateArtifact(type: string, name: string, path: string, base: string | undefined): Promise<GeneratorSuccess> {
         console.log(type, name, path, base);
+        const success = {
+            "success": true,
+            "message": ""
+        }
+        return success;
     }
 }
