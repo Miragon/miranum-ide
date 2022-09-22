@@ -70,3 +70,18 @@ export function deployAllFiles(): Command {
                 .catch(err => console.error(err));
         });
 }
+
+export function generate(): Command {
+    return new Command()
+        .command("generate")
+        .description("generates a process model")
+        .requiredOption("-t --type <type>", "specify the file type that is to be generated")
+        .requiredOption("-n, --name <name>", "specify the name")
+        .requiredOption("-p, --path <filepath>", "specify the targeted path")
+        .option("-b, --base <filepath>", "specify the template it's based on")
+        .action((options) => {
+            digiwfLib.deployAllArtifacts(options.type, options.name, options.path)
+                .then(deploymentSuccess => console.log(deploymentSuccess))
+                .catch(err => console.error(err));
+        });
+}
