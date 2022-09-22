@@ -1,4 +1,4 @@
-import {DigiwfDeploymentPluginRest} from "@miragon-process-ide/digiwf-deployment-plugin-rest";
+import {DigiwfDeploymentPluginRest} from "./digiwf-deployment-plugin-rest";
 
 describe("deploy", () => {
     it("should come back as false", async () => {
