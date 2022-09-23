@@ -1,6 +1,7 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
 import {Artifact, DeploymentSuccess, DigiWFDeploymentPlugin, GeneratorSuccess} from "./types";
 import * as fs from "fs";
+import * as util from "util";
 
 export interface DigiwfConfig {
     deploymentPlugins: DigiWFDeploymentPlugin[];
@@ -66,7 +67,9 @@ export class DigiwfLib {
         return deployments;
     }
 
-    public async generateProcess(type: string, name: string, path: string, base?: string | undefined): Promise<GeneratorSuccess> {
+
+    private async generate(type: string, filePath: string, base?: string | undefined): Promise<GeneratorSuccess> {
+        const supportedTypes = ['bpmn', 'dmn', 'form', 'config', 'element'];
         const startBPMN =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" id=\"Definitions_1ni255e\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xmlns:zeebe=\"http://camunda.org/schema/zeebe/1.0\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Cloud\" modeler:executionPlatformVersion=\"8.0.0\">\n" +
@@ -82,17 +85,34 @@ export class DigiwfLib {
             "  </bpmndi:BPMNDiagram>\n" +
             "</bpmn:definitions>";
 
-        //fs.createWriteStream(path + '/' + name + '.' + type);
-        //await fs.writeFile(path + '/' + name + '.' + type, startBPMN);
-
-        const fileName: string = name.replace("." + type, "");
-        fs.writeFileSync(`${path}/${fileName}.${type}`, startBPMN);
-
-        console.log(type, name, path, base);        //not the nicest, should be integrated into return value - since this is logged anyway
-        const success = {
-            "success": true,
-            "message": "Generated a File successfully"
+        if(!supportedTypes.includes(type)) {
+            return {
+                success: false,
+                message: "The given type is not supported"
+            }
         }
+        try {
+            const writeFilePromise = util.promisify(fs.writeFile);
+            await writeFilePromise(`${filePath}.${type}`, startBPMN);
+            return {
+                success: true,
+                message: "Generated a file successfully"
+            };
+        } catch (err) {
+            return {
+                success: false,
+                message: "Failed to generate a file"
+            }
+        }
+    }
+
+    public async generateProcess(type: string, name: string, path: string, base?: string | undefined): Promise<GeneratorSuccess> {
+        const fileName: string = name.replace("." + type, "");
+
+        console.log(type, name, path, base); //not the nicest, should be integrated into return value - since this is logged anyway
+
+        const success = this.generate(type, `${path}/${fileName}`, base);
         return success;
     }
+
 }

@@ -5,8 +5,6 @@ import * as fs from "fs";
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
 const target = "http://localhost:8080";
-const pathToGenerations = "/Users/jakobmertl/Desktop";
-//const pathToGenerations = "/resources/my-generations";
 
 const config: DigiwfConfig = {
     deploymentPlugins: [
@@ -63,7 +61,7 @@ describe("deployAllArtifacts", () => {
 
 
 describe("generateProcess", () => {
-
+    const pathToGenerations = "resources/my-generations";
     const startBPMN: string =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" id=\"Definitions_1ni255e\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xmlns:zeebe=\"http://camunda.org/schema/zeebe/1.0\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Cloud\" modeler:executionPlatformVersion=\"8.0.0\">\n" +
@@ -79,14 +77,29 @@ describe("generateProcess", () => {
         "  </bpmndi:BPMNDiagram>\n" +
         "</bpmn:definitions>";
 
-    //kann man hier generateSuccesses irgendwie rausziehen?
     it("should work", async () => {
+        if(fs.existsSync(`${pathToGenerations}/testFile.bpmn`)){
+            fs.unlinkSync(`${pathToGenerations}/testFile.bpmn`)
+        }
+
         const generateSuccesses = await digiwfLib.generateProcess("bpmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe("Generated a File successfully");
-        //expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`)).toEqual(startBPMN); //the generation read gives weird numbers no xml
+        expect(generateSuccesses.message).toBe("Generated a file successfully");
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toEqual(startBPMN);
+
+        fs.unlinkSync(`${pathToGenerations}/testFile.bpmn`)
     });
 
-    //missing negative example - can't come up with one that makes sense
+    it("should raise an error", async () => {
+        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "errorFile", `${pathToGenerations}/error`);
+        expect(generateSuccesses.success).toBeFalsy();
+        expect(generateSuccesses.message).toBe("Failed to generate a file");
+    });
+
+    it("should not work", async () => {
+        const generateSuccesses = await digiwfLib.generateProcess("typo", "typoFile", pathToGenerations);
+        expect(generateSuccesses.success).toBeFalsy();
+        expect(generateSuccesses.message).toBe("The given type is not supported");
+    });
 
 });
