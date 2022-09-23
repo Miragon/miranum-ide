@@ -12,7 +12,6 @@ const config: DigiwfConfig = {
             name: "rest",
             targetEnvironments: [],
             deploy: function(target: string) {
-                console.log(target);
                 return new Promise<DeploymentSuccess>(resolve => resolve({
                     success: true,
                     message: `Deployed to ${target}`
