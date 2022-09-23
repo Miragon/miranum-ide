@@ -111,8 +111,7 @@ export class DigiwfLib {
 
         console.log(type, name, path, base); //not the nicest, should be integrated into return value - since this is logged anyway
 
-        const success = this.generate(type, `${path}/${fileName}`, base);
-        return success;
+        return this.generate(type, `${path}/${fileName}`, base);
     }
 
 }
