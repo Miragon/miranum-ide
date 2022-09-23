@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "commander": "^9.4.0",
+    "squirrelly": "^8.0.8",
     "tslib": "^2.3.0"
   }
 }

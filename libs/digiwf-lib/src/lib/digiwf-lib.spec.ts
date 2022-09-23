@@ -61,20 +61,23 @@ describe("deployAllArtifacts", () => {
 
 describe("generateProcess", () => {
     const pathToGenerations = "resources/my-generations";
+    //careful, startBPMN is hardcoded
     const startBPMN: string =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-        "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" id=\"Definitions_1ni255e\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xmlns:zeebe=\"http://camunda.org/schema/zeebe/1.0\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Cloud\" modeler:executionPlatformVersion=\"8.0.0\">\n" +
-        "  <bpmn:process id=\"Process_16vr885\" isExecutable=\"true\">\n" +
+        "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" id=\"Definitions_0sduois\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Platform\" modeler:executionPlatformVersion=\"7.17.0\">\n" +
+        "  <bpmn:process id=\"testFile_uuid\" name=\"testFile\" isExecutable=\"true\">\n" +
+        "    <bpmn:documentation>doc</bpmn:documentation>\n" +
+        "    <bpmn:extensionElements />\n" +
         "    <bpmn:startEvent id=\"StartEvent_1\" />\n" +
         "  </bpmn:process>\n" +
         "  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n" +
-        "    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_16vr885\">\n" +
+        "    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"testFile_uuid\">\n" +
         "      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">\n" +
-        "        <dc:Bounds x=\"179\" y=\"159\" width=\"36\" height=\"36\" />\n" +
+        "        <dc:Bounds x=\"179\" y=\"79\" width=\"36\" height=\"36\" />\n" +
         "      </bpmndi:BPMNShape>\n" +
         "    </bpmndi:BPMNPlane>\n" +
         "  </bpmndi:BPMNDiagram>\n" +
-        "</bpmn:definitions>";
+        "</bpmn:definitions>\n"
 
     it("should work", async () => {
         if(fs.existsSync(`${pathToGenerations}/testFile.bpmn`)){
