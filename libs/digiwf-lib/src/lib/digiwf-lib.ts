@@ -88,7 +88,7 @@ export class DigiwfLib {
         if(!supportedTypes.includes(type)) {
             return {
                 success: false,
-                message: "The given type is not supported"
+                message: `The given type: "${type}" is not supported`
             }
         }
         try {
@@ -96,20 +96,18 @@ export class DigiwfLib {
             await writeFilePromise(`${filePath}.${type}`, startBPMN);
             return {
                 success: true,
-                message: "Generated a file successfully"
+                message: `Generated ${filePath}.${type} successfully`
             };
         } catch (err) {
             return {
                 success: false,
-                message: "Failed to generate a file"
+                message: `Failed to generate ${filePath}.${type}`
             }
         }
     }
 
     public async generateProcess(type: string, name: string, path: string, base?: string | undefined): Promise<GeneratorSuccess> {
         const fileName: string = name.replace("." + type, "");
-
-        console.log(type, name, path, base); //not the nicest, should be integrated into return value - since this is logged anyway
 
         return this.generate(type, `${path}/${fileName}`, base);
     }

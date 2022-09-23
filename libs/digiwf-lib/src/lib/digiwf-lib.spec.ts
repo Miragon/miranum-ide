@@ -83,7 +83,7 @@ describe("generateProcess", () => {
 
         const generateSuccesses = await digiwfLib.generateProcess("bpmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe("Generated a file successfully");
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.bpmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toEqual(startBPMN);
 
         fs.unlinkSync(`${pathToGenerations}/testFile.bpmn`)
@@ -92,13 +92,13 @@ describe("generateProcess", () => {
     it("should raise an error", async () => {
         const generateSuccesses = await digiwfLib.generateProcess("bpmn", "errorFile", `${pathToGenerations}/error`);
         expect(generateSuccesses.success).toBeFalsy();
-        expect(generateSuccesses.message).toBe("Failed to generate a file");
+        expect(generateSuccesses.message).toBe(`Failed to generate ${pathToGenerations}/error/errorFile.bpmn`);
     });
 
     it("should not work", async () => {
         const generateSuccesses = await digiwfLib.generateProcess("typo", "typoFile", pathToGenerations);
         expect(generateSuccesses.success).toBeFalsy();
-        expect(generateSuccesses.message).toBe("The given type is not supported");
+        expect(generateSuccesses.message).toBe(`The given type: "typo" is not supported`);
     });
 
 });
