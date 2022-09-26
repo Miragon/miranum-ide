@@ -140,6 +140,27 @@ describe("generateProcess", () => {
         fs.unlinkSync(`${pathToGenerations}/testFile.dmn`)
     });
 
+    it("config should work", async () => {
+        const defaultElement =
+            "{\n" +
+            "  \"key\": \"LM-MarkdownTest\",\n" +
+            "  \"statusDokument\": \"\",\n" +
+            "  \"statusConfig\": [],\n" +
+            "  \"configs\": []\n" +
+            "}\n"
+
+        if(fs.existsSync(`${pathToGenerations}/configTest.json`)){
+            fs.unlinkSync(`${pathToGenerations}/configTest.json`)
+        }
+
+        const generateSuccesses = await digiwfLib.generateProcess("config", "configTest", pathToGenerations);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/configTest.json successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/configTest.json`).toString()).toEqual(defaultElement);
+
+        fs.unlinkSync(`${pathToGenerations}/configTest.json`)
+    });
+
     it("element-template should work", async () => {
         const defaultElement =
             "{\n" +

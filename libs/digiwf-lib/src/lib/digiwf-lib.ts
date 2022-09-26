@@ -78,7 +78,8 @@ export class DigiwfLib {
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
             ["form", "resources/templates/form-default.form"],
-            ["config", "resources/templates/config-default.json"],
+            ["config", {path: "resources/templates/config-default.json",
+                    data: {}}],
             ["element-template", {path: "resources/templates/element-default.json",
                     data: {name: fileName, id: id}}]
         ]);
