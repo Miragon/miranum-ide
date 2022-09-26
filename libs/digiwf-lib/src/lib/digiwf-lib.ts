@@ -89,7 +89,7 @@ export class DigiwfLib {
         const chosenTemplate = TEMPLATES.get(type);
         const content = await Sqrl.renderFile(chosenTemplate.path, chosenTemplate.data);
 
-        return await generate(type, `${path}/${fileName}`, content, templateBase);
+        return generate(type, `${path}/${fileName}`, content, templateBase);
     }
 
 }
