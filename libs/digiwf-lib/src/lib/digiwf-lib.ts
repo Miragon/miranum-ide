@@ -1,6 +1,7 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
 import { generate } from "./generate/generate";
-import {Artifact, Success, DigiWFDeploymentPlugin} from "./types";
+import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
+//import { v4 as uuidv4 } from "uuid";
 
 import * as Sqrl from "squirrelly"
 
@@ -70,14 +71,18 @@ export class DigiwfLib {
 
 
     public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
-        const fileName: string = name.replace("." + type, "").replace(".json","");
+        const fileName: string = name.replace("." + type, "")
+                                    .replace(".json","")
+                                    .replace(".schema", "");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
+        //const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
                     data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}], //currently fillers
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
-            ["form", "resources/templates/form-default.form"],
+            ["form", {path: "resources/templates/form-default.schema.json",
+                    data:{key: name, type: "object"}}],
             ["config", {path: "resources/templates/config-default.json",
                     data: {}}],
             ["element-template", {path: "resources/templates/element-default.json",
@@ -95,6 +100,8 @@ export class DigiwfLib {
 
         if(type === "config" || type === "element-template") {
             type = "json";
+        } else if(type === "form") {
+            type = "schema.json";
         }
 
         return await generate(`${path}/${fileName}.${type}`, content, templateBase);

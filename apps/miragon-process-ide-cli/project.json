@@ -50,6 +50,9 @@
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type dmn --name testFile.dmn  --path resources/my-generations"
           },
           {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type form --name testFile.schema.json  --path resources/my-generations"
+          },
+          {
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type config --name configTest.json  --path resources/my-generations"
           },
           {

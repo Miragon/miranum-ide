@@ -1,6 +1,7 @@
 import { DigiwfConfig, DigiwfLib } from "./digiwf-lib";
 import { Success } from "./types";
 import * as fs from "fs";
+import {endianness} from "os";
 
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
@@ -100,7 +101,8 @@ describe("generateProcess", () => {
         const generateSuccesses = await digiwfLib.generateProcess("bpmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.bpmn successfully`);
-        expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toEqual(defaultBPMN);
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toContain(defaultBPMN.substring(0,512));
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toContain(defaultBPMN.substring(518,798));
 
         fs.unlinkSync(`${pathToGenerations}/testFile.bpmn`)
     });
@@ -136,8 +138,36 @@ describe("generateProcess", () => {
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.dmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.dmn`).toString()).toEqual(defaultDMN);
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.dmn`).toString()).toContain(defaultDMN.substring(289));
 
         fs.unlinkSync(`${pathToGenerations}/testFile.dmn`)
+    });
+
+    it("form should work", async () => {
+        const defaultForm =
+            "{\n" +
+            "  \"key\": \"testFile\",\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"allOf\": [\n" +
+            "    {\n" +
+            "      \"title\": \"Abschnitt\",\n" +
+            "      \"description\": \"\",\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"x-options\": {\n" +
+            "        \"sectionsTitlesClasses\": [\n" +
+            "          \"d-none\"\n" +
+            "        ]\n"
+
+        if(fs.existsSync(`${pathToGenerations}/testFile.schema.json`)){
+            fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
+        }
+
+        const generateSuccesses = await digiwfLib.generateProcess("form", "testFile", pathToGenerations);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.schema.json successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.schema.json`).toString()).toContain(defaultForm);
+
+        fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
     });
 
     it("config should work", async () => {
@@ -186,7 +216,8 @@ describe("generateProcess", () => {
         const generateSuccesses = await digiwfLib.generateProcess("element-template", "elementTest", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/elementTest.json successfully`);
-        expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toEqual(defaultElement);
+        expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toContain(defaultElement.substring(0,48));
+        expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toContain(defaultElement.substring(53));
 
         fs.unlinkSync(`${pathToGenerations}/elementTest.json`)
     });
