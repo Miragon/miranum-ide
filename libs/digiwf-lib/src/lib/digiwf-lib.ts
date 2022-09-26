@@ -1,7 +1,7 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
 import { generate } from "./generate/generate";
 import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
-//import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 import * as Sqrl from "squirrelly"
 
@@ -74,8 +74,8 @@ export class DigiwfLib {
         const fileName: string = name.replace("." + type, "")
                                     .replace(".json","")
                                     .replace(".schema", "");
-        const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
-        //const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
+        //const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
+        const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
                     data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}], //currently fillers

@@ -75,6 +75,21 @@ describe("generateProcess", () => {
         expect(generateSuccesses.message).toBe(`The given type: "typo" is not supported`);
     });
 
+    it("should ignore whitespaces", async () => {
+        const cleanID = "<bpmn:process id=\"whitespaceFile_"
+
+        if(fs.existsSync(`${pathToGenerations}/white space   File.bpmn`)){
+            fs.unlinkSync(`${pathToGenerations}/white space   File.bpmn`)
+        }
+
+        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "white space   File", pathToGenerations);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/white space   File.bpmn successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/white space   File.bpmn`).toString()).toContain(cleanID);
+
+        fs.unlinkSync(`${pathToGenerations}/white space   File.bpmn`)
+    });
+
     it("BPMN should work", async () => {
         //careful, defaultBPMN is hardcoded
         const defaultBPMN: string =
@@ -137,7 +152,6 @@ describe("generateProcess", () => {
         const generateSuccesses = await digiwfLib.generateProcess("dmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.dmn successfully`);
-        expect(fs.readFileSync(`${pathToGenerations}/testFile.dmn`).toString()).toEqual(defaultDMN);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.dmn`).toString()).toContain(defaultDMN.substring(289));
 
         fs.unlinkSync(`${pathToGenerations}/testFile.dmn`)
