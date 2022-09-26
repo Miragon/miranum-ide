@@ -70,7 +70,7 @@ export class DigiwfLib {
 
 
     public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
-        const fileName: string = name.replace("." + type, "");
+        const fileName: string = name.replace("." + type, "").replace(".json","");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
@@ -79,7 +79,8 @@ export class DigiwfLib {
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
             ["form", "resources/templates/form-default.form"],
             ["config", "resources/templates/config-default.json"],
-            ["element-template", "resources/templates/element-default.json"]
+            ["element-template", {path: "resources/templates/element-default.json",
+                    data: {name: fileName, id: id}}]
         ]);
 
         if(!TEMPLATES.has(type)){
@@ -91,7 +92,11 @@ export class DigiwfLib {
         const chosenTemplate = TEMPLATES.get(type);
         const content = await Sqrl.renderFile(chosenTemplate.path, chosenTemplate.data);
 
-        return await generate(type, `${path}/${fileName}`, content, templateBase);
+        if(type === "config" || type === "element-template") {
+            type = "json";
+        }
+
+        return await generate(`${path}/${fileName}.${type}`, content, templateBase);
     }
 
 }

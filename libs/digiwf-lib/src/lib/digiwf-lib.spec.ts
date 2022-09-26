@@ -140,4 +140,34 @@ describe("generateProcess", () => {
         fs.unlinkSync(`${pathToGenerations}/testFile.dmn`)
     });
 
+    it("element-template should work", async () => {
+        const defaultElement =
+            "{\n" +
+            "  \"name\": \"elementTest\",\n" +
+            "  \"id\": \"elementTest_uuid\",\n" +
+            "  \"appliesTo\": [\n" +
+            "    {\n" +
+            "    \"0\": \"bpmn:ServiceTask\"\n" +
+            "    }\n" +
+            "  ],\n" +
+            "  \"properties\": [],\n" +
+            "  \"entriesVisible\": [\n" +
+            "    {\n" +
+            "      \"_all\": true\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}\n"
+
+        if(fs.existsSync(`${pathToGenerations}/elementTest.json`)){
+            fs.unlinkSync(`${pathToGenerations}/elementTest.json`)
+        }
+
+        const generateSuccesses = await digiwfLib.generateProcess("element-template", "elementTest", pathToGenerations);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/elementTest.json successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toEqual(defaultElement);
+
+        fs.unlinkSync(`${pathToGenerations}/elementTest.json`)
+    });
+
 });

@@ -48,6 +48,9 @@
           },
           {
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type dmn --name testFile.dmn  --path resources/my-generations"
+          },
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type element-template --name elementTest.json  --path resources/my-generations"
           }
         ]
       }
