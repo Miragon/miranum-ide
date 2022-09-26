@@ -1,5 +1,5 @@
 import { Command, InvalidArgumentError } from "commander";
-import { DeploymentSuccess, DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
+import { Success, DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 import { DigiwfDeploymentPluginRest } from "@miragon-process-ide/digiwf-deployment-plugin-rest";
 
 const environments = [
@@ -23,7 +23,7 @@ const config: DigiwfConfig = {
             name: "dry",
             targetEnvironments: environments,
             deploy: function(target: string) {
-                return new Promise<DeploymentSuccess>(resolve => resolve({
+                return new Promise<Success>(resolve => resolve({
                     success: true,
                     message: `Deployed to ${target}`
                 }));
@@ -66,6 +66,21 @@ export function deployAllFiles(): Command {
         .option("-p, --project <project>", "specify the project")
         .action((options) => {
             digiwfLib.deployAllArtifacts(options.directory, options.project, options.target)
+                .then(deploymentSuccess => console.log(deploymentSuccess))
+                .catch(err => console.error(err));
+        });
+}
+
+export function generate(): Command {
+    return new Command()
+        .command("generate")
+        .description("generates a process model")
+        .requiredOption("-t --type <type>", "specify the file type that is to be generated")
+        .requiredOption("-n, --name <name>", "specify the name")
+        .requiredOption("-p, --path <filepath>", "specify the targeted path")
+        .option("--template <filepath>", "specify a custom template that is to be used")
+        .action((options) => {
+            digiwfLib.generateProcess(options.type, options.name, options.path, options.template)
                 .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });

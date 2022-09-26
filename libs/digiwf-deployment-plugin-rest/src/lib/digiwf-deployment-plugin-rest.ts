@@ -1,7 +1,7 @@
 import { Configuration, DeploymentAPIApi } from "./openapi";
 import {
     Artifact,
-    DeploymentSuccess,
+    Success,
     DigiWFDeploymentPlugin,
     DigiWFDeploymentTarget
 } from "@miragon-process-ide/digiwf-lib";
@@ -15,7 +15,7 @@ export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin{
         this.targetEnvironments = targetEnvironments;
     }
 
-    async deploy(target : string, artifact : Artifact) : Promise<DeploymentSuccess> {
+    async deploy(target : string, artifact : Artifact) : Promise<Success> {
         const targetEnv = this.targetEnvironments.filter(env => env.name === target);
         if (targetEnv.length === 0) {
             return {

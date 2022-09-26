@@ -15,7 +15,7 @@ export interface FileDetails {
 export interface DigiWFDeploymentPlugin {
     name: string;
     targetEnvironments: DigiWFDeploymentTarget[];
-    deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess>;
+    deploy(target: string, artifact: Artifact): Promise<Success>;
 }
 
 export interface DigiWFDeploymentTarget {
@@ -23,7 +23,7 @@ export interface DigiWFDeploymentTarget {
     url: string;
 }
 
-export interface DeploymentSuccess {
+export interface Success {
     success: boolean;
     message: string | undefined;
 }

@@ -39,6 +39,16 @@
         ]
       }
     },
+    "create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type bpmn --name testFile.bpmn  --path resources/my-generations"
+          }
+        ]
+      }
+    },
     "serve": {
       "executor": "@nrwl/node:node",
       "options": {

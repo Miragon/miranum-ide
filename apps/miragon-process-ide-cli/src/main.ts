@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { deployAllFiles, deployFileCommand } from "./app/command";
+import { deployAllFiles, deployFileCommand, generate } from "./app/command";
 
 
 const program = new Command();
@@ -19,4 +19,5 @@ program
     .version("0.0.1");
 program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
+program.addCommand(generate());
 program.parse();
