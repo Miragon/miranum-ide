@@ -95,8 +95,9 @@ export class DigiwfLib {
                 message: `The given type: "${type}" is not supported`
             }
         }
+
         const chosenTemplate = TEMPLATES.get(type);
-        const content = await Sqrl.renderFile(chosenTemplate.path, chosenTemplate.data);
+        const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path, chosenTemplate.data);
 
         if(type === "config" || type === "element-template") {
             type = "json";
