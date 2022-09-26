@@ -1,7 +1,6 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import {Artifact, DeploymentSuccess, DigiWFDeploymentPlugin, GeneratorSuccess} from "./types";
-import * as fs from "fs";
-import * as util from "util";
+import { generate } from "./generate/generate";
+import {Artifact, Success, DigiWFDeploymentPlugin} from "./types";
 
 import * as Sqrl from "squirrelly"
 
@@ -22,7 +21,7 @@ export class DigiwfLib {
         }
     }
 
-    private async deploy(target: string, artifact: Artifact): Promise<DeploymentSuccess> {
+    private async deploy(target: string, artifact: Artifact): Promise<Success> {
         try {
             await Promise.all(
                 this.deploymentPlugins.map(plugin => plugin.deploy(target, artifact))
@@ -39,7 +38,7 @@ export class DigiwfLib {
         }
     }
 
-    public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<DeploymentSuccess> {
+    public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<Success> {
         const file = await getFile(path);
         const artifact = {
             "type": type,
@@ -50,7 +49,7 @@ export class DigiwfLib {
         return this.deploy(target, artifact);
     }
 
-    public async deployAllArtifacts(path: string, project: string | undefined, target: string): Promise<DeploymentSuccess[]> {
+    public async deployAllArtifacts(path: string, project: string | undefined, target: string): Promise<Success[]> {
         const deployments = [];
         const files = await getFiles(path);
         for (const file of files) {
@@ -70,40 +69,27 @@ export class DigiwfLib {
     }
 
 
-    private async generate(type: string, filePath: string, content: string, base?: string | undefined): Promise<GeneratorSuccess> {
-        try {
-            const writeFilePromise = util.promisify(fs.writeFile);
-            await writeFilePromise(`${filePath}.${type}`, content);
-            return {
-                success: true,
-                message: `Generated ${filePath}.${type} successfully`
-            };
-        } catch (err) {
-            return {
-                success: false,
-                message: `Failed to generate ${filePath}.${type}`
-            }
-        }
-    }
-
-    public async generateProcess(type: string, name: string, path: string, base?: string | undefined): Promise<GeneratorSuccess> {
+    public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "");
+        const TEMPLATES = new Map<string, any>([
+            ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
+                    data: {version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"}}],
+            ["dmn", "resources/templates/dmn-default.dmn"],
+            ["form", "resources/templates/form-default.json"],
+            ["config", "resources/templates/config-default.config"],
+            ["element-template", "resources/templates/element-default.json"]
+        ]);
 
-        const supportedTypes = ['bpmn', 'dmn', 'form', 'config', 'element'];
-        if(!supportedTypes.includes(type)) {
+        if(!TEMPLATES.has(type)){
             return {
                 success: false,
                 message: `The given type: "${type}" is not supported`
             }
         }
+        const chosenTemplate = TEMPLATES.get(type);
+        const content = await Sqrl.renderFile(chosenTemplate.path, chosenTemplate.data);
 
-        const BPMNtemplate = await Sqrl.renderFile("resources/templates/bpmn-default.bpmn", {
-            version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"
-        }); //most are filled with testvariables at the moment
-
-        //hashmap mit typ als key => "BPMNtemplate als value
-
-        return this.generate(type, `${path}/${fileName}`, BPMNtemplate, base);
+        return await generate(type, `${path}/${fileName}`, content, templateBase);
     }
 
 }

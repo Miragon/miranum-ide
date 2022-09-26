@@ -1,5 +1,5 @@
 import { DigiwfConfig, DigiwfLib } from "./digiwf-lib";
-import { DeploymentSuccess } from "./types";
+import { Success } from "./types";
 import * as fs from "fs";
 
 const pathToProject = "resources/my-process-automation-project/";
@@ -12,7 +12,7 @@ const config: DigiwfConfig = {
             name: "rest",
             targetEnvironments: [],
             deploy: function(target: string) {
-                return new Promise<DeploymentSuccess>(resolve => resolve({
+                return new Promise<Success>(resolve => resolve({
                     success: true,
                     message: `Deployed to ${target}`
                 }));
