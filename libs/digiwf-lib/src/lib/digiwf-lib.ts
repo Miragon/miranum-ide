@@ -71,13 +71,14 @@ export class DigiwfLib {
 
     public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "");
+        const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
-                    data: {version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"}}], //currently fillers
+                    data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}], //currently fillers
             ["dmn", {path: "resources/templates/dmn-default.dmn",
-                    data: {Definition_id: `${fileName}_uuid`, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
-            ["form", "resources/templates/form-default.json"],
-            ["config", "resources/templates/config-default.config"],
+                    data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
+            ["form", "resources/templates/form-default.form"],
+            ["config", "resources/templates/config-default.json"],
             ["element-template", "resources/templates/element-default.json"]
         ]);
 
