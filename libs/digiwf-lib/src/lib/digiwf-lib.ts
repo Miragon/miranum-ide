@@ -73,8 +73,9 @@ export class DigiwfLib {
         const fileName: string = name.replace("." + type, "");
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
-                    data: {version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"}}],
-            ["dmn", "resources/templates/dmn-default.dmn"],
+                    data: {version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"}}], //currently fillers
+            ["dmn", {path: "resources/templates/dmn-default.dmn",
+                    data: {Definition_id: `${fileName}_uuid`, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
             ["form", "resources/templates/form-default.json"],
             ["config", "resources/templates/config-default.config"],
             ["element-template", "resources/templates/element-default.json"]
