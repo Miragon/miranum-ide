@@ -45,6 +45,9 @@
         "commands": [
           {
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type bpmn --name testFile.bpmn  --path resources/my-generations"
+          },
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type dmn --name testFile.dmn  --path resources/my-generations"
           }
         ]
       }
