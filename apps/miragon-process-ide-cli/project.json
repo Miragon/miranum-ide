@@ -49,6 +49,16 @@
         ]
       }
     },
+    "createProject": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generateProject --path resources"
+          }
+        ]
+      }
+    },
     "serve": {
       "executor": "@nrwl/node:node",
       "options": {

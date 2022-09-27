@@ -17,3 +17,27 @@ export async function generate(type: string, filePath: string, content: string, 
         }
     }
 }
+
+export async function generateStructure(path?: string): Promise<Success> {
+    let usedPath = "resources/basicStructure"
+    if(path){
+        usedPath = path;
+    }
+
+    try {
+        if(!fs.existsSync(usedPath)){
+            fs.mkdirSync(usedPath, { recursive: true });
+        }
+
+        const writeFilePromise = util.promisify(fs.writeFile);
+        return {
+            success: true,
+            message: `Generated successfully`
+        };
+    } catch (err) {
+        return {
+            success: false,
+            message: `Failed to generate a structure`
+        }
+    }
+}

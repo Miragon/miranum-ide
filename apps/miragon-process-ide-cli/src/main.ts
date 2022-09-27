@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { deployAllFiles, deployFileCommand, generate } from "./app/command";
+import {deployAllFiles, deployFileCommand, generate, generateProject} from "./app/command";
 
 
 const program = new Command();
@@ -20,4 +20,5 @@ program
 program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
 program.addCommand(generate());
+program.addCommand(generateProject());
 program.parse();

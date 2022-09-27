@@ -1,5 +1,5 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { generate } from "./generate/generate";
+import {generate, generateStructure} from "./generate/generate";
 import {Artifact, Success, DigiWFDeploymentPlugin} from "./types";
 
 import * as Sqrl from "squirrelly"
@@ -94,10 +94,8 @@ export class DigiwfLib {
 
     //might cause issues since it's the same name
     public async generateProject(path: string): Promise<Success> {
-        return {
-            success: true,
-            message: "hi"
-        }
+
+        return generateStructure(path);
     }
 
 }
