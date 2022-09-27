@@ -92,4 +92,12 @@ export class DigiwfLib {
         return generate(type, `${path}/${fileName}`, content, templateBase);
     }
 
+    //might cause issues since it's the same name
+    public async generateProject(path: string): Promise<Success> {
+        return {
+            success: true,
+            message: "hi"
+        }
+    }
+
 }

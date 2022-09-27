@@ -85,3 +85,15 @@ export function generate(): Command {
                 .catch(err => console.error(err));
         });
 }
+
+export function generateProject(): Command {
+    return new Command()
+        .command("generateProject")
+        .description("generates a project foundation")
+        .option("-p, --path <filepath>", "specify the targeted path")
+        .action((options) => {
+            digiwfLib.generateProject(options.path)
+                .then(deploymentSuccess => console.log(deploymentSuccess))
+                .catch(err => console.error(err));
+        });
+}
