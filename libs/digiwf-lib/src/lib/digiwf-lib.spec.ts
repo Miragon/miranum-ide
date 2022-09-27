@@ -1,7 +1,6 @@
 import { DigiwfConfig, DigiwfLib } from "./digiwf-lib";
 import { Success } from "./types";
 import * as fs from "fs";
-import {endianness} from "os";
 
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
@@ -234,6 +233,30 @@ describe("generateProcess", () => {
         expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toContain(defaultElement.substring(53));
 
         fs.unlinkSync(`${pathToGenerations}/elementTest.json`)
+    });
+
+    it("own template should work", async () => {
+        const advancements =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" id=\"Definitions_0979zyo\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Platform\" modeler:executionPlatformVersion=\"7.17.0\">\n" +
+            "  <bpmn:process id=\"Process_09hzwwp\" name=\"Advanced\" isExecutable=\"true\">\n" +
+            "    <bpmn:startEvent id=\"StartEvent_1\">\n" +
+            "      <bpmn:outgoing>Flow_1croxed</bpmn:outgoing>\n" +
+            "    </bpmn:startEvent>\n" +
+            "    <bpmn:task id=\"Activity_1k9h69q\" name=\"Prozess1\">"
+
+        if(fs.existsSync(`${pathToGenerations}/advancedFile.bpmn`)){
+            fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
+        }
+
+        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "advancedFile", pathToGenerations
+                                                    , "resources/templates/bpmn-advanced.bpmn"
+                                                    , '{"name": "Advanced", "pname": "Prozess1"}');
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/advancedFile.bpmn successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/advancedFile.bpmn`).toString()).toContain(advancements);
+
+        fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
     });
 
 });

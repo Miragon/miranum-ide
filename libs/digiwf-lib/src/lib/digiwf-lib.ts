@@ -104,12 +104,10 @@ export class DigiwfLib {
 
         const chosenTemplate = TEMPLATES.get(type);
         const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path
-                                            ,templateFiller? templateFiller: chosenTemplate.data);
+                                            ,templateFiller? JSON.parse(templateFiller) : chosenTemplate.data);
 
         return await generate(filepath, content);
     }
 
 }
 
-//comment for project.json
-'{name: "Advanced", pname: "Prozess1"}'

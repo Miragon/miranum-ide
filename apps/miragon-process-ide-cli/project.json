@@ -59,7 +59,7 @@
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type element-template --name elementTest.json  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate -t bpmn -n advancedFile  -p resources/my-generations --template resources/templates/bpmn-advanced.bpmn --data '{name: \"Advanced\", pname: \"Prozess1\"}'"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate -t bpmn -n advancedFile  -p resources/my-generations --template resources/templates/bpmn-advanced.bpmn --data '{\"name\": \"Advanced\", \"pname\": \"Prozess1\"}'"
           }
         ]
       }
