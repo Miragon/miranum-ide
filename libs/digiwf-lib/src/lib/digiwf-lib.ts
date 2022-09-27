@@ -70,15 +70,14 @@ export class DigiwfLib {
     }
 
 
-    public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
+    public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "")
                                     .replace(".json","")
                                     .replace(".schema", "");
-        //const id: string = fileName.trim().replace(/\s+/g, "") + "_uuid";
         const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
-                    data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}], //currently fillers
+                    data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}],
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
             ["form", {path: "resources/templates/form-default.schema.json",
@@ -96,16 +95,21 @@ export class DigiwfLib {
             }
         }
 
-        const chosenTemplate = TEMPLATES.get(type);
-        const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path, chosenTemplate.data);
-
+        let filepath = `${path}/${fileName}.${type}`;
         if(type === "config" || type === "element-template") {
-            type = "json";
+            filepath = `${path}/${fileName}.json`;
         } else if(type === "form") {
-            type = "schema.json";
+            filepath = `${path}/${fileName}.schema.json`;
         }
 
-        return await generate(`${path}/${fileName}.${type}`, content, templateBase);
+        const chosenTemplate = TEMPLATES.get(type);
+        const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path
+                                            ,templateFiller? templateFiller: chosenTemplate.data);
+
+        return await generate(filepath, content);
     }
 
 }
+
+//comment for project.json
+'{name: "Advanced", pname: "Prozess1"}'

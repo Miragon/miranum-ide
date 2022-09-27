@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0979zyo" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.2.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.17.0">
-  <bpmn:process id="Process_09hzwwp" name="Advanced" isExecutable="true">
+  <bpmn:process id="Process_09hzwwp" name="{{it.name}}" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>Flow_1croxed</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:task id="Activity_1k9h69q" name="Prozess">
+    <bpmn:task id="Activity_1k9h69q" name="{{it.pname}}">
       <bpmn:incoming>Flow_1croxed</bpmn:incoming>
       <bpmn:outgoing>Flow_0dlkb1b</bpmn:outgoing>
     </bpmn:task>
