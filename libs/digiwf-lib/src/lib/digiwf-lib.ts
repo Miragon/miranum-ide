@@ -94,7 +94,6 @@ export class DigiwfLib {
 
     //might cause issues since it's the same name
     public async generateProject(path: string): Promise<Success> {
-
         return generateStructure(path);
     }
 
