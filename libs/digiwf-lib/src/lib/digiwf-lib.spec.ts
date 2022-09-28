@@ -171,16 +171,16 @@ describe("generateArtifact", () => {
             "          \"d-none\"\n" +
             "        ]\n"
 
-        if(fs.existsSync(`${pathToGenerations}/testFile.schema.json`)){
-            fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
+        if(fs.existsSync(`${pathToGenerations}/testFile.form`)){
+            fs.unlinkSync(`${pathToGenerations}/testFile.form`)
         }
 
         const generateSuccesses = await digiwfLib.generateArtifact("form", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.schema.json successfully`);
-        expect(fs.readFileSync(`${pathToGenerations}/testFile.schema.json`).toString()).toContain(defaultForm);
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.form successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.form`).toString()).toContain(defaultForm);
 
-        fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
+        fs.unlinkSync(`${pathToGenerations}/testFile.form`)
     });
 
     it("config should work", async () => {
@@ -296,7 +296,7 @@ describe("generateProject", () => {
     });
 
     /*
-    it("should work with direct path outside of project", async () => {
+    it("should work with absolute path outside of project", async () => {
         const projectPath = "/Users/jakobmertl/Desktop/ProjectTest";
         if(fs.existsSync(projectPath)){
             fs.rmSync(projectPath, { recursive: true, force: true });

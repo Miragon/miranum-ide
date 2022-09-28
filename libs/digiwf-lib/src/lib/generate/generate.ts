@@ -2,6 +2,7 @@ import {Success} from "../types";
 import * as fs from "fs";
 import * as util from "util";
 import * as Sqrl from "squirrelly";
+import {readFileSync} from "fs";
 
 export async function createFile(filePath: string, content: string): Promise<Success> {
     try {
@@ -33,6 +34,9 @@ export async function generateStructure(path?: string): Promise<Success> {
         fs.mkdirSync(`${usedPath}/element-templates`);
         fs.mkdirSync(`${usedPath}/forms`);
 
+        //const contentMD = readFileSync("resources/templates/README-layout.md").toString()
+        //await createFile(`${usedPath}/README.md`,contentMD);
+
         const contentDevConfig = await Sqrl.renderFile("resources/templates/config-default.json"
                                     , {key: "example-process-dev", serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"});
         await createFile(`${usedPath}/configs/dev.config.json`, contentDevConfig);
@@ -44,17 +48,17 @@ export async function generateStructure(path?: string): Promise<Success> {
                                     , {name: "exampleTemplate", id: "id"});
         await createFile(`${usedPath}/element-templates/example-template.json`, contentElement);
 
-        const contentControlForm = await  Sqrl.renderFile("resources/templates/form-default.schema.json"
+        const contentControlForm = await  Sqrl.renderFile("resources/templates/form-default.form"
                                     , {key: "4560db7e-64a3-49fc-ab6f-3d308d86dd9a", type: "object"});
         await createFile(`${usedPath}/forms/control.form`, contentControlForm);
-        const contentStartForm = await  Sqrl.renderFile("resources/templates/form-default.schema.json"
+        const contentStartForm = await  Sqrl.renderFile("resources/templates/form-default.form"
                                     , {key: "32dcafc9-5a3d-4ed9-ac91-3cb68383e4ac", type: "object"});
         await createFile(`${usedPath}/forms/start.form`, contentStartForm);
 
         const contentBPMN = await  Sqrl.renderFile("resources/templates/bpmn-default.bpmn"
                                     , {version: "7.17.0", Process_id: "007", name: "example-process", doc: "doc"});
         await createFile(`${usedPath}/example-process.bpmn`, contentBPMN);
-        const contentDMN = await  Sqrl.renderFile("resources/templates/form-default.schema.json"
+        const contentDMN = await  Sqrl.renderFile("resources/templates/dmn-default.dmn"
                                     , {Definition_id: "001", name: "example-dmn", version: "7.17.0", DecisionName: "Decision 1"});
         await createFile(`${usedPath}/example-dmn.dmn`, contentDMN);
 

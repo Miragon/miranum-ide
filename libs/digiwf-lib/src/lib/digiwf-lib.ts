@@ -72,15 +72,14 @@ export class DigiwfLib {
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "")
-                                    .replace(".json","")
-                                    .replace(".schema", "");
+                                    .replace(".json","");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
                     data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}],
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
-            ["form", {path: "resources/templates/form-default.schema.json",
+            ["form", {path: "resources/templates/form-default.form",
                     data:{key: name, type: "object"}}],
             ["config", {path: "resources/templates/config-default.json",
                     data: {key: name, serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"}}],
@@ -98,8 +97,6 @@ export class DigiwfLib {
         let filepath = `${path}/${fileName}.${type}`;
         if(type === "config" || type === "element-template") {
             filepath = `${path}/${fileName}.json`;
-        } else if(type === "form") {
-            filepath = `${path}/${fileName}.schema.json`;
         }
 
         const chosenTemplate = TEMPLATES.get(type);
