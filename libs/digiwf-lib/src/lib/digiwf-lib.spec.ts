@@ -186,7 +186,7 @@ describe("generateProcess", () => {
     it("config should work", async () => {
         const defaultElement =
             "{\n" +
-            "  \"key\": \"LM-MarkdownTest\",\n" +
+            "  \"key\": \"configTest\",\n" +
             "  \"statusDokument\": \"\",\n" +
             "  \"statusConfig\": [],\n" +
             "  \"configs\": []\n" +

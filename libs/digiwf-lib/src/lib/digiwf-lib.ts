@@ -69,6 +69,7 @@ export class DigiwfLib {
     }
 
 
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "")
                                     .replace(".json","")
