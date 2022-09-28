@@ -2,7 +2,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { FileDetails } from "../types";
 
-const supportedFiles = [".bpmn", ".dmn", ".config", ".json"]
+const supportedFiles = [".bpmn", ".dmn", ".config", ".json", ".form"]
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {
     try {
