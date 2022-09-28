@@ -1,8 +1,7 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { generate } from "./generate/generate";
+import { createFile } from "./generate/generate";
 import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
 import { v4 as uuidv4 } from "uuid";
-
 import * as Sqrl from "squirrelly"
 
 export interface DigiwfConfig {
@@ -70,7 +69,7 @@ export class DigiwfLib {
     }
 
 
-    public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
+    public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
         const fileName: string = name.replace("." + type, "")
                                     .replace(".json","")
                                     .replace(".schema", "");
@@ -83,7 +82,7 @@ export class DigiwfLib {
             ["form", {path: "resources/templates/form-default.schema.json",
                     data:{key: name, type: "object"}}],
             ["config", {path: "resources/templates/config-default.json",
-                    data: {}}],
+                    data: {key: name}}],
             ["element-template", {path: "resources/templates/element-default.json",
                     data: {name: fileName, id: id}}]
         ]);
@@ -106,7 +105,7 @@ export class DigiwfLib {
         const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path
                                             ,templateFiller? JSON.parse(templateFiller) : chosenTemplate.data);
 
-        return await generate(filepath, content);
+        return createFile(filepath, content);
     }
 
 }

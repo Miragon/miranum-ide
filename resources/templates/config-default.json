@@ -1,5 +1,5 @@
 {
-  "key": "LM-MarkdownTest",
+  "key": "{{it.key}}",
   "statusDokument": "",
   "statusConfig": [],
   "configs": []

@@ -63,13 +63,13 @@ describe("generateProcess", () => {
     const pathToGenerations = "resources/my-generations";
 
     it("should raise an error", async () => {
-        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "errorFile", `${pathToGenerations}/error`);
+        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "errorFile", `${pathToGenerations}/error`);
         expect(generateSuccesses.success).toBeFalsy();
         expect(generateSuccesses.message).toBe(`Failed to generate ${pathToGenerations}/error/errorFile.bpmn`);
     });
 
     it("should not work", async () => {
-        const generateSuccesses = await digiwfLib.generateProcess("typo", "typoFile", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("typo", "typoFile", pathToGenerations);
         expect(generateSuccesses.success).toBeFalsy();
         expect(generateSuccesses.message).toBe(`The given type: "typo" is not supported`);
     });
@@ -81,7 +81,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/white space   File.bpmn`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "white space   File", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "white space   File", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/white space   File.bpmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/white space   File.bpmn`).toString()).toContain(cleanID);
@@ -112,7 +112,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/testFile.bpmn`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "testFile", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.bpmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.bpmn`).toString()).toContain(defaultBPMN.substring(0,512));
@@ -148,7 +148,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/testFile.dmn`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("dmn", "testFile", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("dmn", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.dmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.dmn`).toString()).toContain(defaultDMN.substring(289));
@@ -175,7 +175,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("form", "testFile", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("form", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.schema.json successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/testFile.schema.json`).toString()).toContain(defaultForm);
@@ -196,7 +196,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/configTest.json`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("config", "configTest", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("config", "configTest", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/configTest.json successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/configTest.json`).toString()).toEqual(defaultElement);
@@ -226,7 +226,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/elementTest.json`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("element-template", "elementTest", pathToGenerations);
+        const generateSuccesses = await digiwfLib.generateArtifact("element-template", "elementTest", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/elementTest.json successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/elementTest.json`).toString()).toContain(defaultElement.substring(0,48));
@@ -249,7 +249,7 @@ describe("generateProcess", () => {
             fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
         }
 
-        const generateSuccesses = await digiwfLib.generateProcess("bpmn", "advancedFile", pathToGenerations
+        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "advancedFile", pathToGenerations
                                                     , "resources/templates/bpmn-advanced.bpmn"
                                                     , '{"name": "Advanced", "pname": "Prozess1"}');
         expect(generateSuccesses.success).toBeTruthy();
