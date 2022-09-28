@@ -29,8 +29,8 @@ export async function generateStructure(path?: string): Promise<Success> {
             fs.mkdirSync(usedPath, { recursive: true });
         }
         const content =""; //get this out of digiwf-lib? or somehow place it in generate method
-        generate("bpmn","resources/basicStructure/basic", content);
-        generate("form","resources/basicStructure/form1", content);
+        createFile("resources/basicStructure/basic.bpmn", content);
+        createFile("resources/basicStructure/form1.schema.json", content);
         return {
             success: true,
             message: `Generated successfully`
