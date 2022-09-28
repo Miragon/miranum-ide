@@ -59,7 +59,7 @@ describe("deployAllArtifacts", () => {
 });
 
 
-describe("generateProcess", () => {
+describe("generateArtifact", () => {
     const pathToGenerations = "resources/my-generations";
 
     it("should raise an error", async () => {
@@ -264,4 +264,29 @@ describe("generateProcess", () => {
         fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
     });
 
+});
+
+
+describe("generateProject", () => {
+    const projectPath = "resources/my-generations/ProjectTest";
+
+    it("should work", async () => {
+        if(fs.existsSync(projectPath)){
+            fs.rmSync(projectPath, { recursive: true, force: true });
+        }
+
+        const generateSuccesses = await digiwfLib.generateProject(projectPath);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated successfully`);
+
+        fs.rmSync(projectPath, { recursive: true, force: true });
+    });
+
+    /*
+    it("should raise an error", async () => {
+        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "errorFile", `${pathToGenerations}/error`);
+        expect(generateSuccesses.success).toBeFalsy();
+        expect(generateSuccesses.message).toBe(`Failed to generate a structure`);
+    });
+    */
 });
