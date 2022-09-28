@@ -268,9 +268,9 @@ describe("generateArtifact", () => {
 
 
 describe("generateProject", () => {
-    const projectPath = "resources/my-generations/ProjectTest";
 
     it("should work", async () => {
+        const projectPath = "resources/my-generations/ProjectTest";
         if(fs.existsSync(projectPath)){
             fs.rmSync(projectPath, { recursive: true, force: true });
         }
@@ -282,7 +282,35 @@ describe("generateProject", () => {
         fs.rmSync(projectPath, { recursive: true, force: true });
     });
 
+    it("should work without path", async () => {
+        const projectPath = "resources/basic-project-structure";
+        if(fs.existsSync(projectPath)){
+            fs.rmSync(projectPath, { recursive: true, force: true });
+        }
+
+        const generateSuccesses = await digiwfLib.generateProject();
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated successfully`);
+
+        fs.rmSync(projectPath, { recursive: true, force: true });
+    });
+
     /*
+    it("should work with direct path outside of project", async () => {
+        const projectPath = "/Users/jakobmertl/Desktop/ProjectTest";
+        if(fs.existsSync(projectPath)){
+            fs.rmSync(projectPath, { recursive: true, force: true });
+        }
+
+        const generateSuccesses = await digiwfLib.generateProject(projectPath);
+        expect(generateSuccesses.success).toBeTruthy();
+        expect(generateSuccesses.message).toBe(`Generated successfully`);
+
+        fs.rmSync(projectPath, { recursive: true, force: true });
+    });
+    */
+
+    /* no error example yet
     it("should raise an error", async () => {
         const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "errorFile", `${pathToGenerations}/error`);
         expect(generateSuccesses.success).toBeFalsy();
