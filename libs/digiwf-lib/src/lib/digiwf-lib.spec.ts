@@ -189,7 +189,12 @@ describe("generateProcess", () => {
             "  \"key\": \"configTest\",\n" +
             "  \"statusDokument\": \"\",\n" +
             "  \"statusConfig\": [],\n" +
-            "  \"configs\": []\n" +
+            "  \"configs\": [\n" +
+            "    {\n" +
+            "      \"key\": \"S3Service\",\n" +
+            "      \"value\": \"dwf-s3-local-01\"\n" +
+            "    }\n" +
+            "  ]\n" +
             "}\n"
 
         if(fs.existsSync(`${pathToGenerations}/configTest.json`)){

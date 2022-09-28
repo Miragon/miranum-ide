@@ -83,7 +83,7 @@ export class DigiwfLib {
             ["form", {path: "resources/templates/form-default.schema.json",
                     data:{key: name, type: "object"}}],
             ["config", {path: "resources/templates/config-default.json",
-                    data: {key: name}}],
+                    data: {key: name, serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"}}],
             ["element-template", {path: "resources/templates/element-default.json",
                     data: {name: fileName, id: id}}]
         ]);

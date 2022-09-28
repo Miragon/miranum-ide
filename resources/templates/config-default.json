@@ -2,5 +2,10 @@
   "key": "{{it.key}}",
   "statusDokument": "",
   "statusConfig": [],
-  "configs": []
+  "configs": [
+    {
+      "key": "{{it.serviceKey}}",
+      "value": "{{it.serviceValue}}"
+    }
+  ]
 }
