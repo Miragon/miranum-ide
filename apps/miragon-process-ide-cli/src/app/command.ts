@@ -79,8 +79,9 @@ export function generate(): Command {
         .requiredOption("-n, --name <name>", "specify the name")
         .requiredOption("-p, --path <filepath>", "specify the targeted path")
         .option("--template <filepath>", "specify a custom template that is to be used")
+        .option("-d --data <data>", "specify the data that is to be used for your template")
         .action((options) => {
-            digiwfLib.generateProcess(options.type, options.name, options.path, options.template)
+            digiwfLib.generateArtifact(options.type, options.name, options.path, options.template, options.data)
                 .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });

@@ -1,7 +1,7 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { generate } from "./generate/generate";
-import {Artifact, Success, DigiWFDeploymentPlugin} from "./types";
-
+import { createFile } from "./generate/generate";
+import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
+import { v4 as uuidv4 } from "uuid";
 import * as Sqrl from "squirrelly"
 
 export interface DigiwfConfig {
@@ -69,15 +69,23 @@ export class DigiwfLib {
     }
 
 
-    public async generateProcess(type: string, name: string, path: string, templateBase?: string | undefined): Promise<Success> {
-        const fileName: string = name.replace("." + type, "");
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
+    public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
+        const fileName: string = name.replace("." + type, "")
+                                    .replace(".json","")
+                                    .replace(".schema", "");
+        const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
-                    data: {version: "7.17.0", Process_id: `${fileName}_uuid`, name: fileName, doc: "doc"}}],
-            ["dmn", "resources/templates/dmn-default.dmn"],
-            ["form", "resources/templates/form-default.json"],
-            ["config", "resources/templates/config-default.config"],
-            ["element-template", "resources/templates/element-default.json"]
+                    data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}],
+            ["dmn", {path: "resources/templates/dmn-default.dmn",
+                    data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
+            ["form", {path: "resources/templates/form-default.schema.json",
+                    data:{key: name, type: "object"}}],
+            ["config", {path: "resources/templates/config-default.json",
+                    data: {key: name}}],
+            ["element-template", {path: "resources/templates/element-default.json",
+                    data: {name: fileName, id: id}}]
         ]);
 
         if(!TEMPLATES.has(type)){
@@ -86,10 +94,19 @@ export class DigiwfLib {
                 message: `The given type: "${type}" is not supported`
             }
         }
-        const chosenTemplate = TEMPLATES.get(type);
-        const content = await Sqrl.renderFile(chosenTemplate.path, chosenTemplate.data);
 
-        return generate(type, `${path}/${fileName}`, content, templateBase);
+        let filepath = `${path}/${fileName}.${type}`;
+        if(type === "config" || type === "element-template") {
+            filepath = `${path}/${fileName}.json`;
+        } else if(type === "form") {
+            filepath = `${path}/${fileName}.schema.json`;
+        }
+
+        const chosenTemplate = TEMPLATES.get(type);
+        const content = await Sqrl.renderFile(templateBase? templateBase : chosenTemplate.path
+                                            ,templateFiller? JSON.parse(templateFiller) : chosenTemplate.data);
+
+        return createFile(filepath, content);
     }
 
 }

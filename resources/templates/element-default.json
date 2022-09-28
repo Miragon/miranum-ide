@@ -1,0 +1,15 @@
+{
+  "name": "{{it.name}}",
+  "id": "{{it.id}}",
+  "appliesTo": [
+    {
+    "0": "bpmn:ServiceTask"
+    }
+  ],
+  "properties": [],
+  "entriesVisible": [
+    {
+      "_all": true
+    }
+  ]
+}
