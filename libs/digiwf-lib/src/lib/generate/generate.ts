@@ -88,3 +88,25 @@ async function createContentAndFile(templatePath: string, templateData: any, cre
     const content = await  Sqrl.renderFile(templatePath, templateData);
     await createFile(creationPath, content);
 }
+
+
+export async function copyStructure(name: string, path?: string, force?: boolean): Promise<Success> {
+    const srcDir = `resources/basicProjectTemplate`;
+    let overwrite = false;
+    if(force) {
+        overwrite = true;
+    }
+    try {
+        const copyPromise = util.promisify(fs.cp);
+        await copyPromise(srcDir, path? `${path}/${name}` : `resources/my-generations/${name}`) //, { overwrite: overwrite }
+        return {
+            success: true,
+            message: `Generated successfully`
+        };
+    } catch (err) {
+        return {
+            success: false,
+            message: `Failed to generate a structure`
+        }
+    }
+}

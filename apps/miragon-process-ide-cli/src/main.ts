@@ -1,5 +1,11 @@
 import { Command } from "commander";
-import {deployAllFiles, deployFileCommand, generate, generateProject} from "./app/command";
+import {
+    deployAllFiles,
+    deployFileCommand,
+    generate,
+    generateProject,
+    generateProjectThroughStructure
+} from "./app/command";
 
 
 const program = new Command();
@@ -21,4 +27,5 @@ program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
 program.addCommand(generate());
 program.addCommand(generateProject());
+program.addCommand(generateProjectThroughStructure());
 program.parse();
