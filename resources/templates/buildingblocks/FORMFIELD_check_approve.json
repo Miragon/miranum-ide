@@ -1,0 +1,33 @@
+{
+  "containerType": "group",
+  "title": "Group",
+  "description": "",
+  "x-options": {
+    "childrenClass": "pl-0"
+  },
+  "properties": {
+    "check": {
+      "fieldType": "switch",
+      "title": "Approve",
+      "x-display": "switch",
+      "default": false,
+      "type": "boolean",
+      "key": "{{it.checkKey}}",
+      "x-options": {
+        "fieldColProps": {
+          "cols": 12,
+          "sm": 12,
+          "messages": {}
+        }
+      },
+      "x-props": {
+        "outlined": true,
+        "dense": true
+      },
+      "x-rules": [
+        "required"
+      ]
+    }
+  },
+  "key": "{{it.checkKey}}"
+}

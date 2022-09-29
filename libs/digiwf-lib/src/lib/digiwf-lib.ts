@@ -71,8 +71,7 @@ export class DigiwfLib {
 
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
-        const fileName: string = name.replace("." + type, "")
-                                    .replace(".json","");
+        const fileName: string = name.replace(/\.[^/.]+$/, "");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
@@ -80,7 +79,7 @@ export class DigiwfLib {
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
             ["form", {path: "resources/templates/form-default.form",
-                    data:{key: name, type: "object"}}],
+                    data:{name: name, allOfKey: "FORMSECTION_input"}}],
             ["config", {path: "resources/templates/config-default.json",
                     data: {key: name, serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"}}],
             ["element-template", {path: "resources/templates/element-default.json",

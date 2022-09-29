@@ -50,7 +50,7 @@
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type dmn --name testFile.dmn  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type form --name testFile.schema.json  --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type form --name testFile.form  --path resources/my-generations"
           },
           {
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type config --name configTest.json  --path resources/my-generations"
@@ -59,7 +59,7 @@
             "command": "node dist/apps/miragon-process-ide-cli/main.js generate --type element-template --name elementTest.json  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate -t bpmn -n advancedFile  -p resources/my-generations --template resources/templates/bpmn-advanced.bpmn --data '{\"name\": \"Advanced\", \"pname\": \"Prozess1\"}'"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate -t bpmn -n advancedFile  -p resources/my-generations --template resources/templates/bpmn-advanced.bpmn --data '{\"id\": \"Advanced_id\", \"name\": \"Advanced\", \"formKey\": \"example-process_start_form\", \"checkForm\": \"example-process_check_form\"}'"
           }
         ]
       }
@@ -69,7 +69,7 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generateProject --path resources"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generateProject --path resources/my-generations"
           }
         ]
       }

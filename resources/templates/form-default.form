@@ -1,46 +1,23 @@
 {
-  "key": "{{it.key}}",
-  "type": "{{it.type}}",
-  "allOf": [
-    {
-      "title": "Abschnitt",
-      "description": "",
-      "type": "object",
-      "x-options": {
-        "sectionsTitlesClasses": [
-          "d-none"
-        ]
-      },
-      "allOf": [
-        {
-          "containerType": "group",
-          "title": "Group",
-          "description": "",
-          "x-options": {
-            "childrenClass": "pl-0"
-          },
-          "properties": {
-            "27ebe73f-9a97-45ae-b29e-b851f62cb69a": {
-              "fieldType": "text",
-              "title": "Textfeld",
-              "type": "string",
-              "x-options": {
-                "fieldColProps": {
-                  "cols": 12,
-                  "sm": 12
-                }
-              },
-              "x-props": {
-                "outlined": true,
-                "dense": true
-              }
-            }
-          },
-          "key": "4e5d0a96-168c-4fc5-bd8b-ff796a0d3958"
-        }
-      ],
-      "key": "9ab42009-36a0-4cbe-a20b-686c5759829e"
-    }
-  ]
+  "key": "{{it.name}}",
+  "schema": {
+    "type": "object",
+    "x-display": "stepper",
+    "allOf": [
+      {
+        "title": "Input",
+        "description": "",
+        "type": "object",
+        "x-options": {
+          "sectionsTitlesClasses": [
+            "d-none"
+          ]
+        },
+        "allOf": [
+            {{it.allOf | safe}}
+        ],
+        "key": "{{it.allOfKey}}"
+      }
+    ]
+  }
 }
-

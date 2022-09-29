@@ -158,18 +158,21 @@ describe("generateArtifact", () => {
 
     it("form should work", async () => {
         const defaultForm =
-            "{\n" +
-            "  \"key\": \"testFile\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"allOf\": [\n" +
-            "    {\n" +
-            "      \"title\": \"Abschnitt\",\n" +
-            "      \"description\": \"\",\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"x-options\": {\n" +
-            "        \"sectionsTitlesClasses\": [\n" +
-            "          \"d-none\"\n" +
-            "        ]\n"
+            "\"key\": \"testFile\",\n" +
+            "  \"schema\": {\n" +
+            "    \"type\": \"object\",\n" +
+            "    \"x-display\": \"stepper\",\n" +
+            "    \"allOf\": [\n" +
+            "      {\n" +
+            "        \"title\": \"Input\",\n" +
+            "        \"description\": \"\",\n" +
+            "        \"type\": \"object\",\n" +
+            "        \"x-options\": {\n" +
+            "          \"sectionsTitlesClasses\": [\n" +
+            "            \"d-none\"\n" +
+            "          ]\n" +
+            "        },\n" +
+            "        \"allOf\": ["
 
         if(fs.existsSync(`${pathToGenerations}/testFile.form`)){
             fs.unlinkSync(`${pathToGenerations}/testFile.form`)
@@ -243,12 +246,21 @@ describe("generateArtifact", () => {
     it("own template should work", async () => {
         const advancements =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" id=\"Definitions_0979zyo\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Platform\" modeler:executionPlatformVersion=\"7.17.0\">\n" +
-            "  <bpmn:process id=\"Process_09hzwwp\" name=\"Advanced\" isExecutable=\"true\">\n" +
-            "    <bpmn:startEvent id=\"StartEvent_1\">\n" +
-            "      <bpmn:outgoing>Flow_1croxed</bpmn:outgoing>\n" +
+            "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:camunda=\"http://camunda.org/schema/1.0/bpmn\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" id=\"Definitions_1c74zun\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"4.6.0\">\n" +
+            "  <bpmn:process id=\"Advanced_id\" name=\"Advanced\" isExecutable=\"true\">\n" +
+            "    <bpmn:startEvent id=\"start_task\" name=\"Start\" camunda:formKey=\"example-formKey\">\n" +
+            "      <bpmn:outgoing>Flow_0alcs75</bpmn:outgoing>\n" +
             "    </bpmn:startEvent>\n" +
-            "    <bpmn:task id=\"Activity_1k9h69q\" name=\"Prozess1\">"
+            "    <bpmn:sequenceFlow id=\"Flow_0alcs75\" sourceRef=\"start_task\" targetRef=\"control_task\" />\n" +
+            "    <bpmn:intermediateThrowEvent id=\"process_end\">\n" +
+            "      <bpmn:incoming>Flow_1d5sehf</bpmn:incoming>\n" +
+            "    </bpmn:intermediateThrowEvent>\n" +
+            "    <bpmn:sequenceFlow id=\"Flow_1d5sehf\" sourceRef=\"control_task\" targetRef=\"process_end\" />\n" +
+            "    <bpmn:userTask id=\"control_task\" name=\"Kontrolle\">\n" +
+            "      <bpmn:extensionElements>\n" +
+            "        <camunda:inputOutput>\n" +
+            "          <camunda:inputParameter name=\"app_task_schema_key\">example-check_form</camunda:inputParameter>\n" +
+            "        </camunda:inputOutput>"
 
         if(fs.existsSync(`${pathToGenerations}/advancedFile.bpmn`)){
             fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
@@ -256,7 +268,7 @@ describe("generateArtifact", () => {
 
         const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "advancedFile", pathToGenerations
                                                     , "resources/templates/bpmn-advanced.bpmn"
-                                                    , '{"name": "Advanced", "pname": "Prozess1"}');
+                                                    , '{"id": "Advanced_id", "name": "Advanced", "formKey": "example-formKey", "checkForm": "example-check_form"}');
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/advancedFile.bpmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/advancedFile.bpmn`).toString()).toContain(advancements);
@@ -264,57 +276,4 @@ describe("generateArtifact", () => {
         fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
     });
 
-});
-
-
-describe("generateProject", () => {
-
-    it("should work", async () => {
-        const projectPath = "resources/my-generations/ProjectTest";
-        if(fs.existsSync(projectPath)){
-            fs.rmSync(projectPath, { recursive: true, force: true });
-        }
-
-        const generateSuccesses = await digiwfLib.generateProject(projectPath);
-        expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe(`Generated successfully`);
-
-        fs.rmSync(projectPath, { recursive: true, force: true });
-    });
-
-    it("should work without path", async () => {
-        const projectPath = "resources/basic-project-structure";
-        if(fs.existsSync(projectPath)){
-            fs.rmSync(projectPath, { recursive: true, force: true });
-        }
-
-        const generateSuccesses = await digiwfLib.generateProject();
-        expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe(`Generated successfully`);
-
-        fs.rmSync(projectPath, { recursive: true, force: true });
-    });
-
-    /*
-    it("should work with absolute path outside of project", async () => {
-        const projectPath = "/Users/jakobmertl/Desktop/ProjectTest";
-        if(fs.existsSync(projectPath)){
-            fs.rmSync(projectPath, { recursive: true, force: true });
-        }
-
-        const generateSuccesses = await digiwfLib.generateProject(projectPath);
-        expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe(`Generated successfully`);
-
-        fs.rmSync(projectPath, { recursive: true, force: true });
-    });
-    */
-
-    /* no error example yet
-    it("should raise an error", async () => {
-        const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "errorFile", `${pathToGenerations}/error`);
-        expect(generateSuccesses.success).toBeFalsy();
-        expect(generateSuccesses.message).toBe(`Failed to generate a structure`);
-    });
-    */
 });

@@ -21,9 +21,9 @@ export async function createFile(filePath: string, content: string): Promise<Suc
 }
 
 export async function generateStructure(path?: string): Promise<Success> {
-    let usedPath = "resources/basic-project-structure"
+    let usedPath = "resources/my-generations/basic-project"
     if(path){
-        usedPath = `${path}/basic-project-structure`;
+        usedPath = `${path}/basic-project`;
     }
 
     try {
@@ -34,8 +34,8 @@ export async function generateStructure(path?: string): Promise<Success> {
         fs.mkdirSync(`${usedPath}/element-templates`);
         fs.mkdirSync(`${usedPath}/forms`);
 
-        //const contentMD = readFileSync("resources/templates/README-layout.md").toString()
-        //await createFile(`${usedPath}/README.md`,contentMD);
+        const contentMD = readFileSync("resources/templates/README-layout.md").toString()
+        await createFile(`${usedPath}/README.md`,contentMD);
 
         const contentDevConfig = await Sqrl.renderFile("resources/templates/config-default.json"
                                     , {key: "example-process-dev", serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"});
@@ -44,24 +44,30 @@ export async function generateStructure(path?: string): Promise<Success> {
                                     , {key: "example-process-prod", serviceKey: "S3Service", serviceValue: "dwf-s3-prod"});
         await createFile(`${usedPath}/configs/prod-config.json`, contentProdConfig);
 
-        const contentElement = await  Sqrl.renderFile("resources/templates/element-default.json"
-                                    , {name: "exampleTemplate", id: "id"});
-        await createFile(`${usedPath}/element-templates/example-template.json`, contentElement);
+        await createFile(`${usedPath}/element-templates/.gitkeep`, "");
 
         const contentControlForm = await  Sqrl.renderFile("resources/templates/form-default.form"
-                                    , {key: "4560db7e-64a3-49fc-ab6f-3d308d86dd9a", type: "object"});
+                                    , {name: "example-process_check_form"
+                                            , allOf: await Sqrl.renderFile("resources/templates/buildingblocks/FORMFIELD_input_text.json"
+                                                                        , {inputKey: "FORMFIELD_input_text"})
+                                                        + ","
+                                                        + await Sqrl.renderFile("resources/templates/buildingblocks/FORMFIELD_check_approve.json"
+                                                                        , {checkKey: "FORMFIELD_input_check_approve"})
+                                            , allOfKey: "FORMSECTION_check"});
         await createFile(`${usedPath}/forms/control.form`, contentControlForm);
         const contentStartForm = await  Sqrl.renderFile("resources/templates/form-default.form"
-                                    , {key: "32dcafc9-5a3d-4ed9-ac91-3cb68383e4ac", type: "object"});
+                                    , {name: "example-process_start_form"
+                                            , allOf: await Sqrl.renderFile("resources/templates/buildingblocks/FORMFIELD_input_text.json"
+                                                                        , {inputKey: "FORMFIELD_input_text_field"})
+                                            , allOfKey: "FORMSECTION_input"});
         await createFile(`${usedPath}/forms/start.form`, contentStartForm);
 
-        const contentBPMN = await  Sqrl.renderFile("resources/templates/bpmn-default.bpmn"
-                                    , {version: "7.17.0", Process_id: "007", name: "example-process", doc: "doc"});
+        const contentBPMN = await  Sqrl.renderFile("resources/templates/bpmn-advanced.bpmn"
+                                    , {id: "example-process", name: "Beispielprozess", formKey: "example-process_start_form", checkForm: "example-process_check_form"});
         await createFile(`${usedPath}/example-process.bpmn`, contentBPMN);
         const contentDMN = await  Sqrl.renderFile("resources/templates/dmn-default.dmn"
                                     , {Definition_id: "001", name: "example-dmn", version: "7.17.0", DecisionName: "Decision 1"});
         await createFile(`${usedPath}/example-dmn.dmn`, contentDMN);
-
 
         return {
             success: true,
