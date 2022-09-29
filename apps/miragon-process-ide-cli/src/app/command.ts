@@ -91,9 +91,11 @@ export function generateProject(): Command {
     return new Command()
         .command("generateProject")
         .description("generates a project foundation")
+        .requiredOption("-n, --name <name>", "Project name")
         .option("-p, --path <filepath>", "specify the targeted path")
+        .option ("-f --force", "force overwriting the Project")
         .action((options) => {
-            digiwfLib.generateProject(options.path)
+            digiwfLib.generateProject(options.name, options.path, options.force)
                 .then(deploymentSuccess => console.log(deploymentSuccess))
                 .catch(err => console.error(err));
         });

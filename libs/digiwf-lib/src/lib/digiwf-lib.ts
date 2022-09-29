@@ -105,8 +105,8 @@ export class DigiwfLib {
         return createFile(filepath, content);
     }
 
-    public async generateProject(path?: string): Promise<Success> {
-        return generateStructure(path);
+    public async generateProject(name: string, path?: string, force?: boolean): Promise<Success> {
+        return generateStructure(name ,path, force);
     }
 
 }
