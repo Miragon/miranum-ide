@@ -1,7 +1,7 @@
 import {copyStructure, generateStructure} from "./generate";
 import * as fs from "fs";
 import * as os from "os";
-import {Success} from "@miragon-process-ide/digiwf-lib";
+import {Success} from "../types";
 
 function setUp(dirPath: string) {
     if(fs.existsSync(dirPath)){
