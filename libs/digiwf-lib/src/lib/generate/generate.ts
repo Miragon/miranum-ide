@@ -1,5 +1,6 @@
 import {Success} from "../types";
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as util from "util";
 import * as Sqrl from "squirrelly";
 import {readFile} from "fs/promises";
@@ -91,14 +92,19 @@ async function createContentAndFile(templatePath: string, templateData: any, cre
 
 
 export async function copyStructure(name: string, path?: string, force?: boolean): Promise<Success> {
-    const srcDir = `resources/basicProjectTemplate`;
-    let overwrite = false;
-    if(force) {
-        overwrite = true;
+    const srcDir = `resources/templates/basicProjectTemplate`;
+    const destDir = path? `${path}/${name}` : `resources/my-generations/${name}`;
+
+    const checkPromise = util.promisify(fs.exists);
+    if(await checkPromise(destDir) && !force) {
+        return {
+            success: false,
+            message: `Project already exists`
+        };
     }
+
     try {
-        const copyPromise = util.promisify(fs.cp);
-        await copyPromise(srcDir, path? `${path}/${name}` : `resources/my-generations/${name}`) //, { overwrite: overwrite }
+        await fse.copy(srcDir, destDir);
         return {
             success: true,
             message: `Generated successfully`

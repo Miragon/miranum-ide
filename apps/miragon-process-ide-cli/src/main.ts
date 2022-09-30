@@ -3,8 +3,7 @@ import {
     deployAllFiles,
     deployFileCommand,
     generate,
-    generateProject,
-    generateProjectThroughStructure
+    generateProject
 } from "./app/command";
 
 
@@ -27,5 +26,4 @@ program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
 program.addCommand(generate());
 program.addCommand(generateProject());
-program.addCommand(generateProjectThroughStructure());
 program.parse();
