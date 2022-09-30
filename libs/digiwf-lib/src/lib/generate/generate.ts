@@ -29,7 +29,7 @@ export async function generateStructure(name: string, path?: string, force?: boo
 
     try {
         const checkPromise = util.promisify(fs.exists);
-        if(await checkPromise(usedPath) && !force) {
+        if(!force && await checkPromise(usedPath)) {
             return {
                 success: false,
                 message: `Project already exists`
@@ -96,7 +96,7 @@ export async function copyStructure(name: string, path?: string, force?: boolean
     const destDir = path? `${path}/${name}` : `resources/my-generations/${name}`;
 
     const checkPromise = util.promisify(fs.exists);
-    if(await checkPromise(destDir) && !force) {
+    if(!force && await checkPromise(destDir)) {
         return {
             success: false,
             message: `Project already exists`

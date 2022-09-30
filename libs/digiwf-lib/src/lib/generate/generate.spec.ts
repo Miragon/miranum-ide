@@ -3,13 +3,10 @@ import * as fs from "fs";
 import * as os from "os";
 import {Success} from "../types";
 
-function setUp(dirPath: string) {
+function safeDelDir(dirPath: string) {
     if(fs.existsSync(dirPath)){
         fs.rmSync(dirPath, { recursive: true, force: true });
     }
-}
-function tearDown(dirPath: string) {
-    fs.rmSync(dirPath, { recursive: true, force: true });
 }
 
 function expTruthy(successes: Success) {
@@ -26,46 +23,45 @@ const projectPath = "resources/my-generations/basic-project";
 const path = "resources/my-generations";
 
 
+beforeEach( () => {
+    safeDelDir(projectPath)
+});
+
+afterEach( () => {
+    safeDelDir(projectPath)
+})
+
 describe("generateProject", () => {
 
     it("should work", async () => {
         const projectPath = "resources/ProjectTest";
         const path = "resources";
-        setUp(projectPath);
+        safeDelDir(projectPath);
         expTruthy(await generateStructure("ProjectTest", path));
-        tearDown(projectPath);
+        safeDelDir(projectPath);
     });
 
     it("should work without path", async () => {
-        setUp(projectPath);
         expTruthy(await generateStructure("basic-project"));
-        tearDown(projectPath);
     });
-
 
     it("should work with absolute path outside of project", async () => {
         const projectPath = `${os.homedir()}/Desktop/basic-project`;
         const path = `${os.homedir()}/Desktop`;
 
-        setUp(projectPath);
+        safeDelDir(projectPath);
         expTruthy(await generateStructure("basic-project", path));
-        tearDown(projectPath);
+        safeDelDir(projectPath);
     });
 
-
     it("should fail, due to already existing directory", async () => {
-        const generateSuccessesOriginal = await generateStructure ("basic-project");
-        const generateSuccesses = await generateStructure ("basic-project");
-        expFalsy(generateSuccesses);
-        tearDown(projectPath);
+        await generateStructure ("basic-project");
+        expFalsy(await generateStructure ("basic-project"));
     });
 
     it("should work to overwrite a project", async () => {
-        setUp(projectPath);
-        const generateSuccessesOriginal = await generateStructure ("basic-project", path);
-        const generateSuccesses = await generateStructure ("basic-project",path, true);
-        expTruthy(generateSuccesses);
-        tearDown(projectPath);
+        await generateStructure ("basic-project", path);
+        expTruthy(await generateStructure ("basic-project",path, true));
     });
 
 });
@@ -74,32 +70,25 @@ describe("generateProject", () => {
 describe("copyProject", () => {
 
     it("should work without path", async () => {
-        setUp(projectPath);
         expTruthy(await copyStructure("basic-project"));
-        tearDown(projectPath);
     });
 
     it("should work with absolute path outside of project", async () => {
         const projectPath = `${os.homedir()}/Desktop/Desktop-project`;
         const path = `${os.homedir()}/Desktop`;
 
-        setUp(projectPath);
+        safeDelDir(projectPath);
         expTruthy(await copyStructure("Desktop-project", path));
-        tearDown(projectPath);
+        safeDelDir(projectPath);
     });
 
     it("should fail, due to already existing directory", async () => {
-        const copySuccessesOriginal = await copyStructure ("basic-project");
-        const copySuccesses = await generateStructure ("basic-project");
-        expFalsy(copySuccesses);
-        tearDown(projectPath);
+        await copyStructure ("basic-project");
+        expFalsy(await copyStructure ("basic-project"));
     });
 
     it("should work to overwrite a project", async () => {
-        setUp(projectPath);
-        const copySuccessesOriginal = await copyStructure ("basic-project", path);
-        const copySuccesses = await generateStructure ("basic-project",path, true);
-        expTruthy(copySuccesses);
-        tearDown(projectPath);
+        await copyStructure ("basic-project", path);
+        expTruthy(await copyStructure ("basic-project",path, true));
     });
 });

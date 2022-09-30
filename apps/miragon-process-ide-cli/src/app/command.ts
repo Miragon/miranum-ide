@@ -82,7 +82,7 @@ export function generate(): Command {
         .option("-d --data <data>", "specify the data that is to be used for your template")
         .action((options) => {
             digiwfLib.generateArtifact(options.type, options.name, options.path, options.template, options.data)
-                .then(deploymentSuccess => console.log(deploymentSuccess))
+                .then(generateSuccess => console.log(generateSuccess))
                 .catch(err => console.error(err));
         });
 }
@@ -96,7 +96,7 @@ export function generateProject(): Command {
         .option ("-f --force", "force overwriting the project")
         .action((options) => {
             digiwfLib.generateProject(options.name, options.path, options.force)
-                .then(deploymentSuccess => console.log(deploymentSuccess))
+                .then(generateSuccess => console.log(generateSuccess))
                 .catch(err => console.error(err));
         });
 }
