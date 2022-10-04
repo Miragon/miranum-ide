@@ -1,7 +1,6 @@
 export interface Artifact {
     type: string,
     project: string,
-    path: string,
     file: FileDetails
 }
 

@@ -43,7 +43,6 @@ export class DigiwfLib {
         const artifact = {
             "type": type,
             "project": project ?? "",
-            "path": path,
             "file": file
         };
         return this.deploy(target, artifact);
@@ -60,7 +59,6 @@ export class DigiwfLib {
             const artifact = {
                 "type": type,
                 "project": project ?? "",
-                "path": path,
                 "file": file
             }
             deployments.push(await this.deploy(target, artifact));
