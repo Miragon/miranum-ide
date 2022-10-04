@@ -43,7 +43,6 @@ export class DigiwfLib {
         const artifact = {
             "type": type,
             "project": project ?? "",
-            "path": path,
             "file": file
         };
         return this.deploy(target, artifact);
@@ -60,7 +59,6 @@ export class DigiwfLib {
             const artifact = {
                 "type": type,
                 "project": project ?? "",
-                "path": path,
                 "file": file
             }
             deployments.push(await this.deploy(target, artifact));
@@ -109,7 +107,7 @@ export class DigiwfLib {
         return generateStructure(name ,path, force);
     }
 
-    public async generateProjectCopy(name: string, path?: string, force?: boolean): Promise<Success> {
+    public async copyProject(name: string, path?: string, force?: boolean): Promise<Success> {
         return copyStructure(name ,path, force);
     }
 

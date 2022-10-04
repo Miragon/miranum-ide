@@ -74,6 +74,16 @@
         ]
       }
     },
+    "createGeneric": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node dist/apps/miragon-process-ide-cli/main.js genericGenerate --name basic-project --path resources/my-generations"
+          }
+        ]
+      }
+    },
     "serve": {
       "executor": "@nrwl/node:node",
       "options": {

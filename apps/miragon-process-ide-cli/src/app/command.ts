@@ -100,3 +100,17 @@ export function generateProject(): Command {
                 .catch(err => console.error(err));
         });
 }
+
+export function genericGenerate(): Command {
+    return new Command()
+        .command("genericGenerate")
+        .description("generates a project foundation")
+        .requiredOption("-n, --name <name>", "specify the project name")
+        .option("-p, --path <filepath>", "specify the targeted path")
+        .option ("-f --force", "force overwriting the project")
+        .action((options) => {
+            digiwfLib.copyProject(options.name, options.path, options.force)
+                .then(generateSuccess => console.log(generateSuccess))
+                .catch(err => console.error(err));
+        });
+}

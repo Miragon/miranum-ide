@@ -16,7 +16,8 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
                 "name": name,
                 "extension": ext,
                 "content": file.toString(),
-                "size": size
+                "size": size,
+                "path": pathToFile
             }
         }
     }

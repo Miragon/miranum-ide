@@ -1,5 +1,5 @@
 {
-  "key": "example-process-dev",
+  "key": "{{it.key}}-dev",
   "statusDokument": "",
   "statusConfig": [],
   "configs": [
