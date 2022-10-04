@@ -4,6 +4,7 @@ import * as fse from "fs-extra";
 import * as util from "util";
 import * as Sqrl from "squirrelly";
 import {readFile} from "fs/promises";
+import {getFiles} from "../read-fs/read-fs";
 
 export async function createFile(filePath: string, content: string): Promise<Success> {
     try {
@@ -105,6 +106,10 @@ export async function copyStructure(name: string, path?: string, force?: boolean
 
     try {
         await fse.copy(srcDir, destDir);
+        const files = await getFiles(destDir);
+        files.forEach(file => {
+            createContentAndFile(file.path, {key : name}, file.path);
+        })
         return {
             success: true,
             message: `Generated successfully`

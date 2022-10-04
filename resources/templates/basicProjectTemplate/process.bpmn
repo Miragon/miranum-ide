@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1c74zun" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.6.0">
-  <bpmn:process id="example-process" name="Beispielprozess" isExecutable="true">
-    <bpmn:startEvent id="start_task" name="Start" camunda:formKey="example-process_start_form">
+  <bpmn:process id="example-process" name="{{it.key}}" isExecutable="true">
+    <bpmn:startEvent id="start_task" name="Start" camunda:formKey="{{it.key}}_start_form">
       <bpmn:outgoing>Flow_0alcs75</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:sequenceFlow id="Flow_0alcs75" sourceRef="start_task" targetRef="control_task" />
@@ -12,7 +12,7 @@
     <bpmn:userTask id="control_task" name="Kontrolle">
       <bpmn:extensionElements>
         <camunda:inputOutput>
-          <camunda:inputParameter name="app_task_schema_key">example-process_check_form</camunda:inputParameter>
+          <camunda:inputParameter name="app_task_schema_key">{{it.key}}_check_form</camunda:inputParameter>
         </camunda:inputOutput>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_0alcs75</bpmn:incoming>

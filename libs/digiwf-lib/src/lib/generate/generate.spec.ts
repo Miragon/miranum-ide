@@ -27,7 +27,7 @@ beforeEach( () => {
     safeDelDir(projectPath)
 });
 
-afterEach( () => {
+afterAll( () => {
     safeDelDir(projectPath)
 })
 

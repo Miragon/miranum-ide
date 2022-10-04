@@ -1,5 +1,5 @@
 {
-    "key": "example-process_check_form",
+    "key": "{{it.key}}_check_form",
     "schema": {
         "type": "object",
         "x-display": "stepper",

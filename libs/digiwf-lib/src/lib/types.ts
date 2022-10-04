@@ -6,10 +6,11 @@ export interface Artifact {
 }
 
 export interface FileDetails {
-    name: string,
-    extension: string,
-    content: string
-    size: number
+    name: string;
+    extension: string;
+    content: string;
+    size: number;
+    path: string;
 }
 
 export interface DigiWFDeploymentPlugin {

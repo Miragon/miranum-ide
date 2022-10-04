@@ -109,7 +109,7 @@ export class DigiwfLib {
         return generateStructure(name ,path, force);
     }
 
-    public async generateProjectCopy(name: string, path?: string, force?: boolean): Promise<Success> {
+    public async copyProject(name: string, path?: string, force?: boolean): Promise<Success> {
         return copyStructure(name ,path, force);
     }
 

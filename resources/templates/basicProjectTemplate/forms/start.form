@@ -1,5 +1,5 @@
 {
-    "key": "example-process_start_form",
+    "key": "{{it.key}}_start_form",
     "schema": {
         "type": "object",
         "x-display": "stepper",
