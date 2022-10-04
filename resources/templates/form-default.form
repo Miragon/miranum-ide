@@ -1,0 +1,23 @@
+{
+  "key": "{{it.name}}",
+  "schema": {
+    "type": "object",
+    "x-display": "stepper",
+    "allOf": [
+      {
+        "title": "Input",
+        "description": "",
+        "type": "object",
+        "x-options": {
+          "sectionsTitlesClasses": [
+            "d-none"
+          ]
+        },
+        "allOf": [
+            {{it.allOf | safe}}
+        ],
+        "key": "{{it.allOfKey}}"
+      }
+    ]
+  }
+}

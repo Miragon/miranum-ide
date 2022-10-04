@@ -20,6 +20,7 @@
     "@nrwl/workspace": "14.5.1",
     "@nxrocks/nx-spring-boot": "^4.1.0",
     "@openapitools/openapi-generator-cli": "^2.5.1",
+    "@types/fs-extra": "^9.0.13",
     "@types/jest": "27.4.1",
     "@types/node": "16.11.7",
     "@types/uuid": "^8.3.4",
@@ -39,6 +40,7 @@
   },
   "dependencies": {
     "commander": "^9.4.0",
+    "fs-extra": "^10.1.0",
     "squirrelly": "^8.0.8",
     "tslib": "^2.3.0",
     "uuid": "^9.0.0"

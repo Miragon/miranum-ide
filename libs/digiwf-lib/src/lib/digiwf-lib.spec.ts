@@ -59,7 +59,7 @@ describe("deployAllArtifacts", () => {
 });
 
 
-describe("generateProcess", () => {
+describe("generateArtifact", () => {
     const pathToGenerations = "resources/my-generations";
 
     it("should raise an error", async () => {
@@ -158,29 +158,32 @@ describe("generateProcess", () => {
 
     it("form should work", async () => {
         const defaultForm =
-            "{\n" +
-            "  \"key\": \"testFile\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"allOf\": [\n" +
-            "    {\n" +
-            "      \"title\": \"Abschnitt\",\n" +
-            "      \"description\": \"\",\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"x-options\": {\n" +
-            "        \"sectionsTitlesClasses\": [\n" +
-            "          \"d-none\"\n" +
-            "        ]\n"
+            "\"key\": \"testFile\",\n" +
+            "  \"schema\": {\n" +
+            "    \"type\": \"object\",\n" +
+            "    \"x-display\": \"stepper\",\n" +
+            "    \"allOf\": [\n" +
+            "      {\n" +
+            "        \"title\": \"Input\",\n" +
+            "        \"description\": \"\",\n" +
+            "        \"type\": \"object\",\n" +
+            "        \"x-options\": {\n" +
+            "          \"sectionsTitlesClasses\": [\n" +
+            "            \"d-none\"\n" +
+            "          ]\n" +
+            "        },\n" +
+            "        \"allOf\": ["
 
-        if(fs.existsSync(`${pathToGenerations}/testFile.schema.json`)){
-            fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
+        if(fs.existsSync(`${pathToGenerations}/testFile.form`)){
+            fs.unlinkSync(`${pathToGenerations}/testFile.form`)
         }
 
         const generateSuccesses = await digiwfLib.generateArtifact("form", "testFile", pathToGenerations);
         expect(generateSuccesses.success).toBeTruthy();
-        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.schema.json successfully`);
-        expect(fs.readFileSync(`${pathToGenerations}/testFile.schema.json`).toString()).toContain(defaultForm);
+        expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/testFile.form successfully`);
+        expect(fs.readFileSync(`${pathToGenerations}/testFile.form`).toString()).toContain(defaultForm);
 
-        fs.unlinkSync(`${pathToGenerations}/testFile.schema.json`)
+        fs.unlinkSync(`${pathToGenerations}/testFile.form`)
     });
 
     it("config should work", async () => {
@@ -189,7 +192,12 @@ describe("generateProcess", () => {
             "  \"key\": \"configTest\",\n" +
             "  \"statusDokument\": \"\",\n" +
             "  \"statusConfig\": [],\n" +
-            "  \"configs\": []\n" +
+            "  \"configs\": [\n" +
+            "    {\n" +
+            "      \"key\": \"S3Service\",\n" +
+            "      \"value\": \"dwf-s3-local-01\"\n" +
+            "    }\n" +
+            "  ]\n" +
             "}\n"
 
         if(fs.existsSync(`${pathToGenerations}/configTest.json`)){
@@ -238,12 +246,21 @@ describe("generateProcess", () => {
     it("own template should work", async () => {
         const advancements =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:modeler=\"http://camunda.org/schema/modeler/1.0\" id=\"Definitions_0979zyo\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"5.2.0\" modeler:executionPlatform=\"Camunda Platform\" modeler:executionPlatformVersion=\"7.17.0\">\n" +
-            "  <bpmn:process id=\"Process_09hzwwp\" name=\"Advanced\" isExecutable=\"true\">\n" +
-            "    <bpmn:startEvent id=\"StartEvent_1\">\n" +
-            "      <bpmn:outgoing>Flow_1croxed</bpmn:outgoing>\n" +
+            "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:camunda=\"http://camunda.org/schema/1.0/bpmn\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" id=\"Definitions_1c74zun\" targetNamespace=\"http://bpmn.io/schema/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"4.6.0\">\n" +
+            "  <bpmn:process id=\"Advanced_id\" name=\"Advanced\" isExecutable=\"true\">\n" +
+            "    <bpmn:startEvent id=\"start_task\" name=\"Start\" camunda:formKey=\"example-formKey\">\n" +
+            "      <bpmn:outgoing>Flow_0alcs75</bpmn:outgoing>\n" +
             "    </bpmn:startEvent>\n" +
-            "    <bpmn:task id=\"Activity_1k9h69q\" name=\"Prozess1\">"
+            "    <bpmn:sequenceFlow id=\"Flow_0alcs75\" sourceRef=\"start_task\" targetRef=\"control_task\" />\n" +
+            "    <bpmn:intermediateThrowEvent id=\"process_end\">\n" +
+            "      <bpmn:incoming>Flow_1d5sehf</bpmn:incoming>\n" +
+            "    </bpmn:intermediateThrowEvent>\n" +
+            "    <bpmn:sequenceFlow id=\"Flow_1d5sehf\" sourceRef=\"control_task\" targetRef=\"process_end\" />\n" +
+            "    <bpmn:userTask id=\"control_task\" name=\"Kontrolle\">\n" +
+            "      <bpmn:extensionElements>\n" +
+            "        <camunda:inputOutput>\n" +
+            "          <camunda:inputParameter name=\"app_task_schema_key\">example-check_form</camunda:inputParameter>\n" +
+            "        </camunda:inputOutput>"
 
         if(fs.existsSync(`${pathToGenerations}/advancedFile.bpmn`)){
             fs.unlinkSync(`${pathToGenerations}/advancedFile.bpmn`)
@@ -251,7 +268,7 @@ describe("generateProcess", () => {
 
         const generateSuccesses = await digiwfLib.generateArtifact("bpmn", "advancedFile", pathToGenerations
                                                     , "resources/templates/bpmn-advanced.bpmn"
-                                                    , '{"name": "Advanced", "pname": "Prozess1"}');
+                                                    , '{"id": "Advanced_id", "name": "Advanced", "formKey": "example-formKey", "checkForm": "example-check_form"}');
         expect(generateSuccesses.success).toBeTruthy();
         expect(generateSuccesses.message).toBe(`Generated ${pathToGenerations}/advancedFile.bpmn successfully`);
         expect(fs.readFileSync(`${pathToGenerations}/advancedFile.bpmn`).toString()).toContain(advancements);

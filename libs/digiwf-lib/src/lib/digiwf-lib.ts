@@ -1,5 +1,5 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { createFile } from "./generate/generate";
+import { createFile, generateStructure, copyStructure } from "./generate/generate";
 import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import * as Sqrl from "squirrelly"
@@ -71,19 +71,17 @@ export class DigiwfLib {
 
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
-        const fileName: string = name.replace("." + type, "")
-                                    .replace(".json","")
-                                    .replace(".schema", "");
+        const fileName: string = name.replace(/\.[^/.]+$/, "");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
             ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
                     data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}],
             ["dmn", {path: "resources/templates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
-            ["form", {path: "resources/templates/form-default.schema.json",
-                    data:{key: name, type: "object"}}],
+            ["form", {path: "resources/templates/form-default.form",
+                    data:{name: name, allOfKey: "FORMSECTION_input"}}],
             ["config", {path: "resources/templates/config-default.json",
-                    data: {key: name}}],
+                    data: {key: name, serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"}}],
             ["element-template", {path: "resources/templates/element-default.json",
                     data: {name: fileName, id: id}}]
         ]);
@@ -98,8 +96,6 @@ export class DigiwfLib {
         let filepath = `${path}/${fileName}.${type}`;
         if(type === "config" || type === "element-template") {
             filepath = `${path}/${fileName}.json`;
-        } else if(type === "form") {
-            filepath = `${path}/${fileName}.schema.json`;
         }
 
         const chosenTemplate = TEMPLATES.get(type);
@@ -107,6 +103,14 @@ export class DigiwfLib {
                                             ,templateFiller? JSON.parse(templateFiller) : chosenTemplate.data);
 
         return createFile(filepath, content);
+    }
+
+    public async generateProject(name: string, path?: string, force?: boolean): Promise<Success> {
+        return generateStructure(name ,path, force);
+    }
+
+    public async generateProjectCopy(name: string, path?: string, force?: boolean): Promise<Success> {
+        return copyStructure(name ,path, force);
     }
 
 }

@@ -1,0 +1,11 @@
+{
+  "key": "example-process-prod",
+  "statusDokument": "",
+  "statusConfig": [],
+  "configs": [
+    {
+      "key": "S3Service",
+      "value": "dwf-s3-prod"
+    }
+  ]
+}
