@@ -15,9 +15,12 @@
 
 ## <span style="color:green"> Intro: </span>
 
-    We from Miragon wish to shape the future of process automatisation.
+    We from Miragon want to shape the future of process automatisation.
     Therefore, we created the Process-IDE, which enables process developers to easily develop cubernetes diagramms.
-    Additionally, it gives additional support like project creation / generation, as well as ???.
+    By providing a webservice that contains all neccesary addons, we enable process developing in a way an IDE would support a programmer.
+    Some functionalities it provides are: 
+            ...project creation / generation, 
+            ...???.
 
 ## <span style="color:green"> Used Software: </span>
     Templateengine: [Squirrely](https://squirrelly.js.org/)
