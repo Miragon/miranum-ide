@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-example
+          name: digiwf-deployment-proxy
       - uses: actions/download-artifact@v3
         with:
           name: dist
