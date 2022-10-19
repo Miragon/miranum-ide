@@ -1,8 +1,11 @@
 name: Release
+#on:
+#  push:
+#    tags:
+#      - 'v*.*.*'
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches-ignore: [main]
 
 jobs:
   build:
@@ -76,19 +79,19 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
-         username: ${{ secrets.DOCKER_USERNAME }}
-         password: ${{ secrets.DOCKER_PASSWORD  }}
+         username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
+         password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
       # digiwf-deployment-proxy
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
           context: ./digiwf-deployment-proxy
           push: true
-          tags: flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
+          tags: miragon/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
       # miragon-process-ide-cli
       - name: Build and push miragon-process-ide-cli
         uses: docker/build-push-action@v2
         with:
           context: ./apps/miragon-process-ide-cli
           push: true
-          tags: flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
+          tags: miragon/process-ide-cli:${{ env.RELEASE_VERSION }}
