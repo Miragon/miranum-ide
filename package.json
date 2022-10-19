@@ -28,7 +28,6 @@
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "@vscode/test-electron": "^2.1.5",
-    "axios": "^0.27.2",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "jest": "27.5.1",
@@ -43,6 +42,7 @@
     "fs-extra": "^10.1.0",
     "squirrelly": "^8.0.8",
     "tslib": "^2.3.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "axios": "^0.27.2"
   }
 }
