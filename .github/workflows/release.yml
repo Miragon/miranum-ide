@@ -1,8 +1,11 @@
 name: Release
+#on:
+#  push:
+#    tags:
+#      - 'v*.*.*'
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches-ignore: [main]
 
 jobs:
   build:
@@ -85,11 +88,13 @@ jobs:
           context: ./digiwf-deployment-proxy
           push: true
           # Note: Version in package.json and maven should be the same!
-          tags: flowsquad/digiwf-deployment-proxy:latest,flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
+          tags: flowsquad/digiwf-deployment-proxy:latest
+          #,flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
       # miragon-process-ide-cli
       - name: Build and push miragon-process-ide-cli
         uses: docker/build-push-action@v2
         with:
           context: ./apps/miragon-process-ide-cli
           push: true
-          tags: flowsquad/miragon-process-ide-cli:latest,flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
+          tags: flowsquad/miragon-process-ide-cli:latest
+          #,flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
