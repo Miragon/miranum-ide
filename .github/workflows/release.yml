@@ -87,11 +87,11 @@ jobs:
         with:
           context: ./digiwf-deployment-proxy
           push: true
-          tags: flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
+          tags: flowsquad/digiwf-deployment-proxy:test
       # miragon-process-ide-cli
       - name: Build and push miragon-process-ide-cli
         uses: docker/build-push-action@v2
         with:
           context: ./apps/miragon-process-ide-cli
           push: true
-          tags: flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
+          tags: flowsquad/miragon-process-ide-cli:test
