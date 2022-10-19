@@ -34,24 +34,15 @@ jobs:
           name: spring-boot-apps
           path: spring-boot-apps
 
-  release-version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: print version
-        run: echo ${{ env.RELEASE_VERSION }}
-
   publish-npm:
     runs-on: ubuntu-latest
     needs:
       - build
-      - release-version
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
+      - name: Set release_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: print version
         run: echo ${{ env.RELEASE_VERSION }}
       - name: Publish
@@ -59,39 +50,46 @@ jobs:
 
 # publish maven
 
-#  publish-dockerhub:
-#    runs-on: ubuntu-latest
-#    needs:
-#      - build
-#      - release-version
-#    steps:
-#      - uses: actions/download-artifact@v3
-#        with:
-#          name: spring-boot-apps
-#      - uses: actions/download-artifact@v3
-#        with:
-#          name: dist
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v1
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v1
-#      - name: Login to DockerHub
-#        uses: docker/login-action@v1
-#        with:
-#         username: ${{ secrets.DOCKER_USERNAME }}
-#         password: ${{ secrets.DOCKER_PASSWORD  }}
-#      # digiwf-deployment-proxy
-#      - name: Build and push digiwf-deployment-proxy
-#        uses: docker/build-push-action@v2
-#        with:
-#          context: ./digiwf-deployment-proxy
-#          push: true
-#          # Note: Version in package.json and maven should be the same!
-#          tags: flowsquad/digiwf-deployment-proxy:latest,flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
-#      # miragon-process-ide-cli
-#      - name: Build and push miragon-process-ide-cli
-#        uses: docker/build-push-action@v2
-#        with:
-#          context: ./apps/miragon-process-ide-cli
-#          push: true
-#          tags: flowsquad/miragon-process-ide-cli:latest,flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
+  publish-dockerhub:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Set release_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: print version
+        run: echo ${{ env.RELEASE_VERSION }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: spring-boot-apps
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+         username: ${{ secrets.DOCKER_USERNAME }}
+         password: ${{ secrets.DOCKER_PASSWORD  }}
+      # digiwf-deployment-proxy
+      - name: Build and push digiwf-deployment-proxy
+        uses: docker/build-push-action@v2
+        with:
+          context: ./digiwf-deployment-proxy
+          push: true
+          # Note: Version in package.json and maven should be the same!
+          tags: flowsquad/digiwf-deployment-proxy:latest
+          #,flowsquad/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
+      # miragon-process-ide-cli
+      - name: Build and push miragon-process-ide-cli
+        uses: docker/build-push-action@v2
+        with:
+          context: ./apps/miragon-process-ide-cli
+          push: true
+          tags: flowsquad/miragon-process-ide-cli:latest
+          #,flowsquad/miragon-process-ide-cli:${{ env.RELEASE_VERSION }}
