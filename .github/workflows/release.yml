@@ -47,6 +47,8 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: dist
+      - name: Print version
+        run: echo ${{ steps.extract_version.outputs.version }}
       - name: Publish
         run: npm run publish
 
@@ -61,6 +63,8 @@ jobs:
       - name: Get package version
         id: package_version
         uses: Saionaro/extract-package-version@v1.1.1
+      - name: Print version
+        run: echo ${{ steps.extract_version.outputs.version }}
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
