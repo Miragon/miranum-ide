@@ -71,8 +71,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: dist
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -86,7 +84,7 @@ jobs:
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
-          context: ./spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-starter-example
+          context: ./digiwf-deployment-proxy-starter-example
           push: true
           # Note: Version in package.json and maven should be the same!
           tags: flowsquad/digiwf-deployment-proxy:latest,flowsquad/digiwf-deployment-proxy:${{ steps.package_version.outputs.version }}
@@ -94,6 +92,6 @@ jobs:
       - name: Build and push miragon-process-ide-cli
         uses: docker/build-push-action@v2
         with:
-          context: ./dist/apps/miragon-process-ide-cli
+          context: ./apps/miragon-process-ide-cli
           push: true
           tags: flowsquad/miragon-process-ide-cli:latest,flowsquad/miragon-process-ide-cli:${{ steps.package_version.outputs.version }}
