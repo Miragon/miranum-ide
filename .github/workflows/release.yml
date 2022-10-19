@@ -34,22 +34,16 @@ jobs:
           name: spring-boot-apps
           path: spring-boot-apps
 
-  package-version:
+
+  publish-npm:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
       - name: Get package version
         id: package_version
         uses: Saionaro/extract-package-version@v1.1.1
-
-  publish-npm:
-    runs-on: ubuntu-latest
-    needs: package-version
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
       - uses: actions/download-artifact@v3
         with:
           name: dist
@@ -60,8 +54,13 @@ jobs:
 
   publish-dockerhub:
     runs-on: ubuntu-latest
-    needs: package-version
+    needs: build
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Get package version
+        id: package_version
+        uses: Saionaro/extract-package-version@v1.1.1
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
@@ -84,13 +83,11 @@ jobs:
           context: ./digiwf-deployment-proxy
           push: true
           # Note: Version in package.json and maven should be the same!
-          tags: flowsquad/digiwf-deployment-proxy:latest
-          #,flowsquad/digiwf-deployment-proxy:${{ steps.package_version.outputs.version }}
+          tags: flowsquad/digiwf-deployment-proxy:latest,flowsquad/digiwf-deployment-proxy:${{ steps.package_version.outputs.version }}
       # miragon-process-ide-cli
       - name: Build and push miragon-process-ide-cli
         uses: docker/build-push-action@v2
         with:
           context: ./apps/miragon-process-ide-cli
           push: true
-          tags: flowsquad/miragon-process-ide-cli:latest
-          #,flowsquad/miragon-process-ide-cli:${{ steps.package_version.outputs.version }}
+          tags: flowsquad/miragon-process-ide-cli:latest,flowsquad/miragon-process-ide-cli:${{ steps.package_version.outputs.version }}
