@@ -31,11 +31,8 @@ jobs:
           path: dist
       - uses: actions/upload-artifact@v3
         with:
-          name: digiwf-deployment-proxy
-          path: |
-            spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy
-            spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-starter
-            spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-example
+          name: spring-boot-apps
+          path: spring-boot-apps
 
   package-version:
     runs-on: ubuntu-latest
@@ -67,7 +64,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: digiwf-deployment-proxy
+          name: spring-boot-apps
       - uses: actions/download-artifact@v3
         with:
           name: dist
@@ -84,7 +81,7 @@ jobs:
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
-          context: ./digiwf-deployment-proxy-example
+          context: ./digiwf-deployment-proxy
           push: true
           # Note: Version in package.json and maven should be the same!
           tags: flowsquad/digiwf-deployment-proxy:latest
