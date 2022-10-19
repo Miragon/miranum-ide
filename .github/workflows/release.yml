@@ -84,7 +84,7 @@ jobs:
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
-          context: ./digiwf-deployment-proxy-starter-example
+          context: ./digiwf-deployment-proxy-example
           push: true
           # Note: Version in package.json and maven should be the same!
           tags: flowsquad/digiwf-deployment-proxy:latest
