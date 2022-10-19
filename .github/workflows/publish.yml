@@ -1,10 +1,11 @@
 name: Build
+#on:
+#  push:
+#    tags:
+#      - 'v*.*.*'
 on:
   push:
-    tags:
-      - 'v*.*.*'
-    branch:
-      - "feat/build-pipelines"
+    branches-ignore: [main]
 
 jobs:
   build:
