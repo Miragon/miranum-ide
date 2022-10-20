@@ -2,8 +2,8 @@ import { Command } from "commander";
 import {
     deployAllFiles,
     deployFileCommand,
-    generate,
-    generateProject, genericGenerate
+    generateFile,
+    generateProject
 } from "./app/command";
 
 
@@ -24,7 +24,6 @@ program
     .version("0.0.1");
 program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
-program.addCommand(generate());
+program.addCommand(generateFile());
 program.addCommand(generateProject());
-program.addCommand(genericGenerate());
 program.parse();

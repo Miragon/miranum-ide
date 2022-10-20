@@ -71,9 +71,9 @@ export function deployAllFiles(): Command {
         });
 }
 
-export function generate(): Command {
+export function generateFile(): Command {
     return new Command()
-        .command("generate")
+        .command("generate-file")
         .description("generates a process model")
         .requiredOption("-t --type <type>", "specify the file type that is to be generated")
         .requiredOption("-n, --name <name>", "specify the name")
@@ -81,35 +81,24 @@ export function generate(): Command {
         .option("--template <filepath>", "specify a custom template that is to be used")
         .option("-d --data <data>", "specify the data that is to be used for your template")
         .action((options) => {
-            digiwfLib.generateArtifact(options.type, options.name, options.path, options.template, options.data)
+            digiwfLib.generateFile(options.type, options.name, options.path, options.template, options.data)
                 .then(generateSuccess => console.log(generateSuccess))
                 .catch(err => console.error(err));
         });
 }
 
+/**
+ * generically generates a project foundation based on resources/templates/basicProjectTemplat
+ */
 export function generateProject(): Command {
     return new Command()
-        .command("generateProject")
+        .command("generate-project")
         .description("generates a project foundation")
         .requiredOption("-n, --name <name>", "specify the project name")
         .option("-p, --path <filepath>", "specify the targeted path")
         .option ("-f --force", "force overwriting the project")
         .action((options) => {
             digiwfLib.generateProject(options.name, options.path, options.force)
-                .then(generateSuccess => console.log(generateSuccess))
-                .catch(err => console.error(err));
-        });
-}
-
-export function genericGenerate(): Command {
-    return new Command()
-        .command("genericGenerate")
-        .description("generates a project foundation")
-        .requiredOption("-n, --name <name>", "specify the project name")
-        .option("-p, --path <filepath>", "specify the targeted path")
-        .option ("-f --force", "force overwriting the project")
-        .action((options) => {
-            digiwfLib.copyProject(options.name, options.path, options.force)
                 .then(generateSuccess => console.log(generateSuccess))
                 .catch(err => console.error(err));
         });

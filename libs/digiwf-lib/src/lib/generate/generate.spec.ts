@@ -1,4 +1,4 @@
-import {copyStructure, generateStructure} from "./generate";
+import {copyAndFillStructure, generateStructure} from "./generate";
 import * as fs from "fs";
 import * as os from "os";
 import {Success} from "../types";
@@ -31,7 +31,35 @@ afterAll( () => {
     safeDelDir(projectPath)
 })
 
-describe("generateProject", () => {
+
+describe("copyProject", () => {
+
+    it("should work without path", async () => {
+        expTruthy(await copyAndFillStructure("basic-project"));
+    });
+
+    it("should work with absolute path outside of project", async () => {
+        const projectPath = `${os.homedir()}/Desktop/Desktop-project`;
+        const path = `${os.homedir()}/Desktop`;
+
+        safeDelDir(projectPath);
+        expTruthy(await copyAndFillStructure("Desktop-project", path));
+        safeDelDir(projectPath);
+    });
+
+    it("should fail, due to already existing directory", async () => {
+        await copyAndFillStructure ("basic-project");
+        expFalsy(await copyAndFillStructure ("basic-project"));
+    });
+
+    it("should work to overwrite a project", async () => {
+        await copyAndFillStructure ("basic-project", path);
+        expTruthy(await copyAndFillStructure ("basic-project",path, true));
+    });
+});
+
+//------------------------------ Legacy Code ------------------------------//
+describe("oldGenerateProject", () => {
 
     it("should work", async () => {
         const projectPath = "resources/ProjectTest";
@@ -64,31 +92,4 @@ describe("generateProject", () => {
         expTruthy(await generateStructure ("basic-project",path, true));
     });
 
-});
-
-
-describe("copyProject", () => {
-
-    it("should work without path", async () => {
-        expTruthy(await copyStructure("basic-project"));
-    });
-
-    it("should work with absolute path outside of project", async () => {
-        const projectPath = `${os.homedir()}/Desktop/Desktop-project`;
-        const path = `${os.homedir()}/Desktop`;
-
-        safeDelDir(projectPath);
-        expTruthy(await copyStructure("Desktop-project", path));
-        safeDelDir(projectPath);
-    });
-
-    it("should fail, due to already existing directory", async () => {
-        await copyStructure ("basic-project");
-        expFalsy(await copyStructure ("basic-project"));
-    });
-
-    it("should work to overwrite a project", async () => {
-        await copyStructure ("basic-project", path);
-        expTruthy(await copyStructure ("basic-project",path, true));
-    });
 });
