@@ -18,7 +18,7 @@
 
 # <span style="color:green">Overview of Commands</span>
 
-## *generate*
+## *generate-file*
 
 mandatory:
 
@@ -31,7 +31,13 @@ optional:
     --template <filepath>
     --data <JSON string>
 
-## *generateProject*
+## *generate-project*
+
+mandatory:
+
+    -n or --name <name>
+
 optional:
 
     -p or --path <filepath>
+    -f or --force
