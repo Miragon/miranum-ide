@@ -1,19 +1,19 @@
 <br />
 <div align="center">
 
-# <span style="color:darkgreen"> <u> Documentation </u> </span>
+# <span style="color:green"> <u> Documentation </u> </span>
 
   <a href="#">
     <img src="images/logo.png" alt="Logo" height="244">
   </a>
 
-<h3 align="center" style="font-family: Academy Engraved LET; color:lightgreen">Process-IDE</h3>
+<h3 align="center" style="font-family: Academy Engraved LET; color:#00E676">Process-IDE</h3>
 
 </div>
 
 <hr>
 
-## <span style="color:green"> Intro: </span>
+## <span style="color:#335DE5"> Intro: </span>
 
     We from Miragon want to shape the future of process automatisation.
     Therefore, we created the Process-IDE, which enables process developers to easily develop cubernetes diagramms.
@@ -22,12 +22,22 @@
             ...project creation / generation, 
             ...???.
 
+
+###  <span style="color:#335DE5"> project-structure: </span>
+
+    .
+    ├── miragon-process-ide-cli
+    |     └── src
+    └── vscode-digiwf-deployment
+          └── src
+
+
 ## <span style="color:green"> Used Software: </span>
     Templateengine: [Squirrely](https://squirrelly.js.org/)
 
 <hr>
 
-## <span style="color:green"> existing commands: </span>
+## <span style="color:#335DE5"> Existing Commands: </span>
 
 
 ### <span style="color:lime"> *deployFileCommand* </span>
