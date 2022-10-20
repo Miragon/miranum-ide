@@ -27,9 +27,9 @@
 
     .
     ├── miragon-process-ide-cli
-    |     └── src
+    |     └── src ...
     └── vscode-digiwf-deployment
-          └── src
+          └── src ...
 
 
 ## <span style="color:green"> Used Software: </span>
@@ -55,28 +55,19 @@
     A command can look as the following:
         "deploy-all -d path/to/directory -t local -p projectName"
 
-### <span style="color:lime"> *generate* </span>
+### <span style="color:lime"> *generate-file* </span>
     This command generates a file of a supported type.
     Supportet types are: bpmn, dmn, form, config, element-templatet
 
     A command can look as the following: 
-        "generate -t bpmn -n testForm.form -p path/toBe"
+        "generate-file -t bpmn -n testForm.form -p path/toBe"
     Additionally the user has the option to define his own templates that are to be used, and fill them with the data he wants.
                                                           (--template)                                         (--data)
 
-### <span style="color:lime"> *generateProject* </span>
-    This command generates a whole bpmn project.
-    A bpmn project consists of a bpmn file, two config, and two form files.
-    The user has the possibility to select a certain destination directory, and can - should he wish to do so - force the system to overwrite any already existing files
-
-    A command can look as the following: 
-        "generateProject -n MyProject -p path/of/Destination"
-
-### <span style="color:lime"> *genericGenerate* </span>
-    This command does the same as generateProject.
-    The difference is that this command generates it based on an existing folder-template, which can be easely extended should you whish to.
+### <span style="color:lime"> *generate-project* </span>
+    this command generates a bpmn project with all neccesarry form-/config-files and element-templates.
+    The bpmn project is based on the structure in resources/templates/basicProjectTemplate.
+    The user has the possibility to select a certain destination directory, and can - should he wish to do so - force (f-flag) the system to overwrite any already existing files
 
     A command can look as the following:
-        "genericGenerate -n MyProject -p path/of/Destination -f"
-
-    The force-flag (f-flag) enables the user to force the program to overwrite any existing folder or file
+        "generate-project -n MyProject -p path/of/Destination -f"
