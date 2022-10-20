@@ -32,7 +32,7 @@
           └── src ...
 
 
-## <span style="color:green"> Used Software: </span>
+## <span style="color:#335DE5"> Used Software: </span>
     Templateengine: [Squirrely](https://squirrelly.js.org/)
 
 <hr>
@@ -64,6 +64,18 @@
     Additionally the user has the option to define his own templates that are to be used, and fill them with the data he wants.
                                                           (--template)                                         (--data)
 
+```bash
+[help]    
+    mandatory fields:
+    -t or --type <type>       :   "specify the file type that is to be generated"
+    -n or --name <name>       :   "specify the file name"
+    -p or --path <filepath>   :   "specify the targeted path"
+
+    optional:
+    --template <filepath>     :   "specify a custom template that is to be used"
+    --data <JSON string>      :   "specify the data that is to be used for your template"
+```
+
 ### <span style="color:lime"> *generate-project* </span>
     this command generates a bpmn project with all neccesarry form-/config-files and element-templates.
     The bpmn project is based on the structure in resources/templates/basicProjectTemplate.
@@ -71,3 +83,13 @@
 
     A command can look as the following:
         "generate-project -n MyProject -p path/of/Destination -f"
+
+```bash
+[help]    
+    mandatory fields:
+    -n or --name <name>         :   "specify the project name"
+
+    optional:
+    -p or --path <filepath>     :   "specify the targeted path"
+    -f or --force               :   "force overwriting the project"
+```
