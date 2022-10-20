@@ -3,6 +3,7 @@ import { createFile, copyAndFillStructure } from "./generate/generate";
 import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import * as Sqrl from "squirrelly"
+import * as colors from "colors";
 
 export interface DigiwfConfig {
     deploymentPlugins: DigiWFDeploymentPlugin[];
@@ -26,11 +27,13 @@ export class DigiwfLib {
             await Promise.all(
                 this.deploymentPlugins.map(plugin => plugin.deploy(target, artifact))
             );
+            console.log(colors.green.bold("DEPLOYED ") + artifact);
             return {
                 success: true,
                 message: "Everything is deployed successfully"
             };
         } catch (err) {
+            console.log(colors.red.bold("FAILED ") + ` deploying ${artifact} due to -> ${err}`);
             return {
                 success: false,
                 message: "Deployment failed"
@@ -85,6 +88,7 @@ export class DigiwfLib {
         ]);
 
         if(!TEMPLATES.has(type)){
+            console.log(colors.red.bold("ERROR ") + `${type} is not supported`);
             return {
                 success: false,
                 message: `The given type: "${type}" is not supported`
