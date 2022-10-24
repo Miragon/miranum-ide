@@ -33,7 +33,7 @@ export class DigiwfLib {
                 message: "Everything is deployed successfully"
             };
         } catch (err) {
-            console.log(colors.red.bold("FAILED ") + ` deploying ${artifact} due to -> ${err}`);
+            console.log(colors.red.bold("FAILED ") + ` deploying ${artifact} with -> ${err}`);
             return {
                 success: false,
                 message: "Deployment failed"

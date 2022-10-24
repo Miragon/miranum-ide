@@ -16,7 +16,7 @@ export async function createFile(filePath: string, content: string): Promise<Suc
             message: `Generated ${filePath} successfully`
         };
     } catch (err) {
-        console.log(colors.red.bold("FAILED ") + `generating ${filePath} due to -> ${err}`);
+        console.log(colors.red.bold("FAILED ") + `generating ${filePath} with -> ${err}`);
         return {
             success: false,
             message: `Failed to generate ${filePath}`
@@ -40,9 +40,9 @@ export async function copyAndFillStructure(name: string, path?: string, force?: 
     try {
         await fse.copy(srcDir, destDir);
         const files = await getFiles(destDir);
-        await files.forEach(file => {
-            createContentAndFile(file.path, {key : name}, file.path);
-        })
+        for (const file of files) {
+            await createContentAndFile(file.path, {key : name}, file.path);
+        }
         console.log(colors.green.bold("SUCCESSFULLY GENERATED ") + destDir);
         console.log(colors.cyan("Your project is ready for usage, enjoy!"));
         return {
@@ -50,7 +50,7 @@ export async function copyAndFillStructure(name: string, path?: string, force?: 
             message: `Generated successfully`
         };
     } catch (err) {
-        console.log(colors.red.bold("FAILED ") + `generating ${destDir} due to -> ${err}`);
+        console.log(colors.red.bold("FAILED ") + `generating ${destDir} with-> ${err}`);
         return {
             success: false,
             message: `Failed to generate a structure`
