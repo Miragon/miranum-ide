@@ -1,8 +1,9 @@
 import { getFile, getFiles } from "./read-fs/read-fs";
-import { createFile, generateStructure, copyStructure } from "./generate/generate";
+import { createFile, copyAndFillStructure } from "./generate/generate";
 import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import * as Sqrl from "squirrelly"
+import * as colors from "colors";
 
 export interface DigiwfConfig {
     deploymentPlugins: DigiWFDeploymentPlugin[];
@@ -26,11 +27,13 @@ export class DigiwfLib {
             await Promise.all(
                 this.deploymentPlugins.map(plugin => plugin.deploy(target, artifact))
             );
+            console.log(colors.green.bold("DEPLOYED ") + artifact + " to environment " + target);
             return {
                 success: true,
                 message: "Everything is deployed successfully"
             };
         } catch (err) {
+            console.log(colors.red.bold("FAILED ") + ` deploying ${artifact} with -> ${err}`);
             return {
                 success: false,
                 message: "Deployment failed"
@@ -68,23 +71,24 @@ export class DigiwfLib {
 
 
     /* eslint-disable  @typescript-eslint/no-explicit-any */
-    public async generateArtifact(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
+    public async generateFile(type: string, name: string, path: string, templateBase?: string | undefined, templateFiller?: any | undefined): Promise<Success> {
         const fileName: string = name.replace(/\.[^/.]+$/, "");
         const id: string = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         const TEMPLATES = new Map<string, any>([
-            ["bpmn", {path: "resources/templates/bpmn-default.bpmn",
+            ["bpmn", {path: "resources/templates/basicTemplates/bpmn-default.bpmn",
                     data: {version: "7.17.0", Process_id: id, name: fileName, doc: "doc"}}],
-            ["dmn", {path: "resources/templates/dmn-default.dmn",
+            ["dmn", {path: "resources/templates/basicTemplates/dmn-default.dmn",
                     data: {Definition_id: id, name: fileName, version: "7.17.0", DecisionName: "Decision 1"}}],
-            ["form", {path: "resources/templates/form-default.form",
+            ["form", {path: "resources/templates/basicTemplates/form-default.form",
                     data:{name: name, allOfKey: "FORMSECTION_input"}}],
-            ["config", {path: "resources/templates/config-default.json",
+            ["config", {path: "resources/templates/basicTemplates/config-default.json",
                     data: {key: name, serviceKey: "S3Service", serviceValue: "dwf-s3-local-01"}}],
-            ["element-template", {path: "resources/templates/element-default.json",
+            ["element-template", {path: "resources/templates/basicTemplates/element-default.json",
                     data: {name: fileName, id: id}}]
         ]);
 
         if(!TEMPLATES.has(type)){
+            console.log(colors.red.bold("ERROR ") + `${type} is not supported`);
             return {
                 success: false,
                 message: `The given type: "${type}" is not supported`
@@ -104,11 +108,7 @@ export class DigiwfLib {
     }
 
     public async generateProject(name: string, path?: string, force?: boolean): Promise<Success> {
-        return generateStructure(name ,path, force);
-    }
-
-    public async copyProject(name: string, path?: string, force?: boolean): Promise<Success> {
-        return copyStructure(name ,path, force);
+        return copyAndFillStructure(name ,path, force);
     }
 
 }
