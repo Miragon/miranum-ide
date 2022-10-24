@@ -52,7 +52,7 @@ export function deployFileCommand(): Command {
         })
         .action((options) => {
             digiwfLib.deployArtifact(options.file, options.type, options.project, options.target)
-                .then( () => console.log(""))
+                .then( () => console.log("Successfully deployed file " + options.file))
                 .catch(err => console.error(err));
         });
 }
@@ -66,7 +66,7 @@ export function deployAllFiles(): Command {
         .option("-p, --project <project>", "specify the project")
         .action((options) => {
             digiwfLib.deployAllArtifacts(options.directory, options.project, options.target)
-                .then( () => console.log(""))
+                .then( () => console.log("Successfully deployed " + options.directory))
                 .catch(err => console.error(err));
         });
 }
@@ -82,7 +82,7 @@ export function generateFile(): Command {
         .option("-d --data <data>", "specify the data that is to be used for your template")
         .action((options) => {
             digiwfLib.generateFile(options.type, options.name, options.path, options.template, options.data)
-                .then(() => console.log(""))
+                .then(() => console.log("Successfully generated file " + options.name))
                 .catch(err => console.error(err));
         });
 }
@@ -99,7 +99,7 @@ export function generateProject(): Command {
         .option ("-f --force", "force overwriting the project")
         .action((options) => {
             digiwfLib.generateProject(options.name, options.path, options.force)
-                .then(() => console.log("================================================================"))
+                .then(() => console.log("Successfully generated project " + options.name))
                 .catch(err => console.error(err));
         });
 }
