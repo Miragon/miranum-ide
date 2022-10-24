@@ -10,7 +10,9 @@
         "outputPath": "dist/apps/miragon-process-ide-cli",
         "main": "apps/miragon-process-ide-cli/src/main.ts",
         "tsConfig": "apps/miragon-process-ide-cli/tsconfig.app.json",
-        "assets": ["apps/miragon-process-ide-cli/src/assets"]
+        "assets": ["apps/miragon-process-ide-cli/src/Dockerfile"],
+        "webpackConfig": "apps/miragon-process-ide-cli/custom-webpack.config.js",
+        "generatePackageJson": true
       },
       "configurations": {
         "production": {
