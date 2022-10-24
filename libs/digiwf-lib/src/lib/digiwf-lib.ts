@@ -27,7 +27,7 @@ export class DigiwfLib {
             await Promise.all(
                 this.deploymentPlugins.map(plugin => plugin.deploy(target, artifact))
             );
-            console.log(colors.green.bold("DEPLOYED ") + artifact);
+            console.log(colors.green.bold("DEPLOYED ") + artifact + " to environment " + target);
             return {
                 success: true,
                 message: "Everything is deployed successfully"
