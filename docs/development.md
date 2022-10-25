@@ -3,32 +3,32 @@
 ## Branching
 
 ```mermaid
-    gitGraph
-       commit
-       
-       branch feat/feature2
-       checkout feat/feature2
-       commit
-       
-       checkout main
-       branch feat/feature1
-       checkout feat/feature1
-       commit
-       commit
-       
-       checkout feat/feature2
-       commit
-       commit
-       
-       checkout main
-       merge feat/feature1
-       
-       checkout feat/feature2
-       merge main
-       commit
-       
-       checkout main
-       merge feat/feature2
+gitGraph
+   commit
+   
+   branch feat/feature2
+   checkout feat/feature2
+   commit
+   
+   checkout main
+   branch feat/feature1
+   checkout feat/feature1
+   commit
+   commit
+   
+   checkout feat/feature2
+   commit
+   commit
+   
+   checkout main
+   merge feat/feature1
+   
+   checkout feat/feature2
+   merge main
+   commit
+   
+   checkout main
+   merge feat/feature2
 ```
 
 ## CI/CD
