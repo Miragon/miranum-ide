@@ -58,9 +58,13 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Set maven version
         run: mvn versions:set -DnewVersion=${{ env.RELEASE_VERSION }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: spring-boot-apps
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
+          directory: digiwf-deployment-proxy
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}
           nexus_username: ${{ secrets.nexus_username }}
