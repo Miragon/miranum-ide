@@ -42,4 +42,4 @@ Additionally, PR to the main branch create a build by running the lint command, 
 
 **Release**
 The release pipeline is triggered on every git tag that is created in the format `v*.*.*`.
-Checkout [releases](releases.md) for more information on releases.
+Checkout [releases](releases.md) for more information.
