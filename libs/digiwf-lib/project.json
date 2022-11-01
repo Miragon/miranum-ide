@@ -17,6 +17,20 @@
         "jestConfig": "libs/digiwf-lib/jest.config.ts",
         "passWithNoTests": true
       }
+    },
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/digiwf-lib",
+        "tsConfig": "libs/digiwf-lib/tsconfig.lib.json",
+        "packageJson": "libs/digiwf-lib/package.json",
+        "main": "libs/digiwf-lib/src/index.ts",
+        "assets": [
+          "libs/digiwf-lib/*.md",
+          "resources/"
+        ]
+      }
     }
   },
   "tags": []

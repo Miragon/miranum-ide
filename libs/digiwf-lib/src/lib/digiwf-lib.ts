@@ -4,6 +4,7 @@ import { Artifact, Success, DigiWFDeploymentPlugin } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import * as Sqrl from "squirrelly"
 import * as colors from "colors";
+import { availableDeploymentPlugins } from "./deployment/plugins";
 
 export interface DigiwfConfig {
     deploymentPlugins: DigiWFDeploymentPlugin[];
@@ -12,13 +13,11 @@ export interface DigiwfConfig {
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class DigiwfLib {
-    deploymentPlugins: DigiWFDeploymentPlugin[] = [];
+    deploymentPlugins: DigiWFDeploymentPlugin[] = availableDeploymentPlugins;
 
     constructor(config?: DigiwfConfig) {
         if (config) {
-            config.deploymentPlugins.forEach(plugin => {
-                this.deploymentPlugins.push(plugin);
-            });
+            this.deploymentPlugins = config.deploymentPlugins;
         }
     }
 
