@@ -1,6 +1,6 @@
 import { DigiwfConfig, DigiwfLib } from "./digiwf-lib";
 import * as fs from "fs";
-import { availableDeploymentPlugins } from './digiwf-lib';
+import { availableDeploymentPlugins } from "./deployment/plugins";
 
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
