@@ -1,0 +1,5 @@
+{
+  "name": "@lmoesle/miragon-process-ide-cli",
+  "version": "0.0.1",
+  "bin": "main.js"
+}
