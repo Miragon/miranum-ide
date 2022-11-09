@@ -1,24 +1,13 @@
 import { DigiwfConfig, DigiwfLib } from "./digiwf-lib";
-import { Success } from "./types";
 import * as fs from "fs";
+import { availableDeploymentPlugins } from "./deployment/plugins";
 
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
 const target = "http://localhost:8080";
 
 const config: DigiwfConfig = {
-    deploymentPlugins: [
-        {
-            name: "rest",
-            targetEnvironments: [],
-            deploy: function(target: string) {
-                return new Promise<Success>(resolve => resolve({
-                    success: true,
-                    message: `Deployed to ${target}`
-                }));
-            }
-        }
-    ]
+    deploymentPlugins: availableDeploymentPlugins.filter(plugin => plugin.name === "dry")
 };
 
 const digiwfLib = new DigiwfLib(config);

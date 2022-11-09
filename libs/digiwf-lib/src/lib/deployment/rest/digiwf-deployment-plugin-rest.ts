@@ -1,12 +1,8 @@
 import { Configuration, DeploymentAPIApi } from "./openapi";
-import {
-    Artifact,
-    Success,
-    DigiWFDeploymentPlugin,
-    DigiWFDeploymentTarget
-} from "@miragon-process-ide/digiwf-lib";
+import { Artifact, DigiWFDeploymentPlugin, DigiWFDeploymentTarget, Success } from "../../types";
 
-export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin{
+
+export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
     name: string;
     targetEnvironments: DigiWFDeploymentTarget[];
 

@@ -2,7 +2,6 @@
   "$schema": "miragon-process-ide/node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
-    "digiwf-deployment-plugin-rest": "libs/digiwf-deployment-plugin-rest",
     "digiwf-deployment-proxy": "spring-boot-apps/digiwf-deployment-proxy",
     "digiwf-lib": "libs/digiwf-lib",
     "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
