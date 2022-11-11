@@ -141,7 +141,14 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
-      # tbd
+      - name: Release maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          directory: digiwf-deployment-proxy
+          gpg_private_key: ${{ secrets.gpg_private_key }}
+          gpg_passphrase: ${{ secrets.gpg_passphrase }}
+          nexus_username: ${{ secrets.nexus_username }}
+          nexus_password: ${{ secrets.nexus_password }}
       # docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
