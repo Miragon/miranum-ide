@@ -1,4 +1,4 @@
-import { getFile, getFiles } from "./read-fs";
+import { getFile, getFiles } from "./fs";
 
 const pathToProject = "resources/my-process-automation-project/";
 
