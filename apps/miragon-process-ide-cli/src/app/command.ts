@@ -1,38 +1,8 @@
 import { Command, InvalidArgumentError } from "commander";
-import { Success, DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
-import { DigiwfDeploymentPluginRest } from "@miragon-process-ide/digiwf-deployment-plugin-rest";
+import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 
-const environments = [
-    {
-        name: "local",
-        url: "http://localhost:8080"
-    },
-    {
-        name: "dev",
-        url: "http://localhost:8080"
-    },
-    {
-        name: "test",
-        url: "http://localhost:8080"
-    }
-];
 
-const config: DigiwfConfig = {
-    deploymentPlugins: [
-        {
-            name: "dry",
-            targetEnvironments: environments,
-            deploy: function(target: string) {
-                return new Promise<Success>(resolve => resolve({
-                    success: true,
-                    message: `Deployed to ${target}`
-                }));
-            }
-        },
-        new DigiwfDeploymentPluginRest("rest", environments)
-    ]
-};
-const digiwfLib = new DigiwfLib(config);
+const digiwfLib = new DigiwfLib();
 
 
 export function deployFileCommand(): Command {

@@ -83,6 +83,12 @@ Run `nx g @nrwl/node:lib my-lib` to generate a library.
 
 Libraries are shareable across libraries and applications. They can be imported from `@miragon-process-ide/mylib`.
 
+**Publishable Libs**
+
+```
+npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-process-ide/my-awesome-lib
+```
+
 ### Generate a VSCode-Extension
 
 1. Run `nx g @nrwl/node:app my-app` to generate a node application.
