@@ -252,13 +252,13 @@ const readmeGenerator = new ReadmeGenerator(
     └── example-bpmn.bpmn
 `);
 
-export const availableGeneratorPlugins: DigiWFGeneratorPlugin[] = [
-    bpmnGenerator,
-    dmnGenerator,
-    formGenerator,
-    configGenerator,
-    elementTemplateGenerator,
-    processIdeJsonGenerator,
-    gitkeepGenerator,
-    readmeGenerator
-];
+export const availableGeneratorPlugins: Map<string, DigiWFGeneratorPlugin> = new Map<string, DigiWFGeneratorPlugin>([
+    [bpmnGenerator.type, bpmnGenerator],
+    [dmnGenerator.type, dmnGenerator],
+    [formGenerator.type, formGenerator],
+    [configGenerator.type, configGenerator],
+    [elementTemplateGenerator.type, elementTemplateGenerator],
+    [processIdeJsonGenerator.type, processIdeJsonGenerator],
+    [gitkeepGenerator.type, gitkeepGenerator],
+    [readmeGenerator.type, readmeGenerator],
+]);

@@ -14,8 +14,9 @@ describe("generators", () => {
     for (const file of filesToGenerate) {
         it(`${file.type} generator should work`, async () => {
             // check if generator exists
-            const generator = availableGeneratorPlugins.find(generator => generator.type === file.type);
-            expect(generator).toBeDefined();
+            expect(availableGeneratorPlugins.get(file.type)).toBeTruthy();
+
+            const generator = availableGeneratorPlugins.get(file.type);
 
             if (!generator) {
                 fail("Generator does not exist");
@@ -33,8 +34,9 @@ describe("generators", () => {
 
     it(".gitkeep generator should work", async () => {
         // check if generator exists
-        const generator = availableGeneratorPlugins.find(generator => generator.type === ".gitkeep");
-        expect(generator).toBeDefined();
+        expect(availableGeneratorPlugins.get(".gitkeep")).toBeTruthy();
+
+        const generator = availableGeneratorPlugins.get(".gitkeep");
 
         if (!generator) {
             fail("Generator does not exist");

@@ -14,7 +14,7 @@ export function createDigiwfLib(projectVersion: string, projectName: string, wor
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class DigiwfLib {
     projectConfig: DigiwfConfig;
-    generatorPlugins: DigiWFGeneratorPlugin[] = availableGeneratorPlugins;
+    generatorPlugins: Map<string, DigiWFGeneratorPlugin> = availableGeneratorPlugins;
 
     constructor(config: DigiwfConfig) {
         this.projectConfig = config
@@ -47,7 +47,7 @@ export class DigiwfLib {
     }
 
     public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
-        const generator = this.generatorPlugins.find(generator => generator.type === type);
+        const generator = this.generatorPlugins.get(type);
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
