@@ -1,5 +1,5 @@
 import { Configuration, DeploymentAPIApi } from "./openapi";
-import { Artifact, DigiWFDeploymentPlugin, DigiWFDeploymentTarget, Success } from "../../types";
+import { Artifact, DigiWFDeploymentPlugin, DigiWFDeploymentTarget } from "../../types";
 
 
 export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
@@ -11,13 +11,10 @@ export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
         this.targetEnvironments = targetEnvironments;
     }
 
-    async deploy(target : string, artifact : Artifact) : Promise<Success> {
+    async deploy(target : string, artifact : Artifact) : Promise<Artifact> {
         const targetEnv = this.targetEnvironments.filter(env => env.name === target);
         if (targetEnv.length === 0) {
-            return {
-                success: false,
-                message: `No target configured for ${target}`
-            };
+            throw new Error(`No target configured for ${target}`);
         }
 
         const deployment = {
@@ -27,10 +24,10 @@ export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
             }
         };
         const response = await new DeploymentAPIApi(new Configuration({basePath: targetEnv[0].url})).deployArtifact(deployment);
-        return {
-            success: !!response.data.success,
-            message: response.data.message
-        };
+        if (!response.data.success) {
+            throw new Error(`Failed deployment of artifact ${artifact.file.name} to environment ${target}`);
+        }
+        return artifact;
     }
 
 }

@@ -8,9 +8,7 @@ describe("deploy", () => {
                         file: {name: "name", extension: "extension", content: "content", size: 1, path: "path1"}
                         };
 
-        const deploymentSuccess = await ddpr.deploy("hi", artifact);
-
-        expect(deploymentSuccess.success).toBeFalsy();
-        expect(deploymentSuccess.message).toEqual(`No target configured for hi`);
+        ddpr.deploy("hi", artifact)
+            .catch(err => expect(err.message).toContain("No target configured for"))
     });
 });

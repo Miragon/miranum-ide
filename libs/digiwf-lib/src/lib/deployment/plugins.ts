@@ -1,14 +1,11 @@
 import { DigiwfDeploymentPluginRest } from "./rest/digiwf-deployment-plugin-rest";
-import { DigiWFDeploymentPlugin, Success } from "../types";
+import { Artifact, DigiWFDeploymentPlugin } from "../types";
 
 const dryPlugin = {
     name: "dry",
     targetEnvironments: [{name:"local",url:"http://localhost:8080"}],
-    deploy: function(target: string) {
-        return new Promise<Success>(resolve => resolve({
-            success: true,
-            message: `Deployed to ${target}`
-        }));
+    deploy: function(target: string, artifact: Artifact) {
+        return Promise.resolve(artifact);
     }
 };
 const restPlugin = new DigiwfDeploymentPluginRest("rest", [

@@ -1,10 +1,6 @@
 import { Command } from "commander";
-import {
-    deployAllFiles,
-    deployFileCommand,
-    generateFile,
-    generateProject
-} from "./app/command";
+import { deployAllFiles, deployFileCommand } from "./app/deployment/api";
+import { generateFile, generateProject } from "./app/generate/api";
 
 
 const program = new Command();

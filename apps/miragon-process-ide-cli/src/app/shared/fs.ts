@@ -1,6 +1,6 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { FileDetails } from "../types";
+import { FileDetails } from "@miragon-process-ide/digiwf-lib";
 
 const supportedFiles = [".bpmn", ".dmn", ".config", ".json", ".form"]
 
@@ -16,8 +16,7 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
                 "name": name,
                 "extension": ext,
                 "content": file.toString(),
-                "size": size,
-                "path": pathToFile
+                "size": size
             }
         }
     }
@@ -51,3 +50,15 @@ export async function getFiles(pathToDirectory: string): Promise<FileDetails[]> 
         throw new Error(`File not found on path ${pathToDirectory}`);
     }
 }
+
+export async function saveFile(projectDir: string, pathInProject: string, fileContent: string): Promise<void> {
+    const file = `${projectDir}/${pathInProject}`.replace("//", "/")
+    const path = file.substring(0, file.lastIndexOf("/"));
+    try {
+        await fs.access(path);
+    } catch {
+        await fs.mkdir(path, {recursive: true});
+    }
+    await fs.writeFile(`${projectDir}/${pathInProject}`.replace("//", "/"), fileContent, {flag: "w+"});
+}
+
