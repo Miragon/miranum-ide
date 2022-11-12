@@ -13,14 +13,18 @@ export function createDigiwfLib(projectVersion: string, projectName: string, wor
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class DigiwfLib {
-    projectConfig: DigiwfConfig;
+    projectConfig?: DigiwfConfig;
     generatorPlugins: Map<string, DigiWFGeneratorPlugin> = availableGeneratorPlugins;
 
-    constructor(config: DigiwfConfig) {
+    constructor(config?: DigiwfConfig) {
         this.projectConfig = config
     }
 
     public async deploy(target: string, artifact: Artifact): Promise<Artifact> {
+        if (!this.projectConfig) {
+            throw new Error("Config not available. Please initialize digiwfLib with a valid config");
+        }
+
         await Promise.all(
             this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact))
         );
@@ -51,7 +55,30 @@ export class DigiwfLib {
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
-        return generator.generate(artifactName, project);
+        return generator.generate(artifactName, project, this.getPathFromConfig(type));
+    }
+
+    private getPathFromConfig(type: string): string | undefined {
+        if (this.projectConfig) {
+            switch (type){
+                case "form": {
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    return this.projectConfig.workspace["forms"];
+                }
+                case "config": {
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    return this.projectConfig.workspace["processConfigs"];
+                }
+                case "element-template": {
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    return this.projectConfig.workspace["elementTemplates"];
+                }
+            }
+        }
+        return undefined;
     }
 
 }

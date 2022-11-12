@@ -26,7 +26,10 @@ export class ProjectGenerator {
                 return Promise.reject(msg);
             }
             await saveFile(path, artifact.file.pathInProject, artifact.file.content);
-            console.log(colors.green.bold("SAVED ") + artifact.file.pathInProject.substring(1, artifact.file.pathInProject.length));
+
+            let fileName = artifact.file.pathInProject;
+            fileName = (fileName.charAt(0) === '/') ? fileName.slice(1, fileName.length) : fileName;
+            console.log(colors.green.bold("SAVED ") + fileName);
         } catch (err) {
             console.log(colors.red.bold("FAILED ") + ` creating file ${artifact.file.name} with -> ${err}`);
             return Promise.reject(err);

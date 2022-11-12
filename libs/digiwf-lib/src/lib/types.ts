@@ -31,7 +31,7 @@ export interface DigiWFGeneratorPlugin {
     template: string;
     basePath: string | undefined;
     defaultData: object;
-    generate(name: string, project: string): Promise<Artifact>
+    generate(name: string, project: string, path?: string): Promise<Artifact>
 }
 
 export interface DigiWFDeploymentTarget {

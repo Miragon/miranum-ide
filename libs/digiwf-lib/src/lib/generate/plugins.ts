@@ -17,7 +17,7 @@ export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {
         this.defaultData = defaultData;
     }
 
-    async generate(name : string, project: string) : Promise<Artifact> {
+    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
         const fileName: string = name.replace(/\.[^/.]+$/, "");
         const data: any = this.defaultData;
         data["id"] = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
@@ -28,7 +28,7 @@ export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {
             name: fileName,
             extension: this.fileExtension.toLowerCase(),
             content: fileContent,
-            pathInProject: `${this.basePath ?? ""}/${name}.${this.fileExtension.toLowerCase()}`
+            pathInProject: `${(path ?? this.basePath) ?? ""}/${name}.${this.fileExtension.toLowerCase()}`
         }
         return {
             type: this.type,
@@ -49,7 +49,7 @@ export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project : string) : Promise<Artifact> {
+    async generate(name : string, project : string, path?: string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {projectName: project});
         const fileDetails = {
             name: "process-ide",
@@ -73,7 +73,7 @@ export class GitkeepGenerator implements DigiWFGeneratorPlugin {
     basePath: string | undefined;
     defaultData: object = {};
 
-    async generate(name : string, project: string) : Promise<Artifact> {
+    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
         const fileDetails = {
             name: ".gitkeep",
             extension: "",
@@ -99,7 +99,7 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project: string) : Promise<Artifact> {
+    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {name: name});
         const fileDetails = {
             name: "README",
