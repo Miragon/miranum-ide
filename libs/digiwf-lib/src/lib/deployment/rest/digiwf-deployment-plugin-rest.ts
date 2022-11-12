@@ -3,11 +3,11 @@ import { Artifact, DigiWFDeploymentPlugin, DigiWFDeploymentTarget } from "../../
 
 
 export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
-    name: string;
+    plugin: string;
     targetEnvironments: DigiWFDeploymentTarget[];
 
-    constructor(name: string, targetEnvironments: DigiWFDeploymentTarget[]) {
-        this.name = name;
+    constructor(plugin: string, targetEnvironments: DigiWFDeploymentTarget[]) {
+        this.plugin = plugin;
         this.targetEnvironments = targetEnvironments;
     }
 

@@ -1,13 +1,10 @@
-import { DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
+import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 import { getFile, getFiles } from "../shared/fs";
 import * as colors from "colors";
 
 export class Deployment {
-    private digiwfLib: DigiwfLib;
 
-    constructor(config?: DigiwfConfig) {
-        this.digiwfLib = new DigiwfLib(config);
-    }
+    constructor(private digiwfLib: DigiwfLib) {}
 
     public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<void> {
         const file = await getFile(path);

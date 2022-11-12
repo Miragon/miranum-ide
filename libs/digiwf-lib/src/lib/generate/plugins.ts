@@ -38,6 +38,34 @@ export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {
     }
 }
 
+export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
+    basePath: string | undefined;
+    defaultData = {};
+    fileExtension = "json";
+    template: string;
+    type = "process-ide.json";
+
+    constructor(template: string) {
+        this.template = template;
+    }
+
+    async generate(name : string, project : string) : Promise<Artifact> {
+        const fileContent = await Sqrl.render(this.template, {projectName: project});
+        const fileDetails = {
+            name: "process-ide",
+            extension: this.fileExtension,
+            content: fileContent,
+            pathInProject: `/${this.type}`
+        }
+        return {
+            type: this.type,
+            project: project,
+            file: fileDetails
+        }
+    }
+
+}
+
 export class GitkeepGenerator implements DigiWFGeneratorPlugin {
     type  = ".gitkeep";
     fileExtension = ".gitkeep";
@@ -176,6 +204,34 @@ const elementTemplateGenerator = new DigiwfArtifactGenerator("element-template",
     }
   ]
 }`, {}, "/element-templates");
+const processIdeJsonGenerator  = new ProcessIdeJsonGenerator(`{
+  "projectVersion": "1.0.0",
+  "name": "{{it.projectName}}",
+  "workspace": {
+    "forms": "forms",
+    "elementTemplates": "element-templates",
+    "processConfigs": "configs"
+  },
+  "deployment": [
+    {
+      "plugin": "rest",
+      "targetEnvironments": [
+        {
+          "name": "local",
+          "url": "http://localhost:8080"
+        },
+        {
+          "name": "dev",
+          "url": "http://localhost:8080"
+        },
+        {
+          "name": "test",
+          "url": "http://localhost:8080"
+        }
+      ]
+    }
+  ]
+}`);
 const gitkeepGenerator = new GitkeepGenerator();
 const readmeGenerator = new ReadmeGenerator(
     `# <span style="font-family: Academy Engraved LET; color:#00E676">{{it.name}}</span>
@@ -202,6 +258,7 @@ export const availableGeneratorPlugins: DigiWFGeneratorPlugin[] = [
     formGenerator,
     configGenerator,
     elementTemplateGenerator,
+    processIdeJsonGenerator,
     gitkeepGenerator,
     readmeGenerator
 ];

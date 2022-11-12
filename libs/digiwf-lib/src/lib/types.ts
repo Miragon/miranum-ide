@@ -13,12 +13,14 @@ export interface FileDetails {
 }
 
 export interface DigiwfConfig {
-    deploymentPlugins: DigiWFDeploymentPlugin[];
-    generatorPlugins: DigiWFGeneratorPlugin[];
+    projectVersion: string,
+    name: string;
+    workspace: object;
+    deployment: DigiWFDeploymentPlugin[];
 }
 
 export interface DigiWFDeploymentPlugin {
-    name: string;
+    plugin: string;
     targetEnvironments: DigiWFDeploymentTarget[];
     deploy(target: string, artifact: Artifact): Promise<Artifact>;
 }

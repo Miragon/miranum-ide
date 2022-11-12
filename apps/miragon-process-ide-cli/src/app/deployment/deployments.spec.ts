@@ -1,19 +1,19 @@
 import { Deployment } from "./deployment";
-import { Artifact } from "@miragon-process-ide/digiwf-lib";
+import { Artifact, createDigiwfLib, DigiWFDeploymentPlugin } from "@miragon-process-ide/digiwf-lib";
 
 const pathToProject = "resources/my-process-automation-project/";
 const project = "my-process-automation-project";
 const target = "local";
 
-const dryDeploymentPlugin = {
-    name: "dry",
+const dryDeploymentPlugin: DigiWFDeploymentPlugin = {
+    plugin: "dry",
     targetEnvironments: [{name:"local",url:"http://localhost:8080"}],
     deploy: function(target: string, artifact: Artifact) {
         return Promise.resolve(artifact);
     }
 };
 
-const deployment = new Deployment({deploymentPlugins: [dryDeploymentPlugin], generatorPlugins: []});
+const deployment = new Deployment(createDigiwfLib("0.0.1", "test-project", {}, [dryDeploymentPlugin]));
 
 describe("deployArtifact", () => {
     it("should work", async () => {
