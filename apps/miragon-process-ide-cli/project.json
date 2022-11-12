@@ -71,7 +71,7 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-project --name basic-project --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --name basic-project --path resources/my-generations"
           }
         ]
       }

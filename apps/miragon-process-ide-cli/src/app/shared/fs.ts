@@ -1,8 +1,27 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { FileDetails } from "@miragon-process-ide/digiwf-lib";
+import {
+    createDigiwfLib,
+    DigiWFDeploymentPlugin,
+    DigiwfDeploymentPluginRest,
+    DigiwfLib,
+    FileDetails
+} from "@miragon-process-ide/digiwf-lib";
 
 const supportedFiles = [".bpmn", ".dmn", ".config", ".json", ".form"]
+
+export async function mapProcessConfigToDigiwfLib(path?: string): Promise<DigiwfLib> {
+    const p = path ?  `${path}/process-ide.json`.replace("//", "/") : "process-ide.json";
+    const processIdeJson = await getFile(p);
+    const processIdeConfig = JSON.parse(processIdeJson.content);
+    const plugins: DigiWFDeploymentPlugin[] = [];
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    processIdeConfig.deployment.forEach(p => {
+        plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+    });
+    return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+}
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {
     try {
