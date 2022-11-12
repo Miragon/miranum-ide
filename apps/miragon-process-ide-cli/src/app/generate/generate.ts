@@ -1,13 +1,10 @@
-import { Artifact, DigiwfConfig, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
+import { Artifact, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 import { saveFile } from "../shared/fs";
 import * as colors from "colors";
 
 export class ProjectGenerator {
-    private digiwfLib: DigiwfLib;
 
-    constructor(config?: DigiwfConfig) {
-        this.digiwfLib = new DigiwfLib(config);
-    }
+    constructor(private digiwfLib: DigiwfLib) {}
 
     public async generateProject(name: string, path: string): Promise<void>  {
         const artifacts = await this.digiwfLib.initProject(name);
@@ -17,7 +14,7 @@ export class ProjectGenerator {
     }
 
     public async generateFile(name: string, type: string, path: string, templateBase?: string, additionalData?: object): Promise<void> {
-        const artifact = await this.digiwfLib.generateArtifact(name, type);
+        const artifact = await this.digiwfLib.generateArtifact(name, type, "");
         await this.generate(artifact, path);
     }
 

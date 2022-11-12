@@ -1,15 +1,35 @@
-import { DigiwfLib } from "./digiwf-lib";
-import { availableDeploymentPlugins } from "./deployment/plugins";
-import { DigiwfConfig } from "./types";
+import { createDigiwfLib, DigiwfLib } from "./digiwf-lib";
+import { Artifact } from "./types";
 
 const target = "local";
-
-const config: DigiwfConfig = {
-    deploymentPlugins: availableDeploymentPlugins.filter(plugin => plugin.name === "dry"),
-    generatorPlugins: []
+const workspace = {
+    forms: "forms",
+    elementTemplates: "element-templates",
+    processConfigs: "configs"
 };
-
-const digiwfLib = new DigiwfLib(config);
+const deployment = [
+    {
+        plugin: "dry",
+        targetEnvironments: [
+            {
+                name: "local",
+                url: "http://localhost:8080"
+            },
+            {
+                name: "dev",
+                url: "http://localhost:8080"
+            },
+            {
+                name: "test",
+                url: "http://localhost:8080"
+            }
+        ],
+        async deploy(target : string, artifact : Artifact) : Promise<Artifact> {
+            return artifact;
+        }
+    }
+];
+const digiwfLib: DigiwfLib = createDigiwfLib("1.0.0", "my-project", workspace, deployment);
 
 describe("deploy", () => {
     it("should work", async () => {

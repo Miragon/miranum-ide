@@ -1,6 +1,7 @@
 import { availableGeneratorPlugins } from "./plugins";
 
 const filesToGenerate = [
+    {name: "process-ide", type: "process-ide.json", extension: "json", dir: ""},
     {name: "my-process", type: "bpmn", extension: "bpmn", dir: ""},
     {name: "my-decision-table", type: "dmn", extension: "dmn", dir: ""},
     {name: "my-form", type: "form", extension: "form", dir: "forms"},
