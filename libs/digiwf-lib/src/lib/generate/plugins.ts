@@ -178,7 +178,7 @@ const formGenerator = new DigiwfArtifactGenerator("form", "form",
 }`, {allOfKey: "FORMSECTION_input"}, "/forms");
 const configGenerator = new DigiwfArtifactGenerator("config", "json",
     `{
-  "key": "{{it.key}}",
+  "key": "{{it.name}}",
   "statusDokument": "",
   "statusConfig": [],
   "configs": [
