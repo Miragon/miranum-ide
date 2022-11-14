@@ -1,8 +1,27 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { FileDetails } from "../types";
+import {
+    createDigiwfLib,
+    DigiWFDeploymentPlugin,
+    DigiwfDeploymentPluginRest,
+    DigiwfLib,
+    FileDetails
+} from "@miragon-process-ide/digiwf-lib";
 
 const supportedFiles = [".bpmn", ".dmn", ".config", ".json", ".form"]
+
+export async function mapProcessConfigToDigiwfLib(path?: string): Promise<DigiwfLib> {
+    const p = path ?  `${path}/process-ide.json`.replace("//", "/") : "process-ide.json";
+    const processIdeJson = await getFile(p);
+    const processIdeConfig = JSON.parse(processIdeJson.content);
+    const plugins: DigiWFDeploymentPlugin[] = [];
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    processIdeConfig.deployment.forEach(p => {
+        plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+    });
+    return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+}
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {
     try {
@@ -16,8 +35,7 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
                 "name": name,
                 "extension": ext,
                 "content": file.toString(),
-                "size": size,
-                "path": pathToFile
+                "size": size
             }
         }
     }
@@ -51,3 +69,15 @@ export async function getFiles(pathToDirectory: string): Promise<FileDetails[]> 
         throw new Error(`File not found on path ${pathToDirectory}`);
     }
 }
+
+export async function saveFile(projectDir: string, pathInProject: string, fileContent: string): Promise<void> {
+    const file = `${projectDir}/${pathInProject}`.replace("//", "/")
+    const path = file.substring(0, file.lastIndexOf("/"));
+    try {
+        await fs.access(path);
+    } catch {
+        await fs.mkdir(path, {recursive: true});
+    }
+    await fs.writeFile(`${projectDir}/${pathInProject}`.replace("//", "/"), fileContent, {flag: "w+"});
+}
+
