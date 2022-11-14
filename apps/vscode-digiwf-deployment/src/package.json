@@ -9,16 +9,82 @@
 	"categories": [
 		"Other"
 	],
+	"extensionPack": [
+	  "publisher.extensionName"
+	],
 	"activationEvents": [
-        "onCommand:vscode-digiwf-deployment.helloWorld"
+        "onCommand:process-ide.deploy",
+        "onCommand:process-ide.deployAll",
+		"onCommand:process-ide.generateFile",
+		"onCommand:process-ide.generateProject"
 	],
 	"main": "../../../dist/apps/vscode-digiwf-deployment/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-digiwf-deployment.helloWorld",
-				"title": "Hello World"
+				"command": "process-ide.deploy",
+				"title": "deploy",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAll",
+				"title": "deployAll",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.generateFile",
+				"title": "generateFile",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.generateProject",
+				"title": "generateProject",
+				"category": "Miragon"
 			}
-		]
+		],
+		"viewsContainers": {
+			"activitybar": [
+			  {
+				"id": "miragon-process-ide",
+				"title": "Process-IDE",
+				"icon": "../../../images/komet.svg"
+			  }
+			]
+		  },
+		  "views": {
+			"miragon-process-ide": [
+			  {
+				"id": "bpmn-project",
+				"name": "Files"
+			  },
+			  {
+				"id": "commands",
+				"name": "Commands"
+			  }
+			]
+		  },
+		  "viewsWelcome": [
+			{
+				"view": "bpmn-project",
+				"contents": "[Generate a new Project](command:vscode.openFolder) \n For further explanation regarding the commands [read our docs](https://aka.ms/vscode-scm).",
+				"when": "config.git.enabled && commands.state == initialized && workbenchState == empty"
+			},
+			{
+				"view": "commands",
+				"contents": "[deployAll](command:process-ide.deployAll) \n [generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
+			}
+		  ],
+		  "menus": {
+			"explorer/context": [
+			  {
+				"command": "process-ide.deploy",
+				"group": "1_modification"
+			  },
+			  {
+				"command": "process-ide.deployAll",
+				"group": "1_modification"
+			  }
+			]
+		  }
 	}
 }
