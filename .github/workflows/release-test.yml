@@ -1,24 +1,7 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release-tag:
-        description: 'Release Tag'
-        required: false
-        default: 'release/XXX'
-      process-ide-cli:
-        description: 'Release process-ide-cli app (y/n)?'
-        required: true
-        default: 'y'
-      digiwf-lib:
-        description: 'Release digiwf-lib (y/n)?'
-        required: true
-        default: 'y'
-      spring-boot-apps:
-        description: 'Release spring boot services (y/n)?'
-        required: true
-        default: 'n'
+  push:
 
 jobs:
   build:
