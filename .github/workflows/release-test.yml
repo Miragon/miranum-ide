@@ -1,4 +1,4 @@
-name: Release
+name: Release-test
 
 on:
   push:
@@ -49,6 +49,6 @@ jobs:
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: 'refs/tags/'github.event.inputs.release-tag,
+              ref: 'refs/tags/github.event.inputs.release-tag',
               sha: context.sha
             })
