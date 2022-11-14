@@ -54,22 +54,17 @@ jobs:
           path: spring-boot-apps
 
   create-release-tag:
+    if: github.event.inputs.release-tag
     runs-on: ubuntu-latest
     needs:
       - build
     steps:
       - uses: actions/checkout@v3
       - name: Create tag
-        if: github.event.inputs.release-tag
-        uses: actions/github-script@v6
+        uses: tvdias/github-tagger@v0.0.2
         with:
-          script: |
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${github.event.inputs.release-tag}`,
-              sha: context.sha
-            })
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: github.event.inputs.release-tag
 
   # process-ide-cli
   publish-process-ide-cli:
