@@ -64,7 +64,7 @@ jobs:
         uses: tvdias/github-tagger@v0.0.2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: github.event.inputs.release-tag
+          tag: "${{ github.event.inputs.release-tag }}"
 
   # process-ide-cli
   publish-process-ide-cli:
