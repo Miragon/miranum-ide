@@ -77,14 +77,36 @@
 		  "menus": {
 			"explorer/context": [
 			  {
-				"command": "process-ide.deploy",
-				"group": "1_modification"
+				"submenu": "deploy.submenu",
+				"group": "1_modification",
+				"when": "resourceExtname == .bpmn || resourceExtname == .form"
 			  },
 			  {
-				"command": "process-ide.deployAll",
-				"group": "1_modification"
+				"submenu": "deployAll.submenu",
+				"group": "1_modification",
+				"when": "explorerResourceIsFolder"
 			  }
-			]
-		  }
+			],
+            "deploy.submenu":[
+                {
+                    "command": "process-ide.deploy"
+                }
+            ],
+			"deployAll.submenu":[
+                {
+                    "command": "process-ide.deployAll"
+                }
+            ]
+		  },
+		  "submenus": [
+			{
+				"id": "deploy.submenu",
+        		"label": "Deploy"
+			},
+			{
+				"id": "deployAll.submenu",
+        		"label": "Deploy All"
+			}
+		  ]
 	}
 }

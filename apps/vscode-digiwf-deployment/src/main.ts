@@ -14,9 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
         //         "file": file
         //     });
         // console.log(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
+
         const panel = vscode.window.createWebviewPanel(
             'catCoding',
-            'Cat Coding',
+            'Generate',
             vscode.ViewColumn.One,
             {
                 enableScripts: true
@@ -99,24 +100,18 @@ async function generate(artifact: Artifact, path: string): Promise<void> {
 
 function getWebviewContent() {
     return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Cat Coding</title>
-  </head>
-  <body>
-      <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
-      <h1 id="lines-of-code-counter">0</h1>
-  
-      <script>
-          const counter = document.getElementById('lines-of-code-counter');
-  
-          let count = 0;
-          setInterval(() => {
-              counter.textContent = count++;
-          }, 100);
-      </script>
-  </body>
-  </html>`;
-  }
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generate</title>
+    </head>
+    <body>
+        <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+    
+        <script>
+            showInputBox();
+        </script>
+    </body>
+    </html>`;
+}
