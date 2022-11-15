@@ -1,11 +1,9 @@
 import * as vscode from "vscode";
-import * as colors from "colors";
 import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
-import { mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
+import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
 
 let digiwfLib = new DigiwfLib();
-const fs = vscode.workspace.fs;
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -33,17 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
         await getUriAndDeploy(path, "test");
     });
 
-    const generateFile = vscode.commands.registerCommand("process-ide.generateFile", async (name: string, type: string, path: string) => {
-        name = "test";
-        type = "bpmn";
-        //absoluter Pfad notwendig
-        path = "Users/jakobmertl/Desktop";
-        const artifact = await digiwfLib.generateArtifact(name, type, "");
-        await generate(artifact, path);
-        vscode.window.showInformationMessage(`generated ${name}.${type}`);
-    });
-
-    const generateProject = vscode.commands.registerCommand("process-ide.generateProject", async (name: string, path: string) => {
+    const generateFile = vscode.commands.registerCommand("process-ide.generateFile", async () => {
         const panel = vscode.window.createWebviewPanel(
             'catCoding',
             'Generate',
@@ -52,16 +40,42 @@ export async function activate(context: vscode.ExtensionContext) {
                 enableScripts: true
             }
         );
-        panel.webview.html = getInputWebviewContent();
+        panel.webview.html = getGenerateFileWebview();
 
-        // const artifacts = await digiwfLib.initProject(name);
-        // for (const artifact of artifacts) {
-        //     await generate(artifact, path);
-        // }
-        vscode.window.showInformationMessage(`generated ${name}`);
+        panel.webview.onDidReceiveMessage( async (event) => {
+            switch (event.message) {
+                case 'generate':
+                    // eslint-disable-next-line no-case-declarations
+                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
+                    await generate(artifact, event.path);
+            }
+        });
     });
-    
-    context.subscriptions.push(deploy, deployDev, deployTest, 
+
+    const generateProject = vscode.commands.registerCommand("process-ide.generateProject", async () => {
+        const panel = vscode.window.createWebviewPanel(
+            'catCoding',
+            'Generate Project',
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true
+            }
+        );
+        panel.webview.html = getGenerateProjectWebview();
+
+        panel.webview.onDidReceiveMessage( async (event) => {
+            switch (event.message) {
+                case 'generateProject':
+                    // eslint-disable-next-line no-case-declarations
+                    const artifacts = await digiwfLib.initProject(event.name);
+                    for (const artifact of artifacts) {
+                        await generate(artifact, event.path);
+                    }
+            }
+        });
+    });
+
+    context.subscriptions.push(deploy, deployDev, deployTest,
                             deployAll, deployAllDev, deployAllTest,
                             generateFile, generateProject);
 }
@@ -69,7 +83,14 @@ export async function activate(context: vscode.ExtensionContext) {
 // eslint-disable-next-line
 export function deactivate() { }
 
-function getInputWebviewContent() {
+//     -----------------------------HELPERS-----------------------------     \\
+//evtl. später in deploy auslagern?
+export function getDigiWfLib(): DigiwfLib {
+    return digiwfLib;
+}
+
+//     ----------------------------Web-Views----------------------------     \\
+function getGenerateFileWebview() {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -78,43 +99,77 @@ function getInputWebviewContent() {
         <title>Generate</title>
     </head>
     <body>
-        <script src="app.js"></script>
+        <div>
+            <h3>name:</h3>
+            <textarea id="name">ProjectName</textarea>
+        </div>
+        <div>
+            <h3>type:</h3>
+            <textarea id="type">bpmn</textarea>
+        </div>
+        <div>
+            <h3>Path:</h3>
+            <textarea id="path">Users/jakobmertl/Desktop</textarea>
+        </div>
+        <button id="confirm">generate</button>
+        <script>
+            const vscode = acquireVsCodeApi();
+            let name = "test Project";
+            let type = "bpmn";
+            let path = "Users/jakobmertl/Desktop";
+
+            confirm = document.getElementById("confirm");
+            confirm.addEventListener("click", async () => {
+                name = document.getElementById("name").value;
+                type = document.getElementById("type").value;
+                path = document.getElementById("path").value;
+                if(name && type && path) {
+                    vscode.postMessage({
+                        message:'generate', name: name, type: type, path: path
+                    })
+                }
+            });
+
+        </script>
     </body>
     </html>`;
 }
 
+function getGenerateProjectWebview() {
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generate a Project</title>
+    </head>
+    <body>
+        <div>
+            <h3>Project name:</h3>
+            <textarea id="name">ProjectName</textarea>
+        </div>
+        <div>
+            <h3>Path:</h3>
+            <textarea id="path">Users/jakobmertl/Desktop/ProjectName</textarea>
+        </div>
+        <button id="confirm">generate</button>
+        <script>
+            const vscode = acquireVsCodeApi();
+            let name = "test Project";
+            let path = "Users/jakobmertl/Desktop";
 
-//     -----------------------------HELPERS-----------------------------     \\
+            confirm = document.getElementById("confirm");
+            confirm.addEventListener("click", async () => {
+                name = document.getElementById("name").value;
+                path = document.getElementById("path").value;
+                if(name && path) {
+                    vscode.postMessage({
+                        message:'generateProject', name: name, path: path
+                    })
+                }
+            });
 
-export async function deployArtifact(path: vscode.Uri, target: string) {
-    const content = (await fs.readFile(path)).toString();
-    const file = path.fsPath.substring(path.fsPath.lastIndexOf('/')+1).split('.');
-    try {
-        const artifact = await digiwfLib.deploy(target, {
-            "type": file[1],
-            "project": "test" ?? "",     //should be the actual project-name
-            "file": {
-                "content": content,
-                "extension": file[1],
-                "name": file[0]
-            }
-        });
-        vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
-    } catch(err: any) {
-        console.log(colors.red.bold("FAILED ") + ` deploying ${file} with -> ${err}`);
-        vscode.window.showInformationMessage(err.msg);
-    }
-}
-
-export async function getUriAndDeploy(path: vscode.Uri, target: string) {
-    const files = await fs.readDirectory(path);
-    for (const file of files) {
-        const filePath = vscode.Uri.file(path.fsPath + "/" + file[0]);
-        if(file[1] != 1) {
-            getUriAndDeploy(filePath, target);
-        } else {
-            //only form and bpmn
-            await deployArtifact(filePath, target);
-        }
-    }
+        </script>
+    </body>
+    </html>`;
 }
