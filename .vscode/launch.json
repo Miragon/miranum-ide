@@ -2,6 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "java",
+      "name": "Launch ExampleApplication",
+      "request": "launch",
+      "mainClass": "io.miragon.digiwf.digiwfdeploymentproxy.ExampleApplication",
+      "projectName": "digiwf-deployment-proxy-example"
+    },
+    {
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
@@ -18,7 +25,7 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/vscode-digiwf-deployment",
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/vscode-digiwf-deployment"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/apps/vscode-digiwf-deployment"

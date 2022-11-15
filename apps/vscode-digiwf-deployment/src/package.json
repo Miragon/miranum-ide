@@ -14,6 +14,8 @@
 	],
 	"activationEvents": [
         "onCommand:process-ide.deploy",
+        "onCommand:process-ide.deployDev",
+        "onCommand:process-ide.deployTest",
         "onCommand:process-ide.deployAll",
 		"onCommand:process-ide.generateFile",
 		"onCommand:process-ide.generateProject"
@@ -23,12 +25,32 @@
 		"commands": [
 			{
 				"command": "process-ide.deploy",
-				"title": "deploy",
+				"title": "deployLocal",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployDev",
+				"title": "deployDev",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployTest",
+				"title": "deployTest",
 				"category": "Miragon"
 			},
 			{
 				"command": "process-ide.deployAll",
-				"title": "deployAll",
+				"title": "to local",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAllDev",
+				"title": "to dev",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAllTest",
+				"title": "to test",
 				"category": "Miragon"
 			},
 			{
@@ -79,7 +101,7 @@
 			  {
 				"submenu": "deploy.submenu",
 				"group": "1_modification",
-				"when": "resourceExtname == .bpmn || resourceExtname == .form"
+				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn"
 			  },
 			  {
 				"submenu": "deployAll.submenu",
@@ -90,11 +112,23 @@
             "deploy.submenu":[
                 {
                     "command": "process-ide.deploy"
+                },
+				{
+                    "command": "process-ide.deployDev"
+                },
+				{
+                    "command": "process-ide.deployTest"
                 }
             ],
 			"deployAll.submenu":[
                 {
                     "command": "process-ide.deployAll"
+                },
+				{
+                    "command": "process-ide.deployAllDev"
+                },
+				{
+                    "command": "process-ide.deployAllTest"
                 }
             ]
 		  },

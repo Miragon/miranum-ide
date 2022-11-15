@@ -1,54 +1,36 @@
 import * as vscode from "vscode";
 import * as colors from "colors";
-import { Artifact, DigiwfLib } from "@miragon-process-ide/digiwf-lib";
-import { saveFile } from "./app/filesystem/fs";
+import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
+import { generate } from "./app/generate/generate";
+import { mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
 
-export function activate(context: vscode.ExtensionContext) {
-    const digiwfLib = new DigiwfLib;
+let digiwfLib = new DigiwfLib();
+const fs = vscode.workspace.fs;
 
-    const deploy = vscode.commands.registerCommand("process-ide.deploy", async (path: string, type: string, project: string | undefined, target: string) => {
-        // const file = await getFile(path);
-        //     const artifact = await digiwfLib.deploy(target, {
-        //         "type": type,
-        //         "project": project ?? "",
-        //         "file": file
-        //     });
-        // console.log(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
 
-        const panel = vscode.window.createWebviewPanel(
-            'catCoding',
-            'Generate',
-            vscode.ViewColumn.One,
-            {
-                enableScripts: true
-            }
-        );
-        panel.webview.html = getWebviewContent();
+export async function activate(context: vscode.ExtensionContext) {
+    digiwfLib = await mapProcessConfigToDigiwfLib();
 
-        vscode.window.showInformationMessage(`deployed ${path}`);
+    const deploy = vscode.commands.registerCommand("process-ide.deploy", async (path: vscode.Uri, target: string) => {
+        target = "local";
+        await deployArtifact(path, target);
+    });
+    const deployDev = vscode.commands.registerCommand("process-ide.deployDev", async (path: vscode.Uri) => {
+        await deployArtifact(path, "dev");
+    });
+    const deployTest = vscode.commands.registerCommand("process-ide.deployTest", async (path: vscode.Uri) => {
+        await deployArtifact(path, "test");
     });
 
-    const deployAll = vscode.commands.registerCommand("process-ide.deployAll", async (path: string, project: string | undefined, target: string) => {
-        // const files = await getFiles(path);
-        // for (const file of files) {
-        //     try {
-        //         let type = file.extension.replace(".", "").toLowerCase();
-        //         if (type === "json") {
-        //             path.includes("schema.json") ? type = "form" : type = "config";
-        //         }
-        //         const artifact = {
-        //             "type": type,
-        //             "project": project ?? "",
-        //             "file": file
-        //         }
-        //         await digiwfLib.deploy(target, artifact);
-        //         console.log(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
-        //     } catch (err) {
-        //         console.log(colors.red.bold("FAILED ") + ` deploying ${file.name} with -> ${err}`);
-        //     }
-        // }
-
-        vscode.window.showInformationMessage("deployed project");
+    const deployAll = vscode.commands.registerCommand("process-ide.deployAll", async (path: vscode.Uri, target: string) => {
+        target = "local";
+        await getUriAndDeploy(path, target);
+    });
+    const deployAllDev = vscode.commands.registerCommand("process-ide.deployAllDev", async (path: vscode.Uri) => {
+        await getUriAndDeploy(path, "dev");
+    });
+    const deployAllTest = vscode.commands.registerCommand("process-ide.deployAllTest", async (path: vscode.Uri) => {
+        await getUriAndDeploy(path, "test");
     });
 
     const generateFile = vscode.commands.registerCommand("process-ide.generateFile", async (name: string, type: string, path: string) => {
@@ -62,6 +44,16 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     const generateProject = vscode.commands.registerCommand("process-ide.generateProject", async (name: string, path: string) => {
+        const panel = vscode.window.createWebviewPanel(
+            'catCoding',
+            'Generate',
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true
+            }
+        );
+        panel.webview.html = getInputWebviewContent();
+
         // const artifacts = await digiwfLib.initProject(name);
         // for (const artifact of artifacts) {
         //     await generate(artifact, path);
@@ -69,36 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(`generated ${name}`);
     });
     
-    context.subscriptions.push(deploy, deployAll, generateFile, generateProject);
+    context.subscriptions.push(deploy, deployDev, deployTest, 
+                            deployAll, deployAllDev, deployAllTest,
+                            generateFile, generateProject);
 }
 
 // eslint-disable-next-line
 export function deactivate() { }
 
-
-//     -----------------------------HELPERS-----------------------------     \\
-
-async function generate(artifact: Artifact, path: string): Promise<void> {
-    try {
-        if (!artifact.file.pathInProject) {
-            const msg = `Could not create file ${artifact.file.name}`;
-            vscode.window.showInformationMessage(colors.red.bold("FAILED ") + msg);
-            return Promise.reject(msg);
-        }
-        await saveFile(path, artifact.file.pathInProject, artifact.file.content);
-
-        let fileName = artifact.file.pathInProject;
-        fileName = (fileName.charAt(0) === '/') ? fileName.slice(1, fileName.length) : fileName;
-        vscode.window.showInformationMessage(colors.green.bold("SAVED ") + fileName);
-    } catch (err) {
-        vscode.window.showInformationMessage(colors.red.bold("FAILED ") + ` creating file ${artifact.file.name} with -> ${err}`);
-        return Promise.reject(err);
-    }
-}
-
-
-
-function getWebviewContent() {
+function getInputWebviewContent() {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -107,11 +78,43 @@ function getWebviewContent() {
         <title>Generate</title>
     </head>
     <body>
-        <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
-    
-        <script>
-            showInputBox();
-        </script>
+        <script src="app.js"></script>
     </body>
     </html>`;
+}
+
+
+//     -----------------------------HELPERS-----------------------------     \\
+
+export async function deployArtifact(path: vscode.Uri, target: string) {
+    const content = (await fs.readFile(path)).toString();
+    const file = path.fsPath.substring(path.fsPath.lastIndexOf('/')+1).split('.');
+    try {
+        const artifact = await digiwfLib.deploy(target, {
+            "type": file[1],
+            "project": "test" ?? "",     //should be the actual project-name
+            "file": {
+                "content": content,
+                "extension": file[1],
+                "name": file[0]
+            }
+        });
+        vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
+    } catch(err: any) {
+        console.log(colors.red.bold("FAILED ") + ` deploying ${file} with -> ${err}`);
+        vscode.window.showInformationMessage(err.msg);
+    }
+}
+
+export async function getUriAndDeploy(path: vscode.Uri, target: string) {
+    const files = await fs.readDirectory(path);
+    for (const file of files) {
+        const filePath = vscode.Uri.file(path.fsPath + "/" + file[0]);
+        if(file[1] != 1) {
+            getUriAndDeploy(filePath, target);
+        } else {
+            //only form and bpmn
+            await deployArtifact(filePath, target);
+        }
+    }
 }
