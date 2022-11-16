@@ -19,8 +19,8 @@
         "onCommand:process-ide.deployAll",
         "onCommand:process-ide.deployAllDev",
         "onCommand:process-ide.deployAllTest",
-		"onCommand:process-ide.generateFile",
-		"onCommand:process-ide.generateProject"
+        "onCommand:process-ide.generateFile",
+        "onCommand:process-ide.generateProject"
 	],
 	"main": "../../../dist/apps/vscode-digiwf-deployment/main.js",
 	"contributes": {

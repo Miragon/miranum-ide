@@ -10,7 +10,7 @@ let digiwfLib = new DigiwfLib();
 
 
 export async function activate(context: vscode.ExtensionContext) {
-    digiwfLib = await mapProcessConfigToDigiwfLib();
+    digiwfLib = await mapProcessConfigToDigiwfLib(context.extensionUri);
 
     const deploy = vscode.commands.registerCommand("process-ide.deploy", async (path: vscode.Uri, target: string) => {
         target = "local";
@@ -48,13 +48,15 @@ export async function activate(context: vscode.ExtensionContext) {
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generate':
-                    //fix this if with a drop down menu later
-                    if(event.type != "form" && event.type != "bpmn" && event.type != "dmn") {
-                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + event.type + " is not a supported type");
-                    } else {
+                    //fix this if with a drop-down menu later
+                    // eslint-disable-next-line no-case-declarations
+                    const supportedTypes = ["bpmn", "dmn", "form", "config", "element-template"];
+                    if(supportedTypes.includes(event.type)) {
                         // eslint-disable-next-line no-case-declarations
                         const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                         await generate(artifact, event.path);
+                    } else {
+                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + event.type + " is not a supported type");
                     }
                     break;
             }
