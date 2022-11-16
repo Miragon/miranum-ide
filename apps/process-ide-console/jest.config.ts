@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: "vscode-digiwf-deployment",
+    displayName: "process-ide-console",
     preset: "../../jest.preset.js",
     globals: {
         "ts-jest": {
@@ -12,5 +12,5 @@ export default {
         "^.+\\.[tj]s$": "ts-jest",
     },
     moduleFileExtensions: ["ts", "js", "html"],
-    coverageDirectory: "../../coverage/apps/vscode-digiwf-deployment",
+    coverageDirectory: "../../coverage/apps/process-ide-console",
 };
