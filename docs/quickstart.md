@@ -97,8 +97,8 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 
 ````json
 {
-  "name": "vscode-digiwf-deployment",
-	"displayName": "vscode-digiwf-deployment",
+  "name": "process-ide-console",
+	"displayName": "process-ide-console",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -108,13 +108,13 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:vscode-digiwf-deployment.helloWorld"
+        "onCommand:process-ide-console.helloWorld"
 	],
-	"main": "../../../dist/apps/vscode-digiwf-deployment/main.js",
+	"main": "../../../dist/apps/process-ide-console/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-digiwf-deployment.helloWorld",
+				"command": "process-ide-console.helloWorld",
 				"title": "Hello World"
 			}
 		]
