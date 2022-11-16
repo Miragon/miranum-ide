@@ -10,6 +10,10 @@ export function createDigiwfLib(projectVersion: string, projectName: string, wor
     });
 }
 
+export function getSupportedTypes(): Array<string> {
+    return ["bpmn", "dmn", "form", "config"];
+}
+
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class DigiwfLib {
@@ -24,12 +28,10 @@ export class DigiwfLib {
         if (!this.projectConfig) {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
-        //whitelisting valid artifact-types for deployment:
-        const ext = artifact.file.extension
-        if(ext != ".form" && ext != ".bpmn" && ext != ".dmn" &&
-            ext != "form" && ext !=  "bpmn" && ext != "dmn") {
+        //blacklisting invalid artifact-types for deployment
+        if(!getSupportedTypes().includes(artifact.type)) {
             console.log("failed deployment");
-            throw new Error(`Unable to Deploy ${ext}`);
+            throw new Error(`Unable to Deploy ${artifact.type}`);
         }
 
         await Promise.all(
