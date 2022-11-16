@@ -26,8 +26,7 @@ export class DigiwfLib {
         }
         //whitelisting valid artifact-types for deployment:
         const ext = artifact.file.extension
-        console.log(ext);
-        if(ext != "form" && ext != "bpmn" && ext != "dmn") {
+        if(ext != ".form" && ext != ".bpmn" && ext != ".dmn") {
             console.log("failed deployment");
             throw new Error(`Unable to Deploy ${ext}`);
         }
@@ -48,7 +47,7 @@ export class DigiwfLib {
             {name: `${projectName}_dev`, type: "config"},
             {name: `${projectName}_prod`, type: "config"},
             {name: "element-templates", type: ".gitkeep"},
-            {name: `${projectName}.md`, type: "README.md"}
+            {name: `${projectName}`, type: "README.md"}
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {

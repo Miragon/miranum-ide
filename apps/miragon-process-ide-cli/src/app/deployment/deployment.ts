@@ -8,6 +8,11 @@ export class Deployment {
 
     public async deployArtifact(path: string, type: string, project: string | undefined, target: string): Promise<void> {
         const file = await getFile(path);
+        //blacklisting everything that isn't supported
+        if(type != "form" && type != "bpmn" && type != "dmn") {
+            console.log(colors.red.bold("ERROR: ") + `${type} is not supported for deployment`);
+            return;
+        }
         const artifact = await this.digiwfLib.deploy(target, {
             "type": type,
             "project": project ?? "",
@@ -24,6 +29,14 @@ export class Deployment {
                 if (type === "json") {
                     path.includes("schema.json") ? type = "form" : type = "config";
                 }
+
+                //await this.deployArtifact(`${path}/${file.pathInProject}`, type, project ?? "", target);  //wäre schöner, hat aber probleme mit dem filepath
+
+                //blacklisting everything that isn't supported
+                if(type != "form" && type != "bpmn" && type != "dmn") {
+                    console.log(colors.red.bold("ERROR: ") + `${type} is not supported for deployment`);
+                    continue;
+                }
                 const artifact = {
                     "type": type,
                     "project": project ?? "",
@@ -32,7 +45,7 @@ export class Deployment {
                 await this.digiwfLib.deploy(target, artifact);
                 console.log(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + target);
             } catch (err) {
-                console.log(colors.red.bold("FAILED ") + ` deploying ${file.name} with -> ${err}`);
+                console.log(colors.red.bold("FAILED ") + `deploying ${file.name} with -> ${err}`);
             }
         }
     }

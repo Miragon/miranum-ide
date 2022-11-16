@@ -105,7 +105,7 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
             name: name,
             extension: this.fileExtension,
             content: fileContent,
-            pathInProject: `/${this.type}`
+            pathInProject: `/${name}.${this.fileExtension}`
         }
         return {
             type: this.type,
