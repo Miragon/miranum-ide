@@ -24,6 +24,13 @@ export class DigiwfLib {
         if (!this.projectConfig) {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
+        //whitelisting valid artifact-types for deployment:
+        const ext = artifact.file.extension
+        console.log(ext);
+        if(ext != "form" && ext != "bpmn" && ext != "dmn") {
+            console.log("failed deployment");
+            throw new Error(`Unable to Deploy ${ext}`);
+        }
 
         await Promise.all(
             this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact))
@@ -41,7 +48,7 @@ export class DigiwfLib {
             {name: "dev", type: "config"},
             {name: "prod", type: "config"},
             {name: "element-templates", type: ".gitkeep"},
-            {name: "README.md", type: "README.md"}
+            {name: "README.md", type: "README.md"} //auch noch anpassen?
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
