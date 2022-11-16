@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
 import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
-import { getGenerateFileWebview } from "./webviews/inputs/generateInput";
-import {getGenerateProjectWebview} from "./webviews/inputs/generateProjectInput";
+import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
+import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
 import * as colors from "colors";
 
 let digiwfLib = new DigiwfLib();
