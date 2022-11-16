@@ -30,7 +30,7 @@ export class Deployment {
     //Helpers//
     private async deployFile(file: FileDetails, type: string, project: string | undefined, target: string): Promise<void> {
         //blacklisting invalid artifact-types
-        if (!getSupportedTypes().includes(type)) {
+        if (!getSupportedTypes().includes(type.toLowerCase())) {
             console.log(colors.red.bold("ERROR: ") + `${type} is not supported for deployment`);
             return Promise.reject(`${type} is not supported for deployment`);
         }

@@ -29,7 +29,7 @@ export class DigiwfLib {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
         //blacklisting invalid artifact-types for deployment
-        if(!getSupportedTypes().includes(artifact.type)) {
+        if(!getSupportedTypes().includes(artifact.type.toLowerCase())) {
             console.log("failed deployment");
             throw new Error(`Unable to Deploy ${artifact.type}`);
         }
