@@ -10,7 +10,7 @@
         "outputPath": "dist/apps/process-ide-console",
         "main": "apps/process-ide-console/src/main.ts",
         "tsConfig": "apps/process-ide-console/tsconfig.app.json",
-        "assets": ["apps/process-ide-console/src/assets", "apps/process-ide-console/src/package.json"],
+        "generatePackageJson": true,
         "webpackConfig": "apps/process-ide-console/custom-webpack.config.js"
       },
       "configurations": {

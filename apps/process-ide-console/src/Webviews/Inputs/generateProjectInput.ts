@@ -13,13 +13,13 @@ export function getGenerateProjectWebview() {
         </div>
         <div>
             <h3>Path:</h3>
-            <textarea id="path">Users/jakobmertl/Desktop</textarea>
+            <textarea id="path">absolutePath</textarea>
         </div>
         <button id="confirm">generate</button>
         <script>
             const vscode = acquireVsCodeApi();
             let name = "testProject";
-            let path = "Users/jakobmertl/Desktop";
+            let path = "absolutePath";
 
             confirm = document.getElementById("confirm");
             confirm.addEventListener("click", async () => {

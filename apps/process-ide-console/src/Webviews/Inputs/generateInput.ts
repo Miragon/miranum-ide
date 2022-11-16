@@ -8,23 +8,23 @@ export function getGenerateFileWebview() {
     </head>
     <body>
         <div>
-            <h3>name:</h3>
+            <h3>Name:</h3>
             <textarea id="name">test</textarea>
         </div>
         <div>
-            <h3>type:</h3>
+            <h3>Type:</h3>
             <textarea id="type">bpmn</textarea>
         </div>
         <div>
             <h3>Path:</h3>
-            <textarea id="path">Users/jakobmertl/Desktop</textarea>
+            <textarea id="path">absolutePath</textarea>
         </div>
         <button id="confirm">generate</button>
         <script>
             const vscode = acquireVsCodeApi();
             let name = "test";
             let type = "bpmn";
-            let path = "Users/jakobmertl/Desktop";
+            let path = "absolutePath";
 
             confirm = document.getElementById("confirm");
             confirm.addEventListener("click", async () => {

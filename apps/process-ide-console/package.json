@@ -22,7 +22,7 @@
         "onCommand:process-ide.generateFile",
         "onCommand:process-ide.generateProject"
 	],
-	"main": "../../../dist/apps/process-ide-console/main.js",
+	"main": "main.js",
 	"contributes": {
 		"commands": [
 			{
