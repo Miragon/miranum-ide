@@ -26,7 +26,8 @@ export class DigiwfLib {
         }
         //whitelisting valid artifact-types for deployment:
         const ext = artifact.file.extension
-        if(ext != ".form" && ext != ".bpmn" && ext != ".dmn") {
+        if(ext != ".form" && ext != ".bpmn" && ext != ".dmn" &&
+            ext != "form" && ext !=  "bpmn" && ext != "dmn") {
             console.log("failed deployment");
             throw new Error(`Unable to Deploy ${ext}`);
         }
