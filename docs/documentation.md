@@ -28,7 +28,7 @@ Some functionalities it provides are:
     .
     ├── miragon-process-ide-cli
     |     └── src ...
-    └── vscode-digiwf-deployment
+    └── process-ide-console
           └── src ...
 
 

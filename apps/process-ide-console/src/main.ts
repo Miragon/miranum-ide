@@ -56,7 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
                         const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                         await generate(artifact, event.path);
                     } else {
-                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + event.type + " is not a supported type");
+                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + `"${event.type}" is not a supported type`);
                     }
                     break;
             }
@@ -80,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     // eslint-disable-next-line no-case-declarations
                     const artifacts = await digiwfLib.initProject(event.name);
                     for (const artifact of artifacts) {
-                        await generate(artifact, event.path);
+                        await generate(artifact, `${event.path}/${event.name}`);
                     }
             }
         });

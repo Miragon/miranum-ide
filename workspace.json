@@ -5,6 +5,6 @@
     "digiwf-deployment-proxy": "spring-boot-apps/digiwf-deployment-proxy",
     "digiwf-lib": "libs/digiwf-lib",
     "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
-    "vscode-digiwf-deployment": "apps/vscode-digiwf-deployment"
+    "process-ide-console": "apps/process-ide-console"
   }
 }

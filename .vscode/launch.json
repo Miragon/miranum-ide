@@ -13,7 +13,7 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/vscode-digiwf-deployment"
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/process-ide-console"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
@@ -25,10 +25,10 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/vscode-digiwf-deployment"
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/process-ide-console"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/vscode-digiwf-deployment"
+        "${workspaceFolder}/dist/apps/process-ide-console"
       ],
       "preLaunchTask": "${defaultBuildTask}"
     }
