@@ -43,12 +43,12 @@ export class DigiwfLib {
             {name: projectName, type: "process-ide.json"},
             {name: projectName, type: "bpmn"},
             // {name: name, type: "dmn"}
-            {name: "start", type: "form"},
-            {name: "control", type: "form"},
-            {name: "dev", type: "config"},
-            {name: "prod", type: "config"},
+            {name: `${projectName}_start`, type: "form"},
+            {name: `${projectName}_control`, type: "form"},
+            {name: `${projectName}_dev`, type: "config"},
+            {name: `${projectName}_prod`, type: "config"},
             {name: "element-templates", type: ".gitkeep"},
-            {name: "README.md", type: "README.md"} //auch noch anpassen?
+            {name: `${projectName}.md`, type: "README.md"}
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
