@@ -2,7 +2,9 @@ import * as vscode from "vscode";
 import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
 import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
-import { getGenerateFileWebview, getGenerateProjectWebview } from "./webviews/inputs/generateInput";
+import { getGenerateFileWebview } from "./webviews/inputs/generateInput";
+import {getGenerateProjectWebview} from "./webviews/inputs/generateProjectInput";
+import * as colors from "colors";
 
 let digiwfLib = new DigiwfLib();
 
@@ -46,9 +48,15 @@ export async function activate(context: vscode.ExtensionContext) {
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generate':
-                    // eslint-disable-next-line no-case-declarations
-                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                    await generate(artifact, event.path);
+                    //fix this if with a drop down menu later
+                    if(event.type != "form" && event.type != "bpmn" && event.type != "dmn") {
+                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + event.type + " is not a supported type");
+                    } else {
+                        // eslint-disable-next-line no-case-declarations
+                        const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
+                        await generate(artifact, event.path);
+                    }
+                    break;
             }
         });
     });

@@ -7,7 +7,7 @@ const fs = vscode.workspace.fs;
 
 
 export async function mapProcessConfigToDigiwfLib(): Promise<DigiwfLib> {
-    const p =  vscode.Uri.file("/Users/jakobmertl/source/miragon/web-ide/miragon-process-ide/process-ide.json");
+    const p =  vscode.Uri.file("@miragon-process-ide/process-ide.json"); //has to be relative
     const processIdeJson = (await fs.readFile(p)).toString();
     const processIdeConfig = JSON.parse(processIdeJson);
     const plugins: DigiWFDeploymentPlugin[] = [];
