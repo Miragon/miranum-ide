@@ -10,6 +10,19 @@ export function createDigiwfLib(projectVersion: string, projectName: string, wor
     });
 }
 
+const supportedTypes = ["bpmn", "dmn", "form", "config"];
+/**
+ * If the type is supported for deployment the function returns true
+ * @param type: type of the artifact that is to be deployed
+ */
+export function checkIfSupportedType(type: string): boolean {
+    if (!supportedTypes.includes(type.toLowerCase())) {
+        console.log(`${type} is not supported for deployment`);
+        return false;
+    }
+    return true;
+}
+
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class DigiwfLib {
@@ -25,6 +38,10 @@ export class DigiwfLib {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
 
+        if(!checkIfSupportedType(artifact.type)) {
+            throw new Error(`Unable to Deploy ${artifact.type}`);
+        }
+
         await Promise.all(
             this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact))
         );
@@ -36,12 +53,12 @@ export class DigiwfLib {
             {name: projectName, type: "process-ide.json"},
             {name: projectName, type: "bpmn"},
             // {name: name, type: "dmn"}
-            {name: "start", type: "form"},
-            {name: "control", type: "form"},
-            {name: "dev", type: "config"},
-            {name: "prod", type: "config"},
+            {name: `${projectName}_start`, type: "form"},
+            {name: `${projectName}_control`, type: "form"},
+            {name: `${projectName}_dev`, type: "config"},
+            {name: `${projectName}_prod`, type: "config"},
             {name: "element-templates", type: ".gitkeep"},
-            {name: "README.md", type: "README.md"}
+            {name: `${projectName}`, type: "README.md"}
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
