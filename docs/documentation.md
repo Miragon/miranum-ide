@@ -16,11 +16,11 @@
 ## <span style="color:#335DE5"> Intro: </span>
 
 We from Miragon want to shape the future of process automatisation.
-Therefore, we created the Process-IDE, which enables process developers to easily develop cubernetes diagramms.
+Therefore, we created the Process-IDE, which enables process developers to easily develop bpmn diagramms.
 By providing a webservice that contains all neccesary addons, we enable process developing in a way an IDE would support a programmer.
 Some functionalities it provides are: 
-    ...project creation / generation, 
-    ...???.
+    project creation / generation, 
+    deployment.
 
 
 ###  <span style="color:#335DE5"> project-structure: </span>
