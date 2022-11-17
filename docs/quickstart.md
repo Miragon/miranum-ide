@@ -97,8 +97,8 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 
 ````json
 {
-  "name": "process-ide-console",
-	"displayName": "process-ide-console",
+  "name": "example",
+	"displayName": "example",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -108,13 +108,13 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:process-ide-console.helloWorld"
+        "onCommand:example.helloWorld"
 	],
-	"main": "../../../dist/apps/process-ide-console/main.js",
+	"main": "../../../dist/apps/example/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "process-ide-console.helloWorld",
+				"command": "example.helloWorld",
 				"title": "Hello World"
 			}
 		]
