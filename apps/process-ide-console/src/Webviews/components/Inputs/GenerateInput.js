@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import * as vscode from "vscode";
 import DropdownSelection from "../Dropdown/DropdownSelection";
 
@@ -10,21 +10,18 @@ const GenerateInput = () => {
 
     const clickHandler = () => {
         setName(() => {
-            const name = document.getElementById("name").value;
-            return name;
+            return document.getElementById("name").value;
         });
         setType(() => {
-            const type = document.getElementById("type").value;
-            return type;
+            return document.getElementById("type").value;
         });
         setPath(() => {
-            const path = document.getElementById("path").value;
-            return path;
+            return document.getElementById("path").value;
         });
         if(name && type && path) {
             vscode.postMessage({
                 message:'generate', name: name, type: type, path: path
-            })
+            });
         }
     };
 
