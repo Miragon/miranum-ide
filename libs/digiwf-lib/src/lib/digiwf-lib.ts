@@ -10,8 +10,17 @@ export function createDigiwfLib(projectVersion: string, projectName: string, wor
     });
 }
 
-export function getSupportedTypes(): Array<string> {
-    return ["bpmn", "dmn", "form", "config"];
+const supportedTypes = ["bpmn", "dmn", "form", "config"];
+/**
+ * If the type is supported for deployment the function returns true
+ * @param type: type of the artifact that is to be deployed
+ */
+export function checkIfSupportedType(type: string): boolean {
+    if (!supportedTypes.includes(type.toLowerCase())) {
+        console.log(`${type} is not supported for deployment`);
+        return false;
+    }
+    return true;
 }
 
 // observer pattern
@@ -28,9 +37,8 @@ export class DigiwfLib {
         if (!this.projectConfig) {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
-        //blacklisting invalid artifact-types for deployment
-        if(!getSupportedTypes().includes(artifact.type.toLowerCase())) {
-            console.log("failed deployment");
+
+        if(!checkIfSupportedType(artifact.type)) {
             throw new Error(`Unable to Deploy ${artifact.type}`);
         }
 
