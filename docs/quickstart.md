@@ -83,6 +83,12 @@ Run `nx g @nrwl/node:lib my-lib` to generate a library.
 
 Libraries are shareable across libraries and applications. They can be imported from `@miragon-process-ide/mylib`.
 
+**Publishable Libs**
+
+```
+npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-process-ide/my-awesome-lib
+```
+
 ### Generate a VSCode-Extension
 
 1. Run `nx g @nrwl/node:app my-app` to generate a node application.
@@ -91,8 +97,8 @@ Libraries are shareable across libraries and applications. They can be imported 
 
 ````json
 {
-  "name": "vscode-digiwf-deployment",
-	"displayName": "vscode-digiwf-deployment",
+  "name": "process-ide-console",
+	"displayName": "process-ide-console",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -102,13 +108,13 @@ Libraries are shareable across libraries and applications. They can be imported 
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:vscode-digiwf-deployment.helloWorld"
+        "onCommand:process-ide-console.helloWorld"
 	],
-	"main": "../../../dist/apps/vscode-digiwf-deployment/main.js",
+	"main": "../../../dist/apps/process-ide-console/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-digiwf-deployment.helloWorld",
+				"command": "process-ide-console.helloWorld",
 				"title": "Hello World"
 			}
 		]

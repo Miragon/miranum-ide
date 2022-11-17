@@ -10,9 +10,12 @@
         "outputPath": "dist/apps/miragon-process-ide-cli",
         "main": "apps/miragon-process-ide-cli/src/main.ts",
         "tsConfig": "apps/miragon-process-ide-cli/tsconfig.app.json",
-        "assets": ["apps/miragon-process-ide-cli/src/Dockerfile"],
         "webpackConfig": "apps/miragon-process-ide-cli/custom-webpack.config.js",
-        "generatePackageJson": true
+        "generatePackageJson": true,
+        "assets": [
+          "apps/miragon-process-ide-cli/src/README.md",
+          "apps/miragon-process-ide-cli/src/Dockerfile"
+        ]
       },
       "configurations": {
         "production": {
@@ -46,22 +49,19 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type bpmn --name testFile.bpmn  --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type bpmn --name testFile  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type dmn --name testFile.dmn  --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type dmn --name testFile  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type form --name testFile.form  --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type form --name testFile  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type config --name configTest.json  --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type config --name configTest  --path resources/my-generations"
           },
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type element-template --name elementTest.json  --path resources/my-generations"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file -t bpmn -n advancedFile  -p resources/my-generations --template resources/templates/basicTemplates/bpmn-advanced.bpmn --data '{\"id\": \"Advanced_id\", \"name\": \"Advanced\", \"formKey\": \"example-process_start_form\", \"checkForm\": \"example-process_check_form\"}'"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type element-template --name elementTest  --path resources/my-generations"
           }
         ]
       }
@@ -71,7 +71,7 @@
       "options": {
         "commands": [
           {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-project --name basic-project --path resources/my-generations"
+            "command": "node dist/apps/miragon-process-ide-cli/main.js generate --name basic-project --path resources/my-generations"
           }
         ]
       }

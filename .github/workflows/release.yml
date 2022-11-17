@@ -1,8 +1,24 @@
 name: Release
+
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: 'Release Tag'
+        required: false
+        default: 'release/XXX'
+      process-ide-cli:
+        description: 'Release process-ide-cli app (y/n)?'
+        required: true
+        default: 'y'
+      digiwf-lib:
+        description: 'Release digiwf-lib (y/n)?'
+        required: true
+        default: 'y'
+      spring-boot-apps:
+        description: 'Release spring boot services (y/n)?'
+        required: true
+        default: 'n'
 
 jobs:
   build:
@@ -22,53 +38,55 @@ jobs:
         run: npm run test
       - name: Build
         run: npm run build
-      - uses: actions/upload-artifact@v2
+      # process-ide-cli
+      - uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: dist
+          name: process-ide-cli
+          path: dist/apps/miragon-process-ide-cli
+      # digiwf-lib
+      - uses: actions/upload-artifact@v3
+        with:
+          name: digiwf-lib
+          path: dist/libs/digiwf-lib
       - uses: actions/upload-artifact@v3
         with:
           name: spring-boot-apps
           path: spring-boot-apps
 
-  publish-npm:
+  create-release-tag:
+    if: github.event.inputs.release-tag
     runs-on: ubuntu-latest
     needs:
       - build
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Set release_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
+      - name: Create tag
+        uses: tvdias/github-tagger@v0.0.2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "${{ github.event.inputs.release-tag }}"
+
+  # process-ide-cli
+  publish-process-ide-cli:
+    if: github.event.inputs.process-ide-cli == 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - create-release-tag
+    steps:
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: process-ide-cli
       - name: Publish
-        run: npm run publish
-
-  publish-maven:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Set release_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      # tbd
-
-  publish-dockerhub:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Set release_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - uses: actions/download-artifact@v3
-        with:
-          name: spring-boot-apps
-      - uses: actions/download-artifact@v3
-        with:
-          name: dist
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
+      # docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -76,19 +94,63 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
-         username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
-         password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
-      # digiwf-deployment-proxy
+          username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
+          password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
+      - name: get-npm-version
+        id: process-ide-cli-version
+        uses: martinbeentjes/npm-get-version-action@main
+      - name: Build and push miragon-process-ide-cli
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: miragon/process-ide-cli:${{ steps.process-ide-cli-version.outputs.current-version}}
+
+  # digiwf-lib
+  publish-digiwf-lib:
+    if: github.event.inputs.digiwf-lib == 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - create-release-tag
+    steps:
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: digiwf-lib
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
+
+  publish-spring-boot-apps:
+    if: github.event.inputs.spring-boot-apps == 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - create-release-tag
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: spring-boot-apps
+      # tbd
+      # docker
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
+          password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
           context: ./digiwf-deployment-proxy
           push: true
           tags: miragon/digiwf-deployment-proxy:${{ env.RELEASE_VERSION }}
-      # miragon-process-ide-cli
-      - name: Build and push miragon-process-ide-cli
-        uses: docker/build-push-action@v2
-        with:
-          context: ./apps/miragon-process-ide-cli
-          push: true
-          tags: miragon/process-ide-cli:${{ env.RELEASE_VERSION }}
