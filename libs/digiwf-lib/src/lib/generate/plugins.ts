@@ -102,10 +102,10 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
     async generate(name : string, project: string, path?: string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {name: name});
         const fileDetails = {
-            name: "README",
+            name: name,
             extension: this.fileExtension,
             content: fileContent,
-            pathInProject: `/${this.type}`
+            pathInProject: `/${name}.${this.fileExtension}`
         }
         return {
             type: this.type,
@@ -248,7 +248,7 @@ const readmeGenerator = new ReadmeGenerator(
     │     ├── control.form
     │     └── start.form
     │
-    ├── example-dmn.dmn
+    ├── process-ide.json
     └── example-bpmn.bpmn
 `);
 

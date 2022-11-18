@@ -48,4 +48,19 @@ describe("deploy", () => {
 
         expect(deployment).toEqual(exampleArtifact);
     });
+
+    it("should not be a supported type", async () => {
+        const exampleArtifact = {
+            type: "test",
+            project: "exampleProject",
+            file: {
+                name: "example.bpmn",
+                extension: "bpmn",
+                content: "...",
+                size: 500
+            }
+        }
+        await digiwfLib.deploy(target, exampleArtifact)
+            .catch(e => expect(e).not.toBeNull());
+    });
 });
