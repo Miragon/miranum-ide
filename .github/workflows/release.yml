@@ -137,7 +137,18 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
-      # tbd
+      - name: Install Java and Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Release maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          directory: digiwf-deployment-proxy
+          gpg_private_key: ${{ secrets.PGP_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
+          nexus_username: ${{ secrets.NEXUS_USERNAME }}
+          nexus_password: ${{ secrets.NEXUS_PASSWORD }}
       # docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -148,6 +159,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
           password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
+      - name: Set Release version env variable
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:
