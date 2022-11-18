@@ -1,17 +1,13 @@
 import { Command } from "commander";
-import {
-    deployAllFiles,
-    deployFileCommand,
-    generateFile,
-    generateProject
-} from "./app/command";
+import { deployAllFiles, deployFileCommand } from "./app/deployment/api";
+import { generateFile, generateProject } from "./app/generate/api";
+import * as colors from "colors";
 
 
 const program = new Command();
-
 program
     .name("Miragon Process IDE CLI")
-    .description(`
+    .description(colors.green.bold(`
   __  __ _                               _____                               _____ _____  ______
  |  \\/  (_)                             |  __ \\                             |_   _|  __ \\|  ____|
  | \\  / |_ _ __ __ _  __ _  ___  _ __   | |__) | __ ___   ___ ___  ___ ___    | | | |  | | |__
@@ -20,10 +16,11 @@ program
  |_|  |_|_|_|  \\__,_|\\__, |\\___/|_| |_| |_|   |_|  \\___/ \\___\\___||___/___/ |_____|_____/|______|
                       __/ |
                      |___/
-`)
+`))
     .version("0.0.1");
+
 program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
-program.addCommand(generateFile());
-program.addCommand(generateProject());
-program.parse();
+program.addCommand(generateFile())
+program.addCommand(generateProject())
+program.parse()

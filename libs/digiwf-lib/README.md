@@ -1,65 +1,62 @@
 # digiwf-lib
 
+**Features**
+
+- Generates process artifacts and automation projects
+- Defines a standard structure for automation projects
+- Deploys artifacts to your digiwf instance
+
+- [documentation](https://github.com/FlowSquad/miragon-process-ide/tree/main/docs)
+- [examples](https://github.com/FlowSquad/miragon-process-ide-examples)
+
 ## Getting started
 
-```typescript
-import { DigiwfLib } from "@lmoesle/digiwf-lib";
-
-const digiwfLib = new DigiwfLib();
-
-digiwfLib.deployArtifact("my-process.bpmn", "bpmn", "my-awesome-project", "local")
-    .then(success => console.log(success));
+```
+npm install @miragon/digiwf-lib
 ```
 
-## Deployment Artifacts
-
 ```typescript
-import { DigiwfLib } from "@lmoesle/digiwf-lib";
+import { createDigiwfLib } from "@miragon/digiwf-lib";
+import { DigiwfDeploymentPluginRest } from "./digiwf-deployment-plugin-rest";
 
-const digiwfLib = new DigiwfLib();
-
-digiwfLib.deployArtifact("my-process.bpmn", "bpmn", "my-awesome-project", "local")
-    .then(success => console.log(success));
-```
-
-**Available Deployment Plugins**
-
-* `dry` for testing purposes
-* `rest` deploys artifacts via http requests
-
-**Custom Deployment Plugins**
-
-```typescript
-import { DigiwfLib, Success } from "@lmoesle/digiwf-lib";
-
-// create your own deployment plugin
-const dryPlugin = {
-    name: "dry",
-    targetEnvironments: [{name:"local",url:"http://localhost:8080"}],
-    deploy: function(target: string) {
-        return new Promise<Success>(resolve => resolve({
-            success: true,
-            message: `Deployed to ${target}`
-        }));
+// init digiwf-lib
+const digiwfLib = createDigiwfLib("1.0.0", "my-awesome-project", {
+    "forms": "forms",
+    "elementTemplates": "element-templates",
+    "processConfigs": "configs"
+}, [new DigiwfDeploymentPluginRest("rest", [
+    {
+        "name": "dev",
+        "url": "http://localhost:8080"
     }
-};
+])]);
 
-// create a custom config
-const customConfig = {
-    deploymentPlugins: [
-        dryPlugin
-    ]
-}
+const myArtifact = {
+    type: "bpmn",
+    "project": "my-awesome-project",
+    file: {
+        name: "my-process",
+        extension: "bpmn",
+        content: "..."
+    }
+}; 
+    
+// deploy file
+digiwfLib.deploy("dev", myArtifact)
+    .then(success => console.log(success));
 
-// pass your config to DigiwfLib
-const digiwfLib = new DigiwfLib(customConfig);
+// generate new project
+digiwfLib.initProject("my-awesome-project")
+    .then(artifacts => console.log(artifacts));
 
-// use DigiwfLib
-digiwfLib.deployArtifact("my-process.bpmn", "bpmn", "test-project", "local")
-    .then(success => console.log(success))
-    .catch(error => console.error(error));
+// generate new file
+digiwfLib.generateArtifact("my-process", "bpmn", "my-awesome-project")
+    .then(artifact => console.log(artifact));
 ```
 
-## Generate Artifacts
+## More Information
 
-tbd.
+Checkout our
+
+- [documentation](https://github.com/FlowSquad/miragon-process-ide/tree/main/docs)
+- [examples](https://github.com/FlowSquad/miragon-process-ide-examples)

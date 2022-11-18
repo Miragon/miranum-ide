@@ -1,0 +1,148 @@
+{
+  "name": "process-ide-console",
+	"displayName": "process-ide-console",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.73.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"extensionPack": [
+	  "publisher.extensionName"
+	],
+	"activationEvents": [
+        "onCommand:process-ide.deploy",
+        "onCommand:process-ide.deployDev",
+        "onCommand:process-ide.deployTest",
+        "onCommand:process-ide.deployAll",
+        "onCommand:process-ide.deployAllDev",
+        "onCommand:process-ide.deployAllTest",
+        "onCommand:process-ide.generateFile",
+        "onCommand:process-ide.generateProject"
+	],
+	"main": "main.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "process-ide.deploy",
+				"title": "deployLocal",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployDev",
+				"title": "deployDev",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployTest",
+				"title": "deployTest",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAll",
+				"title": "to local",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAllDev",
+				"title": "to dev",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.deployAllTest",
+				"title": "to test",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.generateFile",
+				"title": "generateFile",
+				"category": "Miragon"
+			},
+			{
+				"command": "process-ide.generateProject",
+				"title": "generateProject",
+				"category": "Miragon"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+			  {
+				"id": "miragon-process-ide",
+				"title": "Process-IDE",
+				"icon": "../../../images/komet.svg"
+			  }
+			]
+		  },
+		  "views": {
+			"miragon-process-ide": [
+			  {
+				"id": "bpmn-project",
+				"name": "Files"
+			  },
+			  {
+				"id": "commands",
+				"name": "Commands"
+			  }
+			]
+		  },
+		  "viewsWelcome": [
+			{
+				"view": "bpmn-project",
+				"contents": "[Generate a new Project](command:vscode.openFolder) \n For further explanation regarding the commands [read our docs](https://aka.ms/vscode-scm).",
+				"when": "config.git.enabled && commands.state == initialized && workbenchState == empty"
+			},
+			{
+				"view": "commands",
+				"contents": "[deployAll](command:process-ide.deployAll) \n [generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
+			}
+		  ],
+		  "menus": {
+			"explorer/context": [
+			  {
+				"submenu": "deploy.submenu",
+				"group": "1_modification",
+				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn"
+			  },
+			  {
+				"submenu": "deployAll.submenu",
+				"group": "1_modification",
+				"when": "explorerResourceIsFolder"
+			  }
+			],
+            "deploy.submenu":[
+                {
+                    "command": "process-ide.deploy"
+                },
+				{
+                    "command": "process-ide.deployDev"
+                },
+				{
+                    "command": "process-ide.deployTest"
+                }
+            ],
+			"deployAll.submenu":[
+                {
+                    "command": "process-ide.deployAll"
+                },
+				{
+                    "command": "process-ide.deployAllDev"
+                },
+				{
+                    "command": "process-ide.deployAllTest"
+                }
+            ]
+		  },
+		  "submenus": [
+			{
+				"id": "deploy.submenu",
+        		"label": "Deploy"
+			},
+			{
+				"id": "deployAll.submenu",
+        		"label": "Deploy All"
+			}
+		  ]
+	}
+}
