@@ -9,6 +9,15 @@
         "root": "spring-boot-apps/digiwf-deployment-proxy"
       }
     },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "java -jar digiwf-deployment-proxy-example/target/digiwf-deployment-proxy-example-0.0.1.jar"
+        ],
+        "cwd": "spring-boot-apps/digiwf-deployment-proxy"
+      }
+    },
     "test": {
       "executor": "@nxrocks/nx-spring-boot:test",
       "options": {

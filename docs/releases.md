@@ -47,17 +47,8 @@ flowchart LR
 
 ## Create a new release
 
-For each release we create a tag (vx.x.x) in git.
-Every new tag triggers the github action release pipeline and publishes the new version to npm, maven and dockerhub.
+Before you release a new version make sure to edit the apps and libs version in its `package.json` or `pom.xml`.
 
-```
-git tag -a v1.0.0 -m "Release version v1.0.0"
-git push origin v1.0.0
-```
-
-The version specified in the tag is responsible for the version that is released to external systems (e.g. maven, npm.js, dockerhub, ...).
-
-> The versions of all apps and libs are always the same even though nothing changed.
-
-Usually we create new releases from the main branch. In special cases (e.g. bug fixing in a previous version) we create release new versions from other branches.
-
+Go to the [actions section in github](https://github.com/FlowSquad/miragon-process-ide/actions/workflows/release.yml) and trigger the `release.yml` action manually.
+In the workflow dispatch window you can select the apps and libs you want to publish.
+Additionally, you can name the release to automatically create a tag in github.
