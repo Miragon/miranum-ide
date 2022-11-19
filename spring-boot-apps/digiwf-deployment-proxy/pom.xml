@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.miragon.digiwf</groupId>
     <artifactId>digiwf-deployment-proxy-parent</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>digiwf-deployment-proxy-parent</name>
     <packaging>pom</packaging>
     <description>Deployment proxy for DigiWF plattform</description>
