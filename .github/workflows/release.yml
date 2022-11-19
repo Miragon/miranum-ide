@@ -10,15 +10,15 @@ on:
       process-ide-cli:
         description: 'Release process-ide-cli app (y/n)?'
         required: true
-        type: Boolean
+        type: boolean
       digiwf-lib:
         description: 'Release digiwf-lib (y/n)?'
         required: true
-        type: Boolean
+        type: boolean
       spring-boot-apps:
         description: 'Release spring boot services (y/n)?'
         required: true
-        type: Boolean
+        type: boolean
 
 jobs:
   build:
