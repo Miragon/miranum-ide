@@ -5,20 +5,20 @@ on:
     inputs:
       release-tag:
         description: 'Release Tag'
-        required: false
+        required: true
         default: 'release/XXX'
       process-ide-cli:
         description: 'Release process-ide-cli app (y/n)?'
         required: true
-        default: 'y'
+        type: Boolean
       digiwf-lib:
         description: 'Release digiwf-lib (y/n)?'
         required: true
-        default: 'y'
+        type: Boolean
       spring-boot-apps:
         description: 'Release spring boot services (y/n)?'
         required: true
-        default: 'n'
+        type: Boolean
 
 jobs:
   build:
@@ -68,7 +68,7 @@ jobs:
 
   # process-ide-cli
   publish-process-ide-cli:
-    if: github.event.inputs.process-ide-cli == 'y'
+    if: github.event.inputs.process-ide-cli
     runs-on: ubuntu-latest
     needs:
       - build
@@ -108,7 +108,7 @@ jobs:
 
   # digiwf-lib
   publish-digiwf-lib:
-    if: github.event.inputs.digiwf-lib == 'y'
+    if: github.event.inputs.digiwf-lib
     runs-on: ubuntu-latest
     needs:
       - build
@@ -128,7 +128,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
   publish-spring-boot-apps:
-    if: github.event.inputs.spring-boot-apps == 'y'
+    if: github.event.inputs.spring-boot-apps
     runs-on: ubuntu-latest
     needs:
       - build
