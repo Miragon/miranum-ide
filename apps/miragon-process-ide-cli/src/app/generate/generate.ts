@@ -13,7 +13,7 @@ export class ProjectGenerator {
         }
     }
 
-    public async generateFile(name: string, type: string, path: string, templateBase?: string, additionalData?: object): Promise<void> {
+    public async generateFile(name: string, type: string, path: string): Promise<void> {
         const artifact = await this.digiwfLib.generateArtifact(name, type, "");
         await this.generate(artifact, path);
     }

@@ -23,16 +23,14 @@ export function generateProject(): Command {
 export function generateFile(): Command {
     return new Command()
         .command("generate-file")
-        .description("generates a process process artifact")
+        .description("generates a process artifact")
         .requiredOption("-t --type <type>", "specify the file type that is to be generated")
         .requiredOption("-n, --name <name>", "specify the name")
         .requiredOption("-p, --path <filepath>", "specify the targeted path")
-        .option("--template <filepath>", "specify a custom template that is to be used")
-        .option("-d --data <data>", "specify the data that is to be used for your template")
         .action((options) => {
             mapProcessConfigToDigiwfLib().then(digiwfLib => {
                 const generate = new ProjectGenerator(digiwfLib);
-                generate.generateFile(options.name, options.type, options.path, options.template, options.data)
+                generate.generateFile(options.name, options.type, options.path)
                     .then(() => console.log(`Successfully created file ${options.name}`))
                     .catch(err => {
                         console.log(`File ${options.name} could not be created`);

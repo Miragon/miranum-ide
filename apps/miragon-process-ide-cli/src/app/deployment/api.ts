@@ -7,10 +7,9 @@ export function deployFileCommand(): Command {
     return new Command()
         .command("deploy-file")
         .description("deploys an artifact to the target environment")
-        .requiredOption("-f --file <file>", "specify the file (full path)")
+        .requiredOption("-f --file <file>", "specify the file in your project")
         .requiredOption("-t, --target <target>", "specify the target environment")
         .requiredOption("--type <type>", "specify the file type")
-        .option("-p, --project <project>", "specify the project")
         .hook("preAction", (thisCommand) => {
             // validate inputs before action is called
             const type = thisCommand.opts()["type"];
@@ -21,7 +20,7 @@ export function deployFileCommand(): Command {
         .action((options) => {
             mapProcessConfigToDigiwfLib().then(digiwfLib => {
                 const deployment =  new Deployment(digiwfLib);
-                deployment.deployArtifact(options.file, options.type, options.project, options.target)
+                deployment.deployArtifact(options.file, options.type, options.target)
                     .then( () => console.log("Deployment was successfully"))
                     .catch(err => console.log(colors.red.bold("FAILED") + ` with -> ${err}`));
             });
@@ -30,16 +29,15 @@ export function deployFileCommand(): Command {
 
 export function deployAllFiles(): Command {
     return new Command()
-        .command("deploy-all")
+        .command("deploy")
         .description("deploys all artifacts to the target environment")
         .requiredOption("-d --directory <directory>", "specify the directory of the source files")
         .requiredOption("-t, --target <target>", "specify the target environment")
-        .option("-p, --project <project>", "specify the project")
         .action((options) => {
-            mapProcessConfigToDigiwfLib().then(digiwfLib => {
+            mapProcessConfigToDigiwfLib(options.directory).then(digiwfLib => {
                 const deployment =  new Deployment(digiwfLib);
-                deployment.deployAllArtifacts(options.directory, options.project, options.target)
-                    .then( () => console.log(`Project ${options.project} was successfully deployed to environment ${options.target}`))
+                deployment.deployAllArtifacts(options.directory, options.target)
+                    .then( () => console.log(`Project ${digiwfLib.projectConfig?.name} was successfully deployed to environment ${options.target}`))
                     .catch(err => console.log(colors.red.bold("FAILED") + ` with -> ${err}`));
             });
         });
