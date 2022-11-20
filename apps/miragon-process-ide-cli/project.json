@@ -35,7 +35,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "node dist/apps/miragon-process-ide-cli/main.js  deploy-all -d resources/my-process-automation-project/ -t dev",
+          "node dist/apps/miragon-process-ide-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
           "node dist/apps/miragon-process-ide-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
         ]
       }

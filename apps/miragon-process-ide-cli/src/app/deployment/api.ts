@@ -29,7 +29,7 @@ export function deployFileCommand(): Command {
 
 export function deployAllFiles(): Command {
     return new Command()
-        .command("deploy-all")
+        .command("deploy")
         .description("deploys all artifacts to the target environment")
         .requiredOption("-d --directory <directory>", "specify the directory of the source files")
         .requiredOption("-t, --target <target>", "specify the target environment")
