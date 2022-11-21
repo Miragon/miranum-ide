@@ -41,20 +41,12 @@ export async function activate(context: vscode.ExtensionContext) {
             'Generate',
             vscode.ViewColumn.One,
             {
-                enableScripts: true
+                enableScripts: true,
+                localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')]
             }
         );
 
-        const localServerUrl = "http://localhost:4200";
-        let scriptUrl = null;
-
-        const isProduction = context.extensionMode === ExtensionMode.Production;
-        if (isProduction) {
-            scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'dist')).toString();
-        } else {
-            scriptUrl = `${localServerUrl}`;
-        }
-
+        const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
         panel.webview.html = getGenerateFileWebview(scriptUrl);
 
         panel.webview.onDidReceiveMessage( async (event) => {

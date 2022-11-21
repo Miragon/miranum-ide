@@ -13,9 +13,6 @@ export function getGenerateFileWebview(scriptUrl: string) {
     <body>
         <div id="root"></div>
         <script src="${scriptUrl}/main.js"></script>
-        <script src="${scriptUrl}/vendor.js"></script>
-        <script src="${scriptUrl}/styles.js"></script>
-        <script src="${scriptUrl}/polyfills.js"></script>
         <script src="${scriptUrl}/runtime.js"></script>
     </body>
     </html>`;

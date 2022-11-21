@@ -12,8 +12,7 @@ import {
     Select, TextField,
     ThemeProvider, Typography
 } from "@mui/material";
-import {CreateNewFolder} from "@mui/icons-material";
-import * as vscode from "vscode";
+import {Description} from "@mui/icons-material";
 
 const theme = createTheme();
 
@@ -26,16 +25,14 @@ export default function GenerateInput() {
         const type = data.get('type');
         const path = data.get('path');
 
-        console.log({
-            name: name,
-            type: type,
-            path: path,
-        });
-        // if(name && type && path) {
-        //     vscode.postMessage({
-        //         message:'generateProject', name: name, type: type, path: path
-        //     })
-        // }
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const vscode = acquireVsCodeApi();
+        if(name && type && path) {
+            vscode.postMessage({
+                message:'generateProject', name: name, type: type, path: path
+            })
+        }
     };
 
     const [type, setType] = useState('');
@@ -53,7 +50,7 @@ export default function GenerateInput() {
                     }}
                 >
                     <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                        <CreateNewFolder />
+                        <Description />
                     </Avatar>
                     <Typography component="h1" variant="h5">
                         Generate File
@@ -66,7 +63,6 @@ export default function GenerateInput() {
                             id="name"
                             label="Name"
                             name="name"
-                            sx={{input: {textAlign: "center"}}}
                             autoFocus
                         />
                         <FormControl fullWidth>
@@ -93,7 +89,6 @@ export default function GenerateInput() {
                             id="path"
                             label="Path"
                             name="path"
-                            sx={{input: {textAlign: "center"}}}
                         />
                         <Button
                             type="submit"
