@@ -95,7 +95,7 @@
 			},
 			{
 				"view": "commands",
-				"contents": "[deployAll](command:process-ide.deployAll) \n [generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
+				"contents": "[generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
 			}
 		  ],
 		  "menus": {
