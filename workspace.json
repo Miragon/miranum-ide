@@ -5,6 +5,8 @@
     "digiwf-deployment-proxy": "spring-boot-apps/digiwf-deployment-proxy",
     "digiwf-lib": "libs/digiwf-lib",
     "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
-    "process-ide-console": "apps/process-ide-console"
+    "process-ide-console": "apps/process-ide-console",
+    "webviews": "apps/webviews",
+    "webviews-e2e": "apps/webviews-e2e"
   }
 }
