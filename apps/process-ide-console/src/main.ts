@@ -5,7 +5,7 @@ import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./
 import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
 import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
 import * as colors from "colors";
-import {ExtensionMode, Uri} from "vscode";
+import {Uri} from "vscode";
 
 let digiwfLib = new DigiwfLib();
 
@@ -47,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateFileWebview(scriptUrl);
+        panel.webview.html = getGenerateFileWebview(scriptUrl, vscode);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {

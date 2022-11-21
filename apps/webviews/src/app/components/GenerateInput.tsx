@@ -16,7 +16,7 @@ import {Description} from "@mui/icons-material";
 
 const theme = createTheme();
 
-export default function GenerateInput() {
+export default function GenerateInput(props: any) {
     const handleSubmit = (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -25,11 +25,8 @@ export default function GenerateInput() {
         const type = data.get('type');
         const path = data.get('path');
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const vscode = acquireVsCodeApi();
         if(name && type && path) {
-            vscode.postMessage({
+            props.postMessage({
                 message:'generateProject', name: name, type: type, path: path
             })
         }

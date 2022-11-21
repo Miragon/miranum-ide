@@ -12,7 +12,7 @@ import {CreateNewFolder} from "@mui/icons-material";
 
 const theme = createTheme();
 
-export default function GenerateProjectInput() {
+export default function GenerateProjectInput(props: any) {
     const handleSubmit = (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);

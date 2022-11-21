@@ -1,7 +1,4 @@
-
-export function getGenerateFileWebview(scriptUrl: string) {
-
-
+export function getGenerateFileWebview(scriptUrl: string, vsAPI: any) {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -12,7 +9,7 @@ export function getGenerateFileWebview(scriptUrl: string) {
     </head>
     <body>
         <div id="root"></div>
-        <script src="${scriptUrl}/main.js"></script>
+        <script src="${scriptUrl}/main.js" props="${vsAPI}"></script>
         <script src="${scriptUrl}/runtime.js"></script>
     </body>
     </html>`;
