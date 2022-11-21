@@ -29,7 +29,7 @@ export class Deployment {
 
     private async deploy(file: FileDetails, type: string, project: string | undefined, target: string): Promise<void> {
         //blacklisting invalid artifact-types
-        if (!checkIfSupportedType(type)) {
+        if (!checkIfSupportedType(type) && type == file.extension) {
             return Promise.reject(`${type} is not supported for deployment`);
         }
         const artifact = await this.digiwfLib.deploy(target, {
