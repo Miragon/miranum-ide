@@ -1,37 +1,47 @@
 import * as vscode from "vscode";
-import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
-import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
+import { initDigiwfLib, getArtifact, getArtifacts, fileDeploymentSupported } from "./app/deployment/deployment";
 import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
 import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
 import * as colors from "colors";
 
-let digiwfLib = new DigiwfLib();
-
 
 export async function activate(context: vscode.ExtensionContext) {
-    digiwfLib = await mapProcessConfigToDigiwfLib(context.extensionUri);
+    const digiwfLib = await initDigiwfLib();
 
-    const deploy = vscode.commands.registerCommand("process-ide.deploy", async (path: vscode.Uri, target: string) => {
-        target = "local";
-        await deployArtifact(path, target);
-    });
-    const deployDev = vscode.commands.registerCommand("process-ide.deployDev", async (path: vscode.Uri) => {
-        await deployArtifact(path, "dev");
-    });
-    const deployTest = vscode.commands.registerCommand("process-ide.deployTest", async (path: vscode.Uri) => {
-        await deployArtifact(path, "test");
-    });
+    digiwfLib.projectConfig?.deployment.forEach(deployment => {
+        deployment.targetEnvironments.forEach(env => {
+            // deploy artifact
+            const deployArtifactCommand = vscode.commands.registerCommand(`process-ide.deploy.${env.name}`, async (path: vscode.Uri) => {
+                let artifact = await getArtifact(path);
+                try {
+                    artifact = await digiwfLib.deploy(env.name, artifact);
+                    vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + env.name);
+                } catch(err: any) {
+                    console.log(colors.red.bold("FAILED ") + ` deploying ${artifact.file.name} with -> ${err}`);
+                    vscode.window.showInformationMessage(err.msg);
+                }
+            });
+            context.subscriptions.push(deployArtifactCommand);
 
-    const deployAll = vscode.commands.registerCommand("process-ide.deployAll", async (path: vscode.Uri, target: string) => {
-        target = "local";
-        await getUriAndDeploy(path, target);
-    });
-    const deployAllDev = vscode.commands.registerCommand("process-ide.deployAllDev", async (path: vscode.Uri) => {
-        await getUriAndDeploy(path, "dev");
-    });
-    const deployAllTest = vscode.commands.registerCommand("process-ide.deployAllTest", async (path: vscode.Uri) => {
-        await getUriAndDeploy(path, "test");
+            // deploy project
+            const deployAllCommand = vscode.commands.registerCommand(`process-ide.deployAll.${env.name}`, async (path: vscode.Uri) => {
+                const artifacts = await getArtifacts(path);
+                console.log(artifacts);
+                for (const artifact of artifacts) {
+                    try {
+                        if (fileDeploymentSupported(artifact)) {
+                            await digiwfLib.deploy(env.name, artifact);
+                            vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + env.name);
+                        }
+                    } catch(err: any) {
+                        console.log(colors.red.bold("FAILED ") + ` deploying ${artifact.file.name} with -> ${err}`);
+                        vscode.window.showInformationMessage(err.msg);
+                    }
+                }
+            });
+            context.subscriptions.push(deployAllCommand);
+        });
     });
 
     const generateFile = vscode.commands.registerCommand("process-ide.generateFile", async () => {
@@ -86,13 +96,5 @@ export async function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    context.subscriptions.push(deploy, deployDev, deployTest,
-                            deployAll, deployAllDev, deployAllTest,
-                            generateFile, generateProject);
-}
-
-//     -----------------------------HELPERS-----------------------------     \\
-//evtl. später in deploy auslagern?
-export function getDigiWfLib(): DigiwfLib {
-    return digiwfLib;
+    context.subscriptions.push(generateFile, generateProject);
 }
