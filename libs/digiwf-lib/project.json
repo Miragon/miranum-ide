@@ -31,6 +31,12 @@
           "resources/"
         ]
       }
+    },
+    "publish": {
+      "executor": "@nrwl/js:tsc"
+    },
+    "vscode:prepublish": {
+      "executor": "@nrwl/js:tsc"
     }
   },
   "tags": []

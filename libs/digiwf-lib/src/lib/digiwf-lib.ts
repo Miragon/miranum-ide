@@ -38,7 +38,7 @@ export class DigiwfLib {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
 
-        if(!checkIfSupportedType(artifact.type) && artifact.type == artifact.file.extension) {
+        if(!checkIfSupportedType(artifact.type)) {
             throw new Error(`Unable to Deploy ${artifact.type}`);
         }
 
