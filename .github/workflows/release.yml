@@ -5,20 +5,20 @@ on:
     inputs:
       release-tag:
         description: 'Release Tag'
-        required: false
+        required: true
         default: 'release/XXX'
       process-ide-cli:
         description: 'Release process-ide-cli app (y/n)?'
         required: true
-        default: 'y'
+        type: boolean
       digiwf-lib:
         description: 'Release digiwf-lib (y/n)?'
         required: true
-        default: 'y'
+        type: boolean
       spring-boot-apps:
         description: 'Release spring boot services (y/n)?'
         required: true
-        default: 'n'
+        type: boolean
 
 jobs:
   build:
@@ -54,7 +54,7 @@ jobs:
           path: spring-boot-apps
 
   create-release-tag:
-    if: github.event.inputs.release-tag
+    if: ${{ github.event.inputs.release-tag }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -68,7 +68,7 @@ jobs:
 
   # process-ide-cli
   publish-process-ide-cli:
-    if: github.event.inputs.process-ide-cli == 'y'
+    if: ${{ github.event.inputs.process-ide-cli }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -108,7 +108,7 @@ jobs:
 
   # digiwf-lib
   publish-digiwf-lib:
-    if: github.event.inputs.digiwf-lib == 'y'
+    if: ${{ github.event.inputs.digiwf-lib }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -128,7 +128,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
   publish-spring-boot-apps:
-    if: github.event.inputs.spring-boot-apps == 'y'
+    if: ${{ github.event.inputs.spring-boot-apps }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -137,7 +137,18 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
-      # tbd
+      - name: Install Java and Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Release maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          directory: digiwf-deployment-proxy
+          gpg_private_key: ${{ secrets.PGP_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
+          nexus_username: ${{ secrets.NEXUS_USERNAME }}
+          nexus_password: ${{ secrets.NEXUS_PASSWORD }}
       # docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -148,6 +159,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
           password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
+      - name: Set Release version env variable
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Build and push digiwf-deployment-proxy
         uses: docker/build-push-action@v2
         with:

@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Configuration
 @ConditionalOnClass(DeploymentService.class)
+@ComponentScan(basePackages = "io.miragon.digiwf.digiwfdeploymentproxy")
 @EnableConfigurationProperties(DeploymentProxyProperties.class)
 public class DeploymentProxyAutoConfiguration {
 

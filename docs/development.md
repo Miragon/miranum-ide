@@ -1,5 +1,47 @@
 # Development
 
+For all available commands checkout [quickstart.md](quickstart.md).
+
+## Setup local dev environment
+
+**Deployment**
+
+You should start the digiwf-deployment-proxy before running deployment commands.
+If you want to deploy your artifacts to a "real" digiwf-engine. 
+Edit in the [`application.properties`](../spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-example/src/main/resources/application.properties) the deployment handlers to use the `RestHandler`.
+
+```bash
+## build
+# npm run build
+npx nx build digiwf-deplyoment-proxy
+
+## execute
+npx nx serve digiwf-deployment-proxy
+```
+
+The deployment test commands:
+
+```bash
+## build
+# npm run build
+npx nx build miragon-process-ide-cli
+
+## execute
+npx nx deploy miragon-process-ide-cli
+```
+
+**Generate**
+
+```bash
+## build
+# npm run build
+npx nx build miragon-process-ide-cli
+
+## execute
+npx nx create miragon-process-ide-cli
+npx nx createProject miragon-process-ide-cli
+```
+
 ## Branching
 
 ```mermaid
@@ -41,5 +83,9 @@ For every open Pull Request (PR) the *pr-labeler* workflow is executed that adds
 Additionally, PR to the main branch create a build by running the lint command, executing all tests and building the applications and libs.
 
 **Release**
-The release pipeline is triggered on every git tag that is created in the format `v*.*.*`.
+The release pipeline is triggered manually with workflow dispatch.
+In the workflow dispatch window you can select which apps and libs you want to release.
+
+> Note: Before releasing an app you should update the apps (or libs) version in its `packages.json` or `pom.xml`. 
+
 Checkout [releases](releases.md) for more information.

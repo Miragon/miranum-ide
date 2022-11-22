@@ -8,8 +8,6 @@ import {
     FileDetails
 } from "@miragon-process-ide/digiwf-lib";
 
-const supportedFiles = [".bpmn", ".dmn", ".config", ".json", ".form"]
-
 export async function mapProcessConfigToDigiwfLib(path?: string): Promise<DigiwfLib> {
     const p = path ?  `${path}/process-ide.json`.replace("//", "/") : "process-ide.json";
     const processIdeJson = await getFile(p);
@@ -45,7 +43,7 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
     throw new Error(`File not found on path ${pathToFile}`);
 }
 
-export async function getFiles(pathToDirectory: string): Promise<FileDetails[]> {
+export async function getFiles(pathToDirectory: string, supportedFileExtensions: string[]): Promise<FileDetails[]> {
     try {
         const files: FileDetails[] = [];
         const filesInDirectory = (await fs.readdir(pathToDirectory));
@@ -54,18 +52,17 @@ export async function getFiles(pathToDirectory: string): Promise<FileDetails[]> 
 
             const fileStat = await fs.lstat(pathToFile);
             // check if file is file and file has supported file extension
-            if (fileStat.isFile() && supportedFiles.filter(supportedFile => file.includes(supportedFile)).length !== 0) {
+            if (fileStat.isFile() && supportedFileExtensions.filter(supportedFile => file.includes(supportedFile)).length !== 0 && file !== "process-ide.json") {
                 files.push(await getFile(pathToFile));
             }
             else if (fileStat.isDirectory()) {
                 // search for files in subdir with recursive call
-                files.push(...(await getFiles(pathToFile)));
+                files.push(...(await getFiles(pathToFile, supportedFileExtensions)));
             }
             // do nothing with unsupported files
         }
         return files;
-    }
-    catch(error: any) {
+    }  catch(error) {
         throw new Error(`File not found on path ${pathToDirectory}`);
     }
 }
