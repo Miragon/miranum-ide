@@ -13,7 +13,8 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/process-ide-console/custom-webpack.config.js",
         "assets": [
-          "apps/process-ide-console/src/assets/komet.svg"
+          "apps/process-ide-console/src/assets/komet.svg",
+          "apps/process-ide-console/src/LICENSE"
         ]
       },
       "configurations": {
