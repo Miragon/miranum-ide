@@ -42,17 +42,17 @@
 			},
 			{
 				"command": "process-ide.deployAll",
-				"title": "to local",
+				"title": "Deploy all to local",
 				"category": "Miragon"
 			},
 			{
 				"command": "process-ide.deployAllDev",
-				"title": "to dev",
+				"title": "Deploy all to dev",
 				"category": "Miragon"
 			},
 			{
 				"command": "process-ide.deployAllTest",
-				"title": "to test",
+				"title": "Deploy all to test",
 				"category": "Miragon"
 			},
 			{
@@ -71,7 +71,7 @@
 			  {
 				"id": "miragon-process-ide",
 				"title": "Process-IDE",
-				"icon": "../../../images/komet.svg"
+				"icon": "assets/komet.svg"
 			  }
 			]
 		  },
@@ -95,7 +95,7 @@
 			},
 			{
 				"view": "commands",
-				"contents": "[deployAll](command:process-ide.deployAll) \n [generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
+				"contents": "[generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
 			}
 		  ],
 		  "menus": {
@@ -107,6 +107,11 @@
 			  },
 			  {
 				"submenu": "deployAll.submenu",
+				"group": "1_modification",
+				"when": "explorerResourceIsFolder"
+			  },
+			  {
+				"submenu": "generate.submenu",
 				"group": "1_modification",
 				"when": "explorerResourceIsFolder"
 			  }
@@ -132,6 +137,14 @@
 				{
                     "command": "process-ide.deployAllTest"
                 }
+            ],
+			"generate.submenu":[
+                {
+                    "command": "process-ide.generateFile"
+                },
+				{
+                    "command": "process-ide.generateProject"
+                }
             ]
 		  },
 		  "submenus": [
@@ -142,6 +155,10 @@
 			{
 				"id": "deployAll.submenu",
         		"label": "Deploy All"
+			},
+			{
+				"id": "generate.submenu",
+				"label": "Generate"
 			}
 		  ]
 	}
