@@ -3,17 +3,19 @@ import styles from "./app.module.css";
 import GenerateInput from "./components/GenerateInput";
 import GenerateProjectInput from "./components/GenerateProjectInput";
 
-export function App(props: any) {
-    let component;
-    const project = false;
-    if(project) {
-        component = <GenerateProjectInput props={props}/>
-    } else {
-        component = <GenerateInput props={props}/>
-    }
+interface Props {
+    vs: any;
+    currentPath: string;
+    project: boolean;
+}
+
+export function App(props: Props) {
     return (
         <>
-            {component}
+            {props.project ?
+                <GenerateProjectInput vs={props.vs} currentPath={props.currentPath}/>
+                : <GenerateInput vs={props.vs} currentPath={props.currentPath}/>
+            }
             <div/>
         </>
     );

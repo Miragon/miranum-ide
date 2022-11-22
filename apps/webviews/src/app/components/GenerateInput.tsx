@@ -16,7 +16,12 @@ import {Description} from "@mui/icons-material";
 
 const theme = createTheme();
 
-export default function GenerateInput(props: any) {
+interface Props {
+    vs: any;
+    currentPath: string;
+}
+
+export default function GenerateInput(props: Props) {
     const handleSubmit = (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -25,9 +30,10 @@ export default function GenerateInput(props: any) {
         const type = data.get('type');
         const path = data.get('path');
 
+        //vscode.webview.postMessage();
         if(name && type && path) {
-            props.postMessage({
-                message:'generateProject', name: name, type: type, path: path
+            props.vs.postMessage({
+                message:'generate', name: name, type: type, path: path
             })
         }
     };
@@ -63,7 +69,7 @@ export default function GenerateInput(props: any) {
                             autoFocus
                         />
                         <FormControl fullWidth>
-                            <InputLabel id="typeLabel">type</InputLabel>
+                            <InputLabel id="typeLabel">Type</InputLabel>
                             <Select
                                 required
                                 fullWidth
@@ -86,6 +92,7 @@ export default function GenerateInput(props: any) {
                             id="path"
                             label="Path"
                             name="path"
+                            defaultValue={props.currentPath}
                         />
                         <Button
                             type="submit"

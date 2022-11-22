@@ -6,13 +6,15 @@ import App from "./app/app";
 const root = ReactDOM.createRoot(
     document.getElementById("root") as HTMLElement
 );
+
+const currentPath = document.getElementsByName('currentPath')[0].getAttribute("content");
+const project = document.getElementsByName('project')[0].getAttribute("content");
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const props = document.currentScript.getAttribute("props");
-console.log(props);
+const vscode = acquireVsCodeApi();
 
 root.render(
     <StrictMode>
-        <App props={props}/>
+        <App vs={vscode} currentPath={currentPath!} project={project === "true"}/>
     </StrictMode>
 );

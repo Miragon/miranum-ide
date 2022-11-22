@@ -3,7 +3,6 @@ import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
 import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
 import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
-import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
 import * as colors from "colors";
 import {Uri} from "vscode";
 
@@ -47,20 +46,16 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateFileWebview(scriptUrl, vscode);
+        panel.webview.html = getGenerateFileWebview(scriptUrl, context.extensionUri.path, false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generate':
-                    //fix this if with a drop-down menu later
-                    // eslint-disable-next-line no-case-declarations
-                    const supportedTypes = ["bpmn", "dmn", "form", "config", "element-template"];
-                    if(supportedTypes.includes(event.type)) {
-                        // eslint-disable-next-line no-case-declarations
+                    try {
                         const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                         await generate(artifact, event.path);
-                    } else {
-                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + `"${event.type}" is not a supported type`);
+                    } catch (e) {
+                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + `with message -> "${e}"`);
                     }
                     break;
             }
@@ -73,10 +68,12 @@ export async function activate(context: vscode.ExtensionContext) {
             'Generate Project',
             vscode.ViewColumn.One,
             {
-                enableScripts: true
+                enableScripts: true,
+                localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')]
             }
         );
-        panel.webview.html = getGenerateProjectWebview();
+        const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
+        panel.webview.html = getGenerateFileWebview(scriptUrl, context.extensionUri.path, true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {

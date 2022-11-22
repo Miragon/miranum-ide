@@ -12,14 +12,24 @@ import {CreateNewFolder} from "@mui/icons-material";
 
 const theme = createTheme();
 
-export default function GenerateProjectInput(props: any) {
+interface Props {
+    vs: any;
+    currentPath: string;
+}
+
+export default function GenerateProjectInput(props: Props) {
     const handleSubmit = (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        console.log({
-            name: data.get('name'),
-            path: data.get('path'),
-        });
+
+        const name = data.get('name');
+        const path = data.get('path');
+
+        if(name && path) {
+            props.vs.postMessage({
+                message:'generateProject', name: name, path: path
+            })
+        }
     };
 
     return (
@@ -48,7 +58,6 @@ export default function GenerateProjectInput(props: any) {
                             id="name"
                             label="Name"
                             name="name"
-                            sx={{input: {textAlign: "center"}}}
                             autoFocus
                         />
                         <TextField
@@ -58,7 +67,7 @@ export default function GenerateProjectInput(props: any) {
                             id="path"
                             label="Path"
                             name="path"
-                            sx={{input: {textAlign: "center"}}}
+                            defaultValue={props.currentPath}
                         />
                         <Button
                             type="submit"
