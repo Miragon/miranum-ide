@@ -3,7 +3,9 @@
 	"displayName": "process-ide-console",
 	"description": "",
 	"version": "0.0.1",
-	"engines": {
+  "license": "Apache-2.0",
+  "repository": "https://github.com/FlowSquad/miragon-process-ide",
+  "engines": {
 		"vscode": "^1.73.0"
 	},
 	"categories": [
