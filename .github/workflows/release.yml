@@ -98,7 +98,7 @@ jobs:
       # tbd. publish vsce
       - uses: actions/upload-artifact@v3
         with:
-          name: process-ide-console-0.0.1.vsix
+          name: process-ide-console
           path: process-ide-console-0.0.1.vsix
 
   # process-ide-cli
