@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {useState} from "react";
 import {
     Avatar,
     Box, Button,
@@ -22,6 +21,7 @@ interface Props {
 }
 
 export default function GenerateInput(props: Props) {
+
     const handleSubmit = (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -30,15 +30,12 @@ export default function GenerateInput(props: Props) {
         const type = data.get('type');
         const path = data.get('path');
 
-        //vscode.webview.postMessage();
         if(name && type && path) {
             props.vs.postMessage({
                 message:'generate', name: name, type: type, path: path
             })
         }
     };
-
-    const [type, setType] = useState('');
 
     return (
         <ThemeProvider theme={theme}>
@@ -76,7 +73,6 @@ export default function GenerateInput(props: Props) {
                                 id="type"
                                 labelId="typeLabel"
                                 name="type"
-                                onChange={(e: any) => setType(e.value)}
                             >
                                 <MenuItem value="bpmn">bpmn</MenuItem>
                                 <MenuItem value="dmn">dmn</MenuItem>

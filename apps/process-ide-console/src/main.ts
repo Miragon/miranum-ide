@@ -3,7 +3,6 @@ import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
 import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
 import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
-import * as colors from "colors";
 import {Uri} from "vscode";
 
 let digiwfLib = new DigiwfLib();
@@ -46,17 +45,14 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionUri.path, false);
+        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generate':
-                    try {
-                        const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                        await generate(artifact, event.path);
-                    } catch (e) {
-                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + `with message -> "${e}"`);
-                    }
+                    // eslint-disable-next-line no-case-declarations
+                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
+                    await generate(artifact, event.path);
                     break;
             }
         });
@@ -73,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         );
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionUri.path, true);
+        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -93,7 +89,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 //     -----------------------------HELPERS-----------------------------     \\
-//evtl. später in deploy auslagern?
 export function getDigiWfLib(): DigiwfLib {
     return digiwfLib;
 }
