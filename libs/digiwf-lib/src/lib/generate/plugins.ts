@@ -1,5 +1,5 @@
 import { Artifact, DigiWFGeneratorPlugin } from "../types";
-import * as Sqrl from "squirrelly"
+import * as Sqrl from "squirrelly";
 import { v4 as uuidv4 } from "uuid";
 
 export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {

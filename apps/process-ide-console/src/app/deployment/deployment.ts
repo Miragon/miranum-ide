@@ -6,7 +6,7 @@ import { getDigiWfLib } from "../../main";
 const fs = vscode.workspace.fs;
 
 export async function mapProcessConfigToDigiwfLib(path: vscode.Uri): Promise<DigiwfLib> {
-    const p = vscode.Uri.joinPath(path,"../../../process-ide.json");
+    const p = vscode.Uri.joinPath(path,"../../../resources/my-process-automation-project/process-ide.json");
     const processIdeJson = (await fs.readFile(p)).toString();
     const processIdeConfig = JSON.parse(processIdeJson);
     const plugins: DigiWFDeploymentPlugin[] = [];

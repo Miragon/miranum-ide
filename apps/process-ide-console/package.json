@@ -71,7 +71,7 @@
 			  {
 				"id": "miragon-process-ide",
 				"title": "Process-IDE",
-				"icon": "../../../images/komet.svg"
+				"icon": "assets/komet.svg"
 			  }
 			]
 		  },
