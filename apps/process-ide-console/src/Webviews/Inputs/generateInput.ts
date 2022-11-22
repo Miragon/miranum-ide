@@ -1,4 +1,4 @@
-export function getGenerateFileWebview(scriptUrl: string, currentPath: string, project: boolean) {
+export function getGenerateWebview(scriptUrl: string, currentPath: string, project: boolean) {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>

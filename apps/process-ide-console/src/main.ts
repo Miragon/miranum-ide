@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 import { generate } from "./app/generate/generate";
 import { deployArtifact, getUriAndDeploy, mapProcessConfigToDigiwfLib } from "./app/deployment/deployment";
-import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
+import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
 import * as colors from "colors";
 import {Uri} from "vscode";
 
@@ -46,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateFileWebview(scriptUrl, context.extensionUri.path, false);
+        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionUri.path, false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -73,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         );
         const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
-        panel.webview.html = getGenerateFileWebview(scriptUrl, context.extensionUri.path, true);
+        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionUri.path, true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {

@@ -4,14 +4,8 @@ import App from "./app";
 
 describe("App", () => {
     it("should render successfully", () => {
-        const { baseElement } = render(<App />);
+        const { baseElement } = render(<App vs="" currentPath="testPath" project={true} />);
 
         expect(baseElement).toBeTruthy();
-    });
-
-    it("should have a greeting as the title", () => {
-        const { getByText } = render(<App />);
-
-        expect(getByText(/Welcome webviews/gi)).toBeTruthy();
     });
 });
