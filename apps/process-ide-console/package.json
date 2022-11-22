@@ -13,12 +13,12 @@
 	  "publisher.extensionName"
 	],
 	"activationEvents": [
-        "onCommand:process-ide.deploy",
-        "onCommand:process-ide.deployDev",
-        "onCommand:process-ide.deployTest",
-        "onCommand:process-ide.deployAll",
-        "onCommand:process-ide.deployAllDev",
-        "onCommand:process-ide.deployAllTest",
+        "onCommand:process-ide.deploy.local",
+        "onCommand:process-ide.deploy.dev",
+        "onCommand:process-ide.deploy.test",
+        "onCommand:process-ide.deployAll.local",
+        "onCommand:process-ide.deployAll.dev",
+        "onCommand:process-ide.deployAll.test",
         "onCommand:process-ide.generateFile",
         "onCommand:process-ide.generateProject"
 	],
@@ -26,32 +26,32 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "process-ide.deploy",
-				"title": "deployLocal",
+				"command": "process-ide.deploy.local",
+				"title": "deploy local",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployDev",
-				"title": "deployDev",
+				"command": "process-ide.deploy.dev",
+				"title": "deploy dev",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployTest",
-				"title": "deployTest",
+				"command": "process-ide.deploy.test",
+				"title": "deploy test",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAll",
+				"command": "process-ide.deployAll.local",
 				"title": "Deploy all to local",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAllDev",
+				"command": "process-ide.deployAll.dev",
 				"title": "Deploy all to dev",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAllTest",
+				"command": "process-ide.deployAll.test",
 				"title": "Deploy all to test",
 				"category": "Miragon"
 			},
@@ -118,24 +118,24 @@
 			],
             "deploy.submenu":[
                 {
-                    "command": "process-ide.deploy"
+                    "command": "process-ide.deploy.local"
                 },
 				{
-                    "command": "process-ide.deployDev"
+                    "command": "process-ide.deploy.dev"
                 },
 				{
-                    "command": "process-ide.deployTest"
+                    "command": "process-ide.deploy.test"
                 }
             ],
 			"deployAll.submenu":[
                 {
-                    "command": "process-ide.deployAll"
+                    "command": "process-ide.deployAll.local"
                 },
 				{
-                    "command": "process-ide.deployAllDev"
+                    "command": "process-ide.deployAll.dev"
                 },
 				{
-                    "command": "process-ide.deployAllTest"
+                    "command": "process-ide.deployAll.test"
                 }
             ],
 			"generate.submenu":[
