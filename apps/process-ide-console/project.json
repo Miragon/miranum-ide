@@ -2,19 +2,25 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/process-ide-console/src",
   "projectType": "application",
+  "implicitDependencies": ["process-ide-console-webview"],
   "targets": {
     "build": {
       "executor": "@nrwl/node:webpack",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/process-ide-console",
+        "deleteOutputPath": false,
         "main": "apps/process-ide-console/src/main.ts",
         "tsConfig": "apps/process-ide-console/tsconfig.app.json",
         "generatePackageJson": true,
         "webpackConfig": "apps/process-ide-console/custom-webpack.config.js",
         "assets": [
           "apps/process-ide-console/src/assets/komet.svg",
-          "apps/process-ide-console/src/LICENSE"
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
         ]
       },
       "configurations": {

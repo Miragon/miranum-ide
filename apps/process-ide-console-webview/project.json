@@ -1,0 +1,81 @@
+{
+  "name": "process-ide-console-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "compiler": "babel",
+        "outputPath": "dist/apps/process-ide-console/process-ide-console-webview",
+        "deleteOutputPath": false,
+        "index": "apps/process-ide-console-webview/src/index.html",
+        "baseHref": "/",
+        "main": "apps/process-ide-console-webview/src/main.tsx",
+        "polyfills": "apps/process-ide-console-webview/src/polyfills.ts",
+        "tsConfig": "apps/process-ide-console-webview/tsconfig.app.json",
+        "styles": ["apps/process-ide-console-webview/src/styles.css"],
+        "scripts": [],
+        "webpackConfig": "@nrwl/react/plugins/webpack"
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true,
+          "vendorChunk": true
+        },
+        "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/process-ide-console-webview/src/environments/environment.ts",
+              "with": "apps/process-ide-console-webview/src/environments/environment.prod.ts"
+            }
+          ],
+          "optimization": true,
+          "outputHashing": "none",
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/webpack:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "process-ide-console-webview:build",
+        "hmr": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "process-ide-console-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "process-ide-console-webview:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/process-ide-console-webview/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/process-ide-console-webview/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

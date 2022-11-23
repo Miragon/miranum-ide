@@ -1,13 +1,37 @@
 import * as vscode from "vscode";
 import { generate } from "./app/generate/generate";
-import { initDigiwfLib, getArtifact, getArtifacts, fileDeploymentSupported } from "./app/deployment/deployment";
-import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
-import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
+import { fileDeploymentSupported, getArtifact, getArtifacts } from "./app/deployment/deployment";
 import * as colors from "colors";
+import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
+import {
+    createDigiwfLib,
+    DigiWFDeploymentPlugin,
+    DigiwfDeploymentPluginRest,
+    DigiwfLib
+} from "@miragon-process-ide/digiwf-lib";
 
+const ws = vscode.workspace;
+
+async function initDigiwfLib(): Promise<DigiwfLib> {
+    try {
+        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(vscode.Uri.file(ws.rootPath ?? ""), "process-ide.json"));
+
+        const processIdeConfig = JSON.parse(processIdeJSON.toString());
+        const plugins: DigiWFDeploymentPlugin[] = [];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        processIdeConfig.deployment.forEach(p => {
+            plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+        });
+        return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+    } catch (e) {
+        return new DigiwfLib();
+    }
+}
 
 export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
+    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'process-ide-console-webview');
 
     digiwfLib.projectConfig?.deployment.forEach(deployment => {
         deployment.targetEnvironments.forEach(env => {
@@ -50,24 +74,20 @@ export async function activate(context: vscode.ExtensionContext) {
             'Generate',
             vscode.ViewColumn.One,
             {
-                enableScripts: true
+                enableScripts: true,
+                localResourceRoots: [pathToWebview]
             }
         );
-        panel.webview.html = getGenerateFileWebview();
+
+        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generate':
-                    //fix this if with a drop-down menu later
                     // eslint-disable-next-line no-case-declarations
-                    const supportedTypes = ["bpmn", "dmn", "form", "config", "element-template"];
-                    if(supportedTypes.includes(event.type)) {
-                        // eslint-disable-next-line no-case-declarations
-                        const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                        await generate(artifact, event.path);
-                    } else {
-                        vscode.window.showInformationMessage(colors.red.bold("ERROR ") + `"${event.type}" is not a supported type`);
-                    }
+                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
+                    await generate(artifact, event.path);
                     break;
             }
         });
@@ -79,10 +99,12 @@ export async function activate(context: vscode.ExtensionContext) {
             'Generate Project',
             vscode.ViewColumn.One,
             {
-                enableScripts: true
+                enableScripts: true,
+                localResourceRoots: [pathToWebview]
             }
         );
-        panel.webview.html = getGenerateProjectWebview();
+        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {

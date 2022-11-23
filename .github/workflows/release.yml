@@ -99,7 +99,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: process-ide-console
-          path: process-ide-console-0.0.1.vsix
+          path: process-ide-console-0.0.2.vsix
 
   # process-ide-cli
   publish-process-ide-cli:
