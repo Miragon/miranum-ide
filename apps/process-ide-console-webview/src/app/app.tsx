@@ -1,7 +1,9 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import styles from "./app.module.css";
 import GenerateInput from "./components/GenerateInput";
 import GenerateProjectInput from "./components/GenerateProjectInput";
+import { Container, createTheme, CssBaseline, ThemeProvider } from "@mui/material";
+import * as React from "react";
+
+const theme = createTheme();
 
 interface Props {
     vs: any;
@@ -12,11 +14,15 @@ interface Props {
 export function App(props: Props) {
     return (
         <>
-            {props.project ?
-                <GenerateProjectInput vs={props.vs} currentPath={props.currentPath}/>
-                : <GenerateInput vs={props.vs} currentPath={props.currentPath}/>
-            }
-            <div/>
+            <ThemeProvider theme={theme}>
+                <Container component="main" maxWidth="xs">
+                    <CssBaseline />
+                    {props.project ?
+                        <GenerateProjectInput vs={props.vs} currentPath={props.currentPath}/>
+                        : <GenerateInput vs={props.vs} currentPath={props.currentPath}/>
+                    }
+                </Container>
+            </ThemeProvider>
         </>
     );
 }
