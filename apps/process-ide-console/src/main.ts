@@ -1,8 +1,33 @@
 import * as vscode from "vscode";
 import { generate } from "./app/generate/generate";
-import { fileDeploymentSupported, getArtifact, getArtifacts, initDigiwfLib } from "./app/deployment/deployment";
+import { fileDeploymentSupported, getArtifact, getArtifacts } from "./app/deployment/deployment";
 import * as colors from "colors";
 import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
+import {
+    createDigiwfLib,
+    DigiWFDeploymentPlugin,
+    DigiwfDeploymentPluginRest,
+    DigiwfLib
+} from "@miragon-process-ide/digiwf-lib";
+
+const ws = vscode.workspace;
+
+async function initDigiwfLib(): Promise<DigiwfLib> {
+    try {
+        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(vscode.Uri.file(ws.rootPath ?? ""), "process-ide.json"));
+
+        const processIdeConfig = JSON.parse(processIdeJSON.toString());
+        const plugins: DigiWFDeploymentPlugin[] = [];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        processIdeConfig.deployment.forEach(p => {
+            plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+        });
+        return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+    } catch (e) {
+        return new DigiwfLib();
+    }
+}
 
 export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
@@ -55,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, false);
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -79,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         );
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, true);
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {

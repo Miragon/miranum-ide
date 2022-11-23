@@ -1,25 +1,8 @@
 import * as vscode from "vscode";
-import { Artifact, createDigiwfLib, DigiWFDeploymentPlugin, DigiwfDeploymentPluginRest, DigiwfLib} from "@miragon-process-ide/digiwf-lib";
+import { Artifact } from "@miragon-process-ide/digiwf-lib";
 
 const ws = vscode.workspace;
 const fs = ws.fs;
-
-export async function initDigiwfLib(): Promise<DigiwfLib> {
-    const processIdeJSON = await fs.readFile(vscode.Uri.joinPath(vscode.Uri.file(ws.rootPath ?? ""), "process-ide.json"));
-
-    if (!processIdeJSON) {
-        return new DigiwfLib();
-    }
-
-    const processIdeConfig = JSON.parse(processIdeJSON.toString());
-    const plugins: DigiWFDeploymentPlugin[] = [];
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    processIdeConfig.deployment.forEach(p => {
-        plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
-    });
-    return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
-}
 
 export async function getArtifact(path: vscode.Uri): Promise<Artifact> {
     const content = (await fs.readFile(path)).toString();
