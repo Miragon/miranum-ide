@@ -1,6 +1,6 @@
 import { getGreeting } from "../support/app.po";
 
-describe("webviews", () => {
+describe("process-ide-console-webview", () => {
     beforeEach(() => cy.visit("/"));
 
     it("should display welcome message", () => {
@@ -8,6 +8,6 @@ describe("webviews", () => {
         cy.login("my-email@something.com", "myPassword");
 
         // Function helper example, see `../support/app.po.ts` file
-        getGreeting().contains("Welcome webviews");
+        getGreeting().contains("Welcome process-ide-console-webview");
     });
 });

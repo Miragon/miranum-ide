@@ -14,7 +14,12 @@
         "generatePackageJson": true,
         "assets": [
           "apps/miragon-process-ide-cli/src/README.md",
-          "apps/miragon-process-ide-cli/src/Dockerfile"
+          "apps/miragon-process-ide-cli/src/Dockerfile",
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
         ]
       },
       "configurations": {

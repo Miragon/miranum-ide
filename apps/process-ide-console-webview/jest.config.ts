@@ -1,11 +1,11 @@
 /* eslint-disable */
 export default {
-    displayName: "webviews",
+    displayName: "process-ide-console-webview",
     preset: "../../jest.preset.js",
     transform: {
         "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)": "@nrwl/react/plugins/jest",
         "^.+\\.[tj]sx?$": "babel-jest",
     },
     moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
-    coverageDirectory: "../../coverage/apps/webviews",
+    coverageDirectory: "../../coverage/apps/process-ide-console-webview",
 };

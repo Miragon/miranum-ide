@@ -6,7 +6,7 @@
     "digiwf-lib": "libs/digiwf-lib",
     "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
     "process-ide-console": "apps/process-ide-console",
-    "webviews": "apps/webviews",
-    "webviews-e2e": "apps/webviews-e2e"
+    "process-ide-console-webview": "apps/process-ide-console-webview",
+    "process-ide-console-webview-e2e": "apps/process-ide-console-webview-e2e"
   }
 }

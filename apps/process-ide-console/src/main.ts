@@ -1,13 +1,12 @@
 import * as vscode from "vscode";
-import { Uri } from "vscode";
 import { generate } from "./app/generate/generate";
 import { fileDeploymentSupported, getArtifact, getArtifacts, initDigiwfLib } from "./app/deployment/deployment";
 import * as colors from "colors";
 import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
 
-
 export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
+    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'process-ide-console-webview');
 
     digiwfLib.projectConfig?.deployment.forEach(deployment => {
         deployment.targetEnvironments.forEach(env => {
@@ -51,11 +50,11 @@ export async function activate(context: vscode.ExtensionContext) {
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')]
+                localResourceRoots: [pathToWebview]
             }
         );
 
-        const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
+        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
         panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
@@ -76,10 +75,10 @@ export async function activate(context: vscode.ExtensionContext) {
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')]
+                localResourceRoots: [pathToWebview]
             }
         );
-        const scriptUrl = panel.webview.asWebviewUri(Uri.joinPath(context.extensionUri, '..', '..', 'apps', 'webviews')).toString();
+        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
         panel.webview.html = getGenerateWebview(scriptUrl, context.extensionPath, true);
 
         panel.webview.onDidReceiveMessage( async (event) => {

@@ -28,7 +28,12 @@
         "main": "libs/digiwf-lib/src/index.ts",
         "assets": [
           "libs/digiwf-lib/*.md",
-          "resources/"
+          "resources/",
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
         ]
       }
     }
