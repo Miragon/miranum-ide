@@ -24,7 +24,7 @@ const GenerateInput: React.FC<Props> = props => {
     }, [name, path, props.vs, type]);
 
     return (
-        <Box
+        <FormControl
             sx={{
                 marginTop: 8,
                 display: 'flex',
@@ -85,7 +85,7 @@ const GenerateInput: React.FC<Props> = props => {
                     sx={{ mt: 3, mb: 2 }}
                 >Generieren</Button>
             </Box>
-        </Box>
+        </FormControl>
     );
 }
 

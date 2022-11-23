@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useCallback, useState } from 'react';
-import { Avatar, Box, Button, TextField, Typography } from "@mui/material";
+import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 
 interface Props {
@@ -22,7 +22,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
     }, [name, path, props.vs]);
 
     return (
-            <Box
+            <FormControl
                 sx={{
                     marginTop: 8,
                     display: 'flex',
@@ -65,7 +65,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         sx={{ mt: 3, mb: 2 }}
                     >Projekt generieren</Button>
                 </Box>
-            </Box>
+            </FormControl>
     );
 }
 
