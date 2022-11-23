@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
+import { Uri } from "vscode";
 import { generate } from "./app/generate/generate";
-import { initDigiwfLib, getArtifact, getArtifacts, fileDeploymentSupported } from "./app/deployment/deployment";
-import { getGenerateFileWebview } from "./Webviews/Inputs/generateInput";
-import {getGenerateProjectWebview} from "./Webviews/Inputs/generateProjectInput";
+import { fileDeploymentSupported, getArtifact, getArtifacts, initDigiwfLib } from "./app/deployment/deployment";
 import * as colors from "colors";
+import { getGenerateWebview } from "./Webviews/Inputs/generateInput";
 
 
 export async function activate(context: vscode.ExtensionContext) {
