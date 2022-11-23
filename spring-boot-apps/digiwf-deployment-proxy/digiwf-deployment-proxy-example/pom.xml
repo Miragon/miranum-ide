@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.miragon.digiwf</groupId>
         <artifactId>digiwf-deployment-proxy-parent</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
     </parent>
 
     <dependencies>
@@ -25,6 +25,12 @@
             <groupId>io.miragon.digiwf</groupId>
             <artifactId>digiwf-deployment-proxy-starter</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

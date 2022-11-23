@@ -3,7 +3,9 @@
 	"displayName": "process-ide-console",
 	"description": "",
 	"version": "0.0.1",
-	"engines": {
+  "license": "Apache-2.0",
+  "repository": "https://github.com/FlowSquad/miragon-process-ide",
+  "engines": {
 		"vscode": "^1.73.0"
 	},
 	"categories": [
@@ -13,12 +15,12 @@
 	  "publisher.extensionName"
 	],
 	"activationEvents": [
-        "onCommand:process-ide.deploy",
-        "onCommand:process-ide.deployDev",
-        "onCommand:process-ide.deployTest",
-        "onCommand:process-ide.deployAll",
-        "onCommand:process-ide.deployAllDev",
-        "onCommand:process-ide.deployAllTest",
+        "onCommand:process-ide.deploy.local",
+        "onCommand:process-ide.deploy.dev",
+        "onCommand:process-ide.deploy.test",
+        "onCommand:process-ide.deployAll.local",
+        "onCommand:process-ide.deployAll.dev",
+        "onCommand:process-ide.deployAll.test",
         "onCommand:process-ide.generateFile",
         "onCommand:process-ide.generateProject"
 	],
@@ -26,33 +28,33 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "process-ide.deploy",
-				"title": "deployLocal",
+				"command": "process-ide.deploy.local",
+				"title": "deploy local",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployDev",
-				"title": "deployDev",
+				"command": "process-ide.deploy.dev",
+				"title": "deploy dev",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployTest",
-				"title": "deployTest",
+				"command": "process-ide.deploy.test",
+				"title": "deploy test",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAll",
-				"title": "to local",
+				"command": "process-ide.deployAll.local",
+				"title": "Deploy all to local",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAllDev",
-				"title": "to dev",
+				"command": "process-ide.deployAll.dev",
+				"title": "Deploy all to dev",
 				"category": "Miragon"
 			},
 			{
-				"command": "process-ide.deployAllTest",
-				"title": "to test",
+				"command": "process-ide.deployAll.test",
+				"title": "Deploy all to test",
 				"category": "Miragon"
 			},
 			{
@@ -71,7 +73,7 @@
 			  {
 				"id": "miragon-process-ide",
 				"title": "Process-IDE",
-				"icon": "../../../images/komet.svg"
+				"icon": "assets/komet.svg"
 			  }
 			]
 		  },
@@ -95,7 +97,7 @@
 			},
 			{
 				"view": "commands",
-				"contents": "[deployAll](command:process-ide.deployAll) \n [generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
+				"contents": "[generateFile](command:process-ide.generateFile) \n [generateProject](command:process-ide.generateProject)"
 			}
 		  ],
 		  "menus": {
@@ -109,28 +111,41 @@
 				"submenu": "deployAll.submenu",
 				"group": "1_modification",
 				"when": "explorerResourceIsFolder"
+			  },
+			  {
+				"submenu": "generate.submenu",
+				"group": "1_modification",
+				"when": "explorerResourceIsFolder"
 			  }
 			],
             "deploy.submenu":[
                 {
-                    "command": "process-ide.deploy"
+                    "command": "process-ide.deploy.local"
                 },
 				{
-                    "command": "process-ide.deployDev"
+                    "command": "process-ide.deploy.dev"
                 },
 				{
-                    "command": "process-ide.deployTest"
+                    "command": "process-ide.deploy.test"
                 }
             ],
 			"deployAll.submenu":[
                 {
-                    "command": "process-ide.deployAll"
+                    "command": "process-ide.deployAll.local"
                 },
 				{
-                    "command": "process-ide.deployAllDev"
+                    "command": "process-ide.deployAll.dev"
                 },
 				{
-                    "command": "process-ide.deployAllTest"
+                    "command": "process-ide.deployAll.test"
+                }
+            ],
+			"generate.submenu":[
+                {
+                    "command": "process-ide.generateFile"
+                },
+				{
+                    "command": "process-ide.generateProject"
                 }
             ]
 		  },
@@ -142,6 +157,10 @@
 			{
 				"id": "deployAll.submenu",
         		"label": "Deploy All"
+			},
+			{
+				"id": "generate.submenu",
+				"label": "Generate"
 			}
 		  ]
 	}

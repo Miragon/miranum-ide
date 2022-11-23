@@ -35,12 +35,8 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-all -d resources/my-process-automation-project/ -t local -p test-project"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js deploy-file -f resources/my-process-automation-project/my-process.bpmn -t local --type bpmn -p test-project"
-          }
+          "node dist/apps/miragon-process-ide-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
+          "node dist/apps/miragon-process-ide-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
         ]
       }
     },
@@ -48,21 +44,11 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type bpmn --name testFile  --path resources/my-generations"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type dmn --name testFile  --path resources/my-generations"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type form --name testFile  --path resources/my-generations"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type config --name configTest  --path resources/my-generations"
-          },
-          {
-            "command": "node dist/apps/miragon-process-ide-cli/main.js generate-file --type element-template --name elementTest  --path resources/my-generations"
-          }
+          "node dist/apps/miragon-process-ide-cli/main.js generate-file --type bpmn --name testFile  --path resources/my-generations",
+          "node dist/apps/miragon-process-ide-cli/main.js generate-file --type dmn --name testFile  --path resources/my-generations",
+          "node dist/apps/miragon-process-ide-cli/main.js generate-file --type form --name testFile  --path resources/my-generations",
+          "node dist/apps/miragon-process-ide-cli/main.js generate-file --type config --name configTest  --path resources/my-generations",
+          "node dist/apps/miragon-process-ide-cli/main.js generate-file --type element-template --name elementTest  --path resources/my-generations"
         ]
       }
     },
