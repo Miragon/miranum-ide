@@ -14,11 +14,15 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
 
     const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generateProject',
-            name: name,
-            path: path
-        })
+        if(name !== "" && path) {
+            props.vs.postMessage({
+                message:'generateProject',
+                name: name,
+                path: path
+            })
+        } else {
+            props.vs.postMessage({message:'missingArguments'});
+        }
     }, [name, path, props.vs]);
 
     return (

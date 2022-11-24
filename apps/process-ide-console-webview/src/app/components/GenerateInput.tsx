@@ -15,12 +15,16 @@ const GenerateInput: React.FC<Props> = props => {
     const [type, setType] = useState<string>("bpmn");
 
     const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generate',
-            name: name,
-            type: type,
-            path: path
-        })
+        if(name !== "" && path){
+            props.vs.postMessage({
+                message:'generate',
+                name: name,
+                type: type,
+                path: path
+            });
+        } else {
+            props.vs.postMessage({message:'missingArguments'});
+        }
     }, [name, path, props.vs, type]);
 
     return (

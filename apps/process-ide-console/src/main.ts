@@ -33,6 +33,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
     const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'process-ide-console-webview');
 
+    if(!digiwfLib.projectConfig) {
+        vscode.window.showInformationMessage("deployment isn't supported");
+    }
+
     digiwfLib.projectConfig?.deployment.forEach(deployment => {
         deployment.targetEnvironments.forEach(env => {
             // deploy artifact
@@ -89,6 +93,9 @@ export async function activate(context: vscode.ExtensionContext) {
                     const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                     await generate(artifact, event.path);
                     break;
+                case 'missingArguments':
+                    missingArgumentsMessage();
+                    break;
             }
         });
     });
@@ -114,9 +121,18 @@ export async function activate(context: vscode.ExtensionContext) {
                     for (const artifact of artifacts) {
                         await generate(artifact, `${event.path}/${event.name}`);
                     }
+                    break;
+                case 'missingArguments':
+                    missingArgumentsMessage();
+                    break;
             }
         });
     });
 
     context.subscriptions.push(generateFile, generateProject);
+
+    //  --------------------HELPERS--------------------  \\
+    function missingArgumentsMessage() {
+        vscode.window.showInformationMessage("MISSING Arguments");
+    }
 }
