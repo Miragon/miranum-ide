@@ -91,9 +91,7 @@
 		  },
 		  "viewsWelcome": [
 			{
-				"view": "bpmn-project",
-				"contents": "[Generate a new Project](command:vscode.openFolder) \n For further explanation regarding the commands [read our docs](https://aka.ms/vscode-scm).",
-				"when": "config.git.enabled && commands.state == initialized && workbenchState == empty"
+				"view": "bpmn-project"
 			},
 			{
 				"view": "commands",
