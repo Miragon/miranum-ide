@@ -14,7 +14,9 @@ const ws = vscode.workspace;
 
 async function initDigiwfLib(): Promise<DigiwfLib> {
     try {
-        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(vscode.Uri.file(ws.rootPath ?? ""), "process-ide.json"));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(ws.workspaceFolders[0].uri, "process-ide.json"));
 
         const processIdeConfig = JSON.parse(processIdeJSON.toString());
         const plugins: DigiWFDeploymentPlugin[] = [];
