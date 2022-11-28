@@ -89,6 +89,15 @@ export async function activate(context: vscode.ExtensionContext) {
                     const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                     await generate(artifact, event.path);
                     break;
+                case 'openFilePicker':
+                    vscode.window.showOpenDialog({
+                        canSelectFolders: true,
+                        canSelectFiles: false,
+                        canSelectMany: false
+                    }).then( fileUri => {
+                        console.log(fileUri);
+                    });
+                    break;
             }
         });
     });

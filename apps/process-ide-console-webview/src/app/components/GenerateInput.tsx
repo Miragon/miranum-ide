@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useCallback, useState } from 'react';
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
+import FileSelector from "./UI/FileSelector";
 
 interface Props {
     vs: any;
@@ -77,6 +78,10 @@ const GenerateInput: React.FC<Props> = props => {
                     name="path"
                     value={path}
                     onChange={e => setPath(e.target.value)}
+                />
+                <FileSelector
+                    vs={props.vs}
+                    path={props.currentPath}
                 />
                 <Button
                     onClick={generate}
