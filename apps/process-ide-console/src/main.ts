@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'process-ide-console-webview');
 
     if(!digiwfLib.projectConfig) {
-        vscode.window.showInformationMessage("deployment isn't supported");
+        vscode.window.showInformationMessage("couldn't find process-ide.json");
     }
 
     digiwfLib.projectConfig?.deployment.forEach(deployment => {
@@ -95,9 +95,6 @@ export async function activate(context: vscode.ExtensionContext) {
                     const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                     await generate(artifact, event.path);
                     break;
-                case 'missingArguments':
-                    missingArgumentsMessage();
-                    break;
             }
         });
     });
@@ -124,17 +121,9 @@ export async function activate(context: vscode.ExtensionContext) {
                         await generate(artifact, `${event.path}/${event.name}`);
                     }
                     break;
-                case 'missingArguments':
-                    missingArgumentsMessage();
-                    break;
             }
         });
     });
 
     context.subscriptions.push(generateFile, generateProject);
-
-    //  --------------------HELPERS--------------------  \\
-    function missingArgumentsMessage() {
-        vscode.window.showInformationMessage("MISSING Arguments");
-    }
 }
