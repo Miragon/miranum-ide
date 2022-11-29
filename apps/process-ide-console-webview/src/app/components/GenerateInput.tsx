@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useCallback, useState } from 'react';
+import {useCallback, useState} from 'react';
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 
@@ -14,16 +14,14 @@ const GenerateInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
     const [type, setType] = useState<string>("bpmn");
 
-    const generate =  useCallback(() => {
-        if(name !== "" && path){
+    const handleSubmit = useCallback(() => {
+        if(name !== '' && path) {
             props.vs.postMessage({
-                message:'generate',
+                message: 'generate',
                 name: name,
                 type: type,
                 path: path
             });
-        } else {
-            props.vs.postMessage({message:'missingArguments'});
         }
     }, [name, path, props.vs, type]);
 
@@ -53,12 +51,11 @@ const GenerateInput: React.FC<Props> = props => {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     autoFocus
+                    error={name === ''}
                 />
-                <FormControl fullWidth>
+                <FormControl fullWidth required>
                     <InputLabel id="typeLabel">Type</InputLabel>
                     <Select
-                        required
-                        fullWidth
                         id="type"
                         labelId="typeLabel"
                         name="type"
@@ -83,7 +80,7 @@ const GenerateInput: React.FC<Props> = props => {
                     onChange={e => setPath(e.target.value)}
                 />
                 <Button
-                    onClick={generate}
+                    onClick={handleSubmit}
                     fullWidth
                     variant="outlined"
                     sx={{ mt: 3, mb: 2 }}
