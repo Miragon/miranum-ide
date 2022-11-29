@@ -70,7 +70,8 @@ const GenerateInput: React.FC<Props> = props => {
                 <Button
                     onClick={generate}
                     fullWidth
-                    variant="outlined"
+                    variant="contained"
+                    color="secondary"
                     sx={{ mt: 3, mb: 2 }}
                 >Generieren</Button>
             </Box>
