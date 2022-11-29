@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useCallback, useState } from 'react';
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
+import FileSelector from "./UI/FileSelector";
 
 interface Props {
     vs: any;
@@ -12,6 +13,10 @@ const GenerateProjectInput: React.FC<Props> = props => {
 
     const [name, setName] = useState<string>("");
     const [path, setPath] = useState<string>(props.currentPath);
+
+    const pathHandler = (newPath: string) => {
+        setPath(newPath);
+    }
 
     const generate =  useCallback(() => {
         props.vs.postMessage({
@@ -48,15 +53,10 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         onChange={e => setName(e.target.value)}
                         autoFocus
                     />
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="path"
-                        label="Path"
-                        name="path"
-                        value={path}
-                        onChange={e => setPath(e.target.value)}
+                    <FileSelector
+                        vs={props.vs}
+                        path={props.currentPath}
+                        onPathChange={pathHandler}
                     />
                     <Button
                         onClick={generate}

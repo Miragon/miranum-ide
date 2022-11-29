@@ -6,12 +6,14 @@ import {Add} from "@mui/icons-material";
 const pathSelector: CSS.Properties = {
     display: 'flex',
     flexDirection: 'row',
-    width: '100%'
+    width: '100%',
+    margin: 'normal'
 };
 
 interface Props {
     vs: any,
     path: string
+    onPathChange: any
 }
 
 const FileSelector: React.FC<Props> = props => {
@@ -40,7 +42,10 @@ const FileSelector: React.FC<Props> = props => {
                 label="Path"
                 name="path"
                 value={path}
-                onChange={e => setPath(e.target.value)}
+                onChange={e => {
+                    setPath(e.target.value);
+                    props.onPathChange(e.target.value);
+                }}
             />
             <Button onClick={openFilePicker} variant="outlined" startIcon={<Add/>}>
                 Choose Path

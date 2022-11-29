@@ -89,15 +89,6 @@ export async function activate(context: vscode.ExtensionContext) {
                     const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                     await generate(artifact, event.path);
                     break;
-                case 'openFilePicker':
-                    vscode.window.showOpenDialog({
-                        canSelectFolders: true,
-                        canSelectFiles: false,
-                        canSelectMany: false
-                    }).then( fileUri => {
-                        console.log(fileUri);
-                    });
-                    break;
             }
         });
     });
@@ -123,6 +114,18 @@ export async function activate(context: vscode.ExtensionContext) {
                     for (const artifact of artifacts) {
                         await generate(artifact, `${event.path}/${event.name}`);
                     }
+                    break;
+                case 'openFilePicker':
+                    vscode.window.showOpenDialog({
+                        canSelectFolders: true,
+                        canSelectFiles: false,
+                        canSelectMany: false
+                    }).then( fileUri => {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        panel.webview.html = getGenerateWebview(scriptUrl, fileUri[0].path, true);
+                    });
+                    break;
             }
         });
     });
