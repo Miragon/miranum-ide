@@ -11,7 +11,6 @@ interface Props {
 const GenerateInput: React.FC<Props> = props => {
 
     const [name, setName] = useState<string>("");
-    const [path, setPath] = useState<string>(props.currentPath);
     const [type, setType] = useState<string>("bpmn");
 
     const generate =  useCallback(() => {
@@ -19,9 +18,9 @@ const GenerateInput: React.FC<Props> = props => {
             message:'generate',
             name: name,
             type: type,
-            path: path
+            path: props.currentPath
         })
-    }, [name, path, props.vs, type]);
+    }, [name, props.currentPath, props.vs, type]);
 
     return (
         <FormControl
@@ -68,16 +67,6 @@ const GenerateInput: React.FC<Props> = props => {
                         <MenuItem value="config">config</MenuItem>
                     </Select>
                 </FormControl>
-                <TextField
-                    margin="normal"
-                    required
-                    fullWidth
-                    id="path"
-                    label="Path"
-                    name="path"
-                    value={path}
-                    onChange={e => setPath(e.target.value)}
-                />
                 <Button
                     onClick={generate}
                     fullWidth

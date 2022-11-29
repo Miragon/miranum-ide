@@ -25,15 +25,6 @@ const FileSelector: React.FC<Props> = props => {
         })
     }, [props.vs]);
 
-    //html Version:             (Issue: only files are selectable)
-    // return (
-    //     <Button fullWidth variant="outlined" startIcon={<Add/>} component="label">
-    //         Choose Path
-    //         <input hidden type="file" accept="" multiple/>
-    //     </Button>
-    // );
-
-    //VS Version:
     return (
         <div style={pathSelector}>
             <TextField
