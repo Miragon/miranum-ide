@@ -20,8 +20,6 @@ const GenerateProjectInput: React.FC<Props> = props => {
                 name: name,
                 path: path
             })
-        } else {
-            props.vs.postMessage({message:'missingArguments'});
         }
     }, [name, path, props.vs]);
 
@@ -51,6 +49,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         autoFocus
+                        error={name === ''}
                     />
                     <TextField
                         margin="normal"
