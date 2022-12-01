@@ -14,7 +14,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
 
     const generate =  useCallback(() => {
-        if(name !== "" && path) {
+        if(name !== "" && path !== "") {
             props.vs.postMessage({
                 message:'generateProject',
                 name: name,
@@ -60,6 +60,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         name="path"
                         value={path}
                         onChange={e => setPath(e.target.value)}
+                        error={path === ''}
                     />
                     <Button
                         onClick={generate}
