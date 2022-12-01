@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useCallback, useState } from 'react';
+import {useCallback, useState} from 'react';
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 
@@ -14,13 +14,15 @@ const GenerateInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
     const [type, setType] = useState<string>("bpmn");
 
-    const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generate',
-            name: name,
-            type: type,
-            path: path
-        })
+    const generate = useCallback(() => {
+        if(name !== '' && path) {
+            props.vs.postMessage({
+                message: 'generate',
+                name: name,
+                type: type,
+                path: path
+            });
+        }
     }, [name, path, props.vs, type]);
 
     return (
@@ -49,12 +51,11 @@ const GenerateInput: React.FC<Props> = props => {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     autoFocus
+                    error={name === ''}
                 />
-                <FormControl fullWidth>
+                <FormControl fullWidth required>
                     <InputLabel id="typeLabel">Type</InputLabel>
                     <Select
-                        required
-                        fullWidth
                         id="type"
                         labelId="typeLabel"
                         name="type"

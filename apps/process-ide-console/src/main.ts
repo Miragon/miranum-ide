@@ -14,7 +14,9 @@ const ws = vscode.workspace;
 
 async function initDigiwfLib(): Promise<DigiwfLib> {
     try {
-        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(vscode.Uri.file(ws.rootPath ?? ""), "process-ide.json"));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(ws.workspaceFolders[0].uri, "process-ide.json"));
 
         const processIdeConfig = JSON.parse(processIdeJSON.toString());
         const plugins: DigiWFDeploymentPlugin[] = [];
@@ -32,6 +34,10 @@ async function initDigiwfLib(): Promise<DigiwfLib> {
 export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
     const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'process-ide-console-webview');
+
+    if(!digiwfLib.projectConfig) {
+        vscode.window.showInformationMessage("couldn't find process-ide.json");
+    }
 
     digiwfLib.projectConfig?.deployment.forEach(deployment => {
         deployment.targetEnvironments.forEach(env => {
@@ -114,6 +120,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     for (const artifact of artifacts) {
                         await generate(artifact, `${event.path}/${event.name}`);
                     }
+                    break;
             }
         });
     });

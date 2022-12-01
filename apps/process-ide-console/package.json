@@ -91,9 +91,7 @@
 		  },
 		  "viewsWelcome": [
 			{
-				"view": "bpmn-project",
-				"contents": "[Generate a new Project](command:vscode.openFolder) \n For further explanation regarding the commands [read our docs](https://aka.ms/vscode-scm).",
-				"when": "config.git.enabled && commands.state == initialized && workbenchState == empty"
+				"view": "bpmn-project"
 			},
 			{
 				"view": "commands",
@@ -118,45 +116,45 @@
 				"when": "explorerResourceIsFolder"
 			  }
 			],
-            "deploy.submenu":[
-                {
-                    "command": "process-ide.deploy.local"
-                },
+      "deploy.submenu":[
+        {
+            "command": "process-ide.deploy.local"
+        },
 				{
-                    "command": "process-ide.deploy.dev"
-                },
+            "command": "process-ide.deploy.dev"
+        },
 				{
-                    "command": "process-ide.deploy.test"
-                }
-            ],
+            "command": "process-ide.deploy.test"
+        }
+      ],
 			"deployAll.submenu":[
-                {
-                    "command": "process-ide.deployAll.local"
-                },
+        {
+            "command": "process-ide.deployAll.local"
+        },
 				{
-                    "command": "process-ide.deployAll.dev"
-                },
+            "command": "process-ide.deployAll.dev"
+        },
 				{
-                    "command": "process-ide.deployAll.test"
-                }
-            ],
+            "command": "process-ide.deployAll.test"
+        }
+      ],
 			"generate.submenu":[
-                {
-                    "command": "process-ide.generateFile"
-                },
+        {
+            "command": "process-ide.generateFile"
+        },
 				{
-                    "command": "process-ide.generateProject"
-                }
-            ]
+            "command": "process-ide.generateProject"
+        }
+      ]
 		  },
 		  "submenus": [
 			{
 				"id": "deploy.submenu",
-        		"label": "Deploy"
+        "label": "Deploy"
 			},
 			{
 				"id": "deployAll.submenu",
-        		"label": "Deploy All"
+        "label": "Deploy All"
 			},
 			{
 				"id": "generate.submenu",

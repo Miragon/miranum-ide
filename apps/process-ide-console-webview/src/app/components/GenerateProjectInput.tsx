@@ -14,11 +14,13 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
 
     const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generateProject',
-            name: name,
-            path: path
-        })
+        if(name !== "" && path !== "") {
+            props.vs.postMessage({
+                message:'generateProject',
+                name: name,
+                path: path
+            })
+        }
     }, [name, path, props.vs]);
 
     return (
@@ -47,6 +49,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         autoFocus
+                        error={name === ''}
                     />
                     <TextField
                         margin="normal"
@@ -57,6 +60,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         name="path"
                         value={path}
                         onChange={e => setPath(e.target.value)}
+                        error={path === ''}
                     />
                     <Button
                         onClick={generate}
