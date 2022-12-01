@@ -159,22 +159,19 @@ const formGenerator = new DigiwfArtifactGenerator("form", "form",
     "type": "object",
     "x-display": "stepper",
     "allOf": [
-      {
-        "title": "Input",
-        "description": "",
-        "type": "object",
-        "x-options": {
-          "sectionsTitlesClasses": [
-            "d-none"
-          ]
-        },
-        "allOf": [
-            {{it.allOf | safe}}
-        ],
-        "key": "{{it.allOfKey}}"
-      }
+        {
+            "title": "Abschnitt",
+            "description": "",
+            "type": "object",
+            "x-options": {
+                "sectionsTitlesClasses": [
+                    "d-none"
+                ]
+            },
+            "allOf": []
+        }
     ]
-  }
+    }
 }`, {allOfKey: "FORMSECTION_input"}, "/forms");
 const configGenerator = new DigiwfArtifactGenerator("config", "json",
     `{

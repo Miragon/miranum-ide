@@ -47,10 +47,10 @@ jobs:
         with:
           name: process-ide-cli
           path: dist/apps/miragon-process-ide-cli
-      # process-ide-vscode
+      # process-ide-console
       - uses: actions/upload-artifact@v3
         with:
-          name: process-ide-cli
+          name: process-ide-console
           path: dist/apps/process-ide-console
       # digiwf-lib
       - uses: actions/upload-artifact@v3
@@ -90,7 +90,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v3
         with:
-          name: process-ide-cli
+          name: process-ide-console
       - name: Prepare
         run: npm install && npm install -g vsce
       - name: Build vsix

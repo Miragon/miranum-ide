@@ -19,11 +19,13 @@ const GenerateProjectInput: React.FC<Props> = props => {
     }
 
     const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generateProject',
-            name: name,
-            path: path
-        })
+        if(name !== "" && path !== "") {
+            props.vs.postMessage({
+                message:'generateProject',
+                name: name,
+                path: path
+            });
+        }
     }, [name, path, props.vs]);
 
     return (
@@ -52,11 +54,13 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         autoFocus
+                        error={name === ''}
                     />
                     <FileSelector
                         vs={props.vs}
                         path={props.currentPath}
                         onPathChange={pathHandler}
+                        error={path === ''}
                     />
                     <Button
                         onClick={generate}

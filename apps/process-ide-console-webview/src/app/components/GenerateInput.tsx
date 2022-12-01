@@ -13,13 +13,15 @@ const GenerateInput: React.FC<Props> = props => {
     const [name, setName] = useState<string>("");
     const [type, setType] = useState<string>("bpmn");
 
-    const generate =  useCallback(() => {
-        props.vs.postMessage({
-            message:'generate',
-            name: name,
-            type: type,
-            path: props.currentPath
-        })
+    const generate = useCallback(() => {
+        if(name !== '' && path) {
+            props.vs.postMessage({
+                message: 'generate',
+                name: name,
+                type: type,
+                path: props.currentPath
+            });
+        }
     }, [name, props.currentPath, props.vs, type]);
 
     return (
@@ -48,12 +50,11 @@ const GenerateInput: React.FC<Props> = props => {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     autoFocus
+                    error={name === ''}
                 />
-                <FormControl fullWidth>
+                <FormControl fullWidth required>
                     <InputLabel id="typeLabel">Type</InputLabel>
                     <Select
-                        required
-                        fullWidth
                         id="type"
                         labelId="typeLabel"
                         name="type"
