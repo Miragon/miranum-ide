@@ -14,7 +14,7 @@ const GenerateInput: React.FC<Props> = props => {
     const [type, setType] = useState<string>("bpmn");
 
     const generate = useCallback(() => {
-        if(name !== '' && path) {
+        if(name !== '') {
             props.vs.postMessage({
                 message: 'generate',
                 name: name,

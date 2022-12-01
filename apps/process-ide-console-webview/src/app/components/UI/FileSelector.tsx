@@ -37,6 +37,7 @@ const FileSelector: React.FC<Props> = props => {
                     setPath(e.target.value);
                     props.onPathChange(e.target.value);
                 }}
+                error={path === ''}
             />
             <Button onClick={openFilePicker} variant="outlined" startIcon={<Add/>}>
                 Choose Path

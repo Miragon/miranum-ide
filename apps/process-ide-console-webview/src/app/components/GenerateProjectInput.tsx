@@ -60,7 +60,6 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         vs={props.vs}
                         path={props.currentPath}
                         onPathChange={pathHandler}
-                        error={path === ''}
                     />
                     <Button
                         onClick={generate}
