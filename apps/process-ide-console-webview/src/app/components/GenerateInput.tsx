@@ -14,7 +14,7 @@ const GenerateInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
     const [type, setType] = useState<string>("bpmn");
 
-    const handleSubmit = useCallback(() => {
+    const generate = useCallback(() => {
         if(name !== '' && path) {
             props.vs.postMessage({
                 message: 'generate',
@@ -80,7 +80,7 @@ const GenerateInput: React.FC<Props> = props => {
                     onChange={e => setPath(e.target.value)}
                 />
                 <Button
-                    onClick={handleSubmit}
+                    onClick={generate}
                     fullWidth
                     variant="outlined"
                     sx={{ mt: 3, mb: 2 }}
