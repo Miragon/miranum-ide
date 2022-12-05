@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useCallback, useState } from 'react';
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
+import FileSelector from "./UI/FileSelector";
 
 interface Props {
     vs: any;
@@ -19,7 +20,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                 message:'generateProject',
                 name: name,
                 path: path
-            })
+            });
         }
     }, [name, path, props.vs]);
 
@@ -51,21 +52,16 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         autoFocus
                         error={name === ''}
                     />
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="path"
-                        label="Path"
-                        name="path"
-                        value={path}
-                        onChange={e => setPath(e.target.value)}
-                        error={path === ''}
+                    <FileSelector
+                        vs={props.vs}
+                        path={props.currentPath}
+                        onPathChange={ (p:string) => setPath(p)}
                     />
                     <Button
                         onClick={generate}
                         fullWidth
-                        variant="outlined"
+                        variant="contained"
+                        color="secondary"
                         sx={{ mt: 3, mb: 2 }}
                     >Projekt generieren</Button>
                 </Box>
