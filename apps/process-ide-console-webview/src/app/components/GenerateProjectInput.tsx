@@ -10,7 +10,6 @@ interface Props {
 }
 
 const GenerateProjectInput: React.FC<Props> = props => {
-
     const [name, setName] = useState<string>("");
     const [path, setPath] = useState<string>(props.currentPath);
 

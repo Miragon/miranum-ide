@@ -3,22 +3,15 @@ import { useCallback, useState } from 'react';
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
-//import * as fs from "fs/promises";
 
 interface Props {
     vs: any;
+    config: any;
     currentPath: string;
 }
 
-// const getProcessIDE = async (path:string) => {
-//     return (await fs.lstat(`${path}/process-ide.json`)).isFile();
-// }
-
 const GenerateInput: React.FC<Props> = props => {
-    //const PIDE = useAsync(getProcessIDE(props.currentPath));
-    //console.log(PIDE);
-    const PIDE = false;
-    console.log(props.vs.getState());
+    const PIDE: boolean = props.config;
 
     const [name, setName] = useState<string>("");
     const [type, setType] = useState<string>("bpmn");

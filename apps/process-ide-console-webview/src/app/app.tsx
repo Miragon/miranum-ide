@@ -7,6 +7,7 @@ const theme = createTheme();
 
 interface Props {
     vs: any;
+    config: any;
     currentPath: string;
     project: boolean;
 }
@@ -19,7 +20,7 @@ export function App(props: Props) {
                     <CssBaseline />
                     {props.project ?
                         <GenerateProjectInput vs={props.vs} currentPath={props.currentPath}/>
-                        : <GenerateInput vs={props.vs} currentPath={props.currentPath}/>
+                        : <GenerateInput vs={props.vs} currentPath={props.currentPath} config={props.config}/>
                     }
                 </Container>
             </ThemeProvider>

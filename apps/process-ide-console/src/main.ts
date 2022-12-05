@@ -86,9 +86,16 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
+        panel.webview.html = getGenerateWebview(scriptUrl);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.workspaceFolders[0].uri.path ?? "", false);
+        const cPath = ws.workspaceFolders[0].uri.path ?? ""
+        console.log(!!digiwfLib.projectConfig);
+        panel.webview.postMessage({
+            command: "generateFile",
+            currentPath: cPath,
+            processIDE: digiwfLib.projectConfig
+        });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -105,7 +112,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }).then( fileUri => {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        panel.webview.html = getGenerateWebview(scriptUrl, fileUri[0].path, false);
+                        panel.webview.postMessage({command: "generateFile", currentPath: fileUri[0].path});
                     });
                     break;
             }
@@ -122,10 +129,17 @@ export async function activate(context: vscode.ExtensionContext) {
                 localResourceRoots: [pathToWebview]
             }
         );
+
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
+        panel.webview.html = getGenerateWebview(scriptUrl);
+
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.workspaceFolders[0].uri.path ?? "", true);
+        const cPath = ws.workspaceFolders[0].uri.path ?? ""
+        panel.webview.postMessage({
+            command: "generateProject",
+            currentPath: cPath
+        });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -144,7 +158,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }).then( fileUri => {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        panel.webview.html = getGenerateWebview(scriptUrl, fileUri[0].path, true);
+                        panel.webview.postMessage({command: generateProject, currentPath: fileUri[0].path});
                     });
                     break;
             }
