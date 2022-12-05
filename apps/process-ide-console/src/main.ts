@@ -86,7 +86,9 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", false);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.workspaceFolders[0].uri.path ?? "", false);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -94,6 +96,17 @@ export async function activate(context: vscode.ExtensionContext) {
                     // eslint-disable-next-line no-case-declarations
                     const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
                     await generate(artifact, event.path);
+                    break;
+                case 'openFilePicker':
+                    vscode.window.showOpenDialog({
+                        canSelectFolders: true,
+                        canSelectFiles: false,
+                        canSelectMany: false
+                    }).then( fileUri => {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        panel.webview.html = getGenerateWebview(scriptUrl, fileUri[0].path, false);
+                    });
                     break;
             }
         });
@@ -110,7 +123,9 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         );
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", true);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        panel.webview.html = getGenerateWebview(scriptUrl, ws.workspaceFolders[0].uri.path ?? "", true);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
