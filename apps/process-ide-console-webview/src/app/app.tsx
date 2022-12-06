@@ -2,25 +2,78 @@ import GenerateInput from "./components/GenerateInput";
 import GenerateProjectInput from "./components/GenerateProjectInput";
 import { Container, createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import * as React from "react";
+import {useState} from "react";
 
 const theme = createTheme();
 
 interface Props {
     vs: any;
-    config: any;
-    currentPath: string;
-    project: boolean;
 }
 
 export function App(props: Props) {
+    const [currentPath, setCurrentPath] = useState("");
+    const [project, setProject] = useState(false);
+    let config: any;
+
+    window.addEventListener('message', event => {
+        const message = event.data;
+        setCurrentPath(message.currentPath);
+
+        //specific arguments
+        if(message.command) {
+            switch (message.command) {
+                case 'generateFile':
+                    setProject(false);
+                    config = message.processIDE;
+
+                    props.vs.setState({
+                        project: false,
+                        config: message.processIDE,
+                    })
+                    break;
+                case 'generateProject':
+                    setProject(true);
+
+                    props.vs.setState({
+                        project: true,
+                    })
+                    break;
+            }
+        }
+
+        props.vs.setState({
+            ...props.vs.getState(),
+            path: message.currentPath
+        });
+        console.log(props.vs.getState());
+    });
+
+    const state = props.vs.getState()
+    if(state){
+        return (
+            <>
+                <ThemeProvider theme={theme}>
+                    <Container component="main" maxWidth="xs">
+                        <CssBaseline />
+                        {state.project ?
+                            <GenerateProjectInput vs={props.vs} currentPath={state.path}/>
+                            : <GenerateInput vs={props.vs} currentPath={state.path} config={state.config}/>
+                        }
+                    </Container>
+                </ThemeProvider>
+            </>
+        );
+    }
+
+    //initial view
     return (
         <>
             <ThemeProvider theme={theme}>
                 <Container component="main" maxWidth="xs">
                     <CssBaseline />
-                    {props.project ?
-                        <GenerateProjectInput vs={props.vs} currentPath={props.currentPath}/>
-                        : <GenerateInput vs={props.vs} currentPath={props.currentPath} config={props.config}/>
+                    {project ?
+                        <GenerateProjectInput vs={props.vs} currentPath={currentPath}/>
+                        : <GenerateInput vs={props.vs} currentPath={currentPath} config={config}/>
                     }
                 </Container>
             </ThemeProvider>

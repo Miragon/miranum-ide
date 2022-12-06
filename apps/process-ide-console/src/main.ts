@@ -110,9 +110,10 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
+                        //panel.webview.html = getGenerateWebview(scriptUrl);
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        panel.webview.postMessage({command: "generateFile", currentPath: fileUri[0].path});
+                        panel.webview.postMessage({currentPath: fileUri[0].path});
                     });
                     break;
             }
@@ -158,7 +159,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }).then( fileUri => {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        panel.webview.postMessage({command: generateProject, currentPath: fileUri[0].path});
+                        panel.webview.postMessage({command: "generateProject", currentPath: fileUri[0].path});
                     });
                     break;
             }
