@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
+import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 
 interface Props {
     vs: any;
@@ -13,15 +14,27 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [name, setName] = useState<string>("");
     const [path, setPath] = useState<string>(props.currentPath);
 
-    const generate =  useCallback(() => {
-        if(name !== "" && path !== "") {
-            props.vs.postMessage({
-                message:'generateProject',
-                name: name,
-                path: path
-            });
+    const digiwfLib = useMemo(() => {
+        return new DigiwfLib()
+    }, []);
+
+    const generate = useCallback(() => {
+        if (name !== '' && path !== '') {
+            digiwfLib.initProject(name)
+                .then(artifacts => {
+                    // todo move this into a custom hook
+                    props.vs.postMessage({
+                        command: 'generateProject',
+                        data: {
+                            name: name,
+                            artifacts: artifacts,
+                            path: path
+                        }
+                    });
+                })
+                .catch(err => console.error(err));
         }
-    }, [name, path, props.vs]);
+    }, [name, path, props.vs, digiwfLib]);
 
     return (
             <FormControl

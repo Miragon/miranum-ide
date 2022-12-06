@@ -90,19 +90,26 @@ export async function activate(context: vscode.ExtensionContext) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const cPath = ws.workspaceFolders[0].uri.path ?? ""
-        console.log(!!digiwfLib.projectConfig);
         panel.webview.postMessage({
-            command: "generateFile",
-            currentPath: cPath,
-            processIDE: digiwfLib.projectConfig
-        });
+            command: "show",
+            view: "generateFile",
+            data: {
+                currentPath: cPath,
+                processIDE: digiwfLib.projectConfig
+            }
+        }).then(() => console.log("Event: show generateFile was sent"));
 
+        // todo remove duplicate code
         panel.webview.onDidReceiveMessage( async (event) => {
-            switch (event.message) {
-                case 'generate':
-                    // eslint-disable-next-line no-case-declarations
-                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                    await generate(artifact, event.path);
+            console.log(`Processing event: ${event.command}`)
+            switch (event.command) {
+                case 'generateProject':
+                    for (const artifact of event.data.artifacts) {
+                        await generate(artifact, `${event.data.path}/${event.data.name}`);
+                    }
+                    break;
+                case 'generateArtifact':
+                    await generate(event.data.artifact, `${event.data.path}`);
                     break;
                 case 'openFilePicker':
                     vscode.window.showOpenDialog({
@@ -110,10 +117,19 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
-                        //panel.webview.html = getGenerateWebview(scriptUrl);
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        panel.webview.postMessage({currentPath: fileUri[0].path});
+                        if (fileUri) {
+                            panel.webview.postMessage({
+                                command: "show",
+                                view: "generateProject",
+                                data: {
+                                    currentPath: fileUri[0].path,
+                                    processIDE: digiwfLib.projectConfig
+                                }
+                            }).then(() => console.log("Event: show generateProject was sent"));
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
                     });
                     break;
             }
@@ -138,18 +154,24 @@ export async function activate(context: vscode.ExtensionContext) {
         // @ts-ignore
         const cPath = ws.workspaceFolders[0].uri.path ?? ""
         panel.webview.postMessage({
-            command: "generateProject",
-            currentPath: cPath
-        });
+            command: "show",
+            view: "generateProject",
+            data: {
+                currentPath: cPath,
+                processIDE: digiwfLib.projectConfig
+            }
+        }).then(() => console.log("Event: show generateProject was sent"));
 
         panel.webview.onDidReceiveMessage( async (event) => {
-            switch (event.message) {
+            console.log(`Processing event: ${event.command}`)
+            switch (event.command) {
                 case 'generateProject':
-                    // eslint-disable-next-line no-case-declarations
-                    const artifacts = await digiwfLib.initProject(event.name);
-                    for (const artifact of artifacts) {
-                        await generate(artifact, `${event.path}/${event.name}`);
+                    for (const artifact of event.data.artifacts) {
+                        await generate(artifact, `${event.data.path}/${event.data.name}`);
                     }
+                    break;
+                case 'generateArtifact':
+                    await generate(event.data.artifact, `${event.data.path}`);
                     break;
                 case 'openFilePicker':
                     vscode.window.showOpenDialog({
@@ -157,9 +179,19 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        panel.webview.postMessage({command: "generateProject", currentPath: fileUri[0].path});
+                        if (fileUri) {
+                            panel.webview.postMessage({
+                                command: "show",
+                                view: "generateProject",
+                                data: {
+                                    currentPath: fileUri[0].path,
+                                    processIDE: digiwfLib.projectConfig
+                                }
+                            }).then(() => console.log("Event: show generateProject was sent"));
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
                     });
                     break;
             }

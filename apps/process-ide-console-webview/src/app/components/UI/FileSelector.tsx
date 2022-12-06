@@ -1,7 +1,7 @@
-import React, {useCallback, useState} from "react";
+import React, { useCallback } from "react";
 import CSS from 'csstype';
-import {Button, TextField} from "@mui/material";
-import {Add} from "@mui/icons-material";
+import { Button, TextField } from "@mui/material";
+import { Add } from "@mui/icons-material";
 
 const pathSelector: CSS.Properties = {
     display: 'flex',
@@ -17,11 +17,10 @@ interface Props {
 }
 
 const FileSelector: React.FC<Props> = props => {
-    const [path, setPath] = useState(props.path);
 
     const openFilePicker =  useCallback(() => {
         props.vs.postMessage({
-            message:'openFilePicker',
+            command:'openFilePicker',
         })
     }, [props.vs]);
 
@@ -32,12 +31,11 @@ const FileSelector: React.FC<Props> = props => {
                 id="path"
                 label="Path"
                 name="path"
-                value={path}
+                value={props.path}
                 onChange={e => {
-                    setPath(e.target.value);
                     props.onPathChange(e.target.value);
                 }}
-                error={path === ''}
+                error={props.path === ''}
             />
             <Button onClick={openFilePicker} variant="outlined" startIcon={<Add/>}>
                 Choose Path
