@@ -45,39 +45,34 @@ export function App(props: Props) {
             ...props.vs.getState(),
             path: message.currentPath
         });
-        console.log(props.vs.getState());
     });
 
     const state = props.vs.getState()
     if(state){
         return (
-            <>
-                <ThemeProvider theme={theme}>
-                    <Container component="main" maxWidth="xs">
-                        <CssBaseline />
-                        {state.project ?
-                            <GenerateProjectInput vs={props.vs} currentPath={state.path}/>
-                            : <GenerateInput vs={props.vs} currentPath={state.path} config={state.config}/>
-                        }
-                    </Container>
-                </ThemeProvider>
-            </>
+            <ThemeProvider theme={theme}>
+                <Container component="main" maxWidth="xs">
+                    <CssBaseline />
+                    {state.project ?
+                        <GenerateProjectInput vs={props.vs} currentPath={state.path} name={state.name? state.name : ""}/>
+                        : <GenerateInput vs={props.vs} currentPath={state.path} name={state.name? state.name : ""} type={state.type? state.type : "bpmn"} config={state.config}/>
+                    }
+                </Container>
+            </ThemeProvider>
         );
     }
 
     //initial view
     return (
-        <>
-            <ThemeProvider theme={theme}>
-                <Container component="main" maxWidth="xs">
-                    <CssBaseline />
-                    {project ?
-                        <GenerateProjectInput vs={props.vs} currentPath={currentPath}/>
-                        : <GenerateInput vs={props.vs} currentPath={currentPath} config={config}/>
-                    }
-                </Container>
-            </ThemeProvider>
-        </>
+        <ThemeProvider theme={theme}>
+            <Container component="main" maxWidth="xs">
+                <CssBaseline />
+                {project ?
+                    <GenerateProjectInput vs={props.vs} currentPath={currentPath} name={""}/>
+                    : <GenerateInput vs={props.vs} currentPath={currentPath} name={""} type={"bpmn"} config={config}/>
+                }
+            </Container>
+        </ThemeProvider>
     );
 }
 

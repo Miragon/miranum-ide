@@ -8,13 +8,15 @@ interface Props {
     vs: any;
     config: any;
     currentPath: string;
+    name: string;
+    type: string;
 }
 
 const GenerateInput: React.FC<Props> = props => {
     const PIDE: boolean = props.config;
 
-    const [name, setName] = useState<string>("");
-    const [type, setType] = useState<string>("bpmn");
+    const [name, setName] = useState<string>(props.name);
+    const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
 
     const generate = useCallback(() => {
