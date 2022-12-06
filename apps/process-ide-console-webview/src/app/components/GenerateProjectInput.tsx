@@ -8,10 +8,11 @@ import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 interface Props {
     vs: any;
     currentPath: string;
+    name: string;
 }
 
 const GenerateProjectInput: React.FC<Props> = props => {
-    const [name, setName] = useState<string>("");
+    const [name, setName] = useState<string>(props.name);
     const [path, setPath] = useState<string>(props.currentPath);
 
     const digiwfLib = useMemo(() => {
@@ -60,7 +61,10 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         label="Name"
                         name="name"
                         value={name}
-                        onChange={e => setName(e.target.value)}
+                        onChange={e => {
+                            setName(e.target.value);
+                            props.vs.setState({...props.vs.getState(), name: e.target.value});
+                        }}
                         autoFocus
                         error={name === ''}
                     />
