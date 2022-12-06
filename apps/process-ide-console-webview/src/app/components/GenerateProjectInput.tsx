@@ -8,11 +8,10 @@ import { DigiwfLib } from "@miragon-process-ide/digiwf-lib";
 interface Props {
     vs: any;
     currentPath: string;
-    name: string;
 }
 
 const GenerateProjectInput: React.FC<Props> = props => {
-    const [name, setName] = useState<string>(props.name);
+    const [name, setName] = useState<string>("");
     const [path, setPath] = useState<string>(props.currentPath);
 
     const digiwfLib = useMemo(() => {
