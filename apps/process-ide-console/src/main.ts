@@ -113,7 +113,7 @@ export async function activate(context: vscode.ExtensionContext) {
                         if(fileUri) {
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
-                            panel.webview.postMessage({currentPath: fileUri[0].path});
+                            panel.webview.postMessage({data: {currentPath: fileUri[0].path}});
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");
@@ -166,7 +166,7 @@ export async function activate(context: vscode.ExtensionContext) {
                         if(fileUri) {
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
-                            panel.webview.postMessage({currentPath: fileUri[0].path});
+                            panel.webview.postMessage({data:{currentPath: fileUri[0].path}});
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");

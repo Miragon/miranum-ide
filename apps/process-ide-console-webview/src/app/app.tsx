@@ -17,7 +17,7 @@ export function App(props: Props) {
 
     window.addEventListener('message', event => {
         const message = event.data;
-        setCurrentPath(message.currentPath);
+        setCurrentPath(message.data.currentPath);
 
         //specific arguments
         if(message.command) {
