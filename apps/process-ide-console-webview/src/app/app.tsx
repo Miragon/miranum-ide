@@ -11,9 +11,9 @@ interface Props {
 }
 
 export function App(props: Props) {
-    const [currentPath, setCurrentPath] = useState("");
-    const [project, setProject] = useState(false);
-    let config: any;
+    const [currentPath, setCurrentPath] = useState<string>("");
+    const [view, setView] = useState<string>();
+    const [config, setConfig] = useState();
 
     window.addEventListener('message', event => {
         const message = event.data;
@@ -21,19 +21,17 @@ export function App(props: Props) {
 
         //specific arguments
         if(message.command) {
+            setView(message.command);
             switch (message.command) {
                 case 'generateFile':
-                    setProject(false);
-                    config = message.processIDE;
+                    setConfig(message.data.processIDE);
 
                     props.vs.setState({
                         project: false,
-                        config: message.processIDE,
+                        config: message.data.processIDE,
                     })
                     break;
                 case 'generateProject':
-                    setProject(true);
-
                     props.vs.setState({
                         project: true,
                     })
@@ -43,7 +41,7 @@ export function App(props: Props) {
 
         props.vs.setState({
             ...props.vs.getState(),
-            path: message.currentPath
+            path: message.data.currentPath
         });
     });
 
@@ -61,16 +59,18 @@ export function App(props: Props) {
             </ThemeProvider>
         );
     }
+    /**
+     *                     {view === "generateFile" && <GenerateInput vs={props.vs} currentPath={state.path} name={state.name? state.name : ""} type={state.type? state.type : "bpmn"} config={state.config}/>}
+     *                     {view === "generateProject" && <GenerateProjectInput vs={props.vs} currentPath={state.path} name={state.name? state.name : ""}/>}
+     */
 
     //initial view
     return (
         <ThemeProvider theme={theme}>
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
-                {project ?
-                    <GenerateProjectInput vs={props.vs} currentPath={currentPath} name={""}/>
-                    : <GenerateInput vs={props.vs} currentPath={currentPath} name={""} type={"bpmn"} config={config}/>
-                }
+                {view === "generateFile" && <GenerateInput vs={props.vs} currentPath={currentPath} name={""} type={"bpmn"} config={config}/>}
+                {view === "generateProject" && <GenerateProjectInput vs={props.vs} currentPath={currentPath} name={""}/>}
             </Container>
         </ThemeProvider>
     );

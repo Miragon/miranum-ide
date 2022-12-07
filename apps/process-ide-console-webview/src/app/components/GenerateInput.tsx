@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { useCallback, useState } from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
+import {DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 
 interface Props {
     vs: any;
@@ -13,22 +14,30 @@ interface Props {
 }
 
 const GenerateInput: React.FC<Props> = props => {
-    const PIDE: boolean = props.config;
-
     const [name, setName] = useState<string>(props.name);
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
 
+    const digiwfLib = useMemo(() => {
+        return new DigiwfLib(props.config)
+    }, [props.config]);
+
     const generate = useCallback(() => {
         if (name !== '' && path !== '') {
-            props.vs.postMessage({
-                message: 'generate',
-                name: name,
-                type: type,
-                path: path
-            });
+            digiwfLib.generateArtifact(name, type,  digiwfLib.projectConfig?.name ?? "")
+                .then(artifact => {
+                    // todo move this into a custom hook
+                    props.vs.postMessage({
+                        message: 'generateArtifact',
+                        data: {
+                            artifact: artifact,
+                            path: path
+                        }
+                    });
+                })
+                .catch(err => console.error(err));
         }
-    }, [name, type, path, props.vs]);
+    }, [name, type, path, props.vs, digiwfLib]);
 
     return (
         <FormControl
@@ -80,8 +89,7 @@ const GenerateInput: React.FC<Props> = props => {
                         <MenuItem value="config">config</MenuItem>
                     </Select>
                 </FormControl>
-                {PIDE ?
-                    <></> :
+                {!digiwfLib.projectConfig &&
                     <FileSelector
                         vs={props.vs}
                         path={props.currentPath}

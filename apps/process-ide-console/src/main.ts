@@ -93,16 +93,16 @@ export async function activate(context: vscode.ExtensionContext) {
         console.log(!!digiwfLib.projectConfig);
         panel.webview.postMessage({
             command: "generateFile",
-            currentPath: cPath,
-            processIDE: digiwfLib.projectConfig
+            data: {
+                currentPath: cPath,
+                processIDE: digiwfLib.projectConfig
+            }
         });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
-                case 'generate':
-                    // eslint-disable-next-line no-case-declarations
-                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                    await generate(artifact, event.path);
+                case 'generateArtifact':
+                    await generate(event.data.artifact, event.data.path);
                     break;
                 case 'openFilePicker':
                     vscode.window.showOpenDialog({
@@ -110,10 +110,14 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
-                        //panel.webview.html = getGenerateWebview(scriptUrl);
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        panel.webview.postMessage({currentPath: fileUri[0].path});
+                        if(fileUri) {
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            panel.webview.postMessage({currentPath: fileUri[0].path});
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
                     });
                     break;
             }
@@ -139,16 +143,18 @@ export async function activate(context: vscode.ExtensionContext) {
         const cPath = ws.workspaceFolders[0].uri.path ?? ""
         panel.webview.postMessage({
             command: "generateProject",
-            currentPath: cPath
+            data: {
+                currentPath: cPath,
+                processIDE: digiwfLib.projectConfig
+            }
         });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generateProject':
                     // eslint-disable-next-line no-case-declarations
-                    const artifacts = await digiwfLib.initProject(event.name);
-                    for (const artifact of artifacts) {
-                        await generate(artifact, `${event.path}/${event.name}`);
+                    for (const artifact of event.data.artifacts) {
+                        await generate(artifact, `${event.data.path}/${event.data.name}`);
                     }
                     break;
                 case 'openFilePicker':
@@ -157,9 +163,14 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        panel.webview.postMessage({command: "generateProject", currentPath: fileUri[0].path});
+                        if(fileUri) {
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            panel.webview.postMessage({currentPath: fileUri[0].path});
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
                     });
                     break;
             }
