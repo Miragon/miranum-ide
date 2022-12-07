@@ -63,14 +63,14 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => {
                             setName(e.target.value);
-                            props.vs.setState({...props.vs.getState(), name: e.target.value});
+                            props.vs.postMessage({message: "changedInput", data: {name: e.target.value}});
                         }}
                         autoFocus
                         error={name === ''}
                     />
                     <FileSelector
                         vs={props.vs}
-                        path={props.currentPath}
+                        path={path}
                         onPathChange={ (p:string) => setPath(p)}
                     />
                     <Button

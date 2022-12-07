@@ -87,17 +87,27 @@ export async function activate(context: vscode.ExtensionContext) {
 
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
         panel.webview.html = getGenerateWebview(scriptUrl);
+
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const cPath = ws.workspaceFolders[0].uri.path ?? ""
-        console.log(!!digiwfLib.projectConfig);
-        panel.webview.postMessage({
-            command: "generateFile",
-            data: {
-                currentPath: cPath,
-                processIDE: digiwfLib.projectConfig
-            }
-        });
+        let currentPath = ws.workspaceFolders[0].uri.path ?? "";
+        let name = "";
+        let type = "bpmn";
+
+        const fileMessage = (cPath: string) => {
+            panel.webview.postMessage({
+                command: "generateFile",
+                data: {
+                    name: name,
+                    type: type,
+                    currentPath: cPath,
+                    processIDE: digiwfLib.projectConfig
+                }
+            });
+        }
+
+        //initialisation
+        fileMessage(currentPath);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -111,15 +121,25 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectMany: false
                     }).then( fileUri => {
                         if(fileUri) {
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            panel.webview.postMessage({data: {currentPath: fileUri[0].path}});
+                            currentPath = fileUri[0].path;
+                            fileMessage(currentPath);
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");
                         }
                     });
                     break;
+                case 'changedInput':
+                    name = event.data.name;
+                    type = event.data.type;
+                    break;
+            }
+        });
+
+        //setState
+        panel.onDidChangeViewState( () => {
+            if(panel.visible) {
+                fileMessage(currentPath);
             }
         });
     });
@@ -140,14 +160,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const cPath = ws.workspaceFolders[0].uri.path ?? ""
-        panel.webview.postMessage({
-            command: "generateProject",
-            data: {
-                currentPath: cPath,
-                processIDE: digiwfLib.projectConfig
-            }
-        });
+        let currentPath = ws.workspaceFolders[0].uri.path ?? "";
+        let name = "";
+
+        const projectMessage = (cPath: string) => {
+            panel.webview.postMessage({
+                command: "generateProject",
+                data: {
+                    name: name,
+                    currentPath: cPath
+                }
+            });
+        }
+
+        //initialisation
+        projectMessage(currentPath);
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -164,15 +191,24 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectMany: false
                     }).then( fileUri => {
                         if(fileUri) {
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            panel.webview.postMessage({data:{currentPath: fileUri[0].path}});
+                            currentPath = fileUri[0].path;
+                            projectMessage(currentPath);
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");
                         }
                     });
                     break;
+                case 'changedInput':
+                    name = event.data.name;
+                    break;
+            }
+        });
+
+        //setState
+        panel.onDidChangeViewState( () => {
+            if(panel.visible) {
+                projectMessage(currentPath);
             }
         });
     });
