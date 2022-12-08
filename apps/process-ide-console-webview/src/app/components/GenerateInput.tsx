@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useArtifactMessage, useInputChangeMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
@@ -7,7 +7,6 @@ import FileSelector from "./UI/FileSelector";
 import {DigiwfConfig, DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 
 interface Props {
-    vs: any;
     config: DigiwfConfig;
     currentPath: string;
     name: string;
@@ -19,13 +18,21 @@ const GenerateInput: React.FC<Props> = props => {
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
+    const [error, setError] = useState<string>("")
+    const inputChange = useInputChangeMessage();
 
     const digiwfLib = useMemo(() => {
         return new DigiwfLib(props.config)
     }, [props.config]);
 
-    const generate = useArtifactMessage(props.vs, digiwfLib, name, type, path);
-    const inputChange = useInputChangeMessage(props.vs);
+    const sendArtifactMessage = useArtifactMessage(path);
+    const generate = useCallback(() => {
+        if (name !== '' && path !== '') {
+            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
+                .then((artifact: any) => sendArtifactMessage(artifact))
+                .catch((err: any) => setError(err.message));
+        }
+    }, [name, path, digiwfLib, type, sendArtifactMessage]);
 
     return (
         <FormControl
@@ -80,7 +87,6 @@ const GenerateInput: React.FC<Props> = props => {
                 </FormControl>
                 {!digiwfLib.projectConfig &&
                     <FileSelector
-                        vs={props.vs}
                         path={path}
                         onPathChange={(p: string) => setPath(p)}
                     />
@@ -96,6 +102,7 @@ const GenerateInput: React.FC<Props> = props => {
                     sx={{mt: 3, mb: 2}}
                 >Generate</Button>
             </Box>
+            {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
         </FormControl>
     );
 }

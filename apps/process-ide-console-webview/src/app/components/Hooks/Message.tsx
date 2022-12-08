@@ -1,7 +1,34 @@
-import {useCallback} from "react";
-import {DigiwfLib} from "@miragon-process-ide/digiwf-lib";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const vs = acquireVsCodeApi();
 
-export const useInputChangeMessage = (vs: any) => {
+
+export const useArtifactMessage = (path: string) => {
+    return (artifact: any) => {
+        vs.postMessage({
+            message: 'generateArtifact',
+            data: {
+                artifact: artifact,
+                path: path
+            }
+        });
+    }
+}
+
+export const useProjectMessage = (name: string, path: string) => {
+    return (artifacts: any) => {
+        vs.postMessage({
+            message: 'generateProject',
+            data: {
+                name: name,
+                path: path,
+                artifacts: artifacts
+            }
+        });
+    }
+}
+
+export const useInputChangeMessage = () => {
     return (name: string, type?: string) => {
         vs.postMessage({
             message: "changedInput",
@@ -13,41 +40,10 @@ export const useInputChangeMessage = (vs: any) => {
     }
 }
 
-export const useArtifactMessage = (vs: any, digiwfLib: DigiwfLib, name: string, type: string, path: string) => {
-    return useCallback(() => {
-        if (name !== '' && path !== '') {
-            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
-                .then((artifact: any) => {
-                    vs.postMessage({
-                        message: 'generateArtifact',
-                        data: {
-                            artifact: artifact,
-                            path: path
-                        }
-                    });
-                })
-                // todo proper error handling
-                .catch((err: any) => console.error(err));
-        }
-    }, [name, type, path, vs, digiwfLib]);
-}
-
-export const useProjectMessage = (vs: any, digiwfLib: any, name: string, path: string) => {
-    return useCallback(() => {
-        if(name !== "" && path !== "") {
-            digiwfLib.initProject(name)
-                .then((artifacts: any) => {
-                    vs.postMessage({
-                        message: 'generateProject',
-                        data: {
-                            name: name,
-                            path: path,
-                            artifacts: artifacts
-                        }
-                    });
-                })
-                // todo proper error handling
-                .catch((err: any) => console.error(err));
-        }
-    }, [name, path, vs, digiwfLib]);
+export const useFilePickerMessage = () => {
+    return () => {
+        vs.postMessage({
+            message:'openFilePicker',
+        })
+    }
 }
