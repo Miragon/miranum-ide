@@ -1,11 +1,9 @@
-export function getGenerateWebview(scriptUrl: string, currentPath: string, project: boolean) {
+export function getGenerateWebview(scriptUrl: string) {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="currentPath" content="${currentPath}">
-        <meta name="project" content="${project}">
         <title>Generate</title>
         <link href="${scriptUrl}/styles.css">
     </head>

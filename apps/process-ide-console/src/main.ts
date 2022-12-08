@@ -9,6 +9,7 @@ import {
     DigiwfDeploymentPluginRest,
     DigiwfLib
 } from "@miragon-process-ide/digiwf-lib";
+import {generateFileMessage, generateProjectMessage} from "./types/MessageAPI";
 
 const ws = vscode.workspace;
 
@@ -86,15 +87,58 @@ export async function activate(context: vscode.ExtensionContext) {
         );
 
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", false);
+        panel.webview.html = getGenerateWebview(scriptUrl);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const userInputCache: generateFileMessage = {name: "", type: "bpmn", path: ws.workspaceFolders[0].uri.path ?? ""};
+        const sendFileMessage = () => {
+            panel.webview.postMessage({
+                type: "show",                   //this is for later, to enable update events
+                command: "generateFile",
+                data: {
+                    name: userInputCache.name,
+                    type: userInputCache.type,
+                    currentPath: userInputCache.path,
+                    processIDE: digiwfLib.projectConfig
+                }
+            });
+        }
+
+        //initialisation
+        sendFileMessage();
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
-                case 'generate':
-                    // eslint-disable-next-line no-case-declarations
-                    const artifact = await digiwfLib.generateArtifact(event.name, event.type, "");
-                    await generate(artifact, event.path);
+                case 'generateArtifact':
+                    await generate(event.data.artifact, event.data.path);
                     break;
+                case 'openFilePicker':
+                    vscode.window.showOpenDialog({
+                        canSelectFolders: true,
+                        canSelectFiles: false,
+                        canSelectMany: false
+                    }).then( fileUri => {
+                        if(fileUri) {
+                            userInputCache.path = fileUri[0].path;
+                            sendFileMessage();
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
+                    });
+                    break;
+                case 'changedInput':
+                    userInputCache.name = event.data.name;
+                    userInputCache.type = event.data.type;
+                    break;
+            }
+        });
+
+        //setState
+        panel.onDidChangeViewState( () => {
+            if(panel.visible) {
+                sendFileMessage();
             }
         });
     });
@@ -109,16 +153,33 @@ export async function activate(context: vscode.ExtensionContext) {
                 localResourceRoots: [pathToWebview]
             }
         );
+
         const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl, ws.rootPath ?? "", true);
+        panel.webview.html = getGenerateWebview(scriptUrl);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const userInputCache: generateProjectMessage = {name: "", path: ws.workspaceFolders[0].uri.path ?? ""};
+        const sendProjectMessage = () => {
+            panel.webview.postMessage({
+                type: "show",                   //this is for later, to enable update events
+                command: "generateProject",
+                data: {
+                    name: userInputCache.name,
+                    currentPath: userInputCache.path
+                }
+            });
+        }
+
+        //initialisation
+        sendProjectMessage();
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generateProject':
                     // eslint-disable-next-line no-case-declarations
-                    const artifacts = await digiwfLib.initProject(event.name);
-                    for (const artifact of artifacts) {
-                        await generate(artifact, `${event.path}/${event.name}`);
+                    for (const artifact of event.data.artifacts) {
+                        await generate(artifact, `${event.data.path}/${event.data.name}`);
                     }
                     break;
                 case 'openFilePicker':
@@ -127,11 +188,25 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectFiles: false,
                         canSelectMany: false
                     }).then( fileUri => {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        panel.webview.html = getGenerateWebview(scriptUrl, fileUri[0].path, true);
+                        if(fileUri) {
+                            userInputCache.path = fileUri[0].path;
+                            sendProjectMessage();
+                        } else {
+                            // TODO proper error handling
+                            console.error("FileUri not defined");
+                        }
                     });
                     break;
+                case 'changedInput':
+                    userInputCache.name = event.data.name;
+                    break;
+            }
+        });
+
+        //setState
+        panel.onDidChangeViewState( () => {
+            if(panel.visible) {
+                sendProjectMessage();
             }
         });
     });
