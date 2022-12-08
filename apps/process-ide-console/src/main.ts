@@ -9,6 +9,7 @@ import {
     DigiwfDeploymentPluginRest,
     DigiwfLib
 } from "@miragon-process-ide/digiwf-lib";
+import {generateFileMessage, generateProjectMessage} from "./types/MessageAPI";
 
 const ws = vscode.workspace;
 
@@ -90,24 +91,22 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        let currentPath = ws.workspaceFolders[0].uri.path ?? "";
-        let name = "";
-        let type = "bpmn";
-
-        const fileMessage = (cPath: string) => {
+        const userInputCache: generateFileMessage = {name: "", type: "bpmn", path: ws.workspaceFolders[0].uri.path ?? ""};
+        const sendFileMessage = () => {
             panel.webview.postMessage({
+                type: "show",                   //this is for later, to enable update events
                 command: "generateFile",
                 data: {
-                    name: name,
-                    type: type,
-                    currentPath: cPath,
+                    name: userInputCache.name,
+                    type: userInputCache.type,
+                    currentPath: userInputCache.path,
                     processIDE: digiwfLib.projectConfig
                 }
             });
         }
 
         //initialisation
-        fileMessage(currentPath);
+        sendFileMessage();
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -121,8 +120,8 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectMany: false
                     }).then( fileUri => {
                         if(fileUri) {
-                            currentPath = fileUri[0].path;
-                            fileMessage(currentPath);
+                            userInputCache.path = fileUri[0].path;
+                            sendFileMessage();
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");
@@ -130,8 +129,8 @@ export async function activate(context: vscode.ExtensionContext) {
                     });
                     break;
                 case 'changedInput':
-                    name = event.data.name;
-                    type = event.data.type;
+                    userInputCache.name = event.data.name;
+                    userInputCache.type = event.data.type;
                     break;
             }
         });
@@ -139,7 +138,7 @@ export async function activate(context: vscode.ExtensionContext) {
         //setState
         panel.onDidChangeViewState( () => {
             if(panel.visible) {
-                fileMessage(currentPath);
+                sendFileMessage();
             }
         });
     });
@@ -160,21 +159,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        let currentPath = ws.workspaceFolders[0].uri.path ?? "";
-        let name = "";
-
-        const projectMessage = (cPath: string) => {
+        const userInputCache: generateProjectMessage = {name: "", path: ws.workspaceFolders[0].uri.path ?? ""};
+        const sendProjectMessage = () => {
             panel.webview.postMessage({
+                type: "show",                   //this is for later, to enable update events
                 command: "generateProject",
                 data: {
-                    name: name,
-                    currentPath: cPath
+                    name: userInputCache.name,
+                    currentPath: userInputCache.path
                 }
             });
         }
 
         //initialisation
-        projectMessage(currentPath);
+        sendProjectMessage();
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -191,8 +189,8 @@ export async function activate(context: vscode.ExtensionContext) {
                         canSelectMany: false
                     }).then( fileUri => {
                         if(fileUri) {
-                            currentPath = fileUri[0].path;
-                            projectMessage(currentPath);
+                            userInputCache.path = fileUri[0].path;
+                            sendProjectMessage();
                         } else {
                             // TODO proper error handling
                             console.error("FileUri not defined");
@@ -200,7 +198,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     });
                     break;
                 case 'changedInput':
-                    name = event.data.name;
+                    userInputCache.name = event.data.name;
                     break;
             }
         });
@@ -208,7 +206,7 @@ export async function activate(context: vscode.ExtensionContext) {
         //setState
         panel.onDidChangeViewState( () => {
             if(panel.visible) {
-                projectMessage(currentPath);
+                sendProjectMessage();
             }
         });
     });
