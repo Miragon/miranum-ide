@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {useFilePickerMessage} from "../Hooks/Message";
+import {useVsMessage} from "../Hooks/Message";
 import CSS from 'csstype';
 import {Button, TextField, Typography} from "@mui/material";
 import {Add} from "@mui/icons-material";
@@ -18,7 +18,7 @@ interface Props {
 
 const FileSelector: React.FC<Props> = props => {
     const [path, setPath] = useState(props.path);
-    const openFilePicker =  useFilePickerMessage();
+    const openFilePicker =  useVsMessage("openFilePicker");
 
     return (
         <div>

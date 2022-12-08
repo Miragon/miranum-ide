@@ -1,10 +1,10 @@
 import * as React from 'react';
 import {useCallback, useMemo, useState} from 'react';
+import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
 import {DigiwfLib} from "@miragon-process-ide/digiwf-lib";
-import {useInputChangeMessage, useProjectMessage} from "./Hooks/Message";
 
 interface Props {
     currentPath: string;
@@ -16,18 +16,24 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
     const [error, setError] = useState<string>("")
-    const inputChange = useInputChangeMessage();
+    const inputChange = useVsMessage("changedInput");
 
     const digiwfLib = useMemo(() => {
         return new DigiwfLib()
     }, []);
 
 
-    const sendProjectMessage =  useProjectMessage(name, path);
+    const sendProjectMessage =  useVsMessage("generateProject");
     const generate = useCallback(() => {
         if(name !== "" && path !== "") {
             digiwfLib.initProject(name)
-                .then((artifacts: any) => sendProjectMessage(artifacts))
+                .then((artifacts: any) => {
+                    sendProjectMessage({
+                        name: name,
+                        path: path,
+                        artifacts: artifacts
+                    })
+                })
                 .catch((err: any) => setError(err.message));
         }
     }, [name, path, digiwfLib, sendProjectMessage]);
@@ -58,7 +64,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => {
                             setName(e.target.value);
-                            inputChange(e.target.value);
+                            inputChange({name: e.target.value});
                         }}
                         autoFocus
                         error={name === ''}
