@@ -1,5 +1,6 @@
 import * as React from 'react';
-import {useCallback, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
+import {useArtifactMessage, useInputChangeMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
@@ -17,27 +18,14 @@ const GenerateInput: React.FC<Props> = props => {
     const [name, setName] = useState<string>(props.name);
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
+    const [pressed, setPressed] = useState<boolean>(false);
 
     const digiwfLib = useMemo(() => {
         return new DigiwfLib(props.config)
     }, [props.config]);
 
-    const generate = useCallback(() => {
-        if (name !== '' && path !== '') {
-            digiwfLib.generateArtifact(name, type,  digiwfLib.projectConfig?.name ?? "")
-                .then(artifact => {
-                    // todo move this into a custom hook
-                    props.vs.postMessage({
-                        message: 'generateArtifact',
-                        data: {
-                            artifact: artifact,
-                            path: path
-                        }
-                    });
-                })
-                .catch(err => console.error(err));
-        }
-    }, [name, type, path, props.vs, digiwfLib]);
+    const generate = useArtifactMessage(props.vs, digiwfLib, name, type, path);
+    const inputChange = useInputChangeMessage(props.vs);
 
     return (
         <FormControl
@@ -65,10 +53,11 @@ const GenerateInput: React.FC<Props> = props => {
                     value={name}
                     onChange={e => {
                         setName(e.target.value);
-                        props.vs.postMessage({message: "changedInput", data: {name: e.target.value, type: type}})
+                        inputChange(e.target.value, type);
                     }}
                     autoFocus
                     error={name === ''}
+                    helperText={(name === '' && pressed)? 'You have to insert a name!':' '}
                 />
                 <FormControl fullWidth required>
                     <InputLabel id="typeLabel">Type</InputLabel>
@@ -79,7 +68,7 @@ const GenerateInput: React.FC<Props> = props => {
                         value={type}
                         onChange={e => {
                             setType(e.target.value);
-                            props.vs.postMessage({message: "changedInput", data: {name: name, type: e.target.value}})
+                            inputChange(name, e.target.value);
                         }}
                     >
                         <MenuItem value="bpmn">bpmn</MenuItem>
@@ -97,12 +86,15 @@ const GenerateInput: React.FC<Props> = props => {
                     />
                 }
                 <Button
-                    onClick={generate}
+                    onClick={() => {
+                        setPressed(!name || !path);
+                        generate();
+                    }}
                     fullWidth
                     variant="contained"
                     color="secondary"
                     sx={{mt: 3, mb: 2}}
-                >Generieren</Button>
+                >Generate</Button>
             </Box>
         </FormControl>
     );

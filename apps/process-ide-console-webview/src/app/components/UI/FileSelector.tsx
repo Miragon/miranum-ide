@@ -1,6 +1,6 @@
 import React, {useCallback, useState} from "react";
 import CSS from 'csstype';
-import {Button, TextField} from "@mui/material";
+import {Button, TextField, Typography} from "@mui/material";
 import {Add} from "@mui/icons-material";
 
 const pathSelector: CSS.Properties = {
@@ -26,22 +26,25 @@ const FileSelector: React.FC<Props> = props => {
     }, [props.vs]);
 
     return (
-        <div style={pathSelector}>
-            <TextField
-                required
-                id="path"
-                label="Path"
-                name="path"
-                value={path}
-                onChange={e => {
-                    setPath(e.target.value);
-                    props.onPathChange(e.target.value);
-                }}
-                error={path === ''}
-            />
-            <Button onClick={openFilePicker} variant="outlined" startIcon={<Add/>}>
-                Choose Path
-            </Button>
+        <div>
+            <div style={pathSelector}>
+                <TextField
+                    required
+                    id="path"
+                    label="Path"
+                    name="path"
+                    value={path}
+                    onChange={e => {
+                        setPath(e.target.value);
+                        props.onPathChange(e.target.value);
+                    }}
+                    error={path === ''}
+                />
+                <Button onClick={openFilePicker} variant="outlined" startIcon={<Add/>}>
+                    Choose Path
+                </Button>
+            </div>
+            {path === '' && <Typography variant="subtitle2" color="red">You have to insert a path!</Typography>}
         </div>
     );
 }

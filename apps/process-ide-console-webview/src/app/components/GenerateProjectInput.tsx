@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
 import {DigiwfLib} from "@miragon-process-ide/digiwf-lib";
+import {useInputChangeMessage, useProjectMessage} from "./Hooks/Message";
 
 interface Props {
     vs: any;
@@ -14,28 +15,14 @@ interface Props {
 const GenerateProjectInput: React.FC<Props> = props => {
     const [name, setName] = useState<string>(props.name);
     const [path, setPath] = useState<string>(props.currentPath);
+    const [pressed, setPressed] = useState<boolean>(false);
 
     const digiwfLib = useMemo(() => {
         return new DigiwfLib()
     }, []);
 
-    const generate =  useCallback(() => {
-        if(name !== "" && path !== "") {
-            digiwfLib.initProject(name)
-                .then(artifacts => {
-                    // todo move this into a custom hook
-                    props.vs.postMessage({
-                        message: 'generateProject',
-                        data: {
-                            name: name,
-                            path: path,
-                            artifacts: artifacts
-                        }
-                    });
-                })
-                .catch(err => console.error(err));
-        }
-    }, [name, path, props.vs, digiwfLib]);
+    const generate =  useProjectMessage(props.vs, digiwfLib, name, path);
+    const inputChange = useInputChangeMessage(props.vs);
 
     return (
             <FormControl
@@ -63,10 +50,11 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => {
                             setName(e.target.value);
-                            props.vs.postMessage({message: "changedInput", data: {name: e.target.value}});
+                            inputChange(e.target.value);
                         }}
                         autoFocus
                         error={name === ''}
+                        helperText={(name === '' && pressed)? 'You have to insert a name!':' '}
                     />
                     <FileSelector
                         vs={props.vs}
@@ -74,12 +62,15 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         onPathChange={ (p:string) => setPath(p)}
                     />
                     <Button
-                        onClick={generate}
+                        onClick={() => {
+                            setPressed(!name || !path);
+                            generate();
+                        }}
                         fullWidth
                         variant="contained"
                         color="secondary"
                         sx={{ mt: 3, mb: 2 }}
-                    >Projekt generieren</Button>
+                    >generate Project</Button>
                 </Box>
             </FormControl>
     );

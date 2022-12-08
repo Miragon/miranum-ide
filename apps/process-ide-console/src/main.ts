@@ -123,8 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
                             userInputCache.path = fileUri[0].path;
                             sendFileMessage();
                         } else {
-                            // TODO proper error handling
-                            console.error("FileUri not defined");
+                            vscode.window.showInformationMessage("Could not find selected Uri, please try again");
                         }
                     });
                     break;
@@ -192,8 +191,7 @@ export async function activate(context: vscode.ExtensionContext) {
                             userInputCache.path = fileUri[0].path;
                             sendProjectMessage();
                         } else {
-                            // TODO proper error handling
-                            console.error("FileUri not defined");
+                            vscode.window.showInformationMessage("Could not find selected Uri, please try again");
                         }
                     });
                     break;
