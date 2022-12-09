@@ -14,6 +14,10 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "strict": true,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "baseUrl": "./",
     "paths": {
       "@miragon-process-ide/digiwf-deployment-plugin-rest": [
