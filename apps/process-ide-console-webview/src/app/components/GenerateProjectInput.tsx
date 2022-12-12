@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import {useCallback, useMemo, useState} from 'react';
+import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
 import {DigiwfLib} from "@miragon-process-ide/digiwf-lib";
 
 interface Props {
-    vs: any;
     currentPath: string;
     name: string;
 }
@@ -14,28 +14,29 @@ interface Props {
 const GenerateProjectInput: React.FC<Props> = props => {
     const [name, setName] = useState<string>(props.name);
     const [path, setPath] = useState<string>(props.currentPath);
+    const [pressed, setPressed] = useState<boolean>(false);
+    const [error, setError] = useState<string>("")
+    const inputChange = useVsMessage("changedInput");
 
     const digiwfLib = useMemo(() => {
         return new DigiwfLib()
     }, []);
 
-    const generate =  useCallback(() => {
+
+    const sendProjectMessage =  useVsMessage("generateProject");
+    const generate = useCallback(() => {
         if(name !== "" && path !== "") {
             digiwfLib.initProject(name)
-                .then(artifacts => {
-                    // todo move this into a custom hook
-                    props.vs.postMessage({
-                        message: 'generateProject',
-                        data: {
-                            name: name,
-                            path: path,
-                            artifacts: artifacts
-                        }
-                    });
+                .then((artifacts: any) => {
+                    sendProjectMessage({
+                        name: name,
+                        path: path,
+                        artifacts: artifacts
+                    })
                 })
-                .catch(err => console.error(err));
+                .catch((err: any) => setError(err.message));
         }
-    }, [name, path, props.vs, digiwfLib]);
+    }, [name, path, digiwfLib, sendProjectMessage]);
 
     return (
             <FormControl
@@ -63,24 +64,28 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         value={name}
                         onChange={e => {
                             setName(e.target.value);
-                            props.vs.postMessage({message: "changedInput", data: {name: e.target.value}});
+                            inputChange({name: e.target.value});
                         }}
                         autoFocus
                         error={name === ''}
+                        helperText={(name === '' && pressed)? 'You have to insert a name!':' '}
                     />
                     <FileSelector
-                        vs={props.vs}
                         path={path}
                         onPathChange={ (p:string) => setPath(p)}
                     />
                     <Button
-                        onClick={generate}
+                        onClick={() => {
+                            setPressed(!name || !path);
+                            generate();
+                        }}
                         fullWidth
                         variant="contained"
                         color="secondary"
                         sx={{ mt: 3, mb: 2 }}
-                    >Projekt generieren</Button>
+                    >generate Project</Button>
                 </Box>
+                {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
             </FormControl>
     );
 }

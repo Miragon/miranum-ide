@@ -6,11 +6,7 @@ import {useState} from "react";
 
 const theme = createTheme();
 
-interface Props {
-    vs: any;
-}
-
-export function App(props: Props) {
+export function App() {
     const [view, setView] = useState<string>();
     const [name, setName] = useState<string>("");
     const [type, setType] = useState<string>("bpmn");
@@ -37,8 +33,8 @@ export function App(props: Props) {
         <ThemeProvider theme={theme}>
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
-                {view === "generateFile" && <GenerateInput vs={props.vs} currentPath={currentPath} name={name} type={type} config={config!}/>}
-                {view === "generateProject" && <GenerateProjectInput vs={props.vs} currentPath={currentPath} name={name}/>}
+                {view === "generateFile" && <GenerateInput currentPath={currentPath} name={name} type={type} config={config!}/>}
+                {view === "generateProject" && <GenerateProjectInput currentPath={currentPath} name={name}/>}
             </Container>
         </ThemeProvider>
     );
