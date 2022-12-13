@@ -12,10 +12,7 @@ export async function generate(artifact: Artifact, path: string): Promise<void> 
             return Promise.reject(msg);
         }
         await saveFile(path, artifact.file.pathInProject, artifact.file.content);
-
-        let fileName = artifact.file.pathInProject;
-        fileName = fileName.includes("/") ? fileName.slice(fileName.indexOf("/")+1) : fileName;
-        vscode.window.showInformationMessage(colors.green.bold("SAVED ") + fileName);
+        vscode.window.showInformationMessage(colors.green.bold("SAVED ") + `${artifact.file.name}.${artifact.file.extension}`);
     } catch (err) {
         vscode.window.showInformationMessage(colors.red.bold("FAILED ") + ` creating file ${artifact.file.name} with -> ${err}`);
         return Promise.reject(err);

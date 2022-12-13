@@ -99,7 +99,7 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project: string) : Promise<Artifact> {
+    async generate(name: string, project: string): Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {name: name});
         const fileDetails = {
             name: name,
@@ -172,7 +172,7 @@ const formGenerator = new DigiwfArtifactGenerator("form", "form",
         }
     ]
     }
-}`, {allOfKey: "FORMSECTION_input"});
+}`, {allOfKey: "FORMSECTION_input"}, "/forms");
 const configGenerator = new DigiwfArtifactGenerator("config", "json",
     `{
   "key": "{{it.name}}",
@@ -184,23 +184,16 @@ const configGenerator = new DigiwfArtifactGenerator("config", "json",
       "value": ""
     }
   ]
-}`, {});
+}`, {}, "/configs");
 const elementTemplateGenerator = new DigiwfArtifactGenerator("element-template", "json",
     `{
   "name": "{{it.name}}",
   "id": "{{it.id}}",
   "appliesTo": [
-    {
-    "0": "bpmn:ServiceTask"
-    }
+    "bpmn:ServiceTask"
   ],
-  "properties": [],
-  "entriesVisible": [
-    {
-      "_all": true
-    }
-  ]
-}`, {});
+  "properties": []
+}`, {}, "/element-templates");
 const processIdeJsonGenerator  = new ProcessIdeJsonGenerator(`{
   "projectVersion": "1.0.0",
   "name": "{{it.projectName}}",
