@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
@@ -17,13 +17,13 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [pressed, setPressed] = useState<boolean>(false);
     const [error, setError] = useState<string>("")
     const inputChange = useVsMessage("changedInput");
+    const sendProjectMessage = useVsMessage("generateProject");
+    const digiwfLib = useMemo(() => {return new DigiwfLib()}, []);
 
-    const digiwfLib = useMemo(() => {
-        return new DigiwfLib()
-    }, []);
+    useEffect(() => {
+        setPath(props.currentPath);
+    }, [props.currentPath]);
 
-
-    const sendProjectMessage =  useVsMessage("generateProject");
     const generate = useCallback(() => {
         if(name !== "" && path !== "") {
             digiwfLib.initProject(name)
@@ -72,7 +72,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     />
                     <FileSelector
                         path={path}
-                        onPathChange={ (p:string) => setPath(p)}
+                        setPath={ (p:string) => setPath(p)}
                     />
                     <Button
                         onClick={() => {

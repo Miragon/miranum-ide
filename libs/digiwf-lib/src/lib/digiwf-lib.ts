@@ -62,17 +62,21 @@ export class DigiwfLib {
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
-            generatedFiles.push(await this.generateArtifact(file.name, file.type, projectName));
+            generatedFiles.push(await this.initArtifact(file.name, file.type, projectName));
         }
         return generatedFiles;
     }
 
     public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
+        return this.initArtifact(artifactName, type, project, this.getPathFromConfig(type));
+    }
+
+    private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
         const generator = this.generatorPlugins.get(type);
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
-        return generator.generate(artifactName, project, this.getPathFromConfig(type));
+        return generator.generate(artifactName, project, basePath);
     }
 
     private getPathFromConfig(type: string): string | undefined {
@@ -95,7 +99,7 @@ export class DigiwfLib {
                 }
             }
         }
-        return undefined;
+        return "";
     }
 
 }

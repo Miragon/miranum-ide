@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
@@ -20,12 +20,15 @@ const GenerateInput: React.FC<Props> = props => {
     const [pressed, setPressed] = useState<boolean>(false);
     const [error, setError] = useState<string>("")
     const inputChange = useVsMessage("changedInput");
-
+    const sendArtifactMessage = useVsMessage("generateArtifact");
     const digiwfLib = useMemo(() => {
         return new DigiwfLib(props.config)
     }, [props.config]);
 
-    const sendArtifactMessage = useVsMessage("generateArtifact");
+    useEffect(() => {
+        setPath(props.currentPath);
+    }, [props.currentPath]);
+
     const generate = useCallback(() => {
         if (name !== '' && path !== '') {
             digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
@@ -93,7 +96,7 @@ const GenerateInput: React.FC<Props> = props => {
                 {!digiwfLib.projectConfig &&
                     <FileSelector
                         path={path}
-                        onPathChange={(p: string) => setPath(p)}
+                        setPath={(p: string) => setPath(p)}
                     />
                 }
                 <Button

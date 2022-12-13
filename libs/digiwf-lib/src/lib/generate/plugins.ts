@@ -49,7 +49,7 @@ export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project : string, path?: string) : Promise<Artifact> {
+    async generate(name : string, project : string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {projectName: project});
         const fileDetails = {
             name: "process-ide",
@@ -73,7 +73,7 @@ export class GitkeepGenerator implements DigiWFGeneratorPlugin {
     basePath: string | undefined;
     defaultData: object = {};
 
-    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
+    async generate(name : string, project: string) : Promise<Artifact> {
         const fileDetails = {
             name: ".gitkeep",
             extension: "",
@@ -99,7 +99,7 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
+    async generate(name: string, project: string): Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {name: name});
         const fileDetails = {
             name: name,
@@ -190,16 +190,9 @@ const elementTemplateGenerator = new DigiwfArtifactGenerator("element-template",
   "name": "{{it.name}}",
   "id": "{{it.id}}",
   "appliesTo": [
-    {
-    "0": "bpmn:ServiceTask"
-    }
+    "bpmn:ServiceTask"
   ],
-  "properties": [],
-  "entriesVisible": [
-    {
-      "_all": true
-    }
-  ]
+  "properties": []
 }`, {}, "/element-templates");
 const processIdeJsonGenerator  = new ProcessIdeJsonGenerator(`{
   "projectVersion": "1.0.0",
