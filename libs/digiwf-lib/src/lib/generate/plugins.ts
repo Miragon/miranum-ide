@@ -49,7 +49,7 @@ export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project : string, path?: string) : Promise<Artifact> {
+    async generate(name : string, project : string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {projectName: project});
         const fileDetails = {
             name: "process-ide",
@@ -73,7 +73,7 @@ export class GitkeepGenerator implements DigiWFGeneratorPlugin {
     basePath: string | undefined;
     defaultData: object = {};
 
-    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
+    async generate(name : string, project: string) : Promise<Artifact> {
         const fileDetails = {
             name: ".gitkeep",
             extension: "",
@@ -99,7 +99,7 @@ export class ReadmeGenerator implements DigiWFGeneratorPlugin {
         this.template = template;
     }
 
-    async generate(name : string, project: string, path?: string) : Promise<Artifact> {
+    async generate(name : string, project: string) : Promise<Artifact> {
         const fileContent = await Sqrl.render(this.template, {name: name});
         const fileDetails = {
             name: name,
@@ -172,7 +172,7 @@ const formGenerator = new DigiwfArtifactGenerator("form", "form",
         }
     ]
     }
-}`, {allOfKey: "FORMSECTION_input"}, "/forms");
+}`, {allOfKey: "FORMSECTION_input"});
 const configGenerator = new DigiwfArtifactGenerator("config", "json",
     `{
   "key": "{{it.name}}",
@@ -184,7 +184,7 @@ const configGenerator = new DigiwfArtifactGenerator("config", "json",
       "value": ""
     }
   ]
-}`, {}, "/configs");
+}`, {});
 const elementTemplateGenerator = new DigiwfArtifactGenerator("element-template", "json",
     `{
   "name": "{{it.name}}",
@@ -200,7 +200,7 @@ const elementTemplateGenerator = new DigiwfArtifactGenerator("element-template",
       "_all": true
     }
   ]
-}`, {}, "/element-templates");
+}`, {});
 const processIdeJsonGenerator  = new ProcessIdeJsonGenerator(`{
   "projectVersion": "1.0.0",
   "name": "{{it.projectName}}",
