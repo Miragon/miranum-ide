@@ -17,9 +17,7 @@ export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: 
                 localResourceRoots: [pathToWebview]
             }
         );
-
-        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl);
+        panel.webview.html = getGenerateWebview(panel.webview.asWebviewUri(pathToWebview).toString());
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -46,18 +44,7 @@ export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: 
                     await generate(event.data.artifact, event.data.path);
                     break;
                 case 'openFilePicker':
-                    vscode.window.showOpenDialog({
-                        canSelectFolders: true,
-                        canSelectFiles: false,
-                        canSelectMany: false
-                    }).then( fileUri => {
-                        if(fileUri) {
-                            userInputCache.path = fileUri[0].path;
-                            sendFileMessage();
-                        } else {
-                            vscode.window.showInformationMessage("Could not find selected Uri, please try again");
-                        }
-                    });
+                    openFilePicker(vscode.window, userInputCache, sendFileMessage);
                     break;
                 case 'changedInput':
                     userInputCache.name = event.data.name;
@@ -66,7 +53,6 @@ export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: 
             }
         });
 
-        //setState
         panel.onDidChangeViewState( () => {
             if(panel.visible) {
                 sendFileMessage();
@@ -91,9 +77,7 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
                 localResourceRoots: [pathToWebview]
             }
         );
-
-        const scriptUrl = panel.webview.asWebviewUri(pathToWebview).toString();
-        panel.webview.html = getGenerateWebview(scriptUrl);
+        panel.webview.html = getGenerateWebview(panel.webview.asWebviewUri(pathToWebview).toString());
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -115,24 +99,12 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
                 case 'generateProject':
-                    // eslint-disable-next-line no-case-declarations
                     for (const artifact of event.data.artifacts) {
                         await generate(artifact, `${event.data.path}/${event.data.name}`);
                     }
                     break;
                 case 'openFilePicker':
-                    vscode.window.showOpenDialog({
-                        canSelectFolders: true,
-                        canSelectFiles: false,
-                        canSelectMany: false
-                    }).then( fileUri => {
-                        if(fileUri) {
-                            userInputCache.path = fileUri[0].path;
-                            sendProjectMessage();
-                        } else {
-                            vscode.window.showInformationMessage("Could not find selected Uri, please try again");
-                        }
-                    });
+                    openFilePicker(vscode.window, userInputCache, sendProjectMessage);
                     break;
                 case 'changedInput':
                     userInputCache.name = event.data.name;
@@ -140,7 +112,6 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
             }
         });
 
-        //setState
         panel.onDidChangeViewState( () => {
             if(panel.visible) {
                 sendProjectMessage();
@@ -149,4 +120,23 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(generateProject);
+}
+
+
+//     -----------------------------HELPERS-----------------------------     \\
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+function openFilePicker (window: any, userInputCache: generateProjectMessage, sendProjectMessage: Function) {
+    window.showOpenDialog({
+        canSelectFolders: true,
+        canSelectFiles: false,
+        canSelectMany: false
+    }).then( (fileUri: { path: string; }[]) => {
+        if(fileUri) {
+            userInputCache.path = fileUri[0].path;
+            sendProjectMessage();
+        } else {
+            window.showInformationMessage("Could not find selected Uri, please try again");
+        }
+    });
 }
