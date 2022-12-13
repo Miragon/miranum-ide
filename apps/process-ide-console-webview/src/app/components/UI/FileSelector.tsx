@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import {useVsMessage} from "../Hooks/Message";
 import CSS from 'csstype';
 import {Button, TextField, Typography} from "@mui/material";
@@ -13,11 +13,10 @@ const pathSelector: CSS.Properties = {
 
 interface Props {
     path: string
-    onPathChange: any
+    setPath: any
 }
 
 const FileSelector: React.FC<Props> = props => {
-    const [path, setPath] = useState(props.path);
     const openFilePicker =  useVsMessage("openFilePicker");
 
     return (
@@ -28,18 +27,17 @@ const FileSelector: React.FC<Props> = props => {
                     id="path"
                     label="Path"
                     name="path"
-                    value={path}
+                    value={props.path}
                     onChange={e => {
-                        setPath(e.target.value);
-                        props.onPathChange(e.target.value);
+                        props.setPath(e.target.value);
                     }}
-                    error={path === ''}
+                    error={props.path === ''}
                 />
                 <Button onClick={() => openFilePicker({})} variant="outlined" startIcon={<Add/>}>
                     Choose Path
                 </Button>
             </div>
-            {path === '' && <Typography variant="subtitle2" color="red">You have to insert a path!</Typography>}
+            {props.path === '' && <Typography variant="subtitle2" color="red">You have to insert a path!</Typography>}
         </div>
     );
 }
