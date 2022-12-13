@@ -1,5 +1,5 @@
 import { availableGeneratorPlugins } from "./plugins";
-import {Artifact} from "@miragon-process-ide/digiwf-lib";
+import {Artifact} from "../types";
 
 const filesToGenerate = [
     {name: "process-ide", type: "process-ide.json", extension: "json", dir: ""},
