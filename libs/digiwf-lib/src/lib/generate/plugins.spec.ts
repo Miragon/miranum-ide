@@ -1,4 +1,5 @@
 import { availableGeneratorPlugins } from "./plugins";
+import {Artifact} from "@miragon-process-ide/digiwf-lib";
 
 const filesToGenerate = [
     {name: "process-ide", type: "process-ide.json", extension: "json", dir: ""},
@@ -13,22 +14,13 @@ const filesToGenerate = [
 describe("generators", () => {
     for (const file of filesToGenerate) {
         it(`${file.type} generator should work`, async () => {
-            // check if generator exists
-            expect(availableGeneratorPlugins.get(file.type)).toBeTruthy();
-
-            const generator = availableGeneratorPlugins.get(file.type);
-
-            if (!generator) {
-                fail("Generator does not exist");
-            }
+            const generator = getGenerator(file.type);
 
             // check file creation
             const artifact = await generator.generate(file.name, "test-project");
-            expect(artifact.type).toEqual(file.type);
+            compareArtifactFile(artifact, file);
             expect(artifact.project).toEqual("test-project");
-            expect(artifact.file.name).toEqual(file.name);
             expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}.${file.extension}`.replace("//", "/"));
-            expect(artifact.file.extension).toEqual(file.extension);
         });
     }
 
@@ -51,3 +43,33 @@ describe("generators", () => {
         expect(artifact.file.extension).toEqual("");
     });
 });
+
+describe("generators without digiwf-lib", () => {
+    for (const file of filesToGenerate) {
+        it(`${file.type} generator should work`, async () => {
+            const generator = getGenerator(file.type);
+
+            const artifact = await generator.generate(file.name, "", "");
+            compareArtifactFile(artifact, file);
+            expect(artifact.file.pathInProject).toEqual(`/${file.name}.${file.extension}`);
+        });
+    }
+})
+
+//   -------------------------HELPERS-------------------------   \\
+function getGenerator(type: string) {
+    // check if generator exists
+    expect(availableGeneratorPlugins.get(type)).toBeTruthy();
+
+    const generator = availableGeneratorPlugins.get(type);
+    if (!generator) {
+        fail("Generator does not exist");
+    }
+    return generator;
+}
+
+function compareArtifactFile(artifact:Artifact, file: any){
+    expect(artifact.type).toEqual(file.type);
+    expect(artifact.file.name).toEqual(file.name);
+    expect(artifact.file.extension).toEqual(file.extension);
+}

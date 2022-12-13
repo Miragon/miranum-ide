@@ -68,7 +68,7 @@ export class DigiwfLib {
     }
 
     public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
-        return this.initArtifact(artifactName, type,project, this.getPathFromConfig(type));
+        return this.initArtifact(artifactName, type, project, this.getPathFromConfig(type));
     }
 
     private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
