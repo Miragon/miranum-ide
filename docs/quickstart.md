@@ -97,8 +97,8 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miranum-ide/m
 
 ````json
 {
-  "name": "miranum-console",
-	"displayName": "miranum-console",
+  "name": "example",
+	"displayName": "example",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -110,11 +110,11 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miranum-ide/m
 	"activationEvents": [
         "onCommand:miranum-console.helloWorld"
 	],
-	"main": "../../../dist/apps/miranum-console/main.js",
+	"main": "../../../dist/apps/example/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "miranum-console.helloWorld",
+				"command": "example.helloWorld",
 				"title": "Hello World"
 			}
 		]
