@@ -1,12 +1,12 @@
 import { Configuration, DeploymentAPIApi } from "./openapi";
-import { Artifact, DigiWFDeploymentPlugin, DigiWFDeploymentTarget } from "../../types";
+import { Artifact, MiranumDeploymentPlugin, MiranumDeploymentTarget } from "../../types";
 
 
-export class DigiwfDeploymentPluginRest implements DigiWFDeploymentPlugin {
+export class DigiwfDeploymentPluginRest implements MiranumDeploymentPlugin {
     plugin: string;
-    targetEnvironments: DigiWFDeploymentTarget[];
+    targetEnvironments: MiranumDeploymentTarget[];
 
-    constructor(plugin: string, targetEnvironments: DigiWFDeploymentTarget[]) {
+    constructor(plugin: string, targetEnvironments: MiranumDeploymentTarget[]) {
         this.plugin = plugin;
         this.targetEnvironments = targetEnvironments;
     }

@@ -12,20 +12,20 @@ export interface FileDetails {
     pathInProject?: string;
 }
 
-export interface DigiwfConfig {
+export interface MiranumConfig {
     projectVersion: string,
     name: string;
     workspace: object;
-    deployment: DigiWFDeploymentPlugin[];
+    deployment: MiranumDeploymentPlugin[];
 }
 
-export interface DigiWFDeploymentPlugin {
+export interface MiranumDeploymentPlugin {
     plugin: string;
-    targetEnvironments: DigiWFDeploymentTarget[];
+    targetEnvironments: MiranumDeploymentTarget[];
     deploy(target: string, artifact: Artifact): Promise<Artifact>;
 }
 
-export interface DigiWFGeneratorPlugin {
+export interface MiranumGeneratorPlugin {
     type: string;
     fileExtension: string;
     template: string;
@@ -34,7 +34,7 @@ export interface DigiWFGeneratorPlugin {
     generate(name: string, project: string, path?: string): Promise<Artifact>
 }
 
-export interface DigiWFDeploymentTarget {
+export interface MiranumDeploymentTarget {
     name: string;
     url: string;
 }

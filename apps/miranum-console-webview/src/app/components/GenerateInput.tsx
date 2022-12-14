@@ -4,10 +4,10 @@ import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
-import {DigiwfConfig, MiranumCore} from "@miranum-ide/miranum-core";
+import {MiranumConfig, MiranumCore} from "@miranum-ide/miranum-core";
 
 interface Props {
-    config: DigiwfConfig;
+    config: MiranumConfig;
     currentPath: string;
     name: string;
     type: string;

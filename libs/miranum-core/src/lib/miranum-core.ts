@@ -1,7 +1,7 @@
-import { Artifact, DigiwfConfig, DigiWFDeploymentPlugin, DigiWFGeneratorPlugin } from "./types";
+import { Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin } from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
-export function createDigiwfLib(projectVersion: string, projectName: string, workspace: object, deployment: DigiWFDeploymentPlugin[]): MiranumCore {
+export function createMiranumCore(projectVersion: string, projectName: string, workspace: object, deployment: MiranumDeploymentPlugin[]): MiranumCore {
     return new MiranumCore({
         projectVersion: projectVersion,
         name: projectName,
@@ -26,10 +26,10 @@ export function checkIfSupportedType(type: string): boolean {
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class MiranumCore {
-    projectConfig?: DigiwfConfig;
-    generatorPlugins: Map<string, DigiWFGeneratorPlugin> = availableGeneratorPlugins;
+    projectConfig?: MiranumConfig;
+    generatorPlugins: Map<string, MiranumGeneratorPlugin> = availableGeneratorPlugins;
 
-    constructor(config?: DigiwfConfig) {
+    constructor(config?: MiranumConfig) {
         this.projectConfig = config
     }
 

@@ -1,4 +1,4 @@
-import { createDigiwfLib, MiranumCore } from "./miranum-core";
+import { createMiranumCore, MiranumCore } from "./miranum-core";
 import { Artifact } from "./types";
 
 const target = "local";
@@ -29,7 +29,7 @@ const deployment = [
         }
     }
 ];
-const digiwfLib: MiranumCore = createDigiwfLib("1.0.0", "my-project", workspace, deployment);
+const digiwfLib: MiranumCore = createMiranumCore("1.0.0", "my-project", workspace, deployment);
 
 describe("deploy", () => {
     it("should work", async () => {

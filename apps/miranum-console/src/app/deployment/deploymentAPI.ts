@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import * as colors from "colors";
-import {DigiWFDeploymentPlugin, DigiWFDeploymentTarget, MiranumCore} from "@miranum-ide/miranum-core";
+import {MiranumDeploymentPlugin, MiranumDeploymentTarget, MiranumCore} from "@miranum-ide/miranum-core";
 import {fileDeploymentSupported, getArtifact, getArtifacts} from "./deployment";
 
 export function createDeployment(context: vscode.ExtensionContext, digiwfLib: MiranumCore) {
-    digiwfLib.projectConfig?.deployment.forEach((deployment: DigiWFDeploymentPlugin) => {
-        deployment.targetEnvironments.forEach((env: DigiWFDeploymentTarget) => {
+    digiwfLib.projectConfig?.deployment.forEach((deployment: MiranumDeploymentPlugin) => {
+        deployment.targetEnvironments.forEach((env: MiranumDeploymentTarget) => {
             // deploy artifact
             const deployArtifactCommand = vscode.commands.registerCommand(`miranum.deploy.${env.name}`, async (path: vscode.Uri) => {
                 let artifact = await getArtifact(path);

@@ -1,8 +1,8 @@
-import { Artifact, DigiWFGeneratorPlugin } from "../types";
+import { Artifact, MiranumGeneratorPlugin } from "../types";
 import * as Sqrl from "squirrelly";
 import { v4 as uuidv4 } from "uuid";
 
-export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {
+export class DigiwfArtifactGenerator implements MiranumGeneratorPlugin {
     type : string;
     fileExtension: string;
     template: string;
@@ -38,7 +38,7 @@ export class DigiwfArtifactGenerator implements DigiWFGeneratorPlugin {
     }
 }
 
-export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
+export class ProcessIdeJsonGenerator implements MiranumGeneratorPlugin {
     basePath: string | undefined;
     defaultData = {};
     fileExtension = "json";
@@ -66,7 +66,7 @@ export class ProcessIdeJsonGenerator implements DigiWFGeneratorPlugin {
 
 }
 
-export class GitkeepGenerator implements DigiWFGeneratorPlugin {
+export class GitkeepGenerator implements MiranumGeneratorPlugin {
     type  = ".gitkeep";
     fileExtension = ".gitkeep";
     template = "";
@@ -88,7 +88,7 @@ export class GitkeepGenerator implements DigiWFGeneratorPlugin {
     }
 }
 
-export class ReadmeGenerator implements DigiWFGeneratorPlugin {
+export class ReadmeGenerator implements MiranumGeneratorPlugin {
     type  = "README.md";
     fileExtension = "md";
     template: string;
@@ -242,7 +242,7 @@ const readmeGenerator = new ReadmeGenerator(
     └── example-bpmn.bpmn
 `);
 
-export const availableGeneratorPlugins: Map<string, DigiWFGeneratorPlugin> = new Map<string, DigiWFGeneratorPlugin>([
+export const availableGeneratorPlugins: Map<string, MiranumGeneratorPlugin> = new Map<string, MiranumGeneratorPlugin>([
     [bpmnGenerator.type, bpmnGenerator],
     [dmnGenerator.type, dmnGenerator],
     [formGenerator.type, formGenerator],

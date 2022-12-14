@@ -1,10 +1,10 @@
 import { Deployment } from "./deployment";
-import { Artifact, createDigiwfLib, DigiWFDeploymentPlugin } from "@miranum-ide/miranum-core";
+import { Artifact, createMiranumCore, MiranumDeploymentPlugin } from "@miranum-ide/miranum-core";
 
 const pathToProject = "resources/my-process-automation-project/";
 const target = "local";
 
-const dryDeploymentPlugin: DigiWFDeploymentPlugin = {
+const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     plugin: "dry",
     targetEnvironments: [{name:"local",url:"http://localhost:8080"}],
     deploy: function(target: string, artifact: Artifact) {
@@ -12,7 +12,7 @@ const dryDeploymentPlugin: DigiWFDeploymentPlugin = {
     }
 };
 
-const deployment = new Deployment(createDigiwfLib("0.0.1", "test-project", {}, [dryDeploymentPlugin]));
+const deployment = new Deployment(createMiranumCore("0.0.1", "test-project", {}, [dryDeploymentPlugin]));
 
 describe("deployArtifact", () => {
     it("should work", async () => {

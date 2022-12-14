@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import {
-    createDigiwfLib,
-    DigiWFDeploymentPlugin,
+    createMiranumCore,
+    MiranumDeploymentPlugin,
     DigiwfDeploymentPluginRest,
     MiranumCore
 } from "@miranum-ide/miranum-core";
@@ -28,13 +28,13 @@ async function initDigiwfLib(): Promise<MiranumCore> {
         const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(ws.workspaceFolders[0].uri, "miranum.json"));
 
         const processIdeConfig = JSON.parse(processIdeJSON.toString());
-        const plugins: DigiWFDeploymentPlugin[] = [];
+        const plugins: MiranumDeploymentPlugin[] = [];
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         processIdeConfig.deployment.forEach(p => {
             plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
         });
-        return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+        return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
     } catch (e) {
         return new MiranumCore();
     }

@@ -1,8 +1,8 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
-    createDigiwfLib,
-    DigiWFDeploymentPlugin,
+    createMiranumCore,
+    MiranumDeploymentPlugin,
     DigiwfDeploymentPluginRest,
     MiranumCore,
     FileDetails
@@ -12,13 +12,13 @@ export async function mapProcessConfigToDigiwfLib(path?: string): Promise<Miranu
     const p = path ?  `${path}/miranum.json`.replace("//", "/") : "miranum.json";
     const processIdeJson = await getFile(p);
     const processIdeConfig = JSON.parse(processIdeJson.content);
-    const plugins: DigiWFDeploymentPlugin[] = [];
+    const plugins: MiranumDeploymentPlugin[] = [];
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     processIdeConfig.deployment.forEach(p => {
         plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
     });
-    return createDigiwfLib(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+    return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
 }
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {

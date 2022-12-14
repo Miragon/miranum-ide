@@ -1,5 +1,5 @@
 import { DigiwfDeploymentPluginRest } from "./rest/digiwf-deployment-plugin-rest";
-import { DigiWFDeploymentPlugin } from "../types";
+import { MiranumDeploymentPlugin } from "../types";
 
 const restPlugin = new DigiwfDeploymentPluginRest("rest", [
     {
@@ -16,6 +16,6 @@ const restPlugin = new DigiwfDeploymentPluginRest("rest", [
     }
 ]);
 
-export const availableDeploymentPlugins: DigiWFDeploymentPlugin[] = [
+export const availableDeploymentPlugins: MiranumDeploymentPlugin[] = [
     restPlugin
 ];
