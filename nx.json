@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "npmScope": "miragon-process-ide",
+  "npmScope": "miranum-ide",
   "affected": {
     "defaultBase": "main"
   },
@@ -28,7 +28,7 @@
     "appsDir": "apps",
     "libsDir": "libs"
   },
-  "defaultProject": "miragon-process-ide-cli",
+  "defaultProject": "miranum-cli",
   "plugins": ["@nxrocks/nx-spring-boot"],
   "generators": {
     "@nrwl/react": {

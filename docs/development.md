@@ -24,10 +24,10 @@ The deployment test commands:
 ```bash
 ## build
 # npm run build
-npx nx build miragon-process-ide-cli
+npx nx build miranum-cli
 
 ## execute
-npx nx deploy miragon-process-ide-cli
+npx nx deploy miranum-cli
 ```
 
 **Generate**
@@ -35,11 +35,11 @@ npx nx deploy miragon-process-ide-cli
 ```bash
 ## build
 # npm run build
-npx nx build miragon-process-ide-cli
+npx nx build miranum-cli
 
 ## execute
-npx nx create miragon-process-ide-cli
-npx nx createProject miragon-process-ide-cli
+npx nx create miranum-cli
+npx nx createProject miranum-cli
 ```
 
 ## Branching

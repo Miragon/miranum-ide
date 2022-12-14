@@ -7,16 +7,16 @@ on:
         description: 'Release Tag'
         required: true
         default: 'release/XXX'
-      process-ide-cli:
-        description: 'Release process-ide-cli app (y/n)?'
+      miranum-cli:
+        description: 'Release miranum-cli app (y/n)?'
         required: true
         default: 'y'
-      process-ide-console:
-        description: 'Release process-ide-console app (y/n)?'
+      miranum-console:
+        description: 'Release miranum-console app (y/n)?'
         required: true
         default: 'y'
-      digiwf-lib:
-        description: 'Release digiwf-lib (y/n)?'
+      miranum-core:
+        description: 'Release miranum-core (y/n)?'
         required: true
         default: 'y'
       spring-boot-apps:
@@ -42,21 +42,21 @@ jobs:
         run: npm run test
       - name: Build
         run: npm run build
-      # process-ide-cli
+      # miranum-cli
       - uses: actions/upload-artifact@v3
         with:
-          name: process-ide-cli
-          path: dist/apps/miragon-process-ide-cli
-      # process-ide-console
+          name: miranum-cli
+          path: dist/apps/miranum-cli
+      # miranum-console
       - uses: actions/upload-artifact@v3
         with:
-          name: process-ide-console
-          path: dist/apps/process-ide-console
-      # digiwf-lib
+          name: miranum-console
+          path: dist/apps/miranum-console
+      # miranum-core
       - uses: actions/upload-artifact@v3
         with:
-          name: digiwf-lib
-          path: dist/libs/digiwf-lib
+          name: miranum-core
+          path: dist/libs/miranum-core
       - uses: actions/upload-artifact@v3
         with:
           name: spring-boot-apps
@@ -75,9 +75,9 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           tag: "${{ github.event.inputs.release-tag }}"
 
-  # process-ide-cli
-  publish-process-ide-console:
-    if: github.event.inputs.process-ide-console == 'y'
+  # miranum-cli
+  publish-miranum-console:
+    if: github.event.inputs.miranum-console == 'y'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -90,7 +90,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v3
         with:
-          name: process-ide-console
+          name: miranum-console
       - name: Prepare
         run: npm install && npm install -g vsce
       - name: Build vsix
@@ -98,12 +98,12 @@ jobs:
       # tbd. publish vsce
       - uses: actions/upload-artifact@v3
         with:
-          name: process-ide-console
-          path: process-ide-console-0.1.0.vsix
+          name: miranum-console
+          path: miranum-console-0.1.0.vsix
 
-  # process-ide-cli
-  publish-process-ide-cli:
-    if: github.event.inputs.process-ide-cli == 'y'
+  # miranum-cli
+  publish-miranum-cli:
+    if: github.event.inputs.miranum-cli == 'y'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -116,15 +116,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v3
         with:
-          name: process-ide-cli
+          name: miranum-cli
       - name: Publish
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
-  # digiwf-lib
-  publish-digiwf-lib:
-    if: github.event.inputs.digiwf-lib == 'y'
+  # miranum-core
+  publish-miranum-core:
+    if: github.event.inputs.miranum-core == 'y'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -137,7 +137,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v3
         with:
-          name: digiwf-lib
+          name: miranum-core
       - name: Publish
         run: npm publish --access public
         env:

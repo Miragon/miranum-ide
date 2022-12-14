@@ -1,12 +1,12 @@
 {
-  "$schema": "miragon-process-ide/node_modules/nx/schemas/workspace-schema.json",
+  "$schema": "miranum-ide/node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
     "digiwf-deployment-proxy": "spring-boot-apps/digiwf-deployment-proxy",
-    "digiwf-lib": "libs/digiwf-lib",
-    "miragon-process-ide-cli": "apps/miragon-process-ide-cli",
-    "process-ide-console": "apps/process-ide-console",
-    "process-ide-console-webview": "apps/process-ide-console-webview",
-    "process-ide-console-webview-e2e": "apps/process-ide-console-webview-e2e"
+    "miranum-core": "libs/miranum-core",
+    "miranum-cli": "apps/miranum-cli",
+    "miranum-console": "apps/miranum-console",
+    "miranum-console-webview": "apps/miranum-console-webview",
+    "miranum-console-webview-e2e": "apps/miranum-console-webview-e2e"
   }
 }

@@ -7,7 +7,7 @@
     <img src="images/logo.png" alt="Logo" height="244">
   </a>
 
-<h3 align="center" style="font-family: Academy Engraved LET; color:#00E676">Process-IDE</h3>
+<h3 align="center" style="font-family: Academy Engraved LET; color:#00E676">Miranum</h3>
 
 </div>
 
@@ -16,7 +16,7 @@
 ## <span style="color:#335DE5"> Intro: </span>
 
 We from Miragon want to shape the future of process automatisation.
-Therefore, we created the Process-IDE, which enables process developers to easily develop cubernetes diagramms.
+Therefore, we created Miranum. It enables process developers to easily develop bpmn diagrams.
 By providing a webservice that contains all neccesary addons, we enable process developing in a way an IDE would support a programmer.
 Some functionalities it provides are: 
     ...project creation / generation, 
@@ -26,10 +26,12 @@ Some functionalities it provides are:
 ###  <span style="color:#335DE5"> project-structure: </span>
 
     .
-    ├── miragon-process-ide-cli
-    |     └── src ...
-    └── process-ide-console
-          └── src ...
+    ├── miranum-cli
+    |     └── src ... (contains the cli-tool)
+    ├── miranum-console
+    |     └── src ... (contains the vs-code extension)
+    └── miranum-console-webview
+          └── src ... (contains webviews)
 
 
 ## <span style="color:#335DE5"> Used Software: </span>

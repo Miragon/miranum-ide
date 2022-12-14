@@ -1,6 +1,6 @@
 {
   "projectVersion": "1.0.0",
-  "name": "process-ide-test",
+  "name": "miranum-test",
   "workspace": {
     "forms": "forms",
     "elementTemplates": "element-templates",
