@@ -2,7 +2,7 @@
   "$schema": "miranum-ide/node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
-    "digiwf-deployment-proxy": "spring-boot-apps/digiwf-deployment-proxy",
+    "miranum-deployment-proxy": "spring-boot-apps/miranum-deployment-proxy",
     "miranum-core": "libs/miranum-core",
     "miranum-cli": "apps/miranum-cli",
     "miranum-console": "apps/miranum-console",

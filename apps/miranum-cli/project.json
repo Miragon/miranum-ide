@@ -41,7 +41,7 @@
       "options": {
         "commands": [
           "node dist/apps/miranum-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
-          "node dist/apps/miranumcli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
+          "node dist/apps/miranum-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
         ]
       }
     },
