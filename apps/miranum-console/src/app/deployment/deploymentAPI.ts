@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as colors from "colors";
 import {MiranumDeploymentPlugin, MiranumDeploymentTarget, MiranumCore} from "@miranum-ide/miranum-core";
 import {fileDeploymentSupported, getArtifact, getArtifacts} from "./deployment";
 
@@ -11,9 +10,9 @@ export function createDeployment(context: vscode.ExtensionContext, digiwfLib: Mi
                 let artifact = await getArtifact(path);
                 try {
                     artifact = await digiwfLib.deploy(env.name, artifact);
-                    vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + env.name);
+                    vscode.window.showInformationMessage(`DEPLOYED ${artifact.file.name} to environment ${env.name}`);
                 } catch(err: any) {
-                    console.log(colors.red.bold("FAILED ") + ` deploying ${artifact.file.name} with -> ${err}`);
+                    console.log(`FAILED deploying ${artifact.file.name} with -> ${err}`);
                     vscode.window.showInformationMessage(err.msg);
                 }
             });
@@ -27,10 +26,10 @@ export function createDeployment(context: vscode.ExtensionContext, digiwfLib: Mi
                     try {
                         if (fileDeploymentSupported(artifact)) {
                             await digiwfLib.deploy(env.name, artifact);
-                            vscode.window.showInformationMessage(colors.green.bold("DEPLOYED ") + artifact.file.name + " to environment " + env.name);
+                            vscode.window.showInformationMessage(`DEPLOYED ${artifact.file.name} to environment ${env.name}`);
                         }
                     } catch(err: any) {
-                        console.log(colors.red.bold("FAILED ") + ` deploying ${artifact.file.name} with -> ${err}`);
+                        console.log(`FAILED deploying ${artifact.file.name} with -> ${err}`);
                         vscode.window.showInformationMessage(err.msg);
                     }
                 }

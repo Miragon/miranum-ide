@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as colors from "colors";
 import { Artifact } from "@miranum-ide/miranum-core";
 
 const fs = vscode.workspace.fs;
@@ -8,13 +7,13 @@ export async function generate(artifact: Artifact, path: string): Promise<void> 
     try {
         if (!artifact.file.pathInProject) {
             const msg = `Could not create file ${artifact.file.name}`;
-            vscode.window.showInformationMessage(colors.red.bold("FAILED ") + msg);
+            vscode.window.showInformationMessage("FAILED " + msg);
             return Promise.reject(msg);
         }
         await saveFile(path, artifact.file.pathInProject, artifact.file.content);
-        vscode.window.showInformationMessage(colors.green.bold("SAVED ") + `${artifact.file.name}.${artifact.file.extension}`);
+        vscode.window.showInformationMessage(`SAVED ${artifact.file.name}.${artifact.file.extension}`);
     } catch (err) {
-        vscode.window.showInformationMessage(colors.red.bold("FAILED ") + ` creating file ${artifact.file.name} with -> ${err}`);
+        vscode.window.showInformationMessage(`FAILED creating file ${artifact.file.name} with -> ${err}`);
         return Promise.reject(err);
     }
 }
