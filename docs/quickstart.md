@@ -81,12 +81,12 @@ Run `nx g @nrwl/node:lib my-lib` to generate a library.
 
 > You can also use any of the plugins above to generate libraries as well.
 
-Libraries are shareable across libraries and applications. They can be imported from `@miragon-process-ide/mylib`.
+Libraries are shareable across libraries and applications. They can be imported from `@miranum-ide/mylib`.
 
 **Publishable Libs**
 
 ```
-npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-process-ide/my-awesome-lib
+npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miranum-ide/my-awesome-lib
 ```
 
 ### Generate a VSCode-Extension
@@ -97,8 +97,8 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 
 ````json
 {
-  "name": "process-ide-console",
-	"displayName": "process-ide-console",
+  "name": "example",
+	"displayName": "example",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -108,13 +108,13 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miragon-proce
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:process-ide-console.helloWorld"
+        "onCommand:miranum-console.helloWorld"
 	],
-	"main": "../../../dist/apps/process-ide-console/main.js",
+	"main": "../../../dist/apps/example/main.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "process-ide-console.helloWorld",
+				"command": "example.helloWorld",
 				"title": "Hello World"
 			}
 		]

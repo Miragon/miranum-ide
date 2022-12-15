@@ -6,9 +6,9 @@ For all available commands checkout [quickstart.md](quickstart.md).
 
 **Deployment**
 
-You should start the digiwf-deployment-proxy before running deployment commands.
+You should start the miranum-deployment-proxy before running deployment commands.
 If you want to deploy your artifacts to a "real" digiwf-engine. 
-Edit in the [`application.properties`](../spring-boot-apps/digiwf-deployment-proxy/digiwf-deployment-proxy-example/src/main/resources/application.properties) the deployment handlers to use the `RestHandler`.
+Edit in the [`application.properties`](../spring-boot-apps/miranum-deployment-proxy/miranum-deployment-proxy-example/src/main/resources/application.properties) the deployment handlers to use the `RestHandler`.
 
 ```bash
 ## build
@@ -16,7 +16,7 @@ Edit in the [`application.properties`](../spring-boot-apps/digiwf-deployment-pro
 npx nx build digiwf-deplyoment-proxy
 
 ## execute
-npx nx serve digiwf-deployment-proxy
+npx nx serve miranum-deployment-proxy
 ```
 
 The deployment test commands:
@@ -24,10 +24,10 @@ The deployment test commands:
 ```bash
 ## build
 # npm run build
-npx nx build miragon-process-ide-cli
+npx nx build miranum-cli
 
 ## execute
-npx nx deploy miragon-process-ide-cli
+npx nx deploy miranum-cli
 ```
 
 **Generate**
@@ -35,11 +35,11 @@ npx nx deploy miragon-process-ide-cli
 ```bash
 ## build
 # npm run build
-npx nx build miragon-process-ide-cli
+npx nx build miranum-cli
 
 ## execute
-npx nx create miragon-process-ide-cli
-npx nx createProject miragon-process-ide-cli
+npx nx create miranum-cli
+npx nx createProject miranum-cli
 ```
 
 ## Branching

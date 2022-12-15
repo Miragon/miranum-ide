@@ -1,0 +1,47 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "spring-boot-apps/miranum-deployment-proxy/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nxrocks/nx-spring-boot:build",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-proxy-example-0.0.2.jar"
+        ],
+        "cwd": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    },
+    "test": {
+      "executor": "@nxrocks/nx-spring-boot:test",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    },
+    "clean": {
+      "executor": "@nxrocks/nx-spring-boot:clean",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    },
+    "format": {
+      "executor": "@nxrocks/nx-spring-boot:format",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    },
+    "format-check": {
+      "executor": "@nxrocks/nx-spring-boot:format-check",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment-proxy"
+      }
+    }
+  },
+  "tags": []
+}

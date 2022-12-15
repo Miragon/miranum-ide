@@ -1,4 +1,4 @@
-name: Test digiwf-lib
+name: Test miranum-core
 on:
   push:
     branches-ignore: [main]

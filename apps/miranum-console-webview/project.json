@@ -1,0 +1,81 @@
+{
+  "name": "miranum-console-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "compiler": "babel",
+        "outputPath": "dist/apps/miranum-console/miranum-console-webview",
+        "deleteOutputPath": false,
+        "index": "apps/miranum-console-webview/src/index.html",
+        "baseHref": "/",
+        "main": "apps/miranum-console-webview/src/main.tsx",
+        "polyfills": "apps/miranum-console-webview/src/polyfills.ts",
+        "tsConfig": "apps/miranum-console-webview/tsconfig.app.json",
+        "styles": ["apps/miranum-console-webview/src/styles.css"],
+        "scripts": [],
+        "webpackConfig": "@nrwl/react/plugins/webpack"
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true,
+          "vendorChunk": true
+        },
+        "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/miranum-console-webview/src/environments/environment.ts",
+              "with": "apps/miranum-console-webview/src/environments/environment.prod.ts"
+            }
+          ],
+          "optimization": true,
+          "outputHashing": "none",
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/webpack:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-console-webview:build",
+        "hmr": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-console-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-console-webview:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/miranum-console-webview/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}
