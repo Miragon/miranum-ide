@@ -8,7 +8,7 @@
     <description>Jacoco Code Coverage</description>
 
     <parent>
-        <groupId>io.miragon.digiwf</groupId>
+        <groupId>io.miragon.miranum</groupId>
         <artifactId>miranum-deployment-proxy-parent</artifactId>
         <version>0.0.2</version>
     </parent>
@@ -90,8 +90,8 @@
                             <goal>report-aggregate</goal>
                         </goals>
                         <configuration>
-                            <title>DigiWF</title>
-                            <footer>Code Coverage Report for DigiWF ${project.version}</footer>
+                            <title>Miranum</title>
+                            <footer>Code Coverage Report for Miranum ${project.version}</footer>
                             <outputDirectory>${project.build.directory}/coverage</outputDirectory>
                         </configuration>
                     </execution>

@@ -9,7 +9,7 @@
 
     <!-- link the parent -->
     <parent>
-        <groupId>io.miragon.digiwf</groupId>
+        <groupId>io.miragon.miranum</groupId>
         <artifactId>miranum-deployment-proxy-parent</artifactId>
         <version>0.0.2</version>
     </parent>
