@@ -83,7 +83,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         variant="contained"
                         color="secondary"
                         sx={{ mt: 3, mb: 2 }}
-                    >generate Project</Button>
+                    >Generate Project</Button>
                 </Box>
                 {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
             </FormControl>
