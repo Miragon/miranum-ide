@@ -1,13 +1,7 @@
-<br />
 <div align="center">
 
-# <span style="color:green"> <u> Documentation </u> </span>
-
-  <a href="#">
-    <img src="images/logo.png" alt="Logo" height="244">
-  </a>
-
-<h3 align="center" style="font-family: Academy Engraved LET; color:#00E676">Process-IDE</h3>
+# <span style="font-family: Academy Engraved LET"> <u> Documentation </u> </span>
+<h2 align="center" style="font-family: Academy Engraved LET; color:#00E676">Miranum</h2>
 
 </div>
 
@@ -15,32 +9,40 @@
 
 ## <span style="color:#335DE5"> Intro: </span>
 
-We from Miragon want to shape the future of process automatisation.
-Therefore, we created the Process-IDE, which enables process developers to easily develop cubernetes diagramms.
-By providing a webservice that contains all neccesary addons, we enable process developing in a way an IDE would support a programmer.
-Some functionalities it provides are: 
-    ...project creation / generation, 
-    ...???.
+We from Miragon want to shape the future of process automation.
+Therefore, we created the Miranum, a process modeling IDE. 
+Miranum enables process developers to easily develop bpmn diagrams.
+By providing a webservice that contains all necessary addons, we enable process developing in a way an IDE would support a programmer.
+Some functionalities it provides are:
+project creation / generation,
+deployment.
 
 
 ###  <span style="color:#335DE5"> project-structure: </span>
 
     .
-    ├── miragon-process-ide-cli
-    |     └── src ...
-    └── process-ide-console
-          └── src ...
+    ├── miranum-cli
+    |     └── src ... (contains the cli-tool)
+    ├── miranum-console
+    |     └── src ... (contains the vs-code extension)
+    └── miranum-console-webview
+          └── src ... (contains webviews)
 
 
 ## <span style="color:#335DE5"> Used Software: </span>
+
 Templateengine: [Squirrely](https://squirrelly.js.org/)
+
+BPMN-Modeler foundation: [bpmn-js](https://bpmn.io/toolkit/bpmn-js/)
+
 
 <hr>
 
-## <span style="color:#335DE5"> Existing Commands: </span>
+
+## <span style="color:#335DE5"> Commands: </span>
 
 
-### <span style="color:lime"> *deployFileCommand* </span>
+### <span style="color:lime"> *deployFile* </span>
     This command deploys an artifact to the target environment.
     An artefact consists out of a type (string), a project (string), and a file
         The file in itself consist out of a name, an extension, some content, a size, and a path

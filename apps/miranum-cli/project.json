@@ -1,0 +1,98 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/miranum-cli/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miranum-cli",
+        "main": "apps/miranum-cli/src/main.ts",
+        "tsConfig": "apps/miranum-cli/tsconfig.app.json",
+        "webpackConfig": "apps/miranum-cli/custom-webpack.config.js",
+        "generatePackageJson": true,
+        "assets": [
+          "apps/miranum-cli/src/README.md",
+          "apps/miranum-cli/src/Dockerfile",
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/miranum-cli/src/environments/environment.ts",
+              "with": "apps/miranum-cli/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node dist/apps/miranum-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
+          "node dist/apps/miranum-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
+        ]
+      }
+    },
+    "create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node dist/apps/miranum-cli/main.js generate-file --type bpmn --name testFile  --path resources/my-generations",
+          "node dist/apps/miranum-cli/main.js generate-file --type dmn --name testFile  --path resources/my-generations",
+          "node dist/apps/miranum-cli/main.js generate-file --type form --name testFile  --path resources/my-generations",
+          "node dist/apps/miranum-cli/main.js generate-file --type config --name configTest  --path resources/my-generations",
+          "node dist/apps/miranum-cli/main.js generate-file --type element-template --name elementTest  --path resources/my-generations"
+        ]
+      }
+    },
+    "createProject": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "node dist/apps/miranum-cli/main.js generate --name basic-project --path resources/my-generations"
+          }
+        ]
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/node:node",
+      "options": {
+        "buildTarget": "miranum-cli:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "miranum-cli:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-cli/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/miranum-cli"],
+      "options": {
+        "jestConfig": "apps/miranum-cli/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

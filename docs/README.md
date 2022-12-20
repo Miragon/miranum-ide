@@ -1,4 +1,4 @@
-# MiragonProcessIde
+# Miranum
 
 - [Quickstart](quickstart.md)
 - [Development](development.md)

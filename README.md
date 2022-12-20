@@ -15,13 +15,13 @@
     <img src="images/logo.png" alt="Logo" height="100">
   </a>
 
-<h3 align="center">Miragon <i>miragon-process-ide</i></h3>
+<h3 align="center">Miragon <i>miranum-ide</i></h3>
 
   <p align="center">
     <i></i>
-    <br /><a href="https://github.com/FlowSquad/miragon-process-ide/issues">Report Bug</a>
+    <br /><a href="https://github.com/FlowSquad/miranum-ide/issues">Report Bug</a>
     ·
-    <a href="https://github.com/FlowSquad/miragon-process-ide/issues">Request Feature</a>
+    <a href="https://github.com/FlowSquad/miranum-ide/issues">Request Feature</a>
   </p>
 </div>
 
@@ -88,20 +88,20 @@ Distributed under the Apache License Version 2.0. See [`License`](LICENSE) file 
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
-[contributors-url]: https://github.com/FlowSquad/miragon-process-ide/graphs/contributors
+[contributors-url]: https://github.com/FlowSquad/miranum-ide/graphs/contributors
 
 [forks-shield]: https://img.shields.io/github/forks/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
-[forks-url]: https://github.com/FlowSquad/miragon-process-ide/network/members
+[forks-url]: https://github.com/FlowSquad/miranum-ide/network/members
 
 [stars-shield]: https://img.shields.io/github/stars/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
-[stars-url]: https://github.com/FlowSquad/miragon-process-ide/stargazers
+[stars-url]: https://github.com/FlowSquad/miranum-ide/stargazers
 
 [issues-shield]: https://img.shields.io/github/issues/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
-[issues-url]: https://github.com/FlowSquad/miragon-process-ide/issues
+[issues-url]: https://github.com/FlowSquad/miranum-ide/issues
 
 [license-shield]: https://img.shields.io/github/license/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
-[license-url]: https://github.com/FlowSquad/miragon-process-ide/blob/master/LICENSE
+[license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE

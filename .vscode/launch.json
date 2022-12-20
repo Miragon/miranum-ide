@@ -2,18 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "java",
-      "name": "Launch ExampleApplication",
-      "request": "launch",
-      "mainClass": "io.miragon.digiwf.digiwfdeploymentproxy.ExampleApplication",
-      "projectName": "digiwf-deployment-proxy-example"
-    },
-    {
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/process-ide-console"
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
@@ -25,10 +18,10 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/process-ide-console"
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/process-ide-console"
+        "${workspaceFolder}/dist/apps/miranum-console"
       ],
       "preLaunchTask": "${defaultBuildTask}"
     }
