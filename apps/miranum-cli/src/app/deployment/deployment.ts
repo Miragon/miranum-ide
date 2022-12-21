@@ -26,7 +26,7 @@ export class Deployment {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".json"]))
-                        .forEach(f => files.push({type: "form", file: f}));
+                        .forEach(f => files.push({type: "config", file: f}));
                     break;
             }
         }
