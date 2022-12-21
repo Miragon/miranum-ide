@@ -103,7 +103,7 @@
 			  {
 				"submenu": "deploy.submenu",
 				"group": "1_modification",
-				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn"
+				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .json"
 			  },
 			  {
 				"submenu": "deployAll.submenu",

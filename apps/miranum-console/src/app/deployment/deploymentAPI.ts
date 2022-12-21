@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
-import {MiranumDeploymentPlugin, MiranumDeploymentTarget, MiranumCore} from "@miranum-ide/miranum-core";
-import {fileDeploymentSupported, getArtifact, getArtifacts} from "./deployment";
+import {
+    MiranumDeploymentPlugin,
+    MiranumDeploymentTarget,
+    MiranumCore,
+    checkIfSupportedType
+} from "@miranum-ide/miranum-core";
+import {getArtifact, getArtifacts} from "./deployment";
 
 export function createDeployment(context: vscode.ExtensionContext, digiwfLib: MiranumCore) {
     digiwfLib.projectConfig?.deployment.forEach((deployment: MiranumDeploymentPlugin) => {
@@ -21,10 +26,9 @@ export function createDeployment(context: vscode.ExtensionContext, digiwfLib: Mi
             // deploy project
             const deployAllCommand = vscode.commands.registerCommand(`miranum.deployAll.${env.name}`, async (path: vscode.Uri) => {
                 const artifacts = await getArtifacts(path);
-                console.log(artifacts);
                 for (const artifact of artifacts) {
                     try {
-                        if (fileDeploymentSupported(artifact)) {
+                        if (checkIfSupportedType(artifact.type)) {
                             await digiwfLib.deploy(env.name, artifact);
                             vscode.window.showInformationMessage(`DEPLOYED ${artifact.file.name} to environment ${env.name}`);
                         }
