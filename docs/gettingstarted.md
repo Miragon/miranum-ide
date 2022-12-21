@@ -34,7 +34,7 @@ Let's first concentrate on the builder, and drag a group and then a textfield in
 In the preview you shoud now see a change, if not press the refresh button in its top right corner.
 Great Job, we made our first form! It's quite simple at the moment, so let's enhance it by adding a number and then a switch into the same group.
 
-![gettingStartet_3](../images/gettingStartet/gettingStartet_step3.gif)
+![gettingStartet_3](../images/gettingStartet/gettingStartet_step3.gif) //edit after digiwf update (x-display is now availaible)
 
 Let's rename some segments. First, press the Options-Button (three dots on the right) of the textfield and press Edit. 
 A new window should pop up. This should have a lot of options to it, we only want to change the name though, so let's change the title to "Article".
@@ -53,7 +53,8 @@ This is the final diagram (Does yours look the same?):
 ![gettingStartet_5](../images/gettingStartet/gettingStartet_step5.png)
 
 Let's do some more editing though. First, select the "Select"-button on the Template property of the Service-Task.
-This should open a window with your available Templates. Now choose the "Mail Task" and fill out custom properties.
+This should open a window with your available Templates. (Make sure that you don't have the template open though, it will disable vs-code to read the file) 
+Now choose the "Mail Task" and fill out custom properties.
 As recipient use your email. As content say "hi". As subject put "present".
 
 Let's also change the name of our elements. Anyone who knows his way around Camunda can do this by themselves.
@@ -65,4 +66,4 @@ Let's try this for our UserTask. Let's name it "Present approval". We do the sam
 That's us done, now we can deploy our new creation. To do this, you can either right-click the Project-folder and say DeployAll.
 Or you can go back to the Miranum-Console, and use the DeployAll button there.
 
-![gettingStartet_7](../images/gettingStartet/gettingStartet_step7.png)
+![gettingStartet_7](../images/gettingStartet/gettingStartet_step7.png) //again without "MyProject2"
