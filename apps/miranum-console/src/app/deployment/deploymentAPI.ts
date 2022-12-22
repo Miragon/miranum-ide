@@ -19,7 +19,7 @@ export function createDeployment(context: vscode.ExtensionContext, digiwfLib: Mi
                     vscode.window.showInformationMessage(`DEPLOYED ${artifact.file.name} to environment ${env.name}`);
                 } catch(err: any) {
                     console.log(`FAILED deploying ${artifact.file.name} with -> ${err}`);
-                    vscode.window.showInformationMessage(err.msg);
+                    vscode.window.showInformationMessage(`FAILED deploying ${artifact.file.name} with -> ${err}`);
                 }
             });
             context.subscriptions.push(deployArtifactCommand);
@@ -36,7 +36,7 @@ export function createDeployment(context: vscode.ExtensionContext, digiwfLib: Mi
                         }
                     } catch(err: any) {
                         console.log(`FAILED deploying ${artifact.file.name} with -> ${err}`);
-                        vscode.window.showInformationMessage(err.msg);
+                        vscode.window.showInformationMessage(`FAILED deploying ${artifact.file.name} with -> ${err}`);
                     }
                 }
             });
