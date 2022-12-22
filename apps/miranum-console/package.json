@@ -95,7 +95,7 @@
 			},
 			{
 				"view": "commands",
-				"contents": "[generateFile](command:miranum.generateFile) \n [generateProject](command:miranum.generateProject)"
+				"contents": "[generate file](command:miranum.generateFile) \n [generate project](command:miranum.generateProject)"
 			}
 		  ],
 		  "menus": {
@@ -103,7 +103,7 @@
 			  {
 				"submenu": "deploy.submenu",
 				"group": "1_modification",
-				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn"
+				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .config"
 			  },
 			  {
 				"submenu": "deployAll.submenu",

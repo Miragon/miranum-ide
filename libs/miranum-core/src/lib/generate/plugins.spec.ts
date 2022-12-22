@@ -6,7 +6,7 @@ const filesToGenerate = [
     {name: "my-process", type: "bpmn", extension: "bpmn", dir: ""},
     {name: "my-decision-table", type: "dmn", extension: "dmn", dir: ""},
     {name: "my-form", type: "form", extension: "form", dir: "forms"},
-    {name: "my-config", type: "config", extension: "json", dir: "configs"},
+    {name: "my-config", type: "config", extension: "config", dir: "configs"},
     {name: "my-element-template", type: "element-template", extension: "json", dir: "element-templates"},
     {name: "README", type: "README.md", extension: "md", dir: ""}
 ];
