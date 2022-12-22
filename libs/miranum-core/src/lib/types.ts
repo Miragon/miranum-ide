@@ -31,7 +31,7 @@ export interface MiranumGeneratorPlugin {
     template: string;
     basePath: string | undefined;
     defaultData: object;
-    generate(name: string, project: string, path?: string): Promise<Artifact>
+    generate(name: string, project: string, pathInProject?: string): Promise<Artifact>
 }
 
 export interface MiranumDeploymentTarget {
