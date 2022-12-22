@@ -10,8 +10,9 @@ Before being able to use the full potential Miranum offers you also need to down
 <hr>
 
 ## Steps to your first BPMN-Project
-Open the Miranum-Console on the side-bar and generate your first Project.
-All you need to do is input a name and select the path you want it to be saved to.
+Open the Miranum-Console on the side-bar and generate your first Project. 
+(Alternatively you can right-click a folder and select "generate" -> "generateProject")
+After that all you need to do is input a name and select the path you want your project to be saved to.
 
 ![gettingStartet_1](../images/gettingStartet/gettingStartet_step1.png)
 
@@ -25,7 +26,7 @@ If we now click the element again and use the wrench on it, we can make it a Use
 Here comes our first feature. If you use Camunda a lot, you already know the Form-Property.
 With Miranum however, we now enable you to skip the process of remembering Form-keys and instead directly select one out of your collection.
 Let's say we don't want one of the forms we already have and need to make a new one. No Problem.
-Go back to the Miranum-Console, but this time generate a File and select type="form".
+Go back to the Miranum-Console, but this time generate a File and select type="form". (Right-click and selecting "generate" -> "generateFile" works as well)
 
 The newly generated form file will be automatically added into your form-folder and can therefore be used in the select field.
 But we aren't done yet, we want to edit the form. Therefore, double click it.
