@@ -2,7 +2,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-console/src",
   "projectType": "application",
-  "implicitDependencies": ["miranum-console-webview"],
+  "implicitDependencies": [
+    "miranum-console-webview"
+  ],
   "targets": {
     "build": {
       "executor": "@nrwl/node:webpack",
@@ -15,12 +17,9 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-console/custom-webpack.config.js",
         "assets": [
-          "apps/miranum-console/src/assets/komet.svg",
-          {
-            "glob": "LICENSE",
-            "input": "./",
-            "output": "/"
-          }
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-console/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
         ]
       },
       "configurations": {
