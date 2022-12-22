@@ -10,19 +10,6 @@ export function createMiranumCore(projectVersion: string, projectName: string, w
     });
 }
 
-const supportedTypes = ["bpmn", "dmn", "form", "config"];
-/**
- * If the type is supported for deployment the function returns true
- * @param type: type of the artifact that is to be deployed
- */
-export function checkIfSupportedType(type: string): boolean {
-    if (!supportedTypes.includes(type.toLowerCase())) {
-        console.log(`${type} is not supported for deployment`);
-        return false;
-    }
-    return true;
-}
-
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class MiranumCore {
@@ -50,15 +37,14 @@ export class MiranumCore {
 
     public async initProject(projectName: string): Promise<Artifact[]> {
         const filesToGenerate = [
-            {name: projectName, type: "miranum.json"},
+            {name: "README", type: "README.md"},
+            {name: "miranum", type: "miranum.json"},
             {name: projectName, type: "bpmn"},
-            // {name: name, type: "dmn"}
-            {name: `${projectName}_start`, type: "form"},
-            {name: `${projectName}_control`, type: "form"},
             {name: `${projectName}_dev`, type: "config"},
             {name: `${projectName}_prod`, type: "config"},
-            {name: "element-templates", type: ".gitkeep"},
-            {name: `${projectName}`, type: "README.md"}
+            {name: " ", type: ".gitkeep"},
+            {name: `${projectName}_start`, type: "form"},
+            {name: `${projectName}_control`, type: "form"}
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
@@ -101,5 +87,17 @@ export class MiranumCore {
         }
         return "";
     }
+}
 
+const supportedTypes = ["bpmn", "dmn", "form", "config"];
+/**
+ * If the type is supported for deployment the function returns true
+ * @param type: type of the artifact that is to be deployed
+ */
+export function checkIfSupportedType(type: string): boolean {
+    if (!supportedTypes.includes(type.toLowerCase())) {
+        console.log(`${type} is not supported for deployment`);
+        return false;
+    }
+    return true;
 }
