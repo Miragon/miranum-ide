@@ -81,6 +81,7 @@ const GenerateInput: React.FC<Props> = props => {
                         labelId="typeLabel"
                         name="type"
                         value={type}
+                        sx={{mb:"28px"}}
                         onChange={e => {
                             setType(e.target.value);
                             inputChange({name: name, type: e.target.value});
