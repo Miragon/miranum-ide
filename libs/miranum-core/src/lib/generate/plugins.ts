@@ -154,7 +154,7 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json
   ]
 }`, {}, "");
 
-const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", "gitkeep", "{{it.data}}", {data:"."}, "/element-templates");
+const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", "gitkeep", "", {data:""}, "/element-templates");
 
 const readmeGenerator = new MiranumArtifactGenerator("README.md", "md",
     `# <span style="font-family: Academy Engraved LET; color:#00E676">{{it.name}}</span>
