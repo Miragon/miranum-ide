@@ -1,15 +1,7 @@
 import React from "react";
 import {useVsMessage} from "../Hooks/Message";
-import CSS from 'csstype';
-import {Button, TextField, Typography} from "@mui/material";
+import {Button, TextField, Grid} from "@mui/material";
 import {Add} from "@mui/icons-material";
-
-const pathSelector: CSS.Properties = {
-    display: 'flex',
-    flexDirection: 'row',
-    width: '100%',
-    margin: 'normal'
-};
 
 interface Props {
     path: string
@@ -21,23 +13,33 @@ const FileSelector: React.FC<Props> = props => {
 
     return (
         <div>
-            <div style={pathSelector}>
-                <TextField
-                    required
-                    id="path"
-                    label="Path"
-                    name="path"
-                    value={props.path}
-                    onChange={e => {
-                        props.setPath(e.target.value);
-                    }}
-                    error={props.path === ''}
-                />
-                <Button onClick={() => openFilePicker({})} variant="outlined" startIcon={<Add/>}>
-                    Choose Path
-                </Button>
-            </div>
-            {props.path === '' && <Typography variant="subtitle2" color="red">You have to insert a path!</Typography>}
+            <Grid container spacing={0.5}>
+                <Grid item xs={6.7} style={{flexBasis:"67%", maxWidth:"67%"}}>
+                    <TextField
+                        required
+                        id="path"
+                        label="Path"
+                        name="path"
+                        value={props.path}
+                        style={{width:"100%"}}
+                        onChange={e => {
+                            props.setPath(e.target.value);
+                        }}
+                        error={props.path === ''}
+                        helperText={(props.path === '')? 'You have to insert a path!':' '}
+                    />
+                </Grid>
+                <Grid item xs={5.3} style={{flexBasis:"33%", maxWidth:"33%"}}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<Add/>}
+                        style={{padding:"3px 12px"}}
+                        onClick={() => openFilePicker({})}
+                    >
+                        Choose Path
+                    </Button>
+                </Grid>
+            </Grid>
         </div>
     );
 }
