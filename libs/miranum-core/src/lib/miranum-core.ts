@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin } from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
@@ -56,7 +54,8 @@ export class MiranumCore {
     }
 
     public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
-        return this.initArtifact(artifactName, type, projectName, this.getPathFromConfig(type, projectPath));
+        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
+        return this.initArtifact(artifactName, type, projectName, lastFolder==projectName ? this.getPathFromConfig(type) : "");
     }
 
     private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
@@ -67,13 +66,11 @@ export class MiranumCore {
         return generator.generate(artifactName, project, basePath);
     }
 
-    private getPathFromConfig(type: string, projectPath: string): string | undefined {
-        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        if (this.projectConfig && (type == "form" || type == "config" || type == "element-template")
-            && lastFolder != this.projectConfig.workspace["forms"]
-            && lastFolder != this.projectConfig.workspace["elementTemplates"]
-            && lastFolder != this.projectConfig.workspace["processConfigs"]) {
-                return this.projectConfig.workspace[`${type}s`];
+    private getPathFromConfig(type: string): string | undefined {
+        if (this.projectConfig && (type == "form" || type == "config" || type == "element-template")) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            return this.projectConfig.workspace[`${type}s`];
         }
         return "";
     }
@@ -91,3 +88,5 @@ export function checkIfSupportedType(type: string): boolean {
     }
     return true;
 }
+
+//also es is fertig, allerdings werden halt nur die drei ordner verglichen, wenn der user also den workspace erweitert is der bug in den unterordner vermutlich noch da
