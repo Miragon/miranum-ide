@@ -95,5 +95,3 @@ export function checkIfSupportedType(type: string): boolean {
     }
     return true;
 }
-
-//also es is fertig, allerdings werden halt nur die drei ordner verglichen, wenn der user also den workspace erweitert is der bug in den unterordner vermutlich noch da
