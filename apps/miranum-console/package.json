@@ -71,95 +71,92 @@
 		"viewsContainers": {
 			"activitybar": [
 			  {
-				"id": "miranum-ide",
-				"title": "Miranum-IDE",
-				"icon": "assets/komet.svg"
+          "id": "miranum-ide",
+          "title": "Miranum-IDE",
+          "icon": "assets/komet.svg"
 			  }
 			]
-		  },
-		  "views": {
+    },
+    "views": {
 			"miranum-ide": [
 			  {
-				"id": "bpmn-project",
-				"name": "Files"
+          "id": "bpmn-project",
+          "name": "Files"
 			  },
 			  {
-				"id": "commands",
-				"name": "Commands"
+          "id": "commands",
+          "name": "Commands"
 			  }
 			]
-		  },
-		  "viewsWelcome": [
-			{
-				"view": "bpmn-project"
-			},
+    },
+    "viewsWelcome": [
 			{
 				"view": "commands",
 				"contents": "[generate file](command:miranum.generateFile) \n [generate project](command:miranum.generateProject)"
 			}
-		  ],
-		  "menus": {
-			"explorer/context": [
-			  {
-				"submenu": "deploy.submenu",
-				"group": "1_modification",
-				"when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .config"
-			  },
-			  {
-				"submenu": "deployAll.submenu",
-				"group": "1_modification",
-				"when": "explorerResourceIsFolder"
-			  },
-			  {
-				"submenu": "generate.submenu",
-				"group": "1_modification",
-				"when": "explorerResourceIsFolder"
-			  }
-			],
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "submenu": "deploy.submenu",
+          "group": "1_modification",
+          "when": "resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .config"
+        },
+        {
+          "submenu": "deployAll.submenu",
+          "group": "1_modification",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "submenu": "generate.submenu",
+          "group": "1_modification",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
       "deploy.submenu":[
         {
             "command": "miranum.deploy.local"
         },
-				{
+        {
             "command": "miranum.deploy.dev"
         },
-				{
+        {
             "command": "miranum.deploy.test"
         }
       ],
-			"deployAll.submenu":[
+      "deployAll.submenu":[
         {
             "command": "miranum.deployAll.local"
         },
-				{
+        {
             "command": "miranum.deployAll.dev"
         },
-				{
+        {
             "command": "miranum.deployAll.test"
         }
       ],
-			"generate.submenu":[
+      "generate.submenu":[
         {
             "command": "miranum.generateFile"
         },
-				{
+        {
             "command": "miranum.generateProject"
         }
       ]
-		  },
-		  "submenus": [
-			{
-				"id": "deploy.submenu",
+    },
+    "submenus": [
+      {
+        "id": "deploy.submenu",
         "label": "Deploy"
-			},
-			{
-				"id": "deployAll.submenu",
+      },
+      {
+        "id": "deployAll.submenu",
         "label": "Deploy All"
-			},
-			{
-				"id": "generate.submenu",
-				"label": "Generate"
-			}
-		  ]
+      },
+      {
+        "id": "generate.submenu",
+        "label": "Generate"
+      }
+    ]
 	}
 }

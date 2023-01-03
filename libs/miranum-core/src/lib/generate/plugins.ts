@@ -80,8 +80,7 @@ const dmnGenerator = new MiranumArtifactGenerator("dmn",  "dmn",
   </dmndi:DMNDI>
 </definitions>`, {version: "7.17.0"}, "");
 
-const formGenerator = new MiranumArtifactGenerator("form", "form",
-    `{
+const formGenerator = new MiranumArtifactGenerator("form", "form", `{
   "key": "{{it.name}}",
   "schema": {
     "type": "object",
@@ -102,8 +101,7 @@ const formGenerator = new MiranumArtifactGenerator("form", "form",
     }
 }`, {allOfKey: "FORMSECTION_input"}, "/forms");
 
-const configGenerator = new MiranumArtifactGenerator("config", "config",
-    `{
+const configGenerator = new MiranumArtifactGenerator("config", "config", `{
   "key": "{{it.name}}",
   "statusDokument": "",
   "statusConfig": [],
@@ -115,8 +113,7 @@ const configGenerator = new MiranumArtifactGenerator("config", "config",
   ]
 }`, {}, "/configs");
 
-const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "json",
-    `{
+const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "json", `{
   "name": "{{it.name}}",
   "id": "{{it.id}}",
   "appliesTo": [
@@ -154,7 +151,7 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json
   ]
 }`, {}, "");
 
-const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", "gitkeep", "{{it.data}}", {data:"."}, "/element-templates");
+const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", "gitkeep", "{{it.data}}", {data:""}, "/element-templates");
 
 const readmeGenerator = new MiranumArtifactGenerator("README.md", "md",
     `# <span style="font-family: Academy Engraved LET; color:#00E676">{{it.name}}</span>
