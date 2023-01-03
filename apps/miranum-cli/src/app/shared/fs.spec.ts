@@ -35,8 +35,12 @@ describe("getFiles",() => {
     });
 
     it("configs should work", async () => {
-        const files = await getFiles(`${pathToProject}config/`, [".json"]);
+        const files = await getFiles(`${pathToProject}configs/`, [".config.json"]);
         checkFiles(files, ".json");
+        // special case if file extension is .<...>.json -> the file extension is .json and .<...> is part of the file name
+        files.forEach(configs => {
+            expect(configs.name.includes(".config")).toBeTruthy();
+        });
     });
 
     it("bpmn should work", async () => {

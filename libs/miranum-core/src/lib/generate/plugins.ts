@@ -101,7 +101,7 @@ const formGenerator = new MiranumArtifactGenerator("form", "form", `{
     }
 }`, {allOfKey: "FORMSECTION_input"}, "/forms");
 
-const configGenerator = new MiranumArtifactGenerator("config", "config", `{
+const configGenerator = new MiranumArtifactGenerator("config", "config.json", `{
   "key": "{{it.name}}",
   "statusDokument": "",
   "statusConfig": [],
@@ -113,7 +113,7 @@ const configGenerator = new MiranumArtifactGenerator("config", "config", `{
   ]
 }`, {}, "/configs");
 
-const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "json", `{
+const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "element-template.json", `{
   "name": "{{it.name}}",
   "id": "{{it.id}}",
   "appliesTo": [
