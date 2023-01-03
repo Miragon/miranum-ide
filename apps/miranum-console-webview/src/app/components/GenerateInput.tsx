@@ -4,7 +4,7 @@ import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
-import {MiranumConfig, MiranumCore} from "@miranum-ide/miranum-core";
+import { Artifact, MiranumConfig, MiranumCore } from "@miranum-ide/miranum-core";
 
 interface Props {
     config: MiranumConfig;
@@ -32,13 +32,13 @@ const GenerateInput: React.FC<Props> = props => {
     const generate = useCallback(() => {
         if (name !== '' && path !== '') {
             digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
-                .then((artifact: any) => {
+                .then((artifact: Artifact) => {
                     sendArtifactMessage({
                         path: path,
                         artifact: artifact
                     })
                 })
-                .catch((err: any) => setError(err.message));
+                .catch((err) => setError(err.message));
         }
     }, [name, path, digiwfLib, type, sendArtifactMessage]);
 

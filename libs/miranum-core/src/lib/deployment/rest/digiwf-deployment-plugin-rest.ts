@@ -4,6 +4,7 @@ import { Artifact, MiranumDeploymentPlugin, MiranumDeploymentTarget } from "../.
 
 export class DigiwfDeploymentPluginRest implements MiranumDeploymentPlugin {
     plugin: string;
+
     targetEnvironments: MiranumDeploymentTarget[];
 
     constructor(plugin: string, targetEnvironments: MiranumDeploymentTarget[]) {

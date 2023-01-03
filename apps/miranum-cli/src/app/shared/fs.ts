@@ -8,22 +8,22 @@ import {
     FileDetails
 } from "@miranum-ide/miranum-core";
 
-export async function mapProcessConfigToDigiwfLib(path?: string): Promise<MiranumCore> {
-    const p = path ?  `${path}/miranum.json`.replace("//", "/") : "miranum.json";
+export async function mapProcessConfigToDigiwfLib(projectPath?: string): Promise<MiranumCore> {
+    const p = projectPath ?  `${projectPath}/miranum.json`.replace("//", "/") : "miranum.json";
     const processIdeJson = await getFile(p);
     const processIdeConfig = JSON.parse(processIdeJson.content);
     const plugins: MiranumDeploymentPlugin[] = [];
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    processIdeConfig.deployment.forEach(p => {
-        plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+    processIdeConfig.deployment.forEach(deployment => {
+        plugins.push(new DigiwfDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
     });
     return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
 }
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {
     try {
-        if ((await fs.lstat(pathToFile)).isFile()){
+        if ((await fs.lstat(pathToFile)).isFile()) {
             const ext = path.extname(pathToFile);
             const name = path.basename(pathToFile);
             const size = (await fs.stat(pathToFile)).size;
@@ -69,11 +69,11 @@ export async function getFiles(pathToDirectory: string, supportedFileExtensions:
 
 export async function saveFile(projectDir: string, pathInProject: string, fileContent: string): Promise<void> {
     const file = `${projectDir}/${pathInProject}`.replace("//", "/")
-    const path = file.substring(0, file.lastIndexOf("/"));
+    const projectPath = file.substring(0, file.lastIndexOf("/"));
     try {
-        await fs.access(path);
+        await fs.access(projectPath);
     } catch {
-        await fs.mkdir(path, {recursive: true});
+        await fs.mkdir(projectPath, {recursive: true});
     }
     await fs.writeFile(`${projectDir}/${pathInProject}`.replace("//", "/"), fileContent, {flag: "w+"});
 }

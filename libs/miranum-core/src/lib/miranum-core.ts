@@ -14,6 +14,7 @@ export function createMiranumCore(projectVersion: string, projectName: string, w
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class MiranumCore {
     projectConfig?: MiranumConfig;
+
     generatorPlugins: Map<string, MiranumGeneratorPlugin> = availableGeneratorPlugins;
 
     constructor(config?: MiranumConfig) {
@@ -67,21 +68,21 @@ export class MiranumCore {
 
     private getPathFromConfig(type: string): string | undefined {
         if (this.projectConfig) {
-            switch (type){
+            switch (type) {
                 case "form": {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    return this.projectConfig.workspace["forms"];
+                    return this.projectConfig.workspace.forms;
                 }
                 case "config": {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    return this.projectConfig.workspace["processConfigs"];
+                    return this.projectConfig.workspace.processConfigs;
                 }
                 case "element-template": {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    return this.projectConfig.workspace["elementTemplates"];
+                    return this.projectConfig.workspace.elementTemplates;
                 }
             }
         }

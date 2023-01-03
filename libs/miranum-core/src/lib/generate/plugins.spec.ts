@@ -1,7 +1,14 @@
 import { availableGeneratorPlugins } from "./plugins";
 import {Artifact} from "../types";
 
-const filesToGenerate = [
+interface FileHelper {
+    name: string;
+    type: string;
+    extension: string;
+    dir: string;
+}
+
+const filesToGenerate: FileHelper[] = [
     {name: "my-process", type: "bpmn", extension: "bpmn", dir: ""},
     {name: "my-decision-table", type: "dmn", extension: "dmn", dir: ""},
     {name: "my-form", type: "form", extension: "form", dir: "forms"},
@@ -50,7 +57,7 @@ function getGenerator(type: string) {
     return generator;
 }
 
-function compareArtifactFile(artifact:Artifact, file: any){
+function compareArtifactFile(artifact:Artifact, file: FileHelper) {
     expect(artifact.type).toEqual(file.type);
     expect(artifact.file.name).toEqual(file.name);
     expect(artifact.file.extension).toEqual(file.extension);
