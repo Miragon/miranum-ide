@@ -31,7 +31,7 @@ const GenerateInput: React.FC<Props> = props => {
 
     const generate = useCallback(() => {
         if (name !== '' && path !== '') {
-            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
+            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "", path)
                 .then((artifact: any) => {
                     sendArtifactMessage({
                         path: path,

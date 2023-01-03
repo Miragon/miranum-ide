@@ -53,8 +53,8 @@ export class MiranumCore {
         return generatedFiles;
     }
 
-    public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
-        return this.initArtifact(artifactName, type, project, this.getPathFromConfig(type));
+    public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
+        return this.initArtifact(artifactName, type, projectName, this.getPathFromConfig(type, projectPath));
     }
 
     private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
@@ -65,25 +65,14 @@ export class MiranumCore {
         return generator.generate(artifactName, project, basePath);
     }
 
-    private getPathFromConfig(type: string): string | undefined {
-        if (this.projectConfig) {
-            switch (type){
-                case "form": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["forms"];
-                }
-                case "config": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["processConfigs"];
-                }
-                case "element-template": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["elementTemplates"];
-                }
-            }
+    private getPathFromConfig(type: string, projectPath: string): string | undefined {
+        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
+        //schöner wäre es wenn man hier irgendwie auf den workspace zugreift
+        if (this.projectConfig && (type == "form" || type == "config" || type == "element-template")
+            && lastFolder != "forms" && lastFolder != "configs" && lastFolder != "element-templates") {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                return this.projectConfig.workspace[`${type}s`];
         }
         return "";
     }
