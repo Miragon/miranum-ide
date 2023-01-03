@@ -54,25 +54,32 @@ export class MiranumCore {
     }
 
     public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
+        /** checks if we have a projectConfig, whether we are on top-level of the project, and if so, if we have a type which has a subfolder
+         *  if so it initialises an artifact with the "pathInProject" set as the projectConfig.workspace defines it,
+         *  otherwise it initialises it as a standalone artifact
+         */
         const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        return this.initArtifact(artifactName, type, projectName, lastFolder==projectName ? this.getPathFromConfig(type) : "");
+        if(this.projectConfig && lastFolder == projectName && (type == "form" || type == "config" || type == "element-template")) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            return this.initArtifact(artifactName, type, projectName, this.projectConfig.workspace[`${type}s`]);
+        }
+        return this.initArtifact(artifactName, type, projectName, "");
     }
 
-    private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
+    /**
+     * @param artifactName: name of the artifact
+     * @param type: type of the artifact
+     * @param project: name of the project
+     * @param pathInProject: if undefined, default/base path will be used => should only be undefined to generate a project
+     * @private
+     */
+    private async initArtifact(artifactName: string, type: string, project: string, pathInProject?: string): Promise<Artifact> {
         const generator = this.generatorPlugins.get(type);
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
-        return generator.generate(artifactName, project, basePath);
-    }
-
-    private getPathFromConfig(type: string): string | undefined {
-        if (this.projectConfig && (type == "form" || type == "config" || type == "element-template")) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            return this.projectConfig.workspace[`${type}s`];
-        }
-        return "";
+        return generator.generate(artifactName, project, pathInProject);
     }
 }
 
