@@ -20,11 +20,11 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "./",
     "paths": {
-      "@miragon-process-ide/digiwf-deployment-plugin-rest": [
+      "@miranum-ide/digiwf-deployment-plugin-rest": [
         "libs/digiwf-deployment-plugin-rest/src/index.ts"
       ],
-      "@miragon-process-ide/digiwf-lib": ["libs/digiwf-lib/src/index.ts"]
+      "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"]
     }
   },
-  "exclude": ["miragon-process-ide/node_modules", "tmp"]
+  "exclude": ["miranum-ide/node_modules", "tmp"]
 }
