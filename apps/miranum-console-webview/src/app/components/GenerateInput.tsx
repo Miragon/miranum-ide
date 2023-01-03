@@ -38,6 +38,7 @@ const GenerateInput: React.FC<Props> = props => {
                         artifact: artifact
                     })
                 })
+                .then(() => setError(""))
                 .catch((err: any) => setError(err.message));
         }
     }, [name, path, digiwfLib, type, sendArtifactMessage]);

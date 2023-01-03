@@ -34,6 +34,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         artifacts: artifacts
                     })
                 })
+                .then(() => setError(""))
                 .catch((err: any) => setError(err.message));
         }
     }, [name, path, digiwfLib, sendProjectMessage]);
