@@ -22,6 +22,7 @@ export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
         const data: any = this.defaultData;
         data["id"] = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
         data["name"] = fileName;
+        data["projectName"] = project;
         const fileContent = await Sqrl.render(this.template, data);
 
         const fileDetails = {
