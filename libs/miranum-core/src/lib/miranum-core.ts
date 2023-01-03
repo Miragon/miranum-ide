@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin } from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
@@ -67,11 +69,10 @@ export class MiranumCore {
 
     private getPathFromConfig(type: string, projectPath: string): string | undefined {
         const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        //schöner wäre es wenn man hier irgendwie auf den workspace zugreift
         if (this.projectConfig && (type == "form" || type == "config" || type == "element-template")
-            && lastFolder != "forms" && lastFolder != "configs" && lastFolder != "element-templates") {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
+            && lastFolder != this.projectConfig.workspace["forms"]
+            && lastFolder != this.projectConfig.workspace["elementTemplates"]
+            && lastFolder != this.projectConfig.workspace["processConfigs"]) {
                 return this.projectConfig.workspace[`${type}s`];
         }
         return "";
