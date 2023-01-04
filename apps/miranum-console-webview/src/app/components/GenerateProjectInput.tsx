@@ -4,7 +4,7 @@ import {useVsMessage} from "./Hooks/Message";
 import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
-import {MiranumCore} from "@miranum-ide/miranum-core";
+import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
 
 interface Props {
     currentPath: string;
@@ -27,7 +27,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const generate = useCallback(() => {
         if(name !== "" && path !== "") {
             digiwfLib.initProject(name)
-                .then((artifacts: any) => {
+                .then((artifacts: Artifact[]) => {
                     sendProjectMessage({
                         name: name,
                         path: path,
@@ -35,7 +35,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     })
                 })
                 .then(() => setError(""))
-                .catch((err: any) => setError(err.message));
+                .catch((err) => setError(err.message));
         }
     }, [name, path, digiwfLib, sendProjectMessage]);
 

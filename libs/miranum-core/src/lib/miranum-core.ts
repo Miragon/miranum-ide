@@ -14,6 +14,7 @@ export function createMiranumCore(projectVersion: string, projectName: string, w
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class MiranumCore {
     projectConfig?: MiranumConfig;
+
     generatorPlugins: Map<string, MiranumGeneratorPlugin> = availableGeneratorPlugins;
 
     constructor(config?: MiranumConfig) {
@@ -52,7 +53,9 @@ export class MiranumCore {
         }
         return generatedFiles;
     }
-
+    // public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
+    //     return this.initArtifact(artifactName, type, project, this.getPathFromConfig(type));
+    // }
     public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
         /** checks if we have a projectConfig, whether we are on top-level of the project, and if so, if we have a type which has a subfolder
          *  if so it initialises an artifact with the "pathInProject" set as the projectConfig.workspace defines it,
@@ -80,7 +83,31 @@ export class MiranumCore {
             throw new Error(`File type ${type} is not supported.`);
         }
         return generator.generate(artifactName, project, pathInProject);
+        //return generator.generate(artifactName, project, basePath);
     }
+
+    // private getPathFromConfig(type: string): string | undefined {
+    //     if (this.projectConfig) {
+    //         switch (type) {
+    //             case "form": {
+    //                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //                 // @ts-ignore
+    //                 return this.projectConfig.workspace.forms;
+    //             }
+    //             case "config": {
+    //                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //                 // @ts-ignore
+    //                 return this.projectConfig.workspace.processConfigs;
+    //             }
+    //             case "element-template": {
+    //                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //                 // @ts-ignore
+    //                 return this.projectConfig.workspace.elementTemplates;
+    //             }
+    //         }
+    //     }
+    //     return "";
+    // }
 }
 
 const supportedTypes = ["bpmn", "dmn", "form", "config"];

@@ -1,10 +1,4 @@
-export type generateProjectMessage = {
+export type GenerateProjectMessage = {
     name: string;
-    path: string;
-};
-
-export type generateFileMessage = {
-    name: string;
-    type: string;
     path: string;
 };

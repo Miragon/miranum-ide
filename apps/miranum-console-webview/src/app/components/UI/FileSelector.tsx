@@ -5,7 +5,7 @@ import {Add} from "@mui/icons-material";
 
 interface Props {
     path: string
-    setPath: any
+    setPath: (p: string) => void
 }
 
 const FileSelector: React.FC<Props> = props => {

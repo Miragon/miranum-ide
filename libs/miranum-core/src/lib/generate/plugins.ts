@@ -4,9 +4,13 @@ import { v4 as uuidv4 } from "uuid";
 
 export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
     type : string;
+
     fileExtension: string;
+
     template: string;
+
     basePath: string | undefined;
+
     defaultData: object;
 
     constructor(type: string, fileExtension: string, template: string, defaultData: object, basePath: string) {
@@ -19,10 +23,11 @@ export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
 
     async generate(name : string, project: string, pathInProject?: string) : Promise<Artifact> {
         const fileName: string = name.replace(/\.[^/.]+$/, "");
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
         const data: any = this.defaultData;
-        data["id"] = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
-        data["name"] = fileName;
-        data["projectName"] = project;
+        data.id = fileName.trim().replace(/\s+/g, "") + "_" + uuidv4();
+        data.name = fileName;
+        data.projectName = project;
         const fileContent = await Sqrl.render(this.template, data);
 
         const fileDetails = {

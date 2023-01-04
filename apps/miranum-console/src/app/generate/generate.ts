@@ -8,7 +8,7 @@ export async function generate(artifact: Artifact, path: string): Promise<void> 
         if (!artifact.file.pathInProject) {
             const msg = `Could not create file ${artifact.file.name}`;
             vscode.window.showInformationMessage("FAILED " + msg);
-            return Promise.reject(msg);
+            return await Promise.reject(msg);
         }
         await saveFile(path, artifact.file.pathInProject, artifact.file.content);
         vscode.window.showInformationMessage(`SAVED ${artifact.file.name}.${artifact.file.extension}`);
