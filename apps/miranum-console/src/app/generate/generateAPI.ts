@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import {getGenerateWebview} from "../../Webviews/Inputs/generateInput";
-import {generateFileMessage, generateProjectMessage} from "../../types/MessageAPI";
+import {GenerateProjectMessage} from "../../types/MessageAPI";
 import {generate} from "./generate";
 import {MiranumCore} from "@miranum-ide/miranum-core";
 
@@ -125,8 +125,8 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
 
 //     -----------------------------HELPERS-----------------------------     \\
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-function openFilePicker (window: any, userInputCache: generateProjectMessage, sendProjectMessage: Function) {
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+function openFilePicker (window: any, userInputCache: GenerateProjectMessage, sendProjectMessage: any) {
     window.showOpenDialog({
         canSelectFolders: true,
         canSelectFiles: false,

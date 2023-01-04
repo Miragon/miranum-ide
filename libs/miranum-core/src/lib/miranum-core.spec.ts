@@ -1,13 +1,13 @@
 import { createMiranumCore, MiranumCore } from "./miranum-core";
 import { Artifact } from "./types";
 
-const target = "local";
+const sampleTarget = "local";
 const workspace = {
     forms: "forms",
     elementTemplates: "element-templates",
     processConfigs: "configs"
 };
-const deployment = [
+const deploymentPlugin = [
     {
         plugin: "dry",
         targetEnvironments: [
@@ -29,7 +29,7 @@ const deployment = [
         }
     }
 ];
-const digiwfLib: MiranumCore = createMiranumCore("1.0.0", "my-project", workspace, deployment);
+const miranumCore: MiranumCore = createMiranumCore("1.0.0", "my-project", workspace, deploymentPlugin);
 
 describe("deploy", () => {
     it("should work", async () => {
@@ -44,7 +44,7 @@ describe("deploy", () => {
             }
         }
 
-        const deployment = await digiwfLib.deploy(target, exampleArtifact);
+        const deployment = await miranumCore.deploy(sampleTarget, exampleArtifact);
 
         expect(deployment).toEqual(exampleArtifact);
     });
@@ -60,7 +60,7 @@ describe("deploy", () => {
                 size: 500
             }
         }
-        await digiwfLib.deploy(target, exampleArtifact)
+        await miranumCore.deploy(sampleTarget, exampleArtifact)
             .catch(e => expect(e).not.toBeNull());
     });
 });
