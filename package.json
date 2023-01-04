@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npx nx run-many --target build --all",
+    "build": "npx nx run-many --target build --all --prod",
     "test": "npx nx run-many --target test --all",
     "lint": "npx nx run-many --target lint --all",
     "generate-api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o libs/digiwf-deployment-plugin-rest/src/lib/openapi --additional-properties=supportsES6=true,withInterfaces=true"

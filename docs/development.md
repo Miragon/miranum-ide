@@ -2,9 +2,32 @@
 
 For all available commands checkout [quickstart.md](quickstart.md).
 
+```mermaid
+flowchart LR
+    miranum-deployment-proxy
+    miranum-cli
+    
+    subgraph miranum-core
+    generate
+    deployment
+    end
+    
+    subgraph miranum-console
+    miranum-console-webview
+    end
+    
+    miranum-cli --> deployment
+    miranum-cli --> generate
+    
+    miranum-console --> deployment
+    miranum-console-webview --> generate
+    
+    deployment-->miranum-deployment-proxy
+```
+
 ## Setup local dev environment
 
-**Deployment**
+### Miranum-Deployment-Proxy
 
 You should start the miranum-deployment-proxy before running deployment commands.
 If you want to deploy your artifacts to a "real" digiwf-engine. 
@@ -19,28 +42,41 @@ npx nx build digiwf-deplyoment-proxy
 npx nx serve miranum-deployment-proxy
 ```
 
-The deployment test commands:
+### Miranum-CLI
 
 ```bash
-## build
-# npm run build
-npx nx build miranum-cli
+# shows help page
+npx nx serve
 
-## execute
+# Deployment domain
 npx nx deploy miranum-cli
+
+# Generate domain
+# Note: nx generate is a built in command, therefore we had to name our custom command create
+npx nx create miranum-cli
 ```
 
-**Generate**
+### Miranum-Console
+
+## Running the Extension locally
+
+In order to start the miranum-console extension in development mode, you have to build the extension and webview.
+Therefore, you can trigger the watch commands for these 2 apps (`npx nx watch-all miranum-console`).
+Then use the `F5` key or the debug menu option `Run Miranum Console` to start the Extension Development Host.
+
+> Note: Even though builds will be generated automatically, you have to close and reopen the webview in the Extension Development Host.
 
 ```bash
-## build
-# npm run build
-npx nx build miranum-cli
-
-## execute
-npx nx create miranum-cli
-npx nx createProject miranum-cli
+# Auto rebuild the extension on every change
+npx nx watch-all miranum-console
 ```
+
+The `watch-all` commands triggers both `watch` commands for the miranum-console and the miranum-console-webview.
+
+## Testing
+
+We use [Jest](https://jestjs.io/) for testing our apps and libs. If you want to execute the tests use `npm run test`.
+If you want to run the tests of a specific app or lib use `npx nx test <app|lib>`.
 
 ## Branching
 

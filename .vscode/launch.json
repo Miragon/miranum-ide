@@ -2,19 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Extension",
+      "name": "Run Miranum-Console",
       "type": "extensionHost",
       "request": "launch",
       "args": [
+        "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
       ],
       "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
-      "preLaunchTask": "${defaultBuildTask}"
+        "${workspaceFolder}/dist/apps/miranum-console"
+      ]
     },
     {
-      "name": "Extension Tests",
+      "name": "Miranum-Console Extension Tests",
       "type": "extensionHost",
       "request": "launch",
       "args": [

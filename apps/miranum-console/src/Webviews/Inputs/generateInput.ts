@@ -11,6 +11,7 @@ export function getGenerateWebview(scriptUrl: string) {
         <div id="root"></div>
         <script src="${scriptUrl}/main.js"></script>
         <script src="${scriptUrl}/runtime.js"></script>
+        <script src="${scriptUrl}/vendor.js"></script>
     </body>
     </html>`;
 }
