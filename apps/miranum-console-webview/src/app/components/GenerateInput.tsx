@@ -31,13 +31,14 @@ const GenerateInput: React.FC<Props> = props => {
 
     const generate = useCallback(() => {
         if (name !== '' && path !== '') {
-            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "")
+            digiwfLib.generateArtifact(name, type, digiwfLib.projectConfig?.name ?? "", path)
                 .then((artifact: Artifact) => {
                     sendArtifactMessage({
                         path: path,
                         artifact: artifact
                     })
                 })
+                .then(() => setError(""))
                 .catch((err) => setError(err.message));
         }
     }, [name, path, digiwfLib, type, sendArtifactMessage]);
@@ -81,6 +82,7 @@ const GenerateInput: React.FC<Props> = props => {
                         labelId="typeLabel"
                         name="type"
                         value={type}
+                        sx={{mb:"28px"}}
                         onChange={e => {
                             setType(e.target.value);
                             inputChange({name: name, type: e.target.value});

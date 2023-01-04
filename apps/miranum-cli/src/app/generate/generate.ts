@@ -14,7 +14,7 @@ export class ProjectGenerator {
     }
 
     public async generateFile(name: string, type: string, path: string): Promise<void> {
-        const artifact = await this.digiwfLib.generateArtifact(name, type, "");
+        const artifact = await this.digiwfLib.generateArtifact(name, type, this.digiwfLib.projectConfig?.name ?? "", path);
         await this.generate(artifact, path);
     }
 
