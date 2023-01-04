@@ -134,7 +134,7 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json
   "workspace": {
     "forms": "forms",
     "elementTemplates": "element-templates",
-    "processConfigs": "configs"
+    "configs": "configs"
   },
   "deployment": [
     {

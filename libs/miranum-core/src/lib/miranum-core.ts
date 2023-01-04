@@ -64,8 +64,7 @@ export class MiranumCore {
         if(this.projectConfig && lastFolder === projectName) {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            //pathInProject = this.projectConfig.workspace[`${type}s`];
-            pathInProject = this.getPathFromConfig(type);
+            pathInProject = this.projectConfig.workspace[this.camelize(`${type}s`)];
         }
         return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
     }
@@ -85,25 +84,15 @@ export class MiranumCore {
         return generator.generate(artifactName, project, pathInProject);
     }
 
-    private getPathFromConfig(type: string): string {
-        switch (type) {
-            case "form": {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                return this.projectConfig.workspace.forms;
-            }
-            case "config": {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                return this.projectConfig.workspace.processConfigs;
-            }
-            case "element-template": {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                return this.projectConfig.workspace.elementTemplates;
-            }
-        }
-        return "";
+    /**
+     * converts a string to camelcase; "-" and "_" are also seen as empty space and therefore removed
+     * @param str string that is to be camlized
+     * @private
+     */
+    private camelize(str: string) {
+        return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
+            return index === 0 ? word.toLowerCase() : word.toUpperCase();
+        }).replace(/\s+/g, '').replace("-",""). replace("_", "");
     }
 }
 
