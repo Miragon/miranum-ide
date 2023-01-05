@@ -2,8 +2,54 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-console/src",
   "projectType": "application",
-  "implicitDependencies": ["miranum-console-webview"],
+  "implicitDependencies": [
+    "miranum-console-webview"
+  ],
   "targets": {
+    "watch-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx watch miranum-console",
+            "prefix": "miranum-console",
+            "color": "green"
+          },
+          {
+            "command": "npx nx watch miranum-console-webview",
+            "prefix": "miranum-console-webview",
+            "color": "yellow"
+          }
+        ]
+      }
+    },
+    "watch": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "outputPath": "dist/apps/miranum-console",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-console/src/main.ts",
+        "tsConfig": "apps/miranum-console/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-console/custom-webpack.config.js",
+        "assets": [
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-console/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false
+        }
+      }
+    },
     "build": {
       "executor": "@nrwl/node:webpack",
       "outputs": ["{options.outputPath}"],
@@ -15,12 +61,9 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-console/custom-webpack.config.js",
         "assets": [
-          "apps/miranum-console/src/assets/komet.svg",
-          {
-            "glob": "LICENSE",
-            "input": "./",
-            "output": "/"
-          }
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-console/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
         ]
       },
       "configurations": {
@@ -28,6 +71,7 @@
           "optimization": true,
           "extractLicenses": true,
           "inspect": false,
+          "sourceMap": false,
           "fileReplacements": [
             {
               "replace": "apps/miranum-console/src/environments/environment.ts",

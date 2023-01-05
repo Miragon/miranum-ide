@@ -11,7 +11,7 @@ export function generateProject(): Command {
         .option("-p, --path <filepath>", "specify the targeted path")
         .action((options) => {
             const generate = new ProjectGenerator(new MiranumCore());
-            generate.generateProject(options.name, options.path)
+            generate.generateProject(options.name, `${options.path}/${options.name}`)
                 .then(() => console.log(`Successfully generated project ${options.name}`))
                 .catch(err => {
                     console.log(`Project ${options.name} could not be created`);

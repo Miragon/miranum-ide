@@ -14,7 +14,7 @@ export class ProjectGenerator {
     }
 
     public async generateFile(name: string, type: string, path: string): Promise<void> {
-        const artifact = await this.digiwfLib.generateArtifact(name, type, "");
+        const artifact = await this.digiwfLib.generateArtifact(name, type, this.digiwfLib.projectConfig?.name ?? "", path);
         await this.generate(artifact, path);
     }
 
@@ -23,7 +23,7 @@ export class ProjectGenerator {
             if (!artifact.file.pathInProject) {
                 const msg = `Could not create file ${artifact.file.name}`;
                 console.log(colors.red.bold("FAILED ") + msg);
-                return Promise.reject(msg);
+                return await Promise.reject(msg);
             }
             await saveFile(path, artifact.file.pathInProject, artifact.file.content);
 

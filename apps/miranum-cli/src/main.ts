@@ -3,7 +3,6 @@ import { deployAllFiles, deployFileCommand } from "./app/deployment/api";
 import { generateFile, generateProject } from "./app/generate/api";
 import * as colors from "colors";
 
-
 const program = new Command();
 program
     .name("Miranum CLI")
@@ -28,4 +27,4 @@ program.addCommand(deployFileCommand());
 program.addCommand(deployAllFiles());
 program.addCommand(generateFile())
 program.addCommand(generateProject())
-program.parse()
+program.parse();

@@ -10,23 +10,11 @@ export function createMiranumCore(projectVersion: string, projectName: string, w
     });
 }
 
-const supportedTypes = ["bpmn", "dmn", "form", "config"];
-/**
- * If the type is supported for deployment the function returns true
- * @param type: type of the artifact that is to be deployed
- */
-export function checkIfSupportedType(type: string): boolean {
-    if (!supportedTypes.includes(type.toLowerCase())) {
-        console.log(`${type} is not supported for deployment`);
-        return false;
-    }
-    return true;
-}
-
 // observer pattern
 // https://en.wikipedia.org/wiki/Observer_pattern#Java
 export class MiranumCore {
     projectConfig?: MiranumConfig;
+
     generatorPlugins: Map<string, MiranumGeneratorPlugin> = availableGeneratorPlugins;
 
     constructor(config?: MiranumConfig) {
@@ -50,15 +38,14 @@ export class MiranumCore {
 
     public async initProject(projectName: string): Promise<Artifact[]> {
         const filesToGenerate = [
-            {name: projectName, type: "miranum.json"},
+            {name: "README", type: "README.md"},
+            {name: "miranum", type: "miranum.json"},
             {name: projectName, type: "bpmn"},
-            // {name: name, type: "dmn"}
-            {name: `${projectName}_start`, type: "form"},
-            {name: `${projectName}_control`, type: "form"},
             {name: `${projectName}_dev`, type: "config"},
             {name: `${projectName}_prod`, type: "config"},
-            {name: "element-templates", type: ".gitkeep"},
-            {name: `${projectName}`, type: "README.md"}
+            {name: " ", type: ".gitkeep"},
+            {name: `${projectName}_start`, type: "form"},
+            {name: `${projectName}_control`, type: "form"}
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
@@ -67,39 +54,57 @@ export class MiranumCore {
         return generatedFiles;
     }
 
-    public async generateArtifact(artifactName: string, type: string, project: string): Promise<Artifact> {
-        return this.initArtifact(artifactName, type, project, this.getPathFromConfig(type));
+    public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
+        /** First, checks if we have a projectConfig && if we are on "root-level" of the project
+         *  if true: initialise an artifact with the artifact.pathInProject set as the projectConfig.workspace defines it,
+         *  otherwise: initialise the artifact as a standalone artifact
+         */
+        let pathInProject = undefined;
+        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
+        if(this.projectConfig && lastFolder === projectName) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            pathInProject = this.projectConfig.workspace[this.camelize(`${type}s`)];
+        }
+        return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
     }
 
-    private async initArtifact(artifactName: string, type: string, project: string, basePath?: string): Promise<Artifact> {
+    /**
+     * @param artifactName name of the artifact
+     * @param type type of the artifact
+     * @param project name of the project
+     * @param pathInProject if undefined, default/base path will be used => should only be undefined to generate a project
+     * @private
+     */
+    private async initArtifact(artifactName: string, type: string, project: string, pathInProject?: string): Promise<Artifact> {
         const generator = this.generatorPlugins.get(type);
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
-        return generator.generate(artifactName, project, basePath);
+        return generator.generate(artifactName, project, pathInProject);
     }
 
-    private getPathFromConfig(type: string): string | undefined {
-        if (this.projectConfig) {
-            switch (type){
-                case "form": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["forms"];
-                }
-                case "config": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["processConfigs"];
-                }
-                case "element-template": {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    return this.projectConfig.workspace["elementTemplates"];
-                }
-            }
-        }
-        return "";
+    /**
+     * converts a string to camelcase; "-" and "_" are also seen as empty space and therefore removed
+     * @param str string that is to be camlized
+     * @private
+     */
+    private camelize(str: string) {
+        return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
+            return index === 0 ? word.toLowerCase() : word.toUpperCase();
+        }).replace(/\s+/g, '').replace("-",""). replace("_", "");
     }
+}
 
+const supportedTypes = ["bpmn", "dmn", "form", "config"];
+/**
+ * If the type is supported for deployment the function returns true
+ * @param type type of the artifact that is to be deployed
+ */
+export function checkIfSupportedType(type: string): boolean {
+    if (!supportedTypes.includes(type.toLowerCase())) {
+        console.log(`${type} is not supported for deployment`);
+        return false;
+    }
+    return true;
 }

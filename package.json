@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npx nx run-many --target build --all",
+    "build": "npx nx run-many --target build --all --prod",
     "test": "npx nx run-many --target test --all",
     "lint": "npx nx run-many --target lint --all",
     "generate-api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o libs/digiwf-deployment-plugin-rest/src/lib/openapi --additional-properties=supportsES6=true,withInterfaces=true"
@@ -38,7 +38,9 @@
     "babel-jest": "28.1.1",
     "cypress": "^11.0.0",
     "eslint": "~8.15.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "8.1.0",
+    "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-cypress": "^2.10.3",
     "eslint-plugin-import": "2.26.0",
     "eslint-plugin-jsx-a11y": "6.6.1",

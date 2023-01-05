@@ -12,7 +12,7 @@ export function deployFileCommand(): Command {
         .requiredOption("--type <type>", "specify the file type")
         .hook("preAction", (thisCommand) => {
             // validate inputs before action is called
-            const type = thisCommand.opts()["type"];
+            const type = thisCommand.opts().type;
             if (!(type === "bpmn" || type === "dmn" || type === "form" || type === "config")) {
                 throw new InvalidArgumentError("type must be either bpmn, dmn, form or config");
             }

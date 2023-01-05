@@ -2,7 +2,7 @@ import { Deployment } from "./deployment";
 import { Artifact, createMiranumCore, MiranumDeploymentPlugin } from "@miranum-ide/miranum-core";
 
 const pathToProject = "resources/my-process-automation-project/";
-const target = "local";
+const sampleTarget = "local";
 
 const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     plugin: "dry",
@@ -19,26 +19,24 @@ describe("deployArtifact", () => {
         const file = `${pathToProject}my-process.bpmn`;
         const type = "BPMN";
 
-        await expect(deployment.deployArtifact(file, type, target))
+        await expect(deployment.deployArtifact(file, type, sampleTarget))
             .resolves.not.toThrow();
     });
 
     it("should raise an error", async () => {
-        return deployment.deployArtifact(pathToProject, "BPMN", target)
+        return deployment.deployArtifact(pathToProject, "BPMN", sampleTarget)
             .catch(e => expect(e).not.toBeNull());
     });
 });
 
 describe("deployAllArtifacts", () => {
     it("should work", async () => {
-        const target = "http://localhost:8080";
-
-        await expect(deployment.deployAllArtifacts(pathToProject, target))
+        await expect(deployment.deployAllArtifacts(pathToProject, "http://localhost:8080"))
             .resolves.not.toThrow();
     });
 
     it("should raise an error", async () => {
-        return deployment.deployAllArtifacts("/path/does-not/exist", target)
+        return deployment.deployAllArtifacts("/path/does-not/exist", sampleTarget)
             .catch(e => expect(e).not.toBeNull());
     });
 });

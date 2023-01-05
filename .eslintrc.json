@@ -1,10 +1,19 @@
 {
   "root": true,
   "ignorePatterns": ["**/*"],
-  "plugins": ["@nrwl/nx"],
+  "plugins": ["@nrwl/nx", "@typescript-eslint"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "parserOptions": {
+        "project": ["tsconfig.*?.json"]
+      },
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "airbnb-typescript",
+        "react-app"
+      ],
       "rules": {
         "@nrwl/nx/enforce-module-boundaries": [
           "error",
@@ -24,7 +33,10 @@
     {
       "files": ["*.ts", "*.tsx"],
       "extends": ["plugin:@nrwl/nx/typescript"],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "error",
+        "import/no-extraneous-dependencies": "off"
+      }
     },
     {
       "files": ["*.js", "*.jsx"],

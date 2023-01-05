@@ -38,6 +38,7 @@
     },
     "deploy": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build", "build"],
       "options": {
         "commands": [
           "node dist/apps/miranum-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
@@ -47,23 +48,15 @@
     },
     "create": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build", "build"],
       "options": {
         "commands": [
+          "node dist/apps/miranum-cli/main.js generate --name basic-project --path resources/my-generations",
           "node dist/apps/miranum-cli/main.js generate-file --type bpmn --name testFile  --path resources/my-generations",
           "node dist/apps/miranum-cli/main.js generate-file --type dmn --name testFile  --path resources/my-generations",
           "node dist/apps/miranum-cli/main.js generate-file --type form --name testFile  --path resources/my-generations",
           "node dist/apps/miranum-cli/main.js generate-file --type config --name configTest  --path resources/my-generations",
           "node dist/apps/miranum-cli/main.js generate-file --type element-template --name elementTest  --path resources/my-generations"
-        ]
-      }
-    },
-    "createProject": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          {
-            "command": "node dist/apps/miranum-cli/main.js generate --name basic-project --path resources/my-generations"
-          }
         ]
       }
     },
