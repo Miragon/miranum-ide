@@ -4,7 +4,14 @@
 	"description": "",
 	"version": "0.1.0",
   "license": "Apache-2.0",
-  "repository": "https://github.com/FlowSquad/miranum-ide",
+  "publisher": "miragon-gmbh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlowSquad/miranum-ide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowSquad/miranum-ide/issues"
+  },
   "engines": {
 		"vscode": "^1.73.0"
 	},
