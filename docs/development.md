@@ -1,6 +1,6 @@
 # Development
 
-For all available commands checkout [quickstart.md](quickstart.md).
+For all available commands checkout [quickstart.md](quickstart.md) and [commands.md](commands.md).
 
 ```mermaid
 flowchart LR
