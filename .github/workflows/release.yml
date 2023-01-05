@@ -98,7 +98,7 @@ jobs:
       - name: Publish extension
         run: vsce publish
         env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
   # miranum-cli
   publish-miranum-cli:
