@@ -110,7 +110,7 @@ const GenerateInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{mt: 3, mb: 2}}
-                >Generate File</Button>
+                >generate file</Button>
             </Box>
             {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
         </FormControl>
