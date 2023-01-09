@@ -92,7 +92,7 @@
                         <configuration>
                             <title>Miranum</title>
                             <footer>Code Coverage Report for Miranum ${project.version}</footer>
-                            <outputDirectory>${project.build.directory}/coverage</outputDirectory>
+                            <outputDirectory>${project.basedir}/../../../coverage/apps/miranum-deployment-proxy</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
