@@ -5,7 +5,7 @@ const sampleTarget = "local";
 const workspace = {
     forms: "forms",
     elementTemplates: "element-templates",
-    processConfigs: "configs"
+    configs: "configs"
 };
 const deploymentPlugin = [
     {
@@ -63,4 +63,37 @@ describe("deploy", () => {
         await miranumCore.deploy(sampleTarget, exampleArtifact)
             .catch(e => expect(e).not.toBeNull());
     });
+});
+
+describe("generate", () => {
+    interface FileHelper {
+        name: string;
+        type: string;
+        extension: string;
+        dir: string;
+    }
+
+    const filesToGenerate: FileHelper[] = [
+        {name: "my-process", type: "bpmn", extension: "bpmn", dir: ""},
+        {name: "my-decision-table", type: "dmn", extension: "dmn", dir: ""},
+        {name: "my-form", type: "form", extension: "form", dir: "forms"},
+        {name: "my-config", type: "config", extension: "config", dir: "configs"},
+        {name: "my-element-template", type: "element-template", extension: "json", dir: "element-templates"},
+    ];
+
+    for (const file of filesToGenerate) {
+        it(`generate ${file.type} on top-level`, async () => {
+            const artifact = await miranumCore.generateArtifact(file.name, file.type, "my-project", "imaginary/path/my-project");
+            //name, type, and extension are tested in plugisn.spec.ts
+            expect(artifact.project).toEqual("my-project");
+            expect(artifact.file.pathInProject).toEqual(`${file.dir}/${file.name}.${file.extension}`);
+        });
+
+        it(`generate ${file.type} in subfolder`, async () => {
+            const artifact = await miranumCore.generateArtifact(file.name, file.type, "my-project", "imaginary/path/my-project/subfolder");
+            //name, type, and extension are tested in plugisn.spec.ts
+            expect(artifact.project).toEqual("my-project");
+            expect(artifact.file.pathInProject).toEqual(`/${file.name}.${file.extension}`);
+        });
+    }
 });
