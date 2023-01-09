@@ -6,6 +6,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![Code Cov][code-cov]][code-cov]
 <!-- END OF PROJECT SHIELDS -->
 
 <!-- PROJECT LOGO -->
@@ -105,3 +106,5 @@ Distributed under the Apache License Version 2.0. See [`License`](LICENSE) file 
 [license-shield]: https://img.shields.io/github/license/FlowSquad/miragon-process-ide.svg?style=for-the-badge
 
 [license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE
+
+[code-cov]: https://img.shields.io/codecov/c/github/FlowSquad/miranum-ide?style=for-the-badge
