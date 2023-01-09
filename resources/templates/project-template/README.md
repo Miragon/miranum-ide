@@ -1,4 +1,4 @@
-# <span style="font-family: Academy Engraved LET; color:#00E676">README</span>
+# <span style="font-family: Academy Engraved LET; color:#00E676">project-template</span>
 
     .
     ├── configs
