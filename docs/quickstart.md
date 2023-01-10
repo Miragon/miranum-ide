@@ -28,6 +28,9 @@ npm run lint
 npm run test
 # npx nx run-many --target test --all
 
+# Run tests with code coverage
+npx nx run-many --target test --all --parallel --coverage 
+
 # build the application
 npm run build
 # npx nx run-many --target build --all

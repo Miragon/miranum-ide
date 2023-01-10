@@ -78,6 +78,12 @@ The `watch-all` commands triggers both `watch` commands for the miranum-console 
 We use [Jest](https://jestjs.io/) for testing our apps and libs. If you want to execute the tests use `npm run test`.
 If you want to run the tests of a specific app or lib use `npx nx test <app|lib>`.
 
+### Code Coverage Reports
+
+We use CodeCov ([https://app.codecov.io/gh/FlowSquad/miranum-ide](https://app.codecov.io/gh/FlowSquad/miranum-ide)) to visualize our code coverage.
+
+If you want to check out the code coverage locally, execute the tests with the flag `--coverage` (e.g. `npx nx run-many --target test --all --parallel --coverage`).
+
 ## Branching
 
 ```mermaid
