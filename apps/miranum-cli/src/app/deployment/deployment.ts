@@ -22,7 +22,7 @@ export class Deployment {
                     (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".form", ".schema.json"]))
                         .forEach(f => files.push({type: "form", file: f}));
                     break;
-                case "processConfigs":
+                case "configs":
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".config", ".json"]))

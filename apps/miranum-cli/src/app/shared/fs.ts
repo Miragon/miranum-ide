@@ -3,7 +3,7 @@ import * as path from "path";
 import {
     createMiranumCore,
     MiranumDeploymentPlugin,
-    DigiwfDeploymentPluginRest,
+    MiranumDeploymentPluginRest,
     MiranumCore,
     FileDetails
 } from "@miranum-ide/miranum-core";
@@ -16,7 +16,7 @@ export async function mapProcessConfigToDigiwfLib(projectPath?: string): Promise
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     processIdeConfig.deployment.forEach(deployment => {
-        plugins.push(new DigiwfDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
+        plugins.push(new MiranumDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
     });
     return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
 }
