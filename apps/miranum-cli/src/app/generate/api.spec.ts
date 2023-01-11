@@ -1,25 +1,25 @@
 import {generateProject, generateFile} from "./api"
 import * as fs from "fs";
 
-const appPath = "dist/apps/miranum-clid/main.js";
+jest.setTimeout(30000);
+
+const appPath = "dist/apps/miranum-cli/main.js";
 const myGenerations = "resources/my-generations";
 const projectName = "test-project";
 
-// afterEach(() => {
-//     fs.rmdirSync(`${myGenerations}/${projectName}`);
-// });
-
 describe("generate bpmn project", () => {
-    it(`should work`,  () => {
+    it(`should work`,  async () => {
         expect(fs.existsSync(`${myGenerations}/${projectName}`)).toBe(false);
 
         const program = generateProject();
         program.parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
 
+        await sleep();
         expect(program.args).toEqual(["generate"]);
         expect(program.opts().name).toBe(projectName);
         expect(program.opts().path).toBe(myGenerations);
-        //expect(fs.existsSync(`${myGenerations}/${projectName}`)).toBe(true);
+        expect(fs.existsSync(`${myGenerations}/${projectName}`)).toBe(true);
+        fs.rmdirSync(`${myGenerations}/${projectName}`, {recursive: true});
     });
 
     it("should not work, due to unknown option", () => {
@@ -77,27 +77,47 @@ describe("generate file", () => {
     for (const file of filesToGenerate) {
         const program = generateFile();
 
-        it(`generate ${file.type} on top-level`, () => {
-            //expect(fs.existsSync(`${myGenerations}/${file.name}.${file.extension}`)).toBe(false);
+        it(`generate ${file.type} as standalone`, async () => {
+            expect(fs.existsSync(`${myGenerations}/${file.name}.${file.extension}`)).toBe(false);
             program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", myGenerations]);
+
+            await sleep();
             expect(program.args).toEqual(["generate-file"]);
             expect(program.opts().type).toBe(file.type);
             expect(program.opts().name).toBe(file.name);
             expect(program.opts().path).toBe(myGenerations);
-            //expect(fs.existsSync(`${myGenerations}/${file.name}.${file.extension}`)).toBe(true);
-            //expect(fs.readFileSync(`${myGenerations}/${file.name}.${file.extension}`, 'utf-8')).toContain(file.content);
+            expect(fs.existsSync(`${myGenerations}/${file.name}.${file.extension}`)).toBe(true);
+            expect(fs.readFileSync(`${myGenerations}/${file.name}.${file.extension}`, 'utf-8')).toContain(file.content);
+            fs.rmSync(`${myGenerations}/${file.name}.${file.extension}`);
         });
 
-        it(`generate ${file.type} in subfolder`, () => {
-            //expect(fs.existsSync(`${myGenerations}/${file.name}.${file.extension}`)).toBe(false);
-            //generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
-            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", `${myGenerations}/${projectName}/forms`]);
+        it(`generate ${file.type} on top-level`, async () => {
+            generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
+
+            await sleep();
+            expect(fs.existsSync(`${myGenerations}/${projectName}/${file.dir}/${file.name}.${file.extension}`)).toBe(false);
+            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", `${myGenerations}/${projectName}`]);
+
+            await sleep();
             expect(program.args).toEqual(["generate-file"]);
-            expect(program.opts().type).toBe(file.type);
-            expect(program.opts().name).toBe(file.name);
+            expect(program.opts().path).toBe(`${myGenerations}/${projectName}`);
+            expect(fs.existsSync(`${myGenerations}/${projectName}/${file.dir}/${file.name}.${file.extension}`)).toBe(true);
+            expect(fs.readFileSync(`${myGenerations}/${projectName}/${file.dir}/${file.name}.${file.extension}`, 'utf-8')).toContain(file.content);
+            fs.rmdirSync(`${myGenerations}/${projectName}`, {recursive: true});
+        });
+
+        it(`generate ${file.type} in subfolder`, async () => {
+            generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
+
+            expect(fs.existsSync(`${myGenerations}/${projectName}/forms/${file.name}.${file.extension}`)).toBe(false);
+            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", `${myGenerations}/${projectName}/forms`]);
+
+            await sleep();
+            expect(program.args).toEqual(["generate-file"]);
             expect(program.opts().path).toBe(`${myGenerations}/${projectName}/forms`);
-            //expect(fs.existsSync(`${myGenerations}/${projectName}/forms/${file.name}.${file.extension}`)).toBe(true);
-            //expect(fs.readFileSync(`${myGenerations}/${projectName}/forms/${file.name}.${file.extension}`, 'utf-8')).toContain(file.content);
+            expect(fs.existsSync(`${myGenerations}/${projectName}/forms/${file.name}.${file.extension}`)).toBe(true);
+            expect(fs.readFileSync(`${myGenerations}/${projectName}/forms/${file.name}.${file.extension}`, 'utf-8')).toContain(file.content);
+            fs.rmdirSync(`${myGenerations}/${projectName}`, {recursive: true});
         });
     }
 
@@ -135,3 +155,8 @@ describe("generate file", () => {
         expect(errorMsg.code).toBe("commander.missingMandatoryOptionValue");
     });
 });
+
+//   ------------------------HELPERS------------------------   \\
+async function sleep() {
+    await new Promise((r) => setTimeout(r, 1500));
+}

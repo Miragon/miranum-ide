@@ -9,7 +9,12 @@ import {
 } from "@miranum-ide/miranum-core";
 
 export async function mapProcessConfigToDigiwfLib(projectPath?: string): Promise<MiranumCore> {
-    const p = projectPath ?  `${projectPath}/miranum.json`.replace("//", "/") : "miranum.json";
+    let p =`${projectPath}/miranum.json`.replace("//", "/")
+    try {
+        await fs.stat(p);
+    } catch (error) {
+        p = "miranum.json"
+    }
     const processIdeJson = await getFile(p);
     const processIdeConfig = JSON.parse(processIdeJson.content);
     const plugins: MiranumDeploymentPlugin[] = [];
