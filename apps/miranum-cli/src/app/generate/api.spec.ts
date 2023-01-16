@@ -1,6 +1,6 @@
 import {generateProject, generateFile} from "./api"
 import * as fs from "fs";
-import {shouldNotWork, sleep} from "../shared/testHelpers.spec";
+import {shouldNotWork, sleep} from "../shared/testHelpers";
 import {Command} from "commander";
 
 jest.setTimeout(30000);

@@ -1,9 +1,8 @@
 import { Deployment } from "./deployment";
 import {Artifact, createMiranumCore, MiranumDeploymentPlugin} from "@miranum-ide/miranum-core";
 import * as colors from "colors";
-import {filesToDeploy} from "../shared/testHelpers.spec";
+import {filesToDeploy, pathToProject} from "../shared/testHelpers";
 
-const pathToProject = "resources/my-process-automation-project/";
 const sampleTarget = "local";
 
 const dryDeploymentPlugin: MiranumDeploymentPlugin = {

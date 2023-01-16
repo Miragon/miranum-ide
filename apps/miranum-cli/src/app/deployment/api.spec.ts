@@ -1,5 +1,5 @@
 import {deployAllFiles, deployFileCommand } from "./api"
-import {filesToDeploy, shouldNotWork, sleep} from "../shared/testHelpers.spec";
+import {filesToDeploy, pathToProject, shouldNotWork, sleep} from "../shared/testHelpers";
 
 const appPath = "dist/apps/miranum-clid/main.js";
 const target = "local"
@@ -7,29 +7,28 @@ const target = "local"
 jest.setTimeout(30000);
 
 describe("deploy all files", () => {
-    const projectPath = "resources/my-process-automation-project"
     it(`should work`, async () => {
         const logSpy = jest.spyOn(console, 'log');
         const program = deployAllFiles();
-        program.parse(["node", appPath, "deploy", "--directory", projectPath, "--target", target]);
+        program.parse(["node", appPath, "deploy", "--directory", pathToProject, "--target", target]);
 
         await sleep(3000);
         expect(program.args).toEqual(["deploy"]);
-        expect(program.opts().directory).toBe(projectPath);
+        expect(program.opts().directory).toBe(pathToProject);
         expect(program.opts().target).toBe(target);
         expect(logSpy).toHaveBeenCalledWith(`Project my-process-automation-project was successfully deployed to environment ${target}`);
     });
 
     it("should not work, due to unknown option", () => {
         shouldNotWork(deployAllFiles(), "deploy",
-            ["node", appPath, "deploy", "--directory", projectPath, "--target", target, "--randomArgument"],
+            ["node", appPath, "deploy", "--directory", pathToProject, "--target", target, "--randomArgument"],
             "error: unknown option '--randomArgument'"
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(deployAllFiles(), "deploy",
-            ["node", appPath, "deploy", "--directory", projectPath],
+            ["node", appPath, "deploy", "--directory", pathToProject],
             "error: required option '-t, --target <target>' not specified"
         );
     });

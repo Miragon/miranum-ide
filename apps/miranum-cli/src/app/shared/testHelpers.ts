@@ -6,6 +6,8 @@ interface FileHelper {
     type: string;
 }
 
+export const pathToProject = "resources/my-process-automation-project";
+
 export const filesToDeploy: FileHelper[] = [
     {nameExt: "my-process.bpmn", path: "resources/my-process-automation-project/my-process.bpmn", type: "bpmn"},
     {nameExt: "dmn-table.dmn", path: "resources/my-process-automation-project/dmn-table.dmn", type: "dmn"},
@@ -15,6 +17,8 @@ export const filesToDeploy: FileHelper[] = [
 
 export function shouldNotWork(program: Command, command: string, argv: readonly string[], error: string) {
     program.exitOverride().command(command).action(() => {});
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     expect(() => {program.parse(argv)}).toThrow(error);
 }
 

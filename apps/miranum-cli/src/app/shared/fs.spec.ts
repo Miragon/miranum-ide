@@ -1,7 +1,6 @@
 import { getFile, getFiles } from "./fs";
 import { FileDetails } from "@miranum-ide/miranum-core";
-
-const pathToProject = "resources/my-process-automation-project/";
+import {pathToProject} from "./testHelpers";
 
 function checkFiles(files: FileDetails[], fileExtension: string) {
     files.forEach(fileDetails => {
@@ -14,7 +13,7 @@ function checkFiles(files: FileDetails[], fileExtension: string) {
 
 describe("getFile",() => {
     it("should work", async () => {
-        const fileDetails = await getFile(`${pathToProject}my-process.bpmn`);
+        const fileDetails = await getFile(`${pathToProject}/my-process.bpmn`);
 
         expect(fileDetails.name).toEqual("my-process.bpmn");
         expect(fileDetails.extension).toEqual(".bpmn");
@@ -30,12 +29,12 @@ describe("getFile",() => {
 
 describe("getFiles",() => {
     it("forms should work", async () => {
-        const files = await getFiles(pathToProject, [".form"]);
+        const files = await getFiles(`${pathToProject}/forms`, [".form"]);
         checkFiles(files, ".form");
     });
 
     it("configs should work", async () => {
-        const files = await getFiles(`${pathToProject}config/`, [".json"]);
+        const files = await getFiles(`${pathToProject}/configs`, [".json"]);
         checkFiles(files, ".json");
     });
 
