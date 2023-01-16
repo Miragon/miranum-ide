@@ -1,5 +1,7 @@
 import { Deployment } from "./deployment";
-import { Artifact, createMiranumCore, MiranumDeploymentPlugin } from "@miranum-ide/miranum-core";
+import {Artifact, createMiranumCore, MiranumDeploymentPlugin} from "@miranum-ide/miranum-core";
+import * as colors from "colors";
+import {filesToDeploy} from "../shared/testHelpers.spec";
 
 const pathToProject = "resources/my-process-automation-project/";
 const sampleTarget = "local";
@@ -12,16 +14,26 @@ const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     }
 };
 
-const deployment = new Deployment(createMiranumCore("0.0.1", "test-project", {}, [dryDeploymentPlugin]));
+const deployment = new Deployment(createMiranumCore(
+    "0.0.1",
+    "my-process-automation-project",
+    {
+        "forms": "forms",
+        "elementTemplates": "element-templates",
+        "configs": "configs"
+    },
+    [dryDeploymentPlugin])
+);
 
 describe("deployArtifact", () => {
-    it("should work", async () => {
-        const file = `${pathToProject}my-process.bpmn`;
-        const type = "BPMN";
+    for(const file of filesToDeploy) {
+        it(`${file.type} should work`, async () => {
+            const logSpy = jest.spyOn(console, 'log');
+            await deployment.deployArtifact(file.path, file.type, sampleTarget);
 
-        await expect(deployment.deployArtifact(file, type, sampleTarget))
-            .resolves.not.toThrow();
-    });
+            expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
+        });
+    }
 
     it("should raise an error", async () => {
         return deployment.deployArtifact(pathToProject, "BPMN", sampleTarget)
@@ -31,8 +43,13 @@ describe("deployArtifact", () => {
 
 describe("deployAllArtifacts", () => {
     it("should work", async () => {
-        await expect(deployment.deployAllArtifacts(pathToProject, "http://localhost:8080"))
-            .resolves.not.toThrow();
+        const logSpy = jest.spyOn(console, 'log');
+        await deployment.deployAllArtifacts(pathToProject, sampleTarget);
+
+        for (const file of filesToDeploy) {
+            expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
+        }
+
     });
 
     it("should raise an error", async () => {

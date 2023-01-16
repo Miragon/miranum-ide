@@ -1,82 +1,75 @@
 import {deployAllFiles, deployFileCommand } from "./api"
+import {filesToDeploy, shouldNotWork, sleep} from "../shared/testHelpers.spec";
 
 const appPath = "dist/apps/miranum-clid/main.js";
 const target = "local"
 
+jest.setTimeout(30000);
+
 describe("deploy all files", () => {
     const projectPath = "resources/my-process-automation-project"
     it(`should work`, async () => {
+        const logSpy = jest.spyOn(console, 'log');
         const program = deployAllFiles();
         program.parse(["node", appPath, "deploy", "--directory", projectPath, "--target", target]);
 
+        await sleep(3000);
         expect(program.args).toEqual(["deploy"]);
         expect(program.opts().directory).toBe(projectPath);
         expect(program.opts().target).toBe(target);
+        expect(logSpy).toHaveBeenCalledWith(`Project my-process-automation-project was successfully deployed to environment ${target}`);
+    });
+
+    it("should not work, due to unknown option", () => {
+        shouldNotWork(deployAllFiles(), "deploy",
+            ["node", appPath, "deploy", "--directory", projectPath, "--target", target, "--randomArgument"],
+            "error: unknown option '--randomArgument'"
+        );
+    });
+
+    it(`should not work, due to missing argument`, async () => {
+        shouldNotWork(deployAllFiles(), "deploy",
+            ["node", appPath, "deploy", "--directory", projectPath],
+            "error: required option '-t, --target <target>' not specified"
+        );
     });
 });
 
 
 describe("deploy files", () => {
-    const bpmn = {path: "resources/my-process-automation-project/my-process.bpmn", type: "bpmn"}
-    it(`should work`, async () => {
-        const program = deployFileCommand();
-        program.parse(["node", appPath, "deploy-file", "--file", bpmn.path, "--target", target, "--type", bpmn.type]);
 
-        expect(program.args).toEqual(["deploy-file"]);
-        expect(program.opts().file).toBe(bpmn.path);
-        expect(program.opts().target).toBe(target);
-        expect(program.opts().type).toBe(bpmn.type);
-    });
+    for (const file of filesToDeploy) {
+        it(`${file.type} should work`, async () => {
+            const program = deployFileCommand();
+            program.parse(["node", appPath, "deploy-file", "--file", file.path, "--target", target, "--type", file.type]);
+
+            await sleep(1500);
+            expect(program.args).toEqual(["deploy-file"]);
+            expect(program.opts().file).toBe(file.path);
+            expect(program.opts().target).toBe(target);
+            expect(program.opts().type).toBe(file.type);
+        });
+    }
 
     it(`should not work, due to wrong type`, async () => {
         const miranumJson = {path: "resources/my-process-automation-project/miranum.json", type: "json"}
-        const program = deployFileCommand();
-        program
-            .exitOverride()
-            .command("generate")
-            .action(() => {});
-        let errorMsg;
-        try {
-            program.parse(["node", appPath, "deploy-file", "--file", miranumJson.path, "--target", target, "--type", miranumJson.type]);
-        } catch (error) {
-            errorMsg = error;
-        }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        expect(errorMsg.code).toBe("commander.invalidArgument");
+        shouldNotWork(deployFileCommand(), "deploy-file",
+            ["node", appPath, "deploy-file", "--file", miranumJson.path, "--target", target, "--type", miranumJson.type],
+            "type must be either bpmn, dmn, form or config"
+        );
     });
 
     it("should not work, due to unknown option", () => {
-        const program = deployFileCommand();
-        program
-            .exitOverride()
-            .command("generate")
-            .action(() => {});
-        let errorMsg;
-        try {
-            program.parse(["node", appPath, "deploy-file", "--file", bpmn.path, "--target", target, "--type", bpmn.type, "--randomArgument"]);
-        } catch (error) {
-            errorMsg = error;
-        }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        expect(errorMsg.code).toBe("commander.unknownOption");
+        shouldNotWork(deployFileCommand(), "deploy-file",
+            ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--target", target, "--type", filesToDeploy[0].type, "--randomArgument"],
+            "error: unknown option '--randomArgument'"
+        );
     });
 
     it(`should not work, due to missing argument`, async () => {
-        const program = deployFileCommand();
-        program
-            .exitOverride()
-            .command("generate")
-            .action(() => {});
-        let errorMsg;
-        try {
-            program.parse(["node", appPath, "deploy-file", "--file", bpmn.path, "--type", bpmn.type]);
-        } catch (error) {
-            errorMsg = error;
-        }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        expect(errorMsg.code).toBe("commander.missingMandatoryOptionValue");
+        shouldNotWork(deployFileCommand(), "deploy-file",
+            ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--type", filesToDeploy[0].type],
+            "error: required option '-t, --target <target>' not specified"
+        );
     });
 });
