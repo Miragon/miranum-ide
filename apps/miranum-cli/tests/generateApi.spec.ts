@@ -1,6 +1,6 @@
-import {generateProject, generateFile} from "./api"
+import {generateProject, generateFile} from "../src/app/generate/api"
 import * as fs from "fs";
-import {shouldNotWork, sleep} from "../shared/testHelpers";
+import {shouldNotWork, sleep} from "./testHelpers";
 import {Command} from "commander";
 
 jest.setTimeout(30000);
@@ -120,7 +120,12 @@ function checkArgsAndPath(program: Command, args: string[], path: string) {
 }
 
 function checkExistence(path: string, expectation: boolean) {
-    expect(fs.existsSync(path)).toBe(expectation);
+    try {
+        fs.open(path, () => {});
+        expect(expectation).toBe(true);
+    } catch(e) {
+        expect(expectation).toBe(false);
+    }
 }
 
 function checkContent(path: string, content: string) {
@@ -138,5 +143,5 @@ function fileChecks(program: Command, file: FileHelper, args: string[], inputPat
 }
 
 function cleanUpDir() {
-    fs.rmdir(dirPath, {recursive: true}, () => {});
+    fs.rm(dirPath, {recursive: true}, () => {});
 }

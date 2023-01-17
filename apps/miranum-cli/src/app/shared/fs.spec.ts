@@ -1,6 +1,6 @@
 import { getFile, getFiles } from "./fs";
 import { FileDetails } from "@miranum-ide/miranum-core";
-import {pathToProject} from "./testHelpers";
+import {pathToProject} from "../../../tests/testHelpers";
 
 function checkFiles(files: FileDetails[], fileExtension: string) {
     files.forEach(fileDetails => {
