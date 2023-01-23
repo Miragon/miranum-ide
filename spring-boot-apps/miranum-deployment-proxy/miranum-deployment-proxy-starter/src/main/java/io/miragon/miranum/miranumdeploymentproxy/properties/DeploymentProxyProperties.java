@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Setter
 @Getter
-@ConfigurationProperties(prefix = "io.miragon.miranum.digiwf-deployment-proxy")
+@ConfigurationProperties(prefix = "io.miragon.miranum.miranum-deployment-proxy")
 public class DeploymentProxyProperties {
     private Map<String, String> deploymentHandlers;
     private Map<String, String> targets;
