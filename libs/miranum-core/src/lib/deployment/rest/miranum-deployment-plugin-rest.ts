@@ -2,7 +2,7 @@ import { Configuration, DeploymentAPIApi } from "./openapi";
 import { Artifact, MiranumDeploymentPlugin, MiranumDeploymentTarget } from "../../types";
 
 
-export class DigiwfDeploymentPluginRest implements MiranumDeploymentPlugin {
+export class MiranumDeploymentPluginRest implements MiranumDeploymentPlugin {
     plugin: string;
 
     targetEnvironments: MiranumDeploymentTarget[];

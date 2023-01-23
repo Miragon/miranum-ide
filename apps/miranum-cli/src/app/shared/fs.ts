@@ -3,22 +3,26 @@ import * as path from "path";
 import {
     createMiranumCore,
     MiranumDeploymentPlugin,
-    DigiwfDeploymentPluginRest,
+    MiranumDeploymentPluginRest,
     MiranumCore,
     FileDetails
 } from "@miranum-ide/miranum-core";
 
 export async function mapProcessConfigToDigiwfLib(projectPath?: string): Promise<MiranumCore> {
-    const p = projectPath ?  `${projectPath}/miranum.json`.replace("//", "/") : "miranum.json";
-    const processIdeJson = await getFile(p);
-    const processIdeConfig = JSON.parse(processIdeJson.content);
-    const plugins: MiranumDeploymentPlugin[] = [];
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    processIdeConfig.deployment.forEach(deployment => {
-        plugins.push(new DigiwfDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
-    });
-    return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+    try {
+        const p = projectPath ? `${projectPath}/miranum.json`.replace("//", "/") : "miranum.json";
+        const processIdeJson = await getFile(p);
+        const processIdeConfig = JSON.parse(processIdeJson.content);
+        const plugins: MiranumDeploymentPlugin[] = [];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        processIdeConfig.deployment.forEach(deployment => {
+            plugins.push(new MiranumDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
+        });
+        return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+    } catch (error) {
+        return new MiranumCore();
+    }
 }
 
 export async function getFile(pathToFile: string): Promise<FileDetails> {

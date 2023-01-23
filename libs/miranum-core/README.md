@@ -17,14 +17,14 @@ npm install @miragon/miranum-core
 
 ```typescript
 import { createDigiwfLib } from "@miragon/miranum-core";
-import { DigiwfDeploymentPluginRest } from "./digiwf-deployment-plugin-rest";
+import { MiranumDeploymentPluginRest } from "./miranum-deployment-plugin-rest";
 
 // init miranum-core
 const digiwfLib = createDigiwfLib("1.0.0", "my-awesome-project", {
     "forms": "forms",
     "elementTemplates": "element-templates",
-    "processConfigs": "configs"
-}, [new DigiwfDeploymentPluginRest("rest", [
+    "configs": "configs"
+}, [new MiranumDeploymentPluginRest("rest", [
     {
         "name": "dev",
         "url": "http://localhost:8080"

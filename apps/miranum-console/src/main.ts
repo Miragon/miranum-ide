@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import {
     createMiranumCore,
     MiranumDeploymentPlugin,
-    DigiwfDeploymentPluginRest,
+    MiranumDeploymentPluginRest,
     MiranumCore
 } from "@miranum-ide/miranum-core";
 import {createDeployment} from "./app/deployment/deploymentAPI";
@@ -32,7 +32,7 @@ async function initDigiwfLib(): Promise<MiranumCore> {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         processIdeConfig.deployment.forEach(p => {
-            plugins.push(new DigiwfDeploymentPluginRest(p.plugin, p.targetEnvironments));
+            plugins.push(new MiranumDeploymentPluginRest(p.plugin, p.targetEnvironments));
         });
         return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
     } catch (e) {

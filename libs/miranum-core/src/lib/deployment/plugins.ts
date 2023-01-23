@@ -1,7 +1,7 @@
-import { DigiwfDeploymentPluginRest } from "./rest/digiwf-deployment-plugin-rest";
+import { MiranumDeploymentPluginRest } from "./rest/miranum-deployment-plugin-rest";
 import { MiranumDeploymentPlugin } from "../types";
 
-const restPlugin = new DigiwfDeploymentPluginRest("rest", [
+const restPlugin = new MiranumDeploymentPluginRest("rest", [
     {
         name: "local",
         url: "http://localhost:8080"
