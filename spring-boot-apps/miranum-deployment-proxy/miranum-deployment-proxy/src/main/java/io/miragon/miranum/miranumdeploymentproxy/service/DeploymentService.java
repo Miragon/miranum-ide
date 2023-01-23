@@ -1,8 +1,8 @@
-package io.miragon.miranum.digiwfdeploymentproxy.service;
+package io.miragon.miranum.miranumdeploymentproxy.service;
 
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentDto;
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentSuccessDto;
-import io.miragon.miranum.digiwfdeploymentproxy.handler.DeploymentHandler;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentSuccessDto;
+import io.miragon.miranum.miranumdeploymentproxy.handler.DeploymentHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
