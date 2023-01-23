@@ -19,7 +19,7 @@ const filesToGenerate: FileHelper[] = [
     {name: " ", type: ".gitkeep", extension: "gitkeep", dir: "element-templates"}
 ];
 
-describe("generators", () => {
+describe("generators with miranum-core", () => {
     for (const file of filesToGenerate) {
         it(`${file.type} generator should work`, async () => {
             const generator = getGenerator(file.type);

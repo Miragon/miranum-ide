@@ -28,7 +28,7 @@ export function generateFile(): Command {
         .requiredOption("-n, --name <name>", "specify the name")
         .requiredOption("-p, --path <filepath>", "specify the targeted path")
         .action((options) => {
-            mapProcessConfigToDigiwfLib().then(digiwfLib => {
+            mapProcessConfigToDigiwfLib(options.path).then(digiwfLib => {
                 const generate = new ProjectGenerator(digiwfLib);
                 generate.generateFile(options.name, options.type, options.path)
                     .then(() => console.log(`Successfully created file ${options.name}`))

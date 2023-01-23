@@ -22,7 +22,7 @@ export class Deployment {
                     (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".form", ".schema.json"]))
                         .forEach(f => files.push({type: "form", file: f}));
                     break;
-                case "processConfigs":
+                case "configs":
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".config", ".json"]))
@@ -39,6 +39,8 @@ export class Deployment {
                 await this.deploy(file.file, file.type, target);
             } catch (err) {
                 console.log(colors.red.bold("FAILED ") + `deploying ${file.file.name} with -> ${err}`);
+                // todo the deployment should continue and fail in the end, not here (Übergangslösung)
+                return Promise.reject(colors.red.bold("FAILED ") + `deploying Artifacts in ${path}`);
             }
         }
     }
