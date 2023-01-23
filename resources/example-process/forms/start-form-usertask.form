@@ -1,0 +1,68 @@
+{
+  "key": "start-form-usertask",
+  "schema": {
+    "type": "object",
+    "x-display": " ",
+    "allOf": [
+      {
+        "key": "sectionKey1",
+        "title": "Erster Abschnitt",
+        "type": "object",
+        "x-options": {
+          "sectionsTitlesClasses": [
+            "d-none"
+          ]
+        },
+        "allOf": [
+          {
+            "type": "object",
+            "key": "4ee909e5-9901-4e84-8e2b-0b9fd3142e8e",
+            "title": "Bearbeiter",
+            "x-options": {
+              "childrenClass": "pr-5 pl-0"
+            },
+            "properties": {
+              "FORMFIELD_testuser": {
+                "fieldType": "text",
+                "title": "Test User",
+                "type": "string",
+                "key": "FORMFIELD_testuser",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 12,
+                    "messages": {}
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                },
+                "x-rules": []
+              },
+              "FORMFIELD_User": {
+                "fieldType": "user-input",
+                "title": "User",
+                "x-display": "custom-user-input",
+                "type": "string",
+                "key": "FORMFIELD_User",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 12,
+                    "messages": {}
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                },
+                "x-rules": []
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
