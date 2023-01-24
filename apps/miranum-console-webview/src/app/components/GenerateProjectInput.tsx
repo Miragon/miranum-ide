@@ -52,7 +52,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     <CreateNewFolder />
                 </Avatar>
                 <Typography component="h1" variant="h5">
-                    Generate Project
+                    Neues Projekt generieren
                 </Typography>
                 <Box component="form" noValidate sx={{ mt: 1 }}>
                     <TextField
@@ -84,7 +84,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                         variant="contained"
                         color="secondary"
                         sx={{ mt: 3, mb: 2 }}
-                    >generate project</Button>
+                    >generieren</Button>
                 </Box>
                 {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
             </FormControl>

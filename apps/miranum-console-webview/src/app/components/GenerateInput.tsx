@@ -18,11 +18,11 @@ const GenerateInput: React.FC<Props> = props => {
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
-    const [error, setError] = useState<string>("")
+    const [error, setError] = useState<string>("");
     const inputChange = useVsMessage("changedInput");
     const sendArtifactMessage = useVsMessage("generateArtifact");
     const digiwfLib = useMemo(() => {
-        return new MiranumCore(props.config)
+        return new MiranumCore(props.config);
     }, [props.config]);
 
     useEffect(() => {
@@ -56,7 +56,7 @@ const GenerateInput: React.FC<Props> = props => {
                 <Description/>
             </Avatar>
             <Typography component="h1" variant="h5">
-                Generate File
+                Neue Datei generieren
             </Typography>
             <Box component="form" noValidate sx={{mt: 1}}>
                 <TextField
@@ -76,7 +76,7 @@ const GenerateInput: React.FC<Props> = props => {
                     helperText={(name === '' && pressed)? 'You have to insert a name!':' '}
                 />
                 <FormControl fullWidth required>
-                    <InputLabel id="typeLabel">Type</InputLabel>
+                    <InputLabel id="typeLabel">Typ</InputLabel>
                     <Select
                         id="type"
                         labelId="typeLabel"
@@ -110,7 +110,7 @@ const GenerateInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{mt: 3, mb: 2}}
-                >generate file</Button>
+                >generieren</Button>
             </Box>
             {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
         </FormControl>

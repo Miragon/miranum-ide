@@ -18,7 +18,7 @@ const FileSelector: React.FC<Props> = props => {
                     <TextField
                         required
                         id="path"
-                        label="Path"
+                        label="Pfad"
                         name="path"
                         value={props.path}
                         style={{width:"100%"}}
