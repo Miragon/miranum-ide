@@ -72,7 +72,7 @@ export async function getFiles(pathToDirectory: string, supportedFileExtensions:
 }
 
 export async function saveFile(projectDir: string, pathInProject: string, fileContent: string): Promise<void> {
-    const file = `${projectDir}/${pathInProject}`.replace("//", "/")
+    const file = `${projectDir}/${pathInProject}`.replace("//", "/");
     const projectPath = file.substring(0, file.lastIndexOf("/"));
     try {
         await fs.access(projectPath);

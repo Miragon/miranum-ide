@@ -3,9 +3,9 @@ import { Artifact } from "./types";
 
 const sampleTarget = "local";
 const workspace = {
-    forms: "forms",
-    elementTemplates: "element-templates",
-    configs: "configs"
+    forms: { path: "forms", extension: ".form" },
+    elementTemplates: { path: "element-templates", extension: ".json" },
+    configs: { path: "configs", extension: ".config" }
 };
 const deploymentPlugin = [
     {

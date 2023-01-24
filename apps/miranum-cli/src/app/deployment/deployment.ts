@@ -19,13 +19,13 @@ export class Deployment {
                 case "forms":
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".form", ".schema.json"]))
+                    (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [this.digiwfLib.projectConfig?.workspace.forms.extension]))
                         .forEach(f => files.push({type: "form", file: f}));
                     break;
                 case "configs":
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
-                    (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [".config", ".json"]))
+                    (await getFiles(`${path}/${workspace[key]}`.replace("//", "/"), [this.digiwfLib.projectConfig?.workspace.configs.extension]))
                         .forEach(f => files.push({type: "config", file: f}));
                     break;
             }

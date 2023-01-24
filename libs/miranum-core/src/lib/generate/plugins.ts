@@ -120,6 +120,7 @@ const configGenerator = new MiranumArtifactGenerator("config", "config", `{
 }`, {}, "/configs");
 
 const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "json", `{
+  "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
   "name": "{{it.name}}",
   "id": "{{it.id}}",
   "appliesTo": [
@@ -132,9 +133,9 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json
   "projectVersion": "1.0.0",
   "name": "{{it.projectName}}",
   "workspace": {
-    "forms": "forms",
-    "elementTemplates": "element-templates",
-    "configs": "configs"
+    "forms": { "path": "forms", "extension": ".form" },
+    "elementTemplates": { "path": "element-templates", "extension": ".json" },
+    "configs": { "path": "configs", "extension": ".config" }
   },
   "deployment": [
     {

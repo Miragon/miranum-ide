@@ -61,10 +61,12 @@ export class MiranumCore {
          */
         let pathInProject = undefined;
         const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        if(this.projectConfig && lastFolder === projectName) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if(this.projectConfig?.workspace[this.camelize(`${type}s`)] && lastFolder === projectName) {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            pathInProject = this.projectConfig.workspace[this.camelize(`${type}s`)];
+            pathInProject = this.projectConfig.workspace[this.camelize(`${type}s`)].path;
         }
         return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
     }

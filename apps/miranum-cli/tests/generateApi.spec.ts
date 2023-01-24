@@ -67,7 +67,7 @@ describe("generate file", () => {
             program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", myGenerations]);
 
             await sleep(1500);
-            fileChecks(program, file,["generate-file"], myGenerations, expectedFilePath);
+            fileChecks(program, file, ["generate-file"], myGenerations, expectedFilePath);
             fs.rm(expectedFilePath, () => {});
         });
 
@@ -80,7 +80,7 @@ describe("generate file", () => {
             program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", dirPath]);
 
             await sleep(1500);
-            fileChecks(program, file,["generate-file"], dirPath, expectedFilePath);
+            fileChecks(program, file, ["generate-file"], dirPath, expectedFilePath);
             cleanUpDir();
         });
 
@@ -93,7 +93,7 @@ describe("generate file", () => {
             program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", `${dirPath}/forms`]);
 
             await sleep(1500);
-            fileChecks(program, file,["generate-file"], `${dirPath}/forms`, expectedFilePath);
+            fileChecks(program, file, ["generate-file"], `${dirPath}/forms`, expectedFilePath);
             cleanUpDir();
         });
     }
