@@ -1,10 +1,10 @@
-package io.miragon.miranum.digiwfdeploymentproxy.configuration;
+package io.miragon.miranum.miranumdeploymentproxy.configuration;
 
-import io.miragon.miranum.digiwfdeploymentproxy.handler.DeploymentHandler;
-import io.miragon.miranum.digiwfdeploymentproxy.handler.DryHandler;
-import io.miragon.miranum.digiwfdeploymentproxy.handler.RestHandler;
-import io.miragon.miranum.digiwfdeploymentproxy.properties.DeploymentProxyProperties;
-import io.miragon.miranum.digiwfdeploymentproxy.service.DeploymentService;
+import io.miragon.miranum.miranumdeploymentproxy.handler.DeploymentHandler;
+import io.miragon.miranum.miranumdeploymentproxy.handler.DryHandler;
+import io.miragon.miranum.miranumdeploymentproxy.handler.RestHandler;
+import io.miragon.miranum.miranumdeploymentproxy.properties.DeploymentProxyProperties;
+import io.miragon.miranum.miranumdeploymentproxy.service.DeploymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Configuration
 @ConditionalOnClass(DeploymentService.class)
-@ComponentScan(basePackages = "io.miragon.miranum.digiwfdeploymentproxy")
+@ComponentScan(basePackages = "io.miragon.miranum.miranumdeploymentproxy")
 @EnableConfigurationProperties(DeploymentProxyProperties.class)
 public class DeploymentProxyAutoConfiguration {
 

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.miragon.miranum</groupId>
     <artifactId>miranum-deployment-proxy-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.2</version>
     <name>miranum-deployment-proxy-parent</name>
     <packaging>pom</packaging>
     <description>Deployment proxy for Miranum plattform</description>
