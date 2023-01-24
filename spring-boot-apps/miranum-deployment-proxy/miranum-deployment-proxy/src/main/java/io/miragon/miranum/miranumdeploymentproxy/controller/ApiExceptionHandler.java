@@ -1,6 +1,6 @@
-package io.miragon.miranum.digiwfdeploymentproxy.controller;
+package io.miragon.miranum.miranumdeploymentproxy.controller;
 
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentSuccessDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentSuccessDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

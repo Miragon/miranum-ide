@@ -1,8 +1,8 @@
-package io.miragon.miranum.digiwfdeploymentproxy.controller;
+package io.miragon.miranum.miranumdeploymentproxy.controller;
 
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentDto;
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentSuccessDto;
-import io.miragon.miranum.digiwfdeploymentproxy.service.DeploymentService;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentSuccessDto;
+import io.miragon.miranum.miranumdeploymentproxy.service.DeploymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

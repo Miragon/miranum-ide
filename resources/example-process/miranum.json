@@ -1,0 +1,24 @@
+{
+  "projectVersion": "1.0.0",
+  "name": "example-process",
+  "workspace": {
+    "forms": "forms",
+    "elementTemplates": "element-templates",
+    "configs": "configs"
+  },
+  "deployment": [
+    {
+      "plugin": "rest",
+      "targetEnvironments": [
+        {
+          "name": "local",
+          "url": "http://localhost:8080"
+        },
+        {
+          "name": "dev",
+          "url": "http://localhost:8080"
+        }
+      ]
+    }
+  ]
+}

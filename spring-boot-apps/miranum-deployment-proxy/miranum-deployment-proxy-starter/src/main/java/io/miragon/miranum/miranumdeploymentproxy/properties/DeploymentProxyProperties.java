@@ -1,4 +1,4 @@
-package io.miragon.miranum.digiwfdeploymentproxy.properties;
+package io.miragon.miranum.miranumdeploymentproxy.properties;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Setter
 @Getter
-@ConfigurationProperties(prefix = "io.miragon.digiwf.miranum-deployment-proxy")
+@ConfigurationProperties(prefix = "io.miragon.miranum.miranum-deployment-proxy")
 public class DeploymentProxyProperties {
     private Map<String, String> deploymentHandlers;
     private Map<String, String> targets;

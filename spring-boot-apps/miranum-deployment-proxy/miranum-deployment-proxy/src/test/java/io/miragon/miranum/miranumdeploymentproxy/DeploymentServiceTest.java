@@ -1,11 +1,11 @@
-package io.miragon.miranum.digiwfdeploymentproxy;
+package io.miragon.miranum.miranumdeploymentproxy;
 
-import io.miragon.miranum.digiwfdeploymentproxy.dto.ArtifactDto;
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentDto;
-import io.miragon.miranum.digiwfdeploymentproxy.dto.DeploymentSuccessDto;
-import io.miragon.miranum.digiwfdeploymentproxy.dto.FileDto;
-import io.miragon.miranum.digiwfdeploymentproxy.handler.DryHandler;
-import io.miragon.miranum.digiwfdeploymentproxy.service.DeploymentService;
+import io.miragon.miranum.miranumdeploymentproxy.dto.ArtifactDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.DeploymentSuccessDto;
+import io.miragon.miranum.miranumdeploymentproxy.dto.FileDto;
+import io.miragon.miranum.miranumdeploymentproxy.handler.DryHandler;
+import io.miragon.miranum.miranumdeploymentproxy.service.DeploymentService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
