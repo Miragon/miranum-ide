@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
     type : string;
 
-    fileExtension: string;
+    defaultFileExtension: string;
 
     template: string;
 
@@ -13,15 +13,15 @@ export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
 
     defaultData: object;
 
-    constructor(type: string, fileExtension: string, template: string, defaultData: object, basePath: string) {
+    constructor(type: string, defaultFileExtension: string, template: string, defaultData: object, basePath: string) {
         this.type = type;
-        this.fileExtension = fileExtension;
+        this.defaultFileExtension = defaultFileExtension;
         this.template = template;
         this.basePath = basePath;
         this.defaultData = defaultData;
     }
 
-    async generate(name : string, project: string, pathInProject?: string) : Promise<Artifact> {
+    async generate(name : string, project: string, extension?: string, pathInProject?: string) : Promise<Artifact> {
         const fileName: string = name.replace(/\.[^/.]+$/, "");
         /* eslint-disable  @typescript-eslint/no-explicit-any */
         const data: any = this.defaultData;
@@ -29,12 +29,13 @@ export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
         data.name = fileName;
         data.projectName = project;
         const fileContent = await Sqrl.render(this.template, data);
+        const fileExtension = extension ?? this.defaultFileExtension.toLowerCase();
 
         const fileDetails = {
             name: fileName,
-            extension: this.fileExtension.toLowerCase(),
+            extension: fileExtension,
             content: fileContent,
-            pathInProject: `${pathInProject ?? this.basePath}/${name}.${this.fileExtension.toLowerCase()}`
+            pathInProject: `${pathInProject ?? this.basePath}/${name}${fileExtension}`
         }
         return {
             type: this.type,
@@ -47,7 +48,7 @@ export class MiranumArtifactGenerator implements MiranumGeneratorPlugin {
 
 //     -----------------------------Generators-----------------------------     \\
 
-const bpmnGenerator = new MiranumArtifactGenerator("bpmn", "bpmn",
+const bpmnGenerator = new MiranumArtifactGenerator("bpmn", ".bpmn",
     `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0sduois" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.2.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="{{it.version}}">
   <bpmn:process id="{{it.id}}" name="{{it.name}}" isExecutable="true">
@@ -64,7 +65,7 @@ const bpmnGenerator = new MiranumArtifactGenerator("bpmn", "bpmn",
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`, {version: "7.17.0"}, "");
 
-const dmnGenerator = new MiranumArtifactGenerator("dmn",  "dmn",
+const dmnGenerator = new MiranumArtifactGenerator("dmn",  ".dmn",
     `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="{{it.id}}" name="{{it.name}}" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.2.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="{{it.version}}">
   <decision id="Decision_1ja0uxu" name="Decision 1">
@@ -86,7 +87,7 @@ const dmnGenerator = new MiranumArtifactGenerator("dmn",  "dmn",
   </dmndi:DMNDI>
 </definitions>`, {version: "7.17.0"}, "");
 
-const formGenerator = new MiranumArtifactGenerator("form", "form", `{
+const formGenerator = new MiranumArtifactGenerator("form", ".form", `{
   "key": "{{it.name}}",
   "schema": {
     "type": "object",
@@ -107,7 +108,7 @@ const formGenerator = new MiranumArtifactGenerator("form", "form", `{
     }
 }`, {allOfKey: "FORMSECTION_input"}, "/forms");
 
-const configGenerator = new MiranumArtifactGenerator("config", "config", `{
+const configGenerator = new MiranumArtifactGenerator("config", ".config.json", `{
   "key": "{{it.name}}",
   "statusDokument": "",
   "statusConfig": [],
@@ -119,7 +120,7 @@ const configGenerator = new MiranumArtifactGenerator("config", "config", `{
   ]
 }`, {}, "/configs");
 
-const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", "json", `{
+const elementTemplateGenerator = new MiranumArtifactGenerator("element-template", ".json", `{
   "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
   "name": "{{it.name}}",
   "id": "{{it.id}}",
@@ -129,14 +130,14 @@ const elementTemplateGenerator = new MiranumArtifactGenerator("element-template"
   "properties": []
 }`, {}, "/element-templates");
 
-const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json", `{
+const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", ".json", `{
   "projectVersion": "1.0.0",
   "name": "{{it.projectName}}",
-  "workspace": {
-    "forms": { "path": "forms", "extension": ".form" },
-    "elementTemplates": { "path": "element-templates", "extension": ".json" },
-    "configs": { "path": "configs", "extension": ".config" }
-  },
+  "workspace": [
+    { "type": "form", "path": "forms", "extension": ".form" },
+    { "type": "element-template", "path": "element-templates", "extension": ".json" },
+    { "type": "config", "path": "configs", "extension": ".config.json" }
+  ],
   "deployment": [
     {
       "plugin": "rest",
@@ -158,9 +159,9 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", "json
   ]
 }`, {}, "");
 
-const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", "gitkeep", "{{it.data}}", {data:""}, "/element-templates");
+const gitkeepGenerator = new MiranumArtifactGenerator(".gitkeep", ".gitkeep", "{{it.data}}", {data:""}, "/element-templates");
 
-const readmeGenerator = new MiranumArtifactGenerator("README.md", "md",
+const readmeGenerator = new MiranumArtifactGenerator("README.md", ".md",
     `# <span style="font-family: Academy Engraved LET; color:#00E676">{{it.projectName}}</span>
 
     .

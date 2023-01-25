@@ -50,18 +50,18 @@ describe("generate bpmn project", () => {
 
 describe("generate file", () => {
     const filesToGenerate: FileHelper[] = [
-        {name: "my-process", type: "bpmn", extension: "bpmn", dir: "", content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>`},
-        {name: "my-decision-table", type: "dmn", extension: "dmn", dir: "", content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">`},
-        {name: "my-form", type: "form", extension: "form", dir: "forms", content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",`},
-        {name: "my-config", type: "config", extension: "config", dir: "configs", content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [`},
-        {name: "my-element-template", type: "element-template", extension: "json", dir: "element-templates", content: `"name": "my-element-template",`},
+        {name: "my-process", type: "bpmn", extension: ".bpmn", dir: "", content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>`},
+        {name: "my-decision-table", type: "dmn", extension: ".dmn", dir: "", content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">`},
+        {name: "my-form", type: "form", extension: ".form", dir: "forms", content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",`},
+        {name: "my-config", type: "config", extension: ".config.json", dir: "configs", content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [`},
+        {name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates", content: `"name": "my-element-template",`},
     ];
 
     for (const file of filesToGenerate) {
         const program = generateFile();
 
         it(`generate ${file.type} as standalone`, async () => {
-            const expectedFilePath = `${myGenerations}/${file.name}.${file.extension}`;
+            const expectedFilePath = `${myGenerations}/${file.name}${file.extension}`;
             checkExistence(expectedFilePath, false);
 
             program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", myGenerations]);
@@ -73,7 +73,7 @@ describe("generate file", () => {
 
         it(`generate ${file.type} on top-level`, async () => {
             generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
-            const expectedFilePath = `${dirPath}/${file.dir}/${file.name}.${file.extension}`;
+            const expectedFilePath = `${dirPath}/${file.dir}/${file.name}${file.extension}`;
 
             await sleep(1500);
             checkExistence(expectedFilePath, false);
@@ -86,7 +86,7 @@ describe("generate file", () => {
 
         it(`generate ${file.type} in subfolder`, async () => {
             generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
-            const expectedFilePath = `${dirPath}/forms/${file.name}.${file.extension}`;
+            const expectedFilePath = `${dirPath}/forms/${file.name}${file.extension}`;
 
             await sleep(1500);
             checkExistence(expectedFilePath, false);

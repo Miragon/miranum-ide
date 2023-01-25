@@ -1,11 +1,11 @@
 {
   "projectVersion": "1.0.0",
   "name": "my-process-automation-project",
-  "workspace": {
-    "forms": { "path": "forms", "extension": ".form" },
-    "elementTemplates": { "path": "element-templates", "extension": ".json" },
-    "configs": { "path": "configs", "extension": ".config" }
-  },
+  "workspace": [
+    { "type": "form", "path": "forms", "extension": ".form" },
+    { "type": "element-template", "path": "element-templates", "extension": ".json" },
+    { "type": "config", "path": "configs", "extension": ".config.json" }
+  ],
   "deployment": [
     {
       "plugin": "rest",

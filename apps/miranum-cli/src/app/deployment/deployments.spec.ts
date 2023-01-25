@@ -16,11 +16,11 @@ const dryDeploymentPlugin: MiranumDeploymentPlugin = {
 const deployment = new Deployment(createMiranumCore(
     "0.0.1",
     "my-process-automation-project",
-    {
-        "forms": "forms",
-        "elementTemplates": "element-templates",
-        "configs": "configs"
-    },
+    [
+        { "type": "form", "path": "forms", "extension": ".form" },
+        { "type": "element-template", "path": "element-templates", "extension": ".json" },
+        { "type": "config", "path": "configs", "extension": ".config.json" }
+    ],
     [dryDeploymentPlugin])
 );
 

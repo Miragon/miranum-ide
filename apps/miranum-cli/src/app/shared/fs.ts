@@ -47,7 +47,7 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
     throw new Error(`File not found on path ${pathToFile}`);
 }
 
-export async function getFiles(pathToDirectory: string, supportedFileExtensions: string[]): Promise<FileDetails[]> {
+export async function getFiles(pathToDirectory: string, supportedFileExtensions: string): Promise<FileDetails[]> {
     try {
         const files: FileDetails[] = [];
         const filesInDirectory = (await fs.readdir(pathToDirectory));
@@ -56,7 +56,7 @@ export async function getFiles(pathToDirectory: string, supportedFileExtensions:
 
             const fileStat = await fs.lstat(pathToFile);
             // check if file is file and file has supported file extension
-            if (fileStat.isFile() && supportedFileExtensions.filter(supportedFile => file.includes(supportedFile)).length !== 0 && file !== "miranum.json") {
+            if (fileStat.isFile() && file.includes(supportedFileExtensions) && file !== "miranum.json") {
                 files.push(await getFile(pathToFile));
             }
             else if (fileStat.isDirectory()) {
