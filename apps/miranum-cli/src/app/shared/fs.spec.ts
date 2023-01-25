@@ -29,22 +29,22 @@ describe("getFile",() => {
 
 describe("getFiles",() => {
     it("forms should work", async () => {
-        const files = await getFiles(`${pathToProject}/forms`, [".form"]);
+        const files = await getFiles(`${pathToProject}/forms`, ".form");
         checkFiles(files, ".form");
     });
 
     it("configs should work", async () => {
-        const files = await getFiles(`${pathToProject}/configs`, [".json"]);
-        checkFiles(files, ".json");
+        const files = await getFiles(`${pathToProject}/configs`, ".config.json");
+        checkFiles(files, ".config.json");
     });
 
     it("bpmn should work", async () => {
-        const files = await getFiles(pathToProject, [".bpmn"]);
+        const files = await getFiles(pathToProject, ".bpmn");
         checkFiles(files, ".bpmn");
     });
 
     it("dmn should work", async () => {
-        const files = await getFiles(pathToProject, [".dmn"]);
+        const files = await getFiles(pathToProject, ".dmn");
         checkFiles(files, ".dmn");
     });
 
