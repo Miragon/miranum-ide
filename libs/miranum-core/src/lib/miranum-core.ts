@@ -61,11 +61,12 @@ export class MiranumCore {
          */
         let pathInProject = undefined;
         const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
+        // eslint-disable-next-line array-callback-return
         this.projectConfig?.workspace.find( workspace => {
-            if(workspace.type == type && lastFolder == projectName) {
+            if(workspace.type === type && lastFolder === projectName) {
                 pathInProject = workspace.path;
             }
-        })
+        });
         return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
     }
 
@@ -83,11 +84,12 @@ export class MiranumCore {
         }
 
         let extension = undefined;
+        // eslint-disable-next-line array-callback-return
         this.projectConfig?.workspace.find( workspace => {
-            if(workspace.type == type) {
+            if(workspace.type === type) {
                 extension = workspace.extension;
             }
-        })
+        });
         return generator.generate(artifactName, project, extension, pathInProject);
     }
 }

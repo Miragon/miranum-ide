@@ -13,14 +13,19 @@ export class Deployment {
 
     public async deployAllArtifacts(path: string, target: string): Promise<void> {
         const files: { type: string; file: FileDetails; }[] = [];
-        if(this.miranumCore.projectConfig) {
-            for (const workspace of this.miranumCore.projectConfig.workspace) {
-                try{
-                    (await getFiles(`${path}/${workspace.path}`.replace("//", "/"), workspace.extension))
-                        .forEach(f => files.push({type: workspace.type, file: f}));
-                } catch (error) {
-                    // continue if workspace is not allocated
-                }
+        if(!this.miranumCore.projectConfig) {
+            throw new Error(path + " is not a valid project!");
+        }
+
+        for (const workspace of this.miranumCore.projectConfig.workspace) {
+            if(!checkIfSupportedType(workspace.type)) {
+                continue;
+            }
+            try{
+                (await getFiles(`${path}/${workspace.path}`.replace("//", "/"), workspace.extension))
+                    .forEach(f => files.push({type: workspace.type, file: f}));
+            } catch (error) {
+                // continue if workspace is not allocated
             }
         }
         (await getFiles(path, ".bpmn"))

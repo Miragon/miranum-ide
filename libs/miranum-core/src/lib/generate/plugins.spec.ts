@@ -31,6 +31,16 @@ describe("generators with miranum-core", () => {
             expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}${file.extension}`.replace("//", "/"));
         });
     }
+
+    it(`generator should work with custom file-extensions`, async () => {
+        const file: FileHelper = {name: "my-form", type: "form", extension: ".random.extension", dir: "forms"};
+        const generator = getGenerator(file.type);
+
+        const artifact = await generator.generate(file.name, "test-project", file.extension);
+        compareArtifactFile(artifact, file);
+        expect(artifact.project).toEqual("test-project");
+        expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}${file.extension}`.replace("//", "/"));
+    });
 });
 
 describe("generators without miranum-core", () => {

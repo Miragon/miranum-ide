@@ -1,9 +1,11 @@
-import { Deployment } from "./deployment";
+// import { Deployment } from "./deployment";
 import {Artifact, createMiranumCore, MiranumDeploymentPlugin} from "@miranum-ide/miranum-core";
 import * as colors from "colors";
 import {filesToDeploy, pathToProject} from "../../../tests/testHelpers";
+import {Deployment} from "./deployment";
 
 const sampleTarget = "local";
+const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/forms/KontrollFormular.json", type: "form"};
 
 const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     plugin: "dry",
@@ -21,8 +23,20 @@ const deployment = new Deployment(createMiranumCore(
         { "type": "element-template", "path": "element-templates", "extension": ".json" },
         { "type": "config", "path": "configs", "extension": ".config.json" }
     ],
-    [dryDeploymentPlugin])
-);
+    [dryDeploymentPlugin]
+));
+
+const customDeployment = new Deployment(createMiranumCore(
+    "0.0.1",
+    "my-process-automation-project",
+    [
+        { "type": "form", "path": "forms", "extension": ".form" },
+        { "type": "form", "path": "my-other-forms", "extension": ".json" },
+        { "type": "element-template", "path": "my-templates", "extension": ".json" },
+        { "type": "config", "path": "configs", "extension": ".config.json" }
+    ],
+    [dryDeploymentPlugin]
+));
 
 describe("deployArtifact", () => {
     for(const file of filesToDeploy) {
@@ -34,6 +48,21 @@ describe("deployArtifact", () => {
         });
     }
 
+    it(`should work with custom Artifact`, async () => {
+        const logSpy = jest.spyOn(console, 'log');
+        await expect(customDeployment.deployArtifact(customForm.path, customForm.type, sampleTarget))
+            .resolves.not.toThrow();
+        expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + customForm.nameExt + " to environment " + sampleTarget);
+    });
+
+    it(`should not work, due to unsupported type`, async () => {
+        const eTemplate = {nameExt: "test.json", path: "resources/my-process-automation-project/my-templates/test.json", type: "element-template"};
+        const logSpy = jest.spyOn(console, 'log');
+        await expect(deployment.deployArtifact(eTemplate.path, eTemplate.type, sampleTarget))
+            .resolves.toThrow();
+        expect(logSpy).toHaveBeenCalledWith(colors.red.bold("FAILED") + ` with -> ${eTemplate.type} is not supported for deployment`);
+    });
+
     it("should raise an error", async () => {
         return deployment.deployArtifact(pathToProject, "BPMN", sampleTarget)
             .catch(e => expect(e).not.toBeNull());
@@ -43,12 +72,13 @@ describe("deployArtifact", () => {
 describe("deployAllArtifacts", () => {
     it("should work", async () => {
         const logSpy = jest.spyOn(console, 'log');
-        await expect(deployment.deployAllArtifacts(pathToProject, sampleTarget))
+        await expect(customDeployment.deployAllArtifacts(pathToProject, sampleTarget))
             .resolves.not.toThrow();
 
         for (const file of filesToDeploy) {
             expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
         }
+        expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + customForm.nameExt + " to environment " + sampleTarget);
     });
 
     it("should raise an error", async () => {
