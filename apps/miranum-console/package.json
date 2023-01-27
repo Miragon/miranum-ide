@@ -37,17 +37,17 @@
 		"commands": [
 			{
 				"command": "miranum.deploy.local",
-				"title": "File in Lokale-Umgebung deployen",
+				"title": "Datei in Lokale-Umgebung deployen",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deploy.dev",
-				"title": "File in Dev-Umgebung deployen",
+				"title": "Datei in Dev-Umgebung deployen",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deploy.test",
-				"title": "File in Test-Umgebung deployen",
+				"title": "Datei in Test-Umgebung deployen",
 				"category": "Miranum"
 			},
 			{
