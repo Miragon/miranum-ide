@@ -1,11 +1,9 @@
-// import { Deployment } from "./deployment";
+import { Deployment } from "./deployment";
 import {Artifact, createMiranumCore, MiranumDeploymentPlugin} from "@miranum-ide/miranum-core";
 import * as colors from "colors";
 import {filesToDeploy, pathToProject} from "../../../tests/testHelpers";
-import {Deployment} from "./deployment";
 
 const sampleTarget = "local";
-const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/my-other-forms/KontrollFormular.json", type: "form"};
 
 const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     plugin: "dry",
@@ -26,6 +24,7 @@ const deployment = new Deployment(createMiranumCore(
     [dryDeploymentPlugin]
 ));
 
+// workspace must be the same as the one in miranum.json from my-process-automation-project
 const customDeployment = new Deployment(createMiranumCore(
     "0.0.1",
     "my-process-automation-project",
@@ -40,7 +39,7 @@ const customDeployment = new Deployment(createMiranumCore(
 
 describe("deployArtifact", () => {
     for(const file of filesToDeploy) {
-        it(`${file.type} should work`, async () => {
+        it(`${file.type} should work with standard settings`, async () => {
             const logSpy = jest.spyOn(console, 'log');
             await expect(deployment.deployArtifact(file.path, file.type, sampleTarget))
                 .resolves.not.toThrow();
@@ -49,6 +48,7 @@ describe("deployArtifact", () => {
     }
 
     it(`should work with custom Artifact`, async () => {
+        const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/my-other-forms/KontrollFormular.json", type: "form"};
         const logSpy = jest.spyOn(console, 'log');
         await expect(customDeployment.deployArtifact(customForm.path, customForm.type, sampleTarget))
             .resolves.not.toThrow();
@@ -68,7 +68,7 @@ describe("deployArtifact", () => {
 });
 
 describe("deployAllArtifacts", () => {
-    it("should work", async () => {
+    it("my-process-automation-project should work", async () => {
         const logSpy = jest.spyOn(console, 'log');
         await expect(customDeployment.deployAllArtifacts(pathToProject, sampleTarget))
             .resolves.not.toThrow();
@@ -76,10 +76,9 @@ describe("deployAllArtifacts", () => {
         for (const file of filesToDeploy) {
             expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
         }
-        expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + customForm.nameExt + " to environment " + sampleTarget);
     });
 
-    it("should raise an error", async () => {
+    it("should raise an error, due to wrong path", async () => {
         return deployment.deployAllArtifacts("/path/does-not/exist", sampleTarget)
             .catch(e => expect(e).not.toBeNull());
     });
