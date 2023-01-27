@@ -134,6 +134,8 @@ const miranumJsonGenerator  = new MiranumArtifactGenerator("miranum.json", ".jso
   "projectVersion": "1.0.0",
   "name": "{{it.projectName}}",
   "workspace": [
+    { "type": "bpmn", "path": "", "extension": ".bpmn" },
+    { "type": "dmn", "path": "", "extension": ".dmn" },
     { "type": "form", "path": "forms", "extension": ".form" },
     { "type": "element-template", "path": "element-templates", "extension": ".json" },
     { "type": "config", "path": "configs", "extension": ".config.json" }

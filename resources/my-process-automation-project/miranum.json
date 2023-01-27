@@ -2,6 +2,8 @@
   "projectVersion": "1.0.0",
   "name": "my-process-automation-project",
   "workspace": [
+    { "type": "bpmn", "path": "", "extension": ".bpmn" },
+    { "type": "dmn", "path": "", "extension": ".dmn" },
     { "type": "form", "path": "forms", "extension": ".form" },
     { "type": "form", "path": "my-other-forms", "extension": ".json" },
     { "type": "element-template", "path": "my-templates", "extension": ".json" },

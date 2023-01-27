@@ -28,10 +28,6 @@ export class Deployment {
                 // continue if workspace is not allocated
             }
         }
-        (await getFiles(path, ".bpmn"))
-            .forEach(f => files.push({type: "bpmn", file: f}));
-        (await getFiles(path, ".dmn"))
-            .forEach(f => files.push({type: "dmn", file: f}));
         for (const file of files) {
             try {
                 await this.deploy(file.file, file.type, target);

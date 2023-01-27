@@ -17,6 +17,8 @@ const deployment = new Deployment(createMiranumCore(
     "0.0.1",
     "my-process-automation-project",
     [
+        { "type": "bpmn", "path": "", "extension": ".bpmn" },
+        { "type": "dmn", "path": "", "extension": ".dmn" },
         { "type": "form", "path": "forms", "extension": ".form" },
         { "type": "element-template", "path": "element-templates", "extension": ".json" },
         { "type": "config", "path": "configs", "extension": ".config.json" }
@@ -29,6 +31,8 @@ const customDeployment = new Deployment(createMiranumCore(
     "0.0.1",
     "my-process-automation-project",
     [
+        { "type": "bpmn", "path": "", "extension": ".bpmn" },
+        { "type": "dmn", "path": "", "extension": ".dmn" },
         { "type": "form", "path": "forms", "extension": ".form" },
         { "type": "form", "path": "my-other-forms", "extension": ".json" },
         { "type": "element-template", "path": "my-templates", "extension": ".json" },
