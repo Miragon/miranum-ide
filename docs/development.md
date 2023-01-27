@@ -36,7 +36,7 @@ Edit in the [`application.properties`](../spring-boot-apps/miranum-deployment-pr
 ```bash
 ## build
 # npm run build
-npx nx build digiwf-deplyoment-proxy
+npx nx build miranum-deplyoment-proxy
 
 ## execute
 npx nx serve miranum-deployment-proxy
@@ -52,15 +52,14 @@ npx nx serve
 npx nx deploy miranum-cli
 
 # Generate domain
+# Resources are generated into directory: resources/my-generations
 # Note: nx generate is a built in command, therefore we had to name our custom command create
 npx nx create miranum-cli
 ```
 
 ### Miranum-Console
 
-## Running the Extension locally
-
-In order to start the miranum-console extension in development mode, you have to build the extension and webview.
+In order to start the miranum-console extension in development mode locally, you have to build the extension and webview.
 Therefore, you can trigger the watch commands for these 2 apps (`npx nx watch-all miranum-console`).
 Then use the `F5` key or the debug menu option `Run Miranum Console` to start the Extension Development Host.
 
@@ -83,6 +82,8 @@ If you want to run the tests of a specific app or lib use `npx nx test <app|lib>
 We use CodeCov ([https://app.codecov.io/gh/FlowSquad/miranum-ide](https://app.codecov.io/gh/FlowSquad/miranum-ide)) to visualize our code coverage.
 
 If you want to check out the code coverage locally, execute the tests with the flag `--coverage` (e.g. `npx nx run-many --target test --all --parallel --coverage`).
+
+Checkout [tests](test.md) for more information on testing.
 
 ## Branching
 
