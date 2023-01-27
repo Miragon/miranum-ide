@@ -35,7 +35,7 @@ describe("getFiles",() => {
 
     it("configs should work", async () => {
         const files = await getFiles(`${pathToProject}/configs`, ".config.json");
-        checkFiles(files, ".config.json");
+        checkFiles(files, ".json");
     });
 
     it("bpmn should work", async () => {

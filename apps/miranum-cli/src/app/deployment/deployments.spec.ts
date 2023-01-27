@@ -5,7 +5,7 @@ import {filesToDeploy, pathToProject} from "../../../tests/testHelpers";
 import {Deployment} from "./deployment";
 
 const sampleTarget = "local";
-const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/forms/KontrollFormular.json", type: "form"};
+const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/my-other-forms/KontrollFormular.json", type: "form"};
 
 const dryDeploymentPlugin: MiranumDeploymentPlugin = {
     plugin: "dry",
@@ -56,11 +56,9 @@ describe("deployArtifact", () => {
     });
 
     it(`should not work, due to unsupported type`, async () => {
-        const eTemplate = {nameExt: "test.json", path: "resources/my-process-automation-project/my-templates/test.json", type: "element-template"};
-        const logSpy = jest.spyOn(console, 'log');
-        await expect(deployment.deployArtifact(eTemplate.path, eTemplate.type, sampleTarget))
-            .resolves.toThrow();
-        expect(logSpy).toHaveBeenCalledWith(colors.red.bold("FAILED") + ` with -> ${eTemplate.type} is not supported for deployment`);
+        const eTemplate = {nameExt: "test.json", path: "resources/my-process-automation-project/element-templates/test.json", type: "element-template"};
+        return deployment.deployArtifact(eTemplate.path, eTemplate.type, sampleTarget)
+            .catch(e => expect(e).toBe(`${eTemplate.type} is not supported for deployment`));
     });
 
     it("should raise an error", async () => {
