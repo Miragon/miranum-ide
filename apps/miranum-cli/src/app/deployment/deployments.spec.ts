@@ -16,23 +16,54 @@ const dryDeploymentPlugin: MiranumDeploymentPlugin = {
 const deployment = new Deployment(createMiranumCore(
     "0.0.1",
     "my-process-automation-project",
-    {
-        "forms": "forms",
-        "elementTemplates": "element-templates",
-        "configs": "configs"
-    },
-    [dryDeploymentPlugin])
-);
+    [
+        { "type": "bpmn", "path": "", "extension": ".bpmn" },
+        { "type": "dmn", "path": "", "extension": ".dmn" },
+        { "type": "form", "path": "forms", "extension": ".form" },
+        { "type": "element-template", "path": "element-templates", "extension": ".json" },
+        { "type": "config", "path": "configs", "extension": ".config.json" }
+    ],
+    [dryDeploymentPlugin]
+));
+
+// workspace must be the same as the one in miranum.json from my-process-automation-project
+const customDeployment = new Deployment(createMiranumCore(
+    "0.0.1",
+    "my-process-automation-project",
+    [
+        { "type": "bpmn", "path": "", "extension": ".bpmn" },
+        { "type": "dmn", "path": "", "extension": ".dmn" },
+        { "type": "form", "path": "forms", "extension": ".form" },
+        { "type": "form", "path": "my-other-forms", "extension": ".json" },
+        { "type": "element-template", "path": "my-templates", "extension": ".json" },
+        { "type": "config", "path": "configs", "extension": ".config.json" }
+    ],
+    [dryDeploymentPlugin]
+));
 
 describe("deployArtifact", () => {
     for(const file of filesToDeploy) {
-        it(`${file.type} should work`, async () => {
+        it(`${file.type} should work with standard settings`, async () => {
             const logSpy = jest.spyOn(console, 'log');
             await expect(deployment.deployArtifact(file.path, file.type, sampleTarget))
                 .resolves.not.toThrow();
             expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
         });
     }
+
+    it(`should work with custom Artifact`, async () => {
+        const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/my-other-forms/KontrollFormular.json", type: "form"};
+        const logSpy = jest.spyOn(console, 'log');
+        await expect(customDeployment.deployArtifact(customForm.path, customForm.type, sampleTarget))
+            .resolves.not.toThrow();
+        expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + customForm.nameExt + " to environment " + sampleTarget);
+    });
+
+    it(`should not work, due to unsupported type`, async () => {
+        const eTemplate = {nameExt: "test.json", path: "resources/my-process-automation-project/element-templates/test.json", type: "element-template"};
+        return deployment.deployArtifact(eTemplate.path, eTemplate.type, sampleTarget)
+            .catch(e => expect(e).toBe(`${eTemplate.type} is not supported for deployment`));
+    });
 
     it("should raise an error", async () => {
         return deployment.deployArtifact(pathToProject, "BPMN", sampleTarget)
@@ -41,9 +72,9 @@ describe("deployArtifact", () => {
 });
 
 describe("deployAllArtifacts", () => {
-    it("should work", async () => {
+    it("my-process-automation-project should work", async () => {
         const logSpy = jest.spyOn(console, 'log');
-        await expect(deployment.deployAllArtifacts(pathToProject, sampleTarget))
+        await expect(customDeployment.deployAllArtifacts(pathToProject, sampleTarget))
             .resolves.not.toThrow();
 
         for (const file of filesToDeploy) {
@@ -51,7 +82,7 @@ describe("deployAllArtifacts", () => {
         }
     });
 
-    it("should raise an error", async () => {
+    it("should raise an error, due to wrong path", async () => {
         return deployment.deployAllArtifacts("/path/does-not/exist", sampleTarget)
             .catch(e => expect(e).not.toBeNull());
     });
