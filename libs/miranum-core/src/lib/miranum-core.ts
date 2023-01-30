@@ -1,7 +1,7 @@
-import { Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin } from "./types";
+import {Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin, MiranumWorkspace} from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
-export function createMiranumCore(projectVersion: string, projectName: string, workspace: object, deployment: MiranumDeploymentPlugin[]): MiranumCore {
+export function createMiranumCore(projectVersion: string, projectName: string, workspace: MiranumWorkspace[], deployment: MiranumDeploymentPlugin[]): MiranumCore {
     return new MiranumCore({
         projectVersion: projectVersion,
         name: projectName,
@@ -18,7 +18,7 @@ export class MiranumCore {
     generatorPlugins: Map<string, MiranumGeneratorPlugin> = availableGeneratorPlugins;
 
     constructor(config?: MiranumConfig) {
-        this.projectConfig = config
+        this.projectConfig = config;
     }
 
     public async deploy(target: string, artifact: Artifact): Promise<Artifact> {
@@ -55,17 +55,18 @@ export class MiranumCore {
     }
 
     public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
-        /** First, checks if we have a projectConfig && if we are on "root-level" of the project
+        /** First, checks if we have a projectConfig, with a valid workspace for the type && if we are on "root-level" of the project
          *  if true: initialise an artifact with the artifact.pathInProject set as the projectConfig.workspace defines it,
          *  otherwise: initialise the artifact as a standalone artifact
          */
         let pathInProject = undefined;
         const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        if(this.projectConfig && lastFolder === projectName) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            pathInProject = this.projectConfig.workspace[this.camelize(`${type}s`)];
-        }
+        // eslint-disable-next-line array-callback-return
+        this.projectConfig?.workspace.find( workspace => {
+            if(workspace.type === type && lastFolder === projectName) {
+                pathInProject = workspace.path;
+            }
+        });
         return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
     }
 
@@ -81,18 +82,15 @@ export class MiranumCore {
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
-        return generator.generate(artifactName, project, pathInProject);
-    }
 
-    /**
-     * converts a string to camelcase; "-" and "_" are also seen as empty space and therefore removed
-     * @param str string that is to be camlized
-     * @private
-     */
-    private camelize(str: string) {
-        return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
-            return index === 0 ? word.toLowerCase() : word.toUpperCase();
-        }).replace(/\s+/g, '').replace("-",""). replace("_", "");
+        let extension = undefined;
+        // eslint-disable-next-line array-callback-return
+        this.projectConfig?.workspace.find( workspace => {
+            if(workspace.type === type) {
+                extension = workspace.extension;
+            }
+        });
+        return generator.generate(artifactName, project, extension, pathInProject);
     }
 }
 

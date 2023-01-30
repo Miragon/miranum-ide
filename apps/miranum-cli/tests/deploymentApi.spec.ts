@@ -13,7 +13,7 @@ jest.setTimeout(30000);
 // axios.get.mockResolvedValue({ data: {success: true} });
 
 describe("deploy all files", () => {
-    it(`should work`, async () => {
+    it(`deploying my-process-automation-project e2e should work`, async () => {
         // const logSpy = jest.spyOn(console, 'log');
         const program = deployAllFiles();
         program.parse(["node", appPath, "deploy", "--directory", pathToProject, "--target", target]);
@@ -45,7 +45,6 @@ describe("deploy all files", () => {
 
 
 describe("deploy files", () => {
-
     for (const file of filesToDeploy) {
         it(`${file.type} should work`, async () => {
             // const logSpy = jest.spyOn(console, 'log');
