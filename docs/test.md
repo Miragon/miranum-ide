@@ -3,6 +3,15 @@
 Most classes have unit tests (classname.spec.ts), though we also want to test the whole code in an "End-To-End" way.
 These tests are written in a separate test-folder, which can be found on the same level as src.
 
+To run tests, use the following command:
+``` bash
+ # to test all .spec files
+ npm run test
+ 
+ # to test all .spec files from a certain app / lib
+ npx nx test <app|lib>.
+```
+
 ## How do we write tests?
 Generally, we create two describe blocks per public-function. 
 One tests the function in case we have a miranum.json, the other the case in which we don't have a miranum.json.

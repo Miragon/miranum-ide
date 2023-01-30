@@ -4,33 +4,6 @@
   "sourceRoot": "/src",
   "projectType": "application",
   "targets": {
-    "watch": {
-      "executor": "@nrwl/webpack:webpack",
-      "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "development",
-      "options": {
-        "watch": true,
-        "compiler": "babel",
-        "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "deleteOutputPath": false,
-        "index": "apps/miranum-console-webview/src/index.html",
-        "baseHref": "/",
-        "main": "apps/miranum-console-webview/src/main.tsx",
-        "polyfills": "apps/miranum-console-webview/src/polyfills.ts",
-        "tsConfig": "apps/miranum-console-webview/tsconfig.app.json",
-        "styles": ["apps/miranum-console-webview/src/styles.css"],
-        "scripts": [],
-        "webpackConfig": "@nrwl/react/plugins/webpack"
-      },
-      "configurations": {
-        "development": {
-          "extractLicenses": false,
-          "optimization": false,
-          "sourceMap": false,
-          "vendorChunk": true
-        }
-      }
-    },
     "build": {
       "executor": "@nrwl/webpack:webpack",
       "outputs": ["{options.outputPath}"],
