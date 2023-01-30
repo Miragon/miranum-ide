@@ -66,7 +66,7 @@ Therefore, you can trigger the watch command:
 npm run watch
 
 # or manually:
-npx -c 'nx watch --projects=miranum-console,miranum-console-webview -- echo \$NX_PROJECT_NAME'
+npx -c 'nx watch --projects=miranum-console,miranum-console-webview -- npx nx build \$NX_PROJECT_NAME'
 ```
 Then use the `F5` key or the debug menu option `Run Miranum Console` to start the Extension Development Host.
 
