@@ -4,7 +4,6 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "npx nx run-many --target build --all --prod",
-    "watch": "npx -c 'nx watch --projects=miranum-console,miranum-console-webview -- nx build \\$NX_PROJECT_NAME'\n",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
     "lint": "npx nx run-many --target lint --all  --parallel",
     "generate-api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o libs/digiwf-deployment-plugin-rest/src/lib/openapi --additional-properties=supportsES6=true,withInterfaces=true"

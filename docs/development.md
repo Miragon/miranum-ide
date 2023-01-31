@@ -63,9 +63,9 @@ In order to start the miranum-console extension in development mode locally, you
 Therefore, you can trigger the watch command:
 ```bash
 # Auto rebuild the extensions on every change
-npm run watch
+npx nx observe-all miranum-console
 
-# or manually:
+# or with nx-build in command:
 npx -c 'nx watch --projects=miranum-console,miranum-console-webview -- npx nx build \$NX_PROJECT_NAME'
 ```
 Then use the `F5` key or the debug menu option `Run Miranum Console` to start the Extension Development Host.
