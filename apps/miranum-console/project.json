@@ -6,7 +6,25 @@
     "miranum-console-webview"
   ],
   "targets": {
-    "watch": {
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx observe miranum-console",
+            "prefix": "miranum-console",
+            "color": "green"
+          },
+          {
+            "command": "npx nx observe miranum-console-webview",
+            "prefix": "miranum-console-webview",
+            "color": "yellow"
+          }
+        ]
+      }
+    },
+    "observe": {
       "executor": "@nrwl/node:webpack",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
