@@ -13,15 +13,11 @@ sidebar_position: xy
 ---
 
 # Titel
-
 ```
+Finally, remove the **Returns** blocks under each function.
 
-## New Commands with [TypeDoc](https://typedoc.org/):
+## Prepare a new Command for [TypeDoc](https://typedoc.org/):
 
-Make a new documentation-comment, in which you describe the method.
-
-Add an example under the tag *@example*
-
-And add all available Options under the tag *@options*
-
-Both lists should be in markdown typical bash boxes
+1. Make a new documentation-comment, in which you describe the method.
+2. Add an example under the tag *@example* (within markdown ```bash```)
+3. Add all available Options under the tag *@options* (within markdown ```bash```)

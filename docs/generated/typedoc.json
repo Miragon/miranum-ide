@@ -5,7 +5,6 @@
   ],
   "excludeNotDocumented": true,
   "disableSources": true,
-  "excludeTags": ["@returns"],
   "tsconfig": "../../apps/miranum-cli/tsconfig.json",
   "plugin": [
     "typedoc-plugin-markdown"

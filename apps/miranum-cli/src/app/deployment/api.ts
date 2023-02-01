@@ -16,8 +16,8 @@ import { mapProcessConfigToDigiwfLib } from "../shared/fs";
  * @options
  * ``` bash
  * # required
- * -f or --file         <file>      :     "specify the file in your project"
- * -t or --target       <target>    :    "specify the target environment"
+ * -f or --file         <file>      :   "specify the file in your project"
+ * -t or --target       <target>    :   "specify the target environment"
  * --type               <type>      :   "specify the file type"
  * ```
  */
