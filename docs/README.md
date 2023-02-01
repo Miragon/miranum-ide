@@ -23,7 +23,8 @@ deployment.
 
     .
     ├── miranum-cli
-    |     └── src ... (contains the cli-tool)
+    |     ├── src ... (contains the cli-tool)
+    |     └── tests ... (contains the cli-e2e-tests)
     ├── miranum-console
     |     └── src ... (contains the vs-code extension)
     └── miranum-console-webview

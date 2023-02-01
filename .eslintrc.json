@@ -27,6 +27,16 @@
               }
             ]
           }
+        ],
+        "@typescript-eslint/quotes": [
+          "error",
+          "double",
+          {
+            "allowTemplateLiterals": true
+          }
+        ],
+        "@typescript-eslint/indent": [
+          "error", 4
         ]
       }
     },

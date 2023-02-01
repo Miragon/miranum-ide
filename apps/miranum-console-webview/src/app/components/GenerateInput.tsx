@@ -56,7 +56,7 @@ const GenerateInput: React.FC<Props> = props => {
                 <Description/>
             </Avatar>
             <Typography component="h1" variant="h5">
-                Neue Datei generieren
+                Generate new file
             </Typography>
             <Box component="form" noValidate sx={{mt: 1}}>
                 <TextField
@@ -76,7 +76,7 @@ const GenerateInput: React.FC<Props> = props => {
                     helperText={(name === '' && pressed)? 'You have to insert a name!':' '}
                 />
                 <FormControl fullWidth required>
-                    <InputLabel id="typeLabel">Typ</InputLabel>
+                    <InputLabel id="typeLabel">Type</InputLabel>
                     <Select
                         id="type"
                         labelId="typeLabel"
@@ -110,9 +110,9 @@ const GenerateInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{mt: 3, mb: 2}}
-                >generieren</Button>
+                >generate</Button>
+                {error !== '' && <Typography variant="h6" color="red" textAlign="center">{error}</Typography>}
             </Box>
-            {error !== '' && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
         </FormControl>
     );
 }

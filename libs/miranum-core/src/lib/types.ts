@@ -15,8 +15,14 @@ export interface FileDetails {
 export interface MiranumConfig {
     projectVersion: string,
     name: string;
-    workspace: object;
+    workspace: MiranumWorkspace[];
     deployment: MiranumDeploymentPlugin[];
+}
+
+export interface MiranumWorkspace {
+    type: string;
+    path: string;
+    extension: string;
 }
 
 export interface MiranumDeploymentPlugin {
@@ -27,11 +33,11 @@ export interface MiranumDeploymentPlugin {
 
 export interface MiranumGeneratorPlugin {
     type: string;
-    fileExtension: string;
+    defaultFileExtension: string;
     template: string;
     basePath: string | undefined;
     defaultData: object;
-    generate(name: string, project: string, pathInProject?: string): Promise<Artifact>
+    generate(name: string, project: string, extension?: string, pathInProject?: string): Promise<Artifact>
 }
 
 export interface MiranumDeploymentTarget {

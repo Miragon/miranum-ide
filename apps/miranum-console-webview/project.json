@@ -4,7 +4,7 @@
   "sourceRoot": "/src",
   "projectType": "application",
   "targets": {
-    "watch": {
+    "observe": {
       "executor": "@nrwl/webpack:webpack",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
@@ -20,7 +20,7 @@
         "tsConfig": "apps/miranum-console-webview/tsconfig.app.json",
         "styles": ["apps/miranum-console-webview/src/styles.css"],
         "scripts": [],
-        "webpackConfig": "@nrwl/react/plugins/webpack"
+        "webpackConfig": "apps/miranum-console-webview/custom-webpack.config.js"
       },
       "configurations": {
         "development": {

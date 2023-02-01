@@ -9,14 +9,14 @@ interface FileHelper {
 }
 
 const filesToGenerate: FileHelper[] = [
-    {name: "my-process", type: "bpmn", extension: "bpmn", dir: ""},
-    {name: "my-decision-table", type: "dmn", extension: "dmn", dir: ""},
-    {name: "my-form", type: "form", extension: "form", dir: "forms"},
-    {name: "my-config", type: "config", extension: "config", dir: "configs"},
-    {name: "my-element-template", type: "element-template", extension: "json", dir: "element-templates"},
-    {name: "miranum", type: "miranum.json", extension: "json", dir: ""},
-    {name: "README", type: "README.md", extension: "md", dir: ""},
-    {name: " ", type: ".gitkeep", extension: "gitkeep", dir: "element-templates"}
+    {name: "my-process", type: "bpmn", extension: ".bpmn", dir: ""},
+    {name: "my-decision-table", type: "dmn", extension: ".dmn", dir: ""},
+    {name: "my-form", type: "form", extension: ".form", dir: "forms"},
+    {name: "my-config", type: "config", extension: ".config.json", dir: "configs"},
+    {name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates"},
+    {name: "miranum", type: "miranum.json", extension: ".json", dir: ""},
+    {name: "README", type: "README.md", extension: ".md", dir: ""},
+    {name: " ", type: ".gitkeep", extension: ".gitkeep", dir: "element-templates"}
 ];
 
 describe("generators with miranum-core", () => {
@@ -28,9 +28,19 @@ describe("generators with miranum-core", () => {
             const artifact = await generator.generate(file.name, "test-project");
             compareArtifactFile(artifact, file);
             expect(artifact.project).toEqual("test-project");
-            expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}.${file.extension}`.replace("//", "/"));
+            expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}${file.extension}`.replace("//", "/"));
         });
     }
+
+    it(`generator should work with custom file-extensions`, async () => {
+        const file: FileHelper = {name: "my-form", type: "form", extension: ".random.extension", dir: "forms"};
+        const generator = getGenerator(file.type);
+
+        const artifact = await generator.generate(file.name, "test-project", file.extension);
+        compareArtifactFile(artifact, file);
+        expect(artifact.project).toEqual("test-project");
+        expect(artifact.file.pathInProject).toEqual(`/${file.dir}/${file.name}${file.extension}`.replace("//", "/"));
+    });
 });
 
 describe("generators without miranum-core", () => {
@@ -38,9 +48,9 @@ describe("generators without miranum-core", () => {
         it(`${file.type} generator should work`, async () => {
             const generator = getGenerator(file.type);
 
-            const artifact = await generator.generate(file.name, "", "");
+            const artifact = await generator.generate(file.name, "", file.extension, "");
             compareArtifactFile(artifact, file);
-            expect(artifact.file.pathInProject).toEqual(`/${file.name}.${file.extension}`);
+            expect(artifact.file.pathInProject).toEqual(`/${file.name}${file.extension}`);
         });
     }
 })
