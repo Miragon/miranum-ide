@@ -1,4 +1,4 @@
-import {deployAllFiles, deployFileCommand } from "../src/app/deployment/api"
+import {deployAllFiles, deployFile } from "../src/app/deployment/api"
 import {filesToDeploy, pathToProject, shouldNotWork, sleep} from "./testHelpers";
 // import axios from 'axios';
 // import * as colors from "colors";
@@ -48,7 +48,7 @@ describe("deploy files", () => {
     for (const file of filesToDeploy) {
         it(`${file.type} should work`, async () => {
             // const logSpy = jest.spyOn(console, 'log');
-            const program = deployFileCommand();
+            const program = deployFile();
             program.parse(["node", appPath, "deploy-file", "--file", file.path, "--target", target, "--type", file.type]);
 
             await sleep(1500);
@@ -62,21 +62,21 @@ describe("deploy files", () => {
 
     it(`should not work, due to wrong type`, async () => {
         const miranumJson = {path: "resources/my-process-automation-project/miranum.json", type: "json"}
-        shouldNotWork(deployFileCommand(), "deploy-file",
+        shouldNotWork(deployFile(), "deploy-file",
             ["node", appPath, "deploy-file", "--file", miranumJson.path, "--target", target, "--type", miranumJson.type],
             "type must be either bpmn, dmn, form or config"
         );
     });
 
     it("should not work, due to unknown option", () => {
-        shouldNotWork(deployFileCommand(), "deploy-file",
+        shouldNotWork(deployFile(), "deploy-file",
             ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--target", target, "--type", filesToDeploy[0].type, "--randomArgument"],
             "error: unknown option '--randomArgument'"
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
-        shouldNotWork(deployFileCommand(), "deploy-file",
+        shouldNotWork(deployFile(), "deploy-file",
             ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--type", filesToDeploy[0].type],
             "error: required option '-t, --target <target>' not specified"
         );

@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { deployAllFiles, deployFileCommand } from "./app/deployment/api";
+import { deployAllFiles, deployFile } from "./app/deployment/api";
 import { generateFile, generateProject } from "./app/generate/api";
 import * as colors from "colors";
 
@@ -23,8 +23,8 @@ program
 `))
     .version("0.0.1");
 
-program.addCommand(deployFileCommand());
+program.addCommand(deployFile());
 program.addCommand(deployAllFiles());
-program.addCommand(generateFile())
-program.addCommand(generateProject())
+program.addCommand(generateFile());
+program.addCommand(generateProject());
 program.parse();

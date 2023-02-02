@@ -1,6 +1,6 @@
 {
   "projectVersion": "1.0.0",
-  "name": "project-template",
+  "name": "example-process",
   "workspace": [
     { "type": "bpmn", "path": "", "extension": ".bpmn" },
     { "type": "dmn", "path": "", "extension": ".dmn" },
@@ -18,11 +18,7 @@
         },
         {
           "name": "dev",
-          "url": "http://localhost:8080"
-        },
-        {
-          "name": "test",
-          "url": "http://localhost:8080"
+          "url": "http://localhost:8090"
         }
       ]
     }
