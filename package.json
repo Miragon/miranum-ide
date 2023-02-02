@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npx nx run-many --target build --all --prod",
+    "build": "npx nx run-many --target build --all --prod && npm run doc",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
     "lint": "npx nx run-many --target lint --all  --parallel",
     "doc": "typedoc --options ./docs/generated/typedoc.json",
