@@ -55,8 +55,8 @@ const GenerateInput: React.FC<Props> = props => {
             <Avatar sx={{m: 1, bgcolor: 'secondary.main'}}>
                 <Description/>
             </Avatar>
-            <Typography component="h1" variant="h5">
-                Generate new file
+            <Typography component="h2" variant="h5">
+                GENERATE A NEW FILE
             </Typography>
             <Box component="form" noValidate sx={{mt: 1}}>
                 <TextField

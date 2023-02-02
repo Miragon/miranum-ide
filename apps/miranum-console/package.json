@@ -100,7 +100,7 @@
     "viewsWelcome": [
 			{
 				"view": "commands",
-				"contents": "[Generate new file](command:miranum.generateFile) \n [Generate new project](command:miranum.generateProject)"
+				"contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
 			}
     ],
     "menus": {

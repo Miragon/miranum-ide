@@ -51,8 +51,8 @@ const GenerateProjectInput: React.FC<Props> = props => {
             <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
                 <CreateNewFolder />
             </Avatar>
-            <Typography component="h1" variant="h5">
-                    generate new project
+            <Typography component="h2" variant="h5">
+                    GENERATE A NEW PROJECT
             </Typography>
             <Box component="form" noValidate sx={{ mt: 1 }}>
                 <TextField
