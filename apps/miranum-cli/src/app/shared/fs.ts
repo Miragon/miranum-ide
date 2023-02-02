@@ -40,8 +40,7 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
                 "size": size
             }
         }
-    }
-    catch {
+    } catch {
         throw new Error(`Path ${pathToFile} is a directory. Provide a path to a file.`);
     }
     throw new Error(`File not found on path ${pathToFile}`);
@@ -58,15 +57,14 @@ export async function getFiles(pathToDirectory: string, supportedFileExtensions:
             // check if file is file and file has supported file extension
             if (fileStat.isFile() && file.includes(supportedFileExtensions) && file !== "miranum.json") {
                 files.push(await getFile(pathToFile));
-            }
-            else if (fileStat.isDirectory()) {
+            } else if (fileStat.isDirectory()) {
                 // search for files in subdir with recursive call
                 files.push(...(await getFiles(pathToFile, supportedFileExtensions)));
             }
             // do nothing with unsupported files
         }
         return files;
-    }  catch(error) {
+    }  catch (error) {
         throw new Error(`File not found on path ${pathToDirectory}`);
     }
 }
