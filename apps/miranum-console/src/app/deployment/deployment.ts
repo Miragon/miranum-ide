@@ -30,7 +30,7 @@ export class Deployment {
         try {
             for (const file of files) {
                 const filePath = vscode.Uri.file(path.fsPath + "/" + file[0]);
-                if (file[1] != 1) {
+                if (file[1] !== 1) {
                     //going through sub-folders
                     artifacts.push(...(await this.getArtifacts(filePath)));
                 } else {

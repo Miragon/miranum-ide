@@ -15,7 +15,7 @@ export function App() {
 
     window.addEventListener('message', event => {
         const message = event.data;
-        if(message.command) {
+        if (message.command) {
             setView(message.command);
             switch (message.command) {
                 case 'generateFile':
@@ -33,6 +33,7 @@ export function App() {
         <ThemeProvider theme={theme}>
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {view === "generateFile" && <GenerateInput currentPath={currentPath} name={name} type={type} config={config!}/>}
                 {view === "generateProject" && <GenerateProjectInput currentPath={currentPath} name={name}/>}
             </Container>

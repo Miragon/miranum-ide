@@ -37,42 +37,42 @@
 		"commands": [
 			{
 				"command": "miranum.deploy.local",
-				"title": "deploy local",
+				"title": "Deploy file to local environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deploy.dev",
-				"title": "deploy dev",
+				"title": "Deploy file to dev environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deploy.test",
-				"title": "deploy test",
+				"title": "Deploy file to test environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deployAll.local",
-				"title": "Deploy all to local",
+				"title": "Deploy directory to local environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deployAll.dev",
-				"title": "Deploy all to dev",
+				"title": "Deploy directory to dev environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.deployAll.test",
-				"title": "Deploy all to test",
+				"title": "Deploy directory to test environment",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.generateFile",
-				"title": "generateFile",
+				"title": "Generate new file",
 				"category": "Miranum"
 			},
 			{
 				"command": "miranum.generateProject",
-				"title": "generateProject",
+				"title": "Generate new project",
 				"category": "Miranum"
 			}
 		],
@@ -100,7 +100,7 @@
     "viewsWelcome": [
 			{
 				"view": "commands",
-				"contents": "[generate file](command:miranum.generateFile) \n [generate project](command:miranum.generateProject)"
+				"contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
 			}
     ],
     "menus": {

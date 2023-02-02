@@ -18,11 +18,11 @@ const GenerateInput: React.FC<Props> = props => {
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
-    const [error, setError] = useState<string>("")
+    const [error, setError] = useState<string>("");
     const inputChange = useVsMessage("changedInput");
     const sendArtifactMessage = useVsMessage("generateArtifact");
     const digiwfLib = useMemo(() => {
-        return new MiranumCore(props.config)
+        return new MiranumCore(props.config);
     }, [props.config]);
 
     useEffect(() => {
@@ -55,8 +55,8 @@ const GenerateInput: React.FC<Props> = props => {
             <Avatar sx={{m: 1, bgcolor: 'secondary.main'}}>
                 <Description/>
             </Avatar>
-            <Typography component="h1" variant="h5">
-                Generate File
+            <Typography component="h2" variant="h5">
+                GENERATE A NEW FILE
             </Typography>
             <Box component="form" noValidate sx={{mt: 1}}>
                 <TextField
@@ -110,7 +110,7 @@ const GenerateInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{mt: 3, mb: 2}}
-                >generate file</Button>
+                >generate</Button>
                 {error !== '' && <Typography variant="h6" color="red" textAlign="center">{error}</Typography>}
             </Box>
         </FormControl>

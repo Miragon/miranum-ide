@@ -51,8 +51,8 @@ const GenerateProjectInput: React.FC<Props> = props => {
             <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
                 <CreateNewFolder />
             </Avatar>
-            <Typography component="h1" variant="h5">
-                    Generate Project
+            <Typography component="h2" variant="h5">
+                    GENERATE A NEW PROJECT
             </Typography>
             <Box component="form" noValidate sx={{ mt: 1 }}>
                 <TextField
@@ -84,7 +84,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{ mt: 3, mb: 2 }}
-                >generate project</Button>
+                >generate</Button>
             </Box>
             {error !== "" && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
         </FormControl>
