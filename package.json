@@ -1,6 +1,6 @@
 {
   "name": "miranum-ide",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "scripts": {
     "build": "npx nx run-many --target build --all --prod && npm run doc",
