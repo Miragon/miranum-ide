@@ -1,0 +1,67 @@
+{
+  "name": "miranum-forms-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-forms-webview/src",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/vite:build",
+      "options": {
+        "outputPath": "dist/apps/miranum-forms-webview"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production",
+          "filenameHashing": true,
+          "productionSourceMap": true,
+          "css": {
+            "extract": true,
+            "sourceMap": false
+          }
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/vite:dev-server",
+      "options": {
+        "buildTarget": "miranum-forms-webview:build"
+      },
+      "configurations": {
+        "production": {
+          "browserTarget": "miranum-forms-webview:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-forms-webview/**/*.{ts,tsx,vue}"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/miranum-forms-webview/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "preview": {
+      "executor": "@nrwl/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-forms-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-forms-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-forms-webview:build:production"
+        }
+      }
+    }
+  },
+  "tags": []
+}
