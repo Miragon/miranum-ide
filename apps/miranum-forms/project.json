@@ -4,43 +4,16 @@
   "sourceRoot": "apps/miranum-forms/src",
   "projectType": "application",
   "targets": {
-    "build": {
-      "executor": "@nrwl/esbuild:esbuild",
-      "outputs": ["{options.outputPath}"],
+    "observe": {
+      "executor": "@nrwl/vite:build",
       "options": {
+        "watch": {
+          "wtf": true
+        },
         "outputPath": "dist/apps/miranum-forms",
-        "format": ["cjs"],
-        "main": "apps/miranum-forms/src/main.ts",
-        "tsConfig": "apps/miranum-forms/tsconfig.app.json",
-        "assets": ["apps/miranum-forms/src/assets"]
-      }
-    },
-    "serve": {
-      "executor": "@nrwl/js:node",
-      "options": {
-        "buildTarget": "miranum-forms:build"
-      },
-      "configurations": {
-        "production": {
-          "buildTarget": "miranum-forms:build:production"
-        }
-      }
-    },
-    "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["apps/miranum-forms/**/*.ts"]
-      }
-    },
-    "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "apps/miranum-forms/jest.config.ts",
-        "passWithNoTests": true
+        "configFile": "apps/miranum-forms/vite.config.ts",
+        "sourcemap": false
       }
     }
-  },
-  "tags": []
+  }
 }

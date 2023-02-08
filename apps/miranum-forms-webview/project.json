@@ -4,6 +4,17 @@
   "projectType": "application",
   "sourceRoot": "apps/miranum-forms-webview/src",
   "targets": {
+    "observe": {
+      "executor": "@nrwl/vite:build",
+      "options": {
+        "watch": {
+          "wtf": true
+        },
+        "outputPath": "dist/apps/miranum-forms-webview",
+        "configFile": "apps/miranum-forms-webview/vite.config.ts",
+        "sourcemap": false
+      }
+    },
     "build": {
       "executor": "@nrwl/vite:build",
       "options": {
