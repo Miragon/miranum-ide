@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 
-import viteTsConfigPaths from "vite-tsconfig-paths";
 import {createVuePlugin} from "vite-plugin-vue2";
 import path from 'path';
 import {viteStaticCopy} from 'vite-plugin-static-copy'
@@ -14,8 +13,8 @@ export default defineConfig({
     resolve: {
         alias: [
             {
-                find: '@/',
-                replacement: `${path.resolve(__dirname, '.')}/`,
+                find: '@',
+                replacement: path.resolve(__dirname, './src'),
             },
         ],
     },
@@ -33,10 +32,7 @@ export default defineConfig({
                 {src: 'node_modules/@mdi/font/css/**', dest: 'assets/css/'},
                 {src: 'node_modules/@mdi/font/fonts/**', dest: 'assets/fonts/'}
             ]
-        }),
-        viteTsConfigPaths({
-            root: "../../",
-        }),
+        })
     ],
     build: {
         target: 'es2021',

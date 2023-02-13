@@ -3,6 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-forms/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "miranum-forms-webview"
+  ],
   "targets": {
     "observe": {
       "executor": "@nrwl/vite:build",

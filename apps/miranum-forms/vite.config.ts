@@ -1,6 +1,5 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
-import ViteTsConfigPathsPlugin from "vite-tsconfig-paths";
 
 export default defineConfig({
     build: {
@@ -17,9 +16,5 @@ export default defineConfig({
             ],
         },
     },
-    plugins: [
-        ViteTsConfigPathsPlugin({
-            root: "../../",
-        }),
-    ],
+    plugins: [],
 });
