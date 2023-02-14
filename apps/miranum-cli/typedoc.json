@@ -1,0 +1,14 @@
+{
+  "entryPoints": [
+    "src/app/deployment/api.ts",
+    "miranum-cli/src/app/generate/api.ts"
+  ],
+  "githubPages": false,
+  "excludeNotDocumented": true,
+  "disableSources": true,
+  "tsconfig": "tsconfig.json",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "name": "generate"
+}
