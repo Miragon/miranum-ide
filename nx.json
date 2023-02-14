@@ -30,6 +30,12 @@
       "dependsOn": [
         "^build"
       ]
+    },
+    "test": {
+      "inputs": [
+        "default",
+        "^default"
+      ]
     }
   },
   "workspaceLayout": {
