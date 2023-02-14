@@ -29,20 +29,21 @@ export default defineConfig({
         }),
         viteStaticCopy({
             targets: [
-                {src: 'node_modules/@mdi/font/css/**', dest: 'assets/css/'},
-                {src: 'node_modules/@mdi/font/fonts/**', dest: 'assets/fonts/'}
+                {src: '../../node_modules/@mdi/font/css/**', dest: 'css/'},
+                {src: '../../node_modules/@mdi/font/fonts/**', dest: 'fonts/'}
             ]
         })
     ],
     build: {
         target: 'es2021',
         commonjsOptions: {transformMixedEsModules: true},
-        lib: {
-            entry: 'src/main.ts',
-            name: 'webview',
-            fileName: 'webview',
+        rollupOptions: {
+            output: {
+                // don't hash the name of the output file (index.js)
+                entryFileNames: `[name].js`,
+                assetFileNames: `[name].[ext]`,
+            },
         },
-        minify: 'esbuild',
     },
     define: {
         "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),

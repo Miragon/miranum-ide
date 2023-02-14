@@ -7,16 +7,110 @@
     "miranum-forms-webview"
   ],
   "targets": {
-    "observe": {
-      "executor": "@nrwl/vite:build",
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
       "options": {
-        "watch": {
-          "wtf": true
-        },
+        "commands": [
+          {
+            "command": "npx nx observe miranum-forms",
+            "prefix": "miranum-forms",
+            "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-forms-webview",
+            "prefix": "miranum-forms-webview",
+            "color": "red"
+          }
+        ]
+      }
+    },
+    "observe": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
         "outputPath": "dist/apps/miranum-forms",
-        "configFile": "apps/miranum-forms/vite.config.ts",
-        "sourcemap": false
+        "deleteOutputPath": false,
+        "main": "apps/miranum-forms/src/main.ts",
+        "tsConfig": "apps/miranum-forms/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-forms/custom-webpack.config.js",
+        "assets": [
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": "images/logo_miranum-forms.png", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-forms/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false
+        }
+      }
+    },
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miranum-forms",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-forms/src/main.ts",
+        "tsConfig": "apps/miranum-forms/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-forms/custom-webpack.config.js",
+        "assets": [
+          { "glob": "images/logo_miranum-forms.png", "input": "./", "output": "/assets" },
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": "images/kometLogo.png", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-forms/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "sourceMap": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/miranum-forms/src/environments/environment.ts",
+              "with": "apps/miranum-forms/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/node:node",
+      "options": {
+        "buildTarget": "miranum-forms:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "miranum-forms:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-forms/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/miranum-forms"],
+      "options": {
+        "jestConfig": "apps/miranum-forms/jest.config.ts",
+        "passWithNoTests": true
       }
     }
-  }
+  },
+  "tags": []
 }

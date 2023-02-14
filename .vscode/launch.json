@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Miranum-Console",
+      "name": "Run miranum-console",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -14,16 +14,16 @@
       ]
     },
     {
-      "name": "Miranum-Console Extension Tests",
+      "name": "Run miranum-forms",
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-forms"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-console"
-      ],
-      "preLaunchTask": "${defaultBuildTask}"
+        "${workspaceFolder}/dist/apps/miranum-forms"
+      ]
     }
   ]
 }

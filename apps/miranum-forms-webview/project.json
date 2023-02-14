@@ -7,28 +7,32 @@
     "observe": {
       "executor": "@nrwl/vite:build",
       "options": {
-        "watch": {
-          "wtf": true
-        },
-        "outputPath": "dist/apps/miranum-forms-webview",
+        "outputPath": "dist/apps/miranum-forms/miranum-forms-webview",
         "configFile": "apps/miranum-forms-webview/vite.config.ts",
-        "sourcemap": false
+        "sourcemap": false,
+        "deleteOutputPath": false,
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false,
+          "vendorChunk": true
+        }
       }
     },
     "build": {
       "executor": "@nrwl/vite:build",
+      "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/miranum-forms-webview"
+        "outputPath": "dist/apps/miranum-forms/miranum-forms-webview"
       },
       "configurations": {
         "production": {
           "mode": "production",
           "filenameHashing": true,
-          "productionSourceMap": true,
-          "css": {
-            "extract": true,
-            "sourceMap": false
-          }
+          "productionSourceMap": true
         }
       }
     },

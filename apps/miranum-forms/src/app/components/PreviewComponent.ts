@@ -16,7 +16,7 @@ export class PreviewComponent extends Preview<Schema> {
     /** Object that contains information for the webview. */
     protected readonly webviewOptions: WebviewOptions = {
         title: "JSON Schema Renderer",
-        icon: vscode.Uri.joinPath(this.extensionUri, "resources/logo_blau.png"),
+        icon: vscode.Uri.joinPath(this.extensionUri, "assets/logo_miranum-forms.png"),
         msgType: PreviewComponent.viewType + ".updateFromExtension",
     };
 

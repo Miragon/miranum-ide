@@ -94,21 +94,7 @@ export function getDefault(): Schema {
  * @returns a string which represents the html content
  */
 export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, initialContent: Schema, mode: string): string {
-    const vueAppUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        extensionUri, "dist", "client", "client.mjs",
-    ));
-
-    const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        extensionUri, "resources", "css", "reset.css",
-    ));
-
-    const styleAppUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        extensionUri, "dist", "client", "style.css",
-    ));
-
-    const fontAppUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        extensionUri, "dist", "client", "assets", "css", "materialdesignicons.min.css",
-    ));
+    const pathToWebview = vscode.Uri.joinPath(extensionUri, "miranum-forms-webview");
 
     const nonce = getNonce();
 
@@ -129,9 +115,8 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-                <link href="${styleResetUri}" rel="stylesheet" type="text/css" />
-                <link href="${styleAppUri}" rel="stylesheet" type="text/css" />
-                <link href="${fontAppUri}" rel="stylesheet" type="text/css" />
+                <link href="${pathToWebview}/css/materialdesignicons.min.css" type="text/css" />
+                <link href="${pathToWebview}/index.css" type="text/css" />
 
                 <title>Json Schema Builder</title>
             </head>
@@ -146,7 +131,7 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
                         mode: '${mode}'
                     });
                 </script>
-                <script type="text/javascript" src="${vueAppUri}" nonce="${nonce}"></script>
+                <script type="text/javascript" src="${pathToWebview}/index.js" nonce="${nonce}"></script>
             </body>
             </html>
         `;
