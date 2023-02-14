@@ -9,7 +9,10 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
-        "outputPath": "dist/apps/miranum-console-webview"
+        "outputPath": "dist/apps/miranum-console/miranum-console-webview",
+        "configFile": "apps/miranum-console-webview/vite.config.ts",
+        "deleteOutputPath": false,
+        "watch": true
       },
       "configurations": {
         "development": {
