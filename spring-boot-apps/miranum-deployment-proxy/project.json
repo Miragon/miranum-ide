@@ -13,7 +13,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-proxy-example-0.0.2.jar"
+          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-proxy-example.jar"
         ],
         "cwd": "spring-boot-apps/miranum-deployment-proxy"
       }
