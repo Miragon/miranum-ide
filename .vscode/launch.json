@@ -12,6 +12,18 @@
       "outFiles": [
         "${workspaceFolder}/dist/apps/miranum-console"
       ]
+    },
+    {
+      "name": "Run miranum-forms",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-forms"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/apps/miranum-forms"
+      ]
     }
   ]
 }
