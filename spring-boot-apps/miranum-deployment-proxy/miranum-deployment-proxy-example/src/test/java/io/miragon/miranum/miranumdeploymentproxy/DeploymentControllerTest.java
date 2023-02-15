@@ -32,7 +32,7 @@ class DeploymentControllerTest {
     private WebApplicationContext context;
 
     @Autowired
-    private YamlProperties properties;
+    private Properties properties;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private MockMvc mockMvc;

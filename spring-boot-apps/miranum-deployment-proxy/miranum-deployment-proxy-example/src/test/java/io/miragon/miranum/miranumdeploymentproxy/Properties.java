@@ -8,11 +8,8 @@ import java.util.List;
 
 @Configuration
 @ConfigurationProperties(prefix = "yaml")
-@PropertySource(value = "classpath:application-test.yaml", factory = YamlPropertySourceFactory.class)
-public class YamlProperties {
-
+@PropertySource(value = "classpath:application-test.yaml", factory = PropertyFactory.class)
+public class Properties {
     private String name;
-
     private List<String> aliases;
-
 }

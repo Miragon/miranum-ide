@@ -9,8 +9,7 @@ import org.springframework.core.io.support.PropertySourceFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-public class YamlPropertySourceFactory implements PropertySourceFactory {
-
+public class PropertyFactory implements PropertySourceFactory {
     @Override
     public PropertySource<?> createPropertySource(String name, EncodedResource encodedResource)
         throws IOException {
