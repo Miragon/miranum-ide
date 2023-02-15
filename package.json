@@ -6,7 +6,7 @@
     "build": "npx nx run-many --target build --all --prod && npm run doc",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
     "lint": "npx nx run-many --target lint --all  --parallel",
-    "doc": "typedoc --options ./docs/generated/typedoc.json",
+    "doc": "npx nx run-many --target generateDocs --parallel",
     "generate-api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o libs/digiwf-deployment-plugin-rest/src/lib/openapi --additional-properties=supportsES6=true,withInterfaces=true",
     "postinstall": "node node_modules/@nx-plus/vue/patch-nx-dep-graph.js"
   },
@@ -44,6 +44,7 @@
     "@typescript-eslint/eslint-plugin": "5.48.2",
     "@typescript-eslint/parser": "5.48.2",
     "@vitest/ui": "^0.25.8",
+    "@vitejs/plugin-react": "^3.0.0",
     "@vscode/test-electron": "^2.1.5",
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
@@ -109,4 +110,3 @@
     "vuetify": "^2.6.0"
   }
 }
-
