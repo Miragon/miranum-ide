@@ -2,7 +2,7 @@ import GenerateInput from "./components/GenerateInput";
 import GenerateProjectInput from "./components/GenerateProjectInput";
 import { Container, createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import * as React from "react";
-import {useState} from "react";
+import { useState } from "react";
 
 const theme = createTheme();
 
@@ -13,17 +13,17 @@ export function App() {
     const [currentPath, setCurrentPath] = useState<string>("");
     const [config, setConfig] = useState();
 
-    window.addEventListener('message', event => {
+    window.addEventListener("message", event => {
         const message = event.data;
         if (message.command) {
             setView(message.command);
             switch (message.command) {
-                case 'generateFile':
-                case 'generateProject':
+                case "generateFile":
+                case "generateProject":
                     setName(message.data.name);
                     setCurrentPath(message.data.currentPath);
                     setType(message.data.type);
-                    setConfig(message.data.processIDE);
+                    setConfig(message.data.miranumJson);
                     break;
             }
         }
@@ -34,7 +34,7 @@ export function App() {
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {view === "generateFile" && <GenerateInput currentPath={currentPath} name={name} type={type} config={config!}/>}
+                {view === "generateFile" && <GenerateInput currentPath={currentPath} name={name} type={type} config={config}/>}
                 {view === "generateProject" && <GenerateProjectInput currentPath={currentPath} name={name}/>}
             </Container>
         </ThemeProvider>
