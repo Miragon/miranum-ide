@@ -29,6 +29,7 @@ export default defineConfig({
         }),
         viteStaticCopy({
             targets: [
+                {src: './src/assets/reset.css', dest: 'css/'},
                 {src: '../../node_modules/@mdi/font/css/**', dest: 'css/'},
                 {src: '../../node_modules/@mdi/font/fonts/**', dest: 'fonts/'}
             ]

@@ -96,6 +96,11 @@ export function getDefault(): Schema {
 export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, initialContent: Schema, mode: string): string {
     const pathToWebview = vscode.Uri.joinPath(extensionUri, "miranum-forms-webview");
 
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.js"));
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.css"));
+    const resetUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "reset.css"));
+    const fontUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "materialdesignicons.min.css"));
+
     const nonce = getNonce();
 
     //TODO
@@ -115,8 +120,9 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-                <link href="${pathToWebview}/css/materialdesignicons.min.css" type="text/css" />
-                <link href="${pathToWebview}/index.css" type="text/css" />
+                <link href="${resetUri}" rel="stylesheet" type="text/css" />
+                <link href="${styleUri}" rel="stylesheet" type="text/css" />
+                <link href="${fontUri}" rel="stylesheet" type="text/css" />
 
                 <title>Json Schema Builder</title>
             </head>
@@ -131,7 +137,7 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
                         mode: '${mode}'
                     });
                 </script>
-                <script type="text/javascript" src="${pathToWebview}/index.js" nonce="${nonce}"></script>
+                <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>
             </body>
             </html>
         `;
