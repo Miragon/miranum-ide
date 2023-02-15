@@ -5,22 +5,14 @@
   "projectType": "application",
   "targets": {
     "observe": {
-      "executor": "@nrwl/webpack:webpack",
+      "executor": "@nrwl/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
-        "watch": true,
-        "compiler": "babel",
         "outputPath": "dist/apps/miranum-console/miranum-console-webview",
+        "configFile": "apps/miranum-console-webview/vite.config.ts",
         "deleteOutputPath": false,
-        "index": "apps/miranum-console-webview/src/index.html",
-        "baseHref": "/",
-        "main": "apps/miranum-console-webview/src/main.tsx",
-        "polyfills": "apps/miranum-console-webview/src/polyfills.ts",
-        "tsConfig": "apps/miranum-console-webview/tsconfig.app.json",
-        "styles": ["apps/miranum-console-webview/src/styles.css"],
-        "scripts": [],
-        "webpackConfig": "apps/miranum-console-webview/custom-webpack.config.js"
+        "watch": true
       },
       "configurations": {
         "development": {
@@ -32,21 +24,14 @@
       }
     },
     "build": {
-      "executor": "@nrwl/webpack:webpack",
+      "executor": "@nrwl/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "compiler": "babel",
         "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "deleteOutputPath": false,
-        "index": "apps/miranum-console-webview/src/index.html",
-        "baseHref": "/",
-        "main": "apps/miranum-console-webview/src/main.tsx",
-        "polyfills": "apps/miranum-console-webview/src/polyfills.ts",
-        "tsConfig": "apps/miranum-console-webview/tsconfig.app.json",
-        "styles": ["apps/miranum-console-webview/src/styles.css"],
-        "scripts": [],
-        "webpackConfig": "apps/miranum-console-webview/custom-webpack.config.js"
+        "configFile": "apps/miranum-console-webview/vite.config.ts",
+        "minify": true,
+        "deleteOutputPath": false
       },
       "configurations": {
         "development": {
@@ -72,7 +57,7 @@
       }
     },
     "serve": {
-      "executor": "@nrwl/webpack:dev-server",
+      "executor": "@nrwl/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "miranum-console-webview:build",
@@ -92,7 +77,9 @@
       "executor": "@nrwl/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"
+        ]
       }
     },
     "test": {
@@ -101,6 +88,21 @@
       "options": {
         "jestConfig": "apps/miranum-console-webview/jest.config.ts",
         "passWithNoTests": true
+      }
+    },
+    "preview": {
+      "executor": "@nrwl/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-console-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-console-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-console-webview:build:production"
+        }
       }
     }
   },
