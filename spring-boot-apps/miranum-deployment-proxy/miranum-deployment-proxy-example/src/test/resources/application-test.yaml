@@ -1,0 +1,9 @@
+io:
+    miragon:
+        miranum:
+            miranum-deployment-proxy:
+                deploymentHandlers:
+                    local: DryHandler
+                    dev: DryHandler
+                    test: DryHandler
+                    prod: DryHandler
