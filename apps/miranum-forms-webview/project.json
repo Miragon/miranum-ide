@@ -6,12 +6,12 @@
   "targets": {
     "observe": {
       "executor": "@nrwl/vite:build",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/miranum-forms/miranum-forms-webview",
-        "configFile": "apps/miranum-forms-webview/vite.config.ts",
-        "sourcemap": false,
+        "configFile": "aapps/miranum-forms-webview/vite.config.ts",
         "deleteOutputPath": false,
-        "watch": true
+        "watch": {}
       },
       "configurations": {
         "development": {
