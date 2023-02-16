@@ -9,7 +9,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/miranum-forms/miranum-forms-webview",
-        "configFile": "aapps/miranum-forms-webview/vite.config.ts",
+        "configFile": "apps/miranum-forms-webview/vite.config.ts",
         "deleteOutputPath": false,
         "watch": {}
       },
