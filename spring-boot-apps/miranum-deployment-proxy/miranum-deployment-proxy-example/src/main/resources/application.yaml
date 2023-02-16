@@ -1,0 +1,11 @@
+io:
+    miragon:
+        miranum:
+            miranum-deployment-proxy:
+                deploymentHandlers:
+                    local: DryHandler
+                    dev: RestHandler
+                    test: DryHandler
+                    prod: DryHandler
+        targets:
+            dev: 'http://localhost:39146'

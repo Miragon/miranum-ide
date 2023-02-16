@@ -60,6 +60,7 @@
                 <version>${maven.surfire.plugin.version}</version>
             </plugin>
         </plugins>
+        <finalName>${project.artifactId}</finalName>
     </build>
 
 
