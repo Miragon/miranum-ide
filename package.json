@@ -1,9 +1,9 @@
 {
   "name": "miranum-ide",
-  "version": "0.1.1",
+  "version": "0.4.0",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npx nx run-many --target build --all --prod && npm run doc",
+    "build": "npx nx run-many --target build --all --prod && node tools/scripts/set-version.js && npm run doc",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
     "lint": "npx nx run-many --target lint --all  --parallel",
     "doc": "npx nx run-many --target generateDocs --parallel",
