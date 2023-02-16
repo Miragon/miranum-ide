@@ -7,8 +7,6 @@ import {
     MiranumDeploymentTarget
 } from "@miranum-ide/miranum-core";
 import * as vscode from "vscode";
-import { GenerateProjectMessage } from "../generate/types";
-import { showErrorMessage } from "../shared/message";
 
 
 const fs = vscode.workspace.fs;
@@ -16,6 +14,12 @@ const fs = vscode.workspace.fs;
 export async function initMiranumCore() : Promise<MiranumCore> {
     try {
         const ws = vscode.workspace;
+
+        // In case you use miranum-console in a new window (without an active workspace folder)
+        if (!ws.workspaceFolders) {
+            return new MiranumCore();
+        }
+
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const miranumJSON = JSON.parse((await ws.fs.readFile(vscode.Uri.joinPath(ws.workspaceFolders[0].uri, "miranum.json"))).toString());
@@ -40,22 +44,17 @@ export async function saveFile(destination: string, fileContent: string): Promis
     await fs.writeFile(vscode.Uri.file(destination), new TextEncoder().encode(fileContent));
 }
 
-// TODO refactor this method
-// it should push into event store and trigger a new event
+
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-export function openFilePicker(window: any, userInputCache: GenerateProjectMessage, sendProjectMessage: any) {
-    window.showOpenDialog({
+export async function selectFiles(): Promise<{ path: string; }[]> {
+    const fileUris = await vscode.window.showOpenDialog({
         canSelectFolders: true,
         canSelectFiles: false,
         canSelectMany: false,
-    }).then( (fileUri: { path: string; }[]) => {
-        if (fileUri) {
-            userInputCache.path = fileUri[0].path;
-            sendProjectMessage();
-        } else {
-            showErrorMessage("Could not find selected Uri, please try again");
-        }
     });
+    const files: { path: string; }[] = [];
+    fileUris?.forEach(uri => files.push({ path: uri.path }));
+    return files;
 }
 
 export async function getArtifact(path: vscode.Uri, projectName?: string): Promise<Artifact> {

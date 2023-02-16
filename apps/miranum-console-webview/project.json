@@ -12,7 +12,7 @@
         "outputPath": "dist/apps/miranum-console/miranum-console-webview",
         "configFile": "apps/miranum-console-webview/vite.config.ts",
         "deleteOutputPath": false,
-        "watch": true
+        "watch": {}
       },
       "configurations": {
         "development": {

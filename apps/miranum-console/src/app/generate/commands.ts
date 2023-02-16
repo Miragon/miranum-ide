@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
 import { getWebviewHTML } from "../shared/webview";
-import { openFilePicker, saveFile } from "../shared/fs-helpers";
+import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";
 
+// TODO fixme
+// We should use proper event sourcing and rethink the architecture of this console
 export async function registerGenerateCommands(context: vscode.ExtensionContext, miranumCore: MiranumCore): Promise<vscode.Disposable[]> {
     const commands: vscode.Disposable[] = [];
     const pathToWebview = vscode.Uri.joinPath(context.extensionUri, "miranum-console-webview");
@@ -16,31 +18,42 @@ export async function registerGenerateCommands(context: vscode.ExtensionContext,
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                localResourceRoots: [pathToWebview]
+                localResourceRoots: [pathToWebview],
             },
         );
         panel.webview.html = getWebviewHTML(panel.webview, context.extensionUri);
 
-        // TODO implement event sourcing or proper caching
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const userInputCache: GenerateFileMessage = { name: "", type: "bpmn", path: path ? path.fsPath : (vscode.workspace.workspaceFolders[0].uri.path ?? "") };
-        // TODO split this into 2 events
-        const sendFileMessage = () => {
-            panel.webview.postMessage({
-                type: "show", //this is for later, to enable update events
-                command: "generateFile",
-                data: {
-                    name: userInputCache.name,
-                    type: userInputCache.type,
-                    currentPath: userInputCache.path,
-                    miranumJson: miranumCore.projectConfig,
-                },
-            });
+        const cache = {
+            name: "",
+            type: "",
+            path: "",
         };
 
-        //initialisation
-        sendFileMessage();
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
+        const sendEvent = (event: any) => {
+            panel.webview.postMessage(event);
+        };
+
+        // initialization
+
+        // path or workspacefolders may be undefined
+        if (path) {
+            cache.path = path.fsPath;
+        } else if (vscode.workspace.workspaceFolders) {
+            cache.path = vscode.workspace.workspaceFolders[0].uri.path;
+        }
+
+        // init event
+        sendEvent({
+            type: "show",
+            command: "generateFile",
+            data: {
+                name: cache.name,
+                type: cache.type,
+                currentPath: cache.path,
+                miranumJson: miranumCore.projectConfig,
+            },
+        });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -48,18 +61,45 @@ export async function registerGenerateCommands(context: vscode.ExtensionContext,
                     await generate(event.data.artifact, event.data.path);
                     break;
                 case "openFilePicker":
-                    openFilePicker(vscode.window, userInputCache, sendFileMessage);
+                    selectFiles()
+                        .then(files => {
+                            if (files.length > 0) {
+                                cache.path = files[0].path;
+                                sendEvent({
+                                    type: "show",
+                                    command: "generateFile",
+                                    data: {
+                                        name: cache.name,
+                                        type: cache.type,
+                                        currentPath: cache.path,
+                                        miranumJson: miranumCore.projectConfig,
+                                    },
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            showErrorMessage("Could not find selected file or path, please try again");
+                        });
                     break;
                 case "changedInput":
-                    userInputCache.name = event.data.name;
-                    userInputCache.type = event.data.type;
+                    cache.name = event.data.name;
+                    cache.type = event.data.type;
                     break;
             }
         });
 
         panel.onDidChangeViewState( () => {
             if (panel.visible) {
-                sendFileMessage();
+                sendEvent({
+                    type: "show",
+                    command: "generateFile",
+                    data: {
+                        name: cache.name,
+                        type: cache.type,
+                        currentPath: cache.path,
+                        miranumJson: miranumCore.projectConfig,
+                    },
+                });
             }
         });
     });
@@ -77,24 +117,34 @@ export async function registerGenerateCommands(context: vscode.ExtensionContext,
         );
         panel.webview.html = getWebviewHTML(panel.webview, context.extensionUri);
 
-        // TODO implement event sourcing or proper caching
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const userInputCache: GenerateProjectMessage = { name: "", path: path ? path.fsPath : (vscode.workspace.workspaceFolders[0].uri.path ?? "") };
-        // TODO split this into 2 events
-        const sendProjectMessage = () => {
-            panel.webview.postMessage({
-                type: "show",                   //this is for later, to enable update events
-                command: "generateProject",
-                data: {
-                    name: userInputCache.name,
-                    currentPath: userInputCache.path,
-                },
-            });
+        const cache = {
+            name: "",
+            path: "",
         };
 
-        //initialisation
-        sendProjectMessage();
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
+        const sendEvent = (event: any) => {
+            panel.webview.postMessage(event);
+        };
+
+        // initialization
+
+        // path or workspacefolders may be undefined
+        if (path) {
+            cache.path = path.fsPath;
+        } else if (vscode.workspace.workspaceFolders) {
+            cache.path = vscode.workspace.workspaceFolders[0].uri.path;
+        }
+
+        // init event
+        sendEvent({
+            type: "show",                   //this is for later, to enable update events
+            command: "generateProject",
+            data: {
+                name: cache.name,
+                currentPath: cache.path,
+            },
+        });
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
@@ -104,17 +154,40 @@ export async function registerGenerateCommands(context: vscode.ExtensionContext,
                     }
                     break;
                 case "openFilePicker":
-                    openFilePicker(vscode.window, userInputCache, sendProjectMessage);
+                    selectFiles()
+                        .then(files => {
+                            if (files.length > 0) {
+                                cache.path = files[0].path;
+                                sendEvent({
+                                    type: "show",
+                                    command: "generateProject",
+                                    data: {
+                                        name: cache.name,
+                                        currentPath: cache.path,
+                                    },
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            showErrorMessage("Could not find selected file or path, please try again");
+                        });
                     break;
                 case "changedInput":
-                    userInputCache.name = event.data.name;
+                    cache.name = event.data.name;
                     break;
             }
         });
 
         panel.onDidChangeViewState( () => {
             if (panel.visible) {
-                sendProjectMessage();
+                sendEvent({
+                    type: "show",
+                    command: "generateProject",
+                    data: {
+                        name: cache.name,
+                        currentPath: cache.path,
+                    },
+                });
             }
         });
     });
