@@ -1,7 +1,8 @@
 {
   "name": "miranum-console",
 	"displayName": "Miranum: Console",
-	"description": "",
+  "version": "0.1.0",
+  "description": "",
   "license": "Apache-2.0",
   "publisher": "miragon-gmbh",
   "repository": {
