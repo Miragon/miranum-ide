@@ -2,24 +2,23 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import {
     createMiranumCore,
-    MiranumDeploymentPlugin,
-    MiranumDeploymentPluginRest,
+    FileDetails,
     MiranumCore,
-    FileDetails
+    MiranumDeploymentPlugin,
+    MiranumDeploymentPluginRest
 } from "@miranum-ide/miranum-core";
 
 export async function mapProcessConfigToDigiwfLib(projectPath?: string): Promise<MiranumCore> {
     try {
         const p = projectPath ? `${projectPath}/miranum.json`.replace("//", "/") : "miranum.json";
-        const processIdeJson = await getFile(p);
-        const processIdeConfig = JSON.parse(processIdeJson.content);
+        const miranumJson = JSON.parse((await getFile(p)).content);
         const plugins: MiranumDeploymentPlugin[] = [];
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        processIdeConfig.deployment.forEach(deployment => {
+        miranumJson.deployment.forEach(deployment => {
             plugins.push(new MiranumDeploymentPluginRest(deployment.plugin, deployment.targetEnvironments));
         });
-        return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
+        return createMiranumCore(miranumJson.projectVersion, miranumJson.name, miranumJson.workspace, plugins);
     } catch (error) {
         return new MiranumCore();
     }
@@ -37,8 +36,8 @@ export async function getFile(pathToFile: string): Promise<FileDetails> {
                 "name": name,
                 "extension": ext,
                 "content": file.toString(),
-                "size": size
-            }
+                "size": size,
+            };
         }
     } catch {
         throw new Error(`Path ${pathToFile} is a directory. Provide a path to a file.`);
@@ -75,8 +74,8 @@ export async function saveFile(projectDir: string, pathInProject: string, fileCo
     try {
         await fs.access(projectPath);
     } catch {
-        await fs.mkdir(projectPath, {recursive: true});
+        await fs.mkdir(projectPath, { recursive: true });
     }
-    await fs.writeFile(`${projectDir}/${pathInProject}`.replace("//", "/"), fileContent, {flag: "w+"});
+    await fs.writeFile(`${projectDir}/${pathInProject}`.replace("//", "/"), fileContent, { flag: "w+" });
 }
 
