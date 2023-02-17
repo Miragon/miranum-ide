@@ -1,1 +1,130 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+    box-sizing: border-box;
+}
+
+body,
+html {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    height: 100%;
+    max-height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+#js-properties-panel {
+    width: 400px;
+}
+
+a:link {
+    text-decoration: none;
+}
+
+.content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+.content > .message {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    display: table;
+    font-size: 16px;
+    color: #111;
+}
+
+.content > .message .note {
+    vertical-align: middle;
+    text-align: center;
+    display: table-cell;
+}
+
+.content > .message.error .details {
+    max-width: 500px;
+    font-size: 12px;
+    margin: 20px auto;
+    text-align: left;
+    color: #BD2828;
+}
+
+.content > .message.error pre {
+    border: solid 1px #BD2828;
+    background: #fefafa;
+    padding: 10px;
+    color: #BD2828;
+}
+
+.content:not(.with-error) .error,
+.content.with-error .intro,
+.content.with-diagram .intro {
+    display: none;
+}
+
+.content .canvas {
+    width: 100%;
+}
+
+.content .canvas,
+.content .properties-panel-parent {
+    display: none;
+}
+
+.content.with-diagram .canvas,
+.content.with-diagram .properties-panel-parent {
+    display: block;
+}
+
+.properties-panel-parent {
+    border-left: 1px solid #ccc;
+    overflow: auto;
+}
+
+.properties-panel-parent:empty {
+    display: none;
+}
+
+.properties-panel-parent > .djs-properties-panel {
+    padding-bottom: 70px;
+    min-height: 100%;
+}
+
+
+/* reset css */
+html {
+    box-sizing: border-box;
+    font-size: 13px;
+    background-color: #fff;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul {
+    margin: 0;
+    padding: 0;
+    font-weight: normal;
+}
+
+body {
+    color: black;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}

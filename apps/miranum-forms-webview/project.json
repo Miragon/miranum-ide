@@ -25,6 +25,7 @@
     "build": {
       "executor": "@nrwl/vite:build",
       "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/miranum-forms/miranum-forms-webview"
       },
@@ -33,17 +34,6 @@
           "mode": "production",
           "filenameHashing": true,
           "productionSourceMap": true
-        }
-      }
-    },
-    "serve": {
-      "executor": "@nrwl/vite:dev-server",
-      "options": {
-        "buildTarget": "miranum-forms-webview:build"
-      },
-      "configurations": {
-        "production": {
-          "browserTarget": "miranum-forms-webview:build:production"
         }
       }
     },
@@ -62,21 +52,6 @@
         "passWithNoTests": true
       }
     },
-    "preview": {
-      "executor": "@nrwl/vite:preview-server",
-      "defaultConfiguration": "development",
-      "options": {
-        "buildTarget": "miranum-forms-webview:build"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "miranum-forms-webview:build:development"
-        },
-        "production": {
-          "buildTarget": "miranum-forms-webview:build:production"
-        }
-      }
-    }
   },
   "tags": []
 }

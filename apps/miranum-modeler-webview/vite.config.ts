@@ -1,42 +1,33 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 
-import viteTsConfigPaths from "vite-tsconfig-paths";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-webview",
 
-    server: {
-        port: 4200,
-        host: "localhost",
-    },
-
-    preview: {
-        port: 4300,
-        host: "localhost",
-    },
-
     plugins: [
-        viteTsConfigPaths({
-            root: "../../",
+        viteStaticCopy({
+            targets: [
+                { src: "node_modules/bpmn-js/dist/assets/bpmn-font/css/**", dest: "assets/bpmn-font/css/" },
+                { src: "node_modules/bpmn-js/dist/assets/bpmn-font/font/**", dest: "assets/bpmn-font/font/" },
+            ],
         }),
     ],
 
-    // Uncomment this if you are using workers.
-    // worker: {
-    //  plugins: [
-    //    viteTsConfigPaths({
-    //      root: "../../",
-    //    }),
-    //  ],
-    // },
-
-    test: {
-        globals: true,
-        cache: {
-            dir: "../../node_modules/.vitest",
+    build: {
+        target: "es2021",
+        commonjsOptions: { transformMixedEsModules: true },
+        rollupOptions: {
+            output: {
+                // don"t hash the name of the output file (index.js)
+                entryFileNames: `[name].js`,
+                assetFileNames: `[name].[ext]`,
+            },
         },
-        environment: "jsdom",
-        include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    },
+
+    define: {
+        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
     },
 });
