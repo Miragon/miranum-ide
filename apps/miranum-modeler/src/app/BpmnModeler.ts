@@ -159,22 +159,11 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     }
 
     private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, initialContent: string, files: FolderContent[]) {
+        const pathToWebview = vscode.Uri.joinPath(extensionUri, "miranum-modeler-webview");
 
-        const scriptApp = webview.asWebviewUri(vscode.Uri.joinPath(
-            extensionUri, "dist", "client", "client.mjs",
-        ));
-
-        const styleReset = webview.asWebviewUri(vscode.Uri.joinPath(
-            extensionUri, "resources", "css", "reset.css",
-        ));
-
-        const styleApp = webview.asWebviewUri(vscode.Uri.joinPath(
-            extensionUri, "dist", "client", "style.css",
-        ));
-
-        const fontBpmn = webview.asWebviewUri(vscode.Uri.joinPath(
-            extensionUri, "dist", "client", "assets", "bpmn-font", "css", "bpmn.css",
-        ));
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.js"));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.css"));
+        const fontBpmn = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"));
 
         const nonce = this.getNonce();
 
@@ -192,8 +181,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-                <link href="${styleReset}" rel="stylesheet" type="text/css" />
-                <link href="${styleApp}" rel="stylesheet" type="text/css" />
+                <link href="${styleUri}" rel="stylesheet" type="text/css" />
                 <link href="${fontBpmn}" rel="stylesheet" type="text/css" />
 
                 <title>Custom Texteditor Template</title>
@@ -226,7 +214,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     });
                 }
               </script>
-              <script type="text/javascript" src="${scriptApp}" nonce="${nonce}"></script>
+              <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>
             </body>
             </html>
         `;

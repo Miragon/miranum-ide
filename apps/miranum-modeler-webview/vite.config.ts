@@ -9,8 +9,8 @@ export default defineConfig({
     plugins: [
         viteStaticCopy({
             targets: [
-                { src: "node_modules/bpmn-js/dist/assets/bpmn-font/css/**", dest: "assets/bpmn-font/css/" },
-                { src: "node_modules/bpmn-js/dist/assets/bpmn-font/font/**", dest: "assets/bpmn-font/font/" },
+                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**", dest: "css/" },
+                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**", dest: "fonts/" },
             ],
         }),
     ],
