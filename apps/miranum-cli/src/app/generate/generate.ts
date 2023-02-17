@@ -28,7 +28,7 @@ export class ProjectGenerator {
             await saveFile(path, artifact.file.pathInProject, artifact.file.content);
 
             let fileName = artifact.file.pathInProject;
-            fileName = (fileName.charAt(0) === '/') ? fileName.slice(1, fileName.length) : fileName;
+            fileName = (fileName.charAt(0) === "/") ? fileName.slice(1, fileName.length) : fileName;
             console.log(colors.green.bold("SAVED ") + fileName);
         } catch (err) {
             console.log(colors.red.bold("FAILED ") + ` creating file ${artifact.file.name} with -> ${err}`);

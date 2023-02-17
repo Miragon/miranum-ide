@@ -1,0 +1,72 @@
+{
+  "name": "miranum-modeler-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-modeler-webview/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nrwl/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/miranum-modeler-webview"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-modeler-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-modeler-webview:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "miranum-modeler-webview:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nrwl/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-modeler-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-modeler-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-modeler-webview:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nrwl/vite:test",
+      "outputs": ["coverage/apps/miranum-modeler-webview"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/miranum-modeler-webview"
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-modeler-webview/**/*.ts"]
+      }
+    }
+  }
+}

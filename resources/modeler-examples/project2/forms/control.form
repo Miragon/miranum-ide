@@ -1,0 +1,76 @@
+{
+    "key": "Approvement_Form",
+    "schema": {
+        "key": "MyStartForm",
+        "type": "object",
+        "allOf": [
+            {
+                "title": "Input",
+                "description": "",
+                "type": "object",
+                "x-options": {
+                    "sectionsTitlesClasses": [
+                        "d-none"
+                    ]
+                },
+                "allOf": [
+                    {
+                        "containerType": "group",
+                        "title": "Input-Group",
+                        "description": "",
+                        "x-options": {
+                            "childrenClass": "pl-0"
+                        },
+                        "properties": {
+                            "6d8f8a29-49fb-4ee0-8a09-5f23fae8419a": {
+                                "fieldType": "text",
+                                "title": "Eingabe",
+                                "type": "string",
+                                "x-options": {
+                                    "fieldColProps": {
+                                        "cols": 12,
+                                        "sm": 12
+                                    }
+                                },
+                                "x-props": {
+                                    "outlined": true,
+                                    "dense": true
+                                }
+                            }
+                        },
+                        "key": "af9b9be4-9ac5-4e4f-b4ea-79202bcee579"
+                    },
+                    {
+                        "containerType": "group",
+                        "title": "Group",
+                        "description": "",
+                        "x-options": {
+                            "childrenClass": "pl-0"
+                        },
+                        "properties": {
+                            "d01c4972-94a3-4a00-aa47-d9f709fe91e7": {
+                                "fieldType": "switch",
+                                "title": "Approve",
+                                "x-display": "switch",
+                                "default": false,
+                                "type": "boolean",
+                                "x-options": {
+                                    "fieldColProps": {
+                                        "cols": 12,
+                                        "sm": 12
+                                    }
+                                },
+                                "x-props": {
+                                    "outlined": true,
+                                    "dense": true
+                                }
+                            }
+                        },
+                        "key": "66d51718-5462-4c59-99f8-b2e9ee4fa440"
+                    }
+                ],
+                "key": "4fe28fcb-dbec-400e-a283-962e280a9ad0"
+            }
+        ]
+    }
+}

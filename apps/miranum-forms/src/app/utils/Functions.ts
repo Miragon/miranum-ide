@@ -112,11 +112,11 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
             <head>
                 <meta charset="utf-8" />
 
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-                    style-src ${webview.cspSource} 'unsafe-inline';
+                <meta http-equiv="Content-Security-Policy" content="default-src "none";
+                    style-src ${webview.cspSource} "unsafe-inline";
                     font-src ${webview.cspSource};
                     img-src ${webview.cspSource};
-                    script-src 'nonce-${nonce}';">
+                    script-src "nonce-${nonce}";">
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -133,8 +133,8 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
                     const vscode = acquireVsCodeApi();
                     // Set the initial state of the webview
                     vscode.setState({
-                        text: '${JSON.stringify(initialContent)}',
-                        mode: '${mode}'
+                        text: "${JSON.stringify(initialContent)}",
+                        mode: "${mode}"
                     });
                 </script>
                 <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>

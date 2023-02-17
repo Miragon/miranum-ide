@@ -10,7 +10,7 @@ export class Deployment {
 
     public async getArtifact(path: vscode.Uri): Promise<Artifact> {
         const content = (await fs.readFile(path)).toString();
-        const file = path.fsPath.substring(path.fsPath.lastIndexOf('/') + 1).split('.');
+        const file = path.fsPath.substring(path.fsPath.lastIndexOf("/") + 1).split(".");
 
         return {
             //type = extension => .json has to be renamed

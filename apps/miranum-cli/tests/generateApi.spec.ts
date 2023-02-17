@@ -36,14 +36,14 @@ describe("generate bpmn project", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(generateProject(), "generate",
             ["node", appPath, "generate", "--name", projectName, "--path", myGenerations, "--randomArgument"],
-            "error: unknown option '--randomArgument'"
+            "error: unknown option "--randomArgument""
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(generateProject(), "generate",
             ["node", appPath, "generate", "--path", myGenerations],
-            "error: required option '-n, --name <name>' not specified"
+            "error: required option "-n, --name <name>" not specified"
         );
     });
 });
@@ -101,14 +101,14 @@ describe("generate file", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(generateFile(), "generate-file",
             ["node", appPath, "generate-file", "--type", "bpmn", "--name", "name", "--path", myGenerations, "--randomArgument"],
-            "error: unknown option '--randomArgument'"
+            "error: unknown option "--randomArgument""
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(generateFile(), "generate-file",
             ["node", appPath, "generate-file", "--type", "bpmn", "--path", myGenerations],
-            "error: required option '-n, --name <name>' not specified"
+            "error: required option "-n, --name <name>" not specified"
         );
     });
 });
@@ -129,7 +129,7 @@ function checkExistence(path: string, expectation: boolean) {
 }
 
 function checkContent(path: string, content: string) {
-    fs.readFile(path, 'utf-8', (err, data) => {
+    fs.readFile(path, "utf-8", (err, data) => {
         expect(data).toContain(content);
     });
 }

@@ -11,7 +11,7 @@ import { getHtmlForWebview, getMinimum } from "./utils";
 import { ViewState } from "./lib";
 
 /**
- * The [Custom Text Editor](https://code.visualstudio.com/api/extension-guides/custom-editors) uses a '.form'-File as its
+ * The [Custom Text Editor](https://code.visualstudio.com/api/extension-guides/custom-editors) uses a ".form"-File as its
  * data model and synchronize changes with the [webview](https://code.visualstudio.com/api/extension-guides/webview).
  * The webview is build with [Vue.js](https://vuejs.org/) and uses the
  * [DigiWF Form Builder](https://github.com/FlowSquad/digiwf-core/tree/dev/digiwf-apps/packages/components/digiwf-form-builder).

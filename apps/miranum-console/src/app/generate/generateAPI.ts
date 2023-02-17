@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
-import {getGenerateWebview} from "../../Webviews/Inputs/generateInput";
-import {GenerateProjectMessage, GenerateFileMessage} from "../../types/MessageAPI";
-import {generate} from "./generate";
-import {MiranumCore} from "@miranum-ide/miranum-core";
+import { getGenerateWebview } from "../../Webviews/Inputs/generateInput";
+import { GenerateFileMessage, GenerateProjectMessage } from "../../types/MessageAPI";
+import { generate } from "./generate";
+import { MiranumCore } from "@miranum-ide/miranum-core";
 
 export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: MiranumCore) {
-    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'miranum-console-webview');
+    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, "miranum-console-webview");
 
     const generateFile = vscode.commands.registerCommand("miranum.generateFile", async (path: vscode.Uri) => {
         const panel = vscode.window.createWebviewPanel(
-            'generate',
-            'Generate',
+            "generate",
+            "Generate",
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -40,13 +40,13 @@ export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: 
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
-                case 'generateArtifact':
+                case "generateArtifact":
                     await generate(event.data.artifact, event.data.path);
                     break;
-                case 'openFilePicker':
+                case "openFilePicker":
                     openFilePicker(vscode.window, userInputCache, sendFileMessage);
                     break;
-                case 'changedInput':
+                case "changedInput":
                     userInputCache.name = event.data.name;
                     userInputCache.type = event.data.type;
                     break;
@@ -65,12 +65,12 @@ export function createGenerateFile(context: vscode.ExtensionContext, digiwfLib: 
 
 
 export function createGenerateProject(context: vscode.ExtensionContext) {
-    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, 'miranum-console-webview');
+    const pathToWebview = vscode.Uri.joinPath(context.extensionUri, "miranum-console-webview");
 
     const generateProject = vscode.commands.registerCommand("miranum.generateProject", async (path: vscode.Uri) => {
         const panel = vscode.window.createWebviewPanel(
-            'generateProject',
-            'Generate Project',
+            "generateProject",
+            "Generate Project",
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -98,15 +98,15 @@ export function createGenerateProject(context: vscode.ExtensionContext) {
 
         panel.webview.onDidReceiveMessage( async (event) => {
             switch (event.message) {
-                case 'generateProject':
+                case "generateProject":
                     for (const artifact of event.data.artifacts) {
                         await generate(artifact, `${event.data.path}/${event.data.name}`);
                     }
                     break;
-                case 'openFilePicker':
+                case "openFilePicker":
                     openFilePicker(vscode.window, userInputCache, sendProjectMessage);
                     break;
-                case 'changedInput':
+                case "changedInput":
                     userInputCache.name = event.data.name;
                     break;
             }

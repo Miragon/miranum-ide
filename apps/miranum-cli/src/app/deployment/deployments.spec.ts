@@ -44,7 +44,7 @@ const customDeployment = new Deployment(createMiranumCore(
 describe("deployArtifact", () => {
     for(const file of filesToDeploy) {
         it(`${file.type} should work with standard settings`, async () => {
-            const logSpy = jest.spyOn(console, 'log');
+            const logSpy = jest.spyOn(console, "log");
             await expect(deployment.deployArtifact(file.path, file.type, sampleTarget))
                 .resolves.not.toThrow();
             expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + file.nameExt + " to environment " + sampleTarget);
@@ -53,7 +53,7 @@ describe("deployArtifact", () => {
 
     it(`should work with custom Artifact`, async () => {
         const customForm = {nameExt: "KontrollFormular.json", path: "resources/my-process-automation-project/my-other-forms/KontrollFormular.json", type: "form"};
-        const logSpy = jest.spyOn(console, 'log');
+        const logSpy = jest.spyOn(console, "log");
         await expect(customDeployment.deployArtifact(customForm.path, customForm.type, sampleTarget))
             .resolves.not.toThrow();
         expect(logSpy).toHaveBeenCalledWith(colors.green.bold("DEPLOYED ") + customForm.nameExt + " to environment " + sampleTarget);
@@ -73,7 +73,7 @@ describe("deployArtifact", () => {
 
 describe("deployAllArtifacts", () => {
     it("my-process-automation-project should work", async () => {
-        const logSpy = jest.spyOn(console, 'log');
+        const logSpy = jest.spyOn(console, "log");
         await expect(customDeployment.deployAllArtifacts(pathToProject, sampleTarget))
             .resolves.not.toThrow();
 

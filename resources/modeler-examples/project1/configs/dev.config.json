@@ -1,0 +1,11 @@
+{
+  "key": "example-process-dev",
+  "statusDokument": "",
+  "statusConfig": [],
+  "configs": [
+    {
+      "key": "S3Service",
+      "value": "dwf-s3-local-01"
+    }
+  ]
+}

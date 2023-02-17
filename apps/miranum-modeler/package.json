@@ -1,0 +1,64 @@
+{
+  "name": "bpmn-modeler",
+  "displayName": "Miranum: Modeler",
+  "description": "Edit bpmn and dmn files inside VS Code.",
+  "license": "Apache License 2.0",
+  "publisher": "miragon-gmbh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlowSquad/miranum-ide/tree/main/apps/miranum-modeler"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowSquad/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.73.0"
+  },
+  "icon": "images/komet.png",
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:bpmn-modeler",
+    "onCommand:bpmn-modeler.toggleTextEditor"
+  ],
+  "main": "main.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "bpmn-modeler",
+        "viewType": "bpmn-modeler",
+        "displayName": "BPMN Modeler",
+        "selector": [
+          {
+            "filenamePattern": "*.bpmn"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "bpmn-modeler.toggleTextEditor",
+        "title": "Miranum: Toggle Standard Text Editor",
+        "icon": "$(notebook-mimetype)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "bpmn-modeler.toggleTextEditor",
+          "when": "resourceExtname == .bpmn"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "bpmn-modeler.toggleTextEditor",
+          "group": "navigation",
+          "when": "resourceExtname == .bpmn"
+        }
+      ]
+    }
+  }
+}

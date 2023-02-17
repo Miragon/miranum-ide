@@ -1,17 +1,17 @@
 import * as vscode from "vscode";
 import {
     createMiranumCore,
+    MiranumCore,
     MiranumDeploymentPlugin,
-    MiranumDeploymentPluginRest,
-    MiranumCore
+    MiranumDeploymentPluginRest
 } from "@miranum-ide/miranum-core";
-import {createDeployment} from "./app/deployment/deploymentAPI";
-import {createGenerateFile, createGenerateProject} from "./app/generate/generateAPI";
+import { createDeployment } from "./app/deployment/deploymentAPI";
+import { createGenerateFile, createGenerateProject } from "./app/generate/generateAPI";
 
 export async function activate(context: vscode.ExtensionContext) {
     const digiwfLib = await initDigiwfLib();
-    if(!digiwfLib.projectConfig) {
-        vscode.window.showInformationMessage("couldn't find miranum.json");
+    if (!digiwfLib.projectConfig) {
+        vscode.window.showInformationMessage("could not find miranum.json");
     }
 
     createDeployment(context, digiwfLib);

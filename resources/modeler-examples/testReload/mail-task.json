@@ -1,0 +1,52 @@
+{
+  "name": "Test Reload",
+  "id": "de.miragon.example.TestReload",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "properties": [
+    {
+      "label": "Implementation Type",
+      "type": "Hidden",
+      "value": "${mailDelegate}",
+      "editable": false,
+      "binding": {
+        "type": "property",
+        "name": "camunda:delegateExpression"
+      }
+    },
+    {
+      "label": "Recipient",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "recipient"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Content",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "content"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Subject",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "subject"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    }
+  ]
+}
