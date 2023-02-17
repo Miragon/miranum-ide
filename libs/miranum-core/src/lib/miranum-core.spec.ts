@@ -1,8 +1,8 @@
 import { createMiranumCore, MiranumCore } from "./miranum-core";
-import {Artifact, MiranumWorkspace} from "./types";
+import { Artifact, MiranumWorkspaceItem } from "./types";
 
 const sampleTarget = "local";
-const workspace: MiranumWorkspace[] = [
+const workspace: MiranumWorkspaceItem[] = [
     {type: "bpmn", path: "", extension: ".bpmn" },
     {type: "dmn", path: "", extension: ".dmn" },
     {type: "form", path: "forms", extension: ".form" },

@@ -15,11 +15,11 @@ export interface FileDetails {
 export interface MiranumConfig {
     projectVersion: string,
     name: string;
-    workspace: MiranumWorkspace[];
+    workspace: MiranumWorkspaceItem[];
     deployment: MiranumDeploymentPlugin[];
 }
 
-export interface MiranumWorkspace {
+export interface MiranumWorkspaceItem {
     type: string;
     path: string;
     extension: string;

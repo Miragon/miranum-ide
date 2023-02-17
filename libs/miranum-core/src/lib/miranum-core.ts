@@ -1,12 +1,18 @@
-import {Artifact, MiranumConfig, MiranumDeploymentPlugin, MiranumGeneratorPlugin, MiranumWorkspace} from "./types";
+import {
+    Artifact,
+    MiranumConfig,
+    MiranumDeploymentPlugin,
+    MiranumGeneratorPlugin,
+    MiranumWorkspaceItem
+} from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
-export function createMiranumCore(projectVersion: string, projectName: string, workspace: MiranumWorkspace[], deployment: MiranumDeploymentPlugin[]): MiranumCore {
+export function createMiranumCore(projectVersion: string, projectName: string, workspace: MiranumWorkspaceItem[], deployment: MiranumDeploymentPlugin[]): MiranumCore {
     return new MiranumCore({
         projectVersion: projectVersion,
         name: projectName,
         workspace: workspace,
-        deployment: deployment
+        deployment: deployment,
     });
 }
 
@@ -26,26 +32,26 @@ export class MiranumCore {
             throw new Error("Config not available. Please initialize digiwfLib with a valid config");
         }
 
-        if(!checkIfSupportedType(artifact.type)) {
+        if (!checkIfSupportedType(artifact.type)) {
             throw new Error(`Unable to Deploy ${artifact.type}`);
         }
 
         await Promise.all(
-            this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact))
+            this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact)),
         );
         return artifact;
     }
 
     public async initProject(projectName: string): Promise<Artifact[]> {
         const filesToGenerate = [
-            {name: "README", type: "README.md"},
-            {name: "miranum", type: "miranum.json"},
-            {name: projectName, type: "bpmn"},
-            {name: `${projectName}_dev`, type: "config"},
-            {name: `${projectName}_prod`, type: "config"},
-            {name: " ", type: ".gitkeep"},
-            {name: `${projectName}_start`, type: "form"},
-            {name: `${projectName}_control`, type: "form"}
+            { name: "README", type: "README.md" },
+            { name: "miranum", type: "miranum.json" },
+            { name: projectName, type: "bpmn" },
+            { name: `${projectName}_dev`, type: "config" },
+            { name: `${projectName}_prod`, type: "config" },
+            { name: " ", type: ".gitkeep" },
+            { name: `${projectName}_start`, type: "form" },
+            { name: `${projectName}_control`, type: "form" },
         ];
         const generatedFiles = [];
         for (const file of filesToGenerate) {
@@ -59,15 +65,18 @@ export class MiranumCore {
          *  if true: initialise an artifact with the artifact.pathInProject set as the projectConfig.workspace defines it,
          *  otherwise: initialise the artifact as a standalone artifact
          */
-        let pathInProject = undefined;
-        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/")+1);
-        // eslint-disable-next-line array-callback-return
-        this.projectConfig?.workspace.find( workspace => {
-            if(workspace.type === type && lastFolder === projectName) {
-                pathInProject = workspace.path;
+        let pathInProject = "";
+        const lastFolder = projectPath.substring(projectPath.lastIndexOf("/") + 1);
+
+        // if project root folder
+        if (this.projectConfig && lastFolder === projectName) {
+            // finds the first item
+            const miranumWorkspaceItem = this.projectConfig.workspace.find(ws => ws.type === type);
+            if (miranumWorkspaceItem) {
+                pathInProject = miranumWorkspaceItem.path;
             }
-        });
-        return this.initArtifact(artifactName, type, projectName, pathInProject ?? "");
+        }
+        return this.initArtifact(artifactName, type, projectName, pathInProject);
     }
 
     /**
@@ -86,7 +95,7 @@ export class MiranumCore {
         let extension = undefined;
         // eslint-disable-next-line array-callback-return
         this.projectConfig?.workspace.find( workspace => {
-            if(workspace.type === type) {
+            if (workspace.type === type) {
                 extension = workspace.extension;
             }
         });

@@ -18,7 +18,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
     const [error, setError] = useState<string>("");
     const inputChange = useVsMessage("changedInput");
     const sendProjectMessage = useVsMessage("generateProject");
-    const digiwfLib = useMemo(() => {return new MiranumCore();}, []);
+    const miranumCore = useMemo(() => {return new MiranumCore();}, []);
 
     useEffect(() => {
         setPath(props.currentPath);
@@ -26,7 +26,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
 
     const generate = useCallback(() => {
         if (name !== "" && path !== "") {
-            digiwfLib.initProject(name)
+            miranumCore.initProject(name)
                 .then((artifacts: Artifact[]) => {
                     sendProjectMessage({
                         name: name,
@@ -37,7 +37,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                 .then(() => setError(""))
                 .catch((err) => setError(err.message));
         }
-    }, [name, path, digiwfLib, sendProjectMessage]);
+    }, [name, path, miranumCore, sendProjectMessage]);
 
     return (
         <FormControl

@@ -1,41 +1,23 @@
 import * as vscode from "vscode";
-import {
-    createMiranumCore,
-    MiranumDeploymentPlugin,
-    MiranumDeploymentPluginRest,
-    MiranumCore
-} from "@miranum-ide/miranum-core";
-import {createDeployment} from "./app/deployment/deploymentAPI";
-import {createGenerateFile, createGenerateProject} from "./app/generate/generateAPI";
+import { initMiranumCore } from "./app/shared/fs-helpers";
+import { registerDeploymentCommands } from "./app/deployment/commands";
+import { showErrorMessage } from "./app/shared/message";
+import { registerGenerateCommands } from "./app/generate/commands";
 
-export async function activate(context: vscode.ExtensionContext) {
-    const digiwfLib = await initDigiwfLib();
-    if(!digiwfLib.projectConfig) {
-        vscode.window.showInformationMessage("couldn't find miranum.json");
-    }
+export async function activate(context : vscode.ExtensionContext) {
+    const miranumCore = await initMiranumCore();
 
-    createDeployment(context, digiwfLib);
-    createGenerateFile(context, digiwfLib);
-    createGenerateProject(context);
-}
+    // generate
+    const generateCommands = await registerGenerateCommands(context, miranumCore);
+    generateCommands.forEach(command => context.subscriptions.push(command));
 
-
-async function initDigiwfLib(): Promise<MiranumCore> {
-    const ws = vscode.workspace;
+    // deployment
     try {
+        const deploymentCommands = await registerDeploymentCommands(context, miranumCore);
+        deploymentCommands.forEach(command => context.subscriptions.push(command));
+    } catch (err) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const processIdeJSON = await ws.fs.readFile(vscode.Uri.joinPath(ws.workspaceFolders[0].uri, "miranum.json"));
-
-        const processIdeConfig = JSON.parse(processIdeJSON.toString());
-        const plugins: MiranumDeploymentPlugin[] = [];
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        processIdeConfig.deployment.forEach(p => {
-            plugins.push(new MiranumDeploymentPluginRest(p.plugin, p.targetEnvironments));
-        });
-        return createMiranumCore(processIdeConfig.projectVersion, processIdeConfig.name, processIdeConfig.workspace, plugins);
-    } catch (e) {
-        return new MiranumCore();
+        showErrorMessage(err.message);
     }
 }
