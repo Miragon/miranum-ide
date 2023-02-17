@@ -1,4 +1,4 @@
-/// <reference types="vitest" />
+/// <reference types='vitest' />
 import { defineConfig } from "vite";
 
 import { createVuePlugin } from "vite-plugin-vue2";
@@ -8,7 +8,7 @@ import Components from "unplugin-vue-components/vite";
 import { VuetifyResolver } from "unplugin-vue-components/resolvers";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-forms-webview",
+    cacheDir: '../../node_modules/.vite/miranum-forms-webview',
 
     resolve: {
         alias: [
@@ -48,6 +48,6 @@ export default defineConfig({
         },
     },
     define: {
-        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }
 });
