@@ -69,7 +69,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 const workspace: WorkspaceFolder[] = JSON.parse(Buffer.from(file).toString("utf-8")).workspace;
                 return workspace;
             } catch (error) {
-                throw new Error("[BpmnModeler] getWorkspace() -> " + error);
+                throw new Error("[MiranumModeler] getWorkspace() -> " + error);
             }
         }
 
