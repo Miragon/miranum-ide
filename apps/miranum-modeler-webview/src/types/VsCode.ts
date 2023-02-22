@@ -10,7 +10,7 @@ export type VscMessage = {
 };
 
 export type VscState = {
-    text: string;
+    bpmn: string;
     files: string;
 };
 

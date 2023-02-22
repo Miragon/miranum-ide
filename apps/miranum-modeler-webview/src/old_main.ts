@@ -16,7 +16,7 @@ import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 
 // css
-import "./app.css";
+import "./styles.css";
 import "../../node_modules/bpmn-js/dist/assets/bpmn-js.css";
 import "../../node_modules/bpmn-js/dist/assets/diagram-js.css";
 import "../../node_modules/bpmn-js-properties-panel/dist/assets/properties-panel.css";

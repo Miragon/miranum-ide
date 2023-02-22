@@ -2,7 +2,7 @@ import { isSelectEntryEdited, SelectEntry } from "@bpmn-io/properties-panel";
 import { useService } from "bpmn-js-properties-panel";
 import { useEffect, useState } from "@bpmn-io/properties-panel/preact/hooks";
 
-export default function (element) {
+export default function (element: any) {
     return [
         {
             id: "formKey",
@@ -15,7 +15,7 @@ export default function (element) {
 
 //camunda:formKey = Embedded or External Task Forms
 //camunda:formRef = Camunda Forms
-function Form(props) {
+function Form(props: any) {
     const { element, id } = props;
     const modeling = useService("modeling");
     const translate = useService("translate");
@@ -25,7 +25,7 @@ function Form(props) {
         return element.businessObject.formKey || "";
     };
 
-    const setValue = value => {
+    const setValue = (value: any) => {
         return modeling.updateProperties(element, {
             formKey: value,
         });

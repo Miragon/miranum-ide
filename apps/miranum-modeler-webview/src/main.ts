@@ -1,28 +1,64 @@
 import { VsCode } from "./types/VsCode";
-import { MiranumModeler } from "./app/MiranumModeler";
-import { VsCodeController } from "./app/VsCodeController";
+import { ContentController } from "./app/ContentController";
+import { VscController } from "./app/VscController";
+import BpmnModeler from "bpmn-js/lib/Modeler";
+import {
+    BpmnPropertiesPanelModule,
+    BpmnPropertiesProviderModule,
+    CamundaPlatformPropertiesProviderModule, ElementTemplatesPropertiesProviderModule,
+} from "bpmn-js-properties-panel";
+import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
+import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
+import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
+//import miragonProviderModule from "./app/PropertieProvider/provider";
+import TokenSimulationModule from "bpmn-js-token-simulation";
+
+// css
+import "./styles.css";
+import "../../../node_modules/bpmn-js/dist/assets/bpmn-js.css";
+import "../../../node_modules/bpmn-js/dist/assets/diagram-js.css";
+import "../../../node_modules/bpmn-js-properties-panel/dist/assets/properties-panel.css";
+import "../../../node_modules/bpmn-js-properties-panel/dist/assets/element-templates.css";
+import "../../../node_modules/@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "../../../node_modules/bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
 declare const vscode: VsCode;
 
-const vsCodeController = new VsCodeController(vscode);
-const modeler = new MiranumModeler(vsCodeController);
-
-// todo: set listener
-window.addEventListener("message", (event: MessageEvent) => {
-    const message = event.data;
-    switch (message.type) {
-        case "bpmn-modeler.undo":
-        case "bpmn-modeler.redo":
-        case "bpmn-modeler.updateFromExtension": {
-            const xml = message.text;
-            modeler.importDiagram(xml);
-            return;
-        }
-        case "FileSystemWatcher.reloadFiles": {
-            //setFilesContent(message.text);
-            //var loader = modeler.get("elementTemplatesLoader");
-            //loader.setTemplates(templates);
-            modeler.updateElementTemplate(message.text);
-        }
-    }
+const modeler = new BpmnModeler({
+    container: "#js-canvas",
+    keyboard: {
+        bindTo: document,
+    },
+    propertiesPanel: {
+        parent: "#js-properties-panel",
+    },
+    additionalModules: [
+        // Properties Panel
+        BpmnPropertiesPanelModule,
+        BpmnPropertiesProviderModule,
+        CamundaPlatformPropertiesProviderModule,
+        CamundaPlatformBehaviors,
+        //miragonProviderModule,
+        // Element Templates
+        ElementTemplatesPropertiesProviderModule,
+        ElementTemplateChooserModule,
+        // Other Plugins
+        TokenSimulationModule,
+    ],
+    moddleExtensions: {
+        camunda: camundaModdleDescriptors,
+    },
 });
+
+function init() {
+    const vscController = new VscController(vscode);
+    const state = vscController.getState();
+    try {
+        const contentController = new ContentController(modeler, vscController, state.bpmn, state.files);
+        vscController.setListener(contentController);
+    } catch (error) {
+        console.error(`[MiranumModeler.Webview]: ${error}`);
+    }
+}
+
+init();

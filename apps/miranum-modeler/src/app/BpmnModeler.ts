@@ -210,7 +210,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 if (!state) {
                     vscode.setState({
                       text: "${JSON.stringify(initialContent)}",
-                      files: "${JSON.stringify(files)}"    // serialize files-Array
+                      files: "${JSON.stringify(files)}"
                     });
                 }
               </script>

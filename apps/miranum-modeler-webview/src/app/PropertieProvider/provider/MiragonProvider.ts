@@ -11,7 +11,7 @@ const LOW_PRIORITY = 500;
  * @param {PropertiesPanel} propertiesPanel
  * @param {Function} translate
  */
-export default function MiragonProvider(propertiesPanel, translate) {
+export default function MiragonProvider(this: any, propertiesPanel: any, translate: any) {
 
     // API ////////
 
@@ -22,7 +22,7 @@ export default function MiragonProvider(propertiesPanel, translate) {
    *
    * @return {(Object[]) => (Object[])} groups middleware
    */
-    this.getGroups = function (element) {
+    this.getGroups = function (element: any) {
 
         /**
      * We return a middleware that modifies
@@ -32,19 +32,19 @@ export default function MiragonProvider(propertiesPanel, translate) {
      *
      * @return {Object[]} modified groups
      */
-        return function (groups) {
+        return function (groups: any) {
 
             //checks whether form files where loaded and either uses default property-panel, or Miranum's custom panel
             if (window.forms.length > 0) {
                 // Add own "form" group to StartEvent, and remove old Form property
                 if (is(element, "bpmn:StartEvent")) {
                     groups.push(createStartFormGroup(element, translate));
-                    groups = groups.filter(obj => obj.id !== "CamundaPlatform__Form");
+                    groups = groups.filter((obj: any) => obj.id !== "CamundaPlatform__Form");
                 }
                 // Add own "form" group to UserTask, and remove old Form property
                 if (is(element, "bpmn:UserTask")) {
                     groups.push(createUserFormGroup(element, translate));
-                    groups = groups.filter(obj => obj.id !== "CamundaPlatform__Form");
+                    groups = groups.filter((obj: any) => obj.id !== "CamundaPlatform__Form");
                 }
             }
 
@@ -63,7 +63,7 @@ MiragonProvider.$inject = [ "propertiesPanel", "translate" ];
 //   -------------------------Custom Groups-------------------------   \\
 // due to prefix 'ElementTemplates__' it will stay displayed even with templates active
 
-function createStartFormGroup(element, translate) {
+function createStartFormGroup(element: any, translate: any) {
     return {
         id: "ElementTemplates__formSimplifier",
         label: translate("Form"),
@@ -71,7 +71,7 @@ function createStartFormGroup(element, translate) {
     };
 }
 
-function createUserFormGroup(element, translate) {
+function createUserFormGroup(element: any, translate: any) {
     return {
         id: "ElementTemplates__formSimplifier",
         label: translate("Form"),

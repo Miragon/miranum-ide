@@ -7,8 +7,8 @@
   "targets": {
     "build": {
       "executor": "@nrwl/vite:build",
-      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/miranum-modeler/miranum-modeler-webview"
       },
@@ -17,7 +17,9 @@
           "mode": "development"
         },
         "production": {
-          "mode": "production"
+          "mode": "production",
+          "filenameHahsing": false,
+          "productionSourceMap": true
         }
       }
     },

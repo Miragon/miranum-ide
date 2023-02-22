@@ -3,6 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-modeler/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "miranum-modeler-webview"
+  ],
   "targets": {
     "build": {
       "executor": "@nrwl/node:webpack",
@@ -15,7 +18,6 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-modeler/custom-webpack.config.js",
         "assets": [
-          { "glob": "images/logo_miranum-forms.png", "input": "./", "output": "/assets" },
           { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
           { "glob": "images/kometLogo.png", "input": "./", "output": "/assets" },
           { "glob": ".vscodeignore", "input": "./apps/miranum-modeler/", "output": "/" },

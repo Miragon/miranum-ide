@@ -18,6 +18,7 @@ export default defineConfig({
     build: {
         target: "es2021",
         commonjsOptions: { transformMixedEsModules: true },
+        chunkSizeWarningLimit: 1200,
         rollupOptions: {
             output: {
                 // don"t hash the name of the output file (index.js)
