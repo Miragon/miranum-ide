@@ -2,6 +2,7 @@
   "name": "bpmn-modeler",
   "displayName": "Miranum: Modeler",
   "description": "Edit bpmn and dmn files inside VS Code.",
+  "version": "0.1.0",
   "license": "Apache License 2.0",
   "publisher": "miragon-gmbh",
   "repository": {

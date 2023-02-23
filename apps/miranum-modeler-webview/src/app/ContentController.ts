@@ -71,7 +71,7 @@ export class ContentController {
             console.error(`[MiranumModeler.Webview] ${errors}`);
             // todo: Show message to user
         });
-        this.eventBus.get("elementTemplatesLoader").setTemplates(this.getFilesContent(folderContent)[1]);
+        this.modeler.get("elementTemplatesLoader").setTemplates(this.getFilesContent(folderContent)[1]);
 
         this.eventBus.on("commandStack.changed", this.sendUpdate);
     }

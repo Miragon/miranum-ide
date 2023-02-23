@@ -7,6 +7,50 @@
     "miranum-modeler-webview"
   ],
   "targets": {
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx observe miranum-modeler",
+            "prefix": "miranum-modeler",
+            "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-modeler-webview",
+            "prefix": "miranum-modeler-webview",
+            "color": "red"
+          }
+        ]
+      }
+    },
+    "observe": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "outputPath": "dist/apps/miranum-modeler",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-modeler/src/main.ts",
+        "tsConfig": "apps/miranum-modeler/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-modeler/custom-webpack.config.js",
+        "assets": [
+          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
+          { "glob": ".vscodeignore", "input": "./apps/miranum-modeler/", "output": "/" },
+          { "glob": "LICENSE", "input": "./", "output": "/" }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true
+        }
+      }
+    },
     "build": {
       "executor": "@nrwl/node:webpack",
       "outputs": ["{options.outputPath}"],
@@ -32,8 +76,8 @@
           "sourceMap": false,
           "fileReplacements": [
             {
-              "replace": "apps/miranum-forms/src/environments/environment.ts",
-              "with": "apps/miranum-forms/src/environments/environment.prod.ts"
+              "replace": "apps/miranum-modeler/src/environments/environment.ts",
+              "with": "apps/miranum-modeler/src/environments/environment.prod.ts"
             }
           ]
         }

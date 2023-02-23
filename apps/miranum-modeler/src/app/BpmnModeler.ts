@@ -173,11 +173,11 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             <head>
                 <meta charset="utf-8" />
 
-                <meta http-equiv="Content-Security-Policy" content="default-src "none";
-                    style-src ${webview.cspSource} "unsafe-inline";
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none';
+                    style-src ${webview.cspSource} 'unsafe-inline';
                     img-src ${webview.cspSource} data:;
                     font-src ${webview.cspSource};
-                    script-src "nonce-${nonce}";"/>
+                    script-src 'nonce-${nonce}';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
@@ -209,8 +209,8 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 const state = vscode.getState();
                 if (!state) {
                     vscode.setState({
-                      text: "${JSON.stringify(initialContent)}",
-                      files: "${JSON.stringify(files)}"
+                      text: '${JSON.stringify(initialContent)}',
+                      files: '${JSON.stringify(files)}'
                     });
                 }
               </script>

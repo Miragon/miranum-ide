@@ -5,6 +5,24 @@
   "sourceRoot": "apps/miranum-modeler-webview/src",
   "tags": [],
   "targets": {
+    "observe": {
+      "executor": "@nrwl/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-webview",
+        "configFile": "apps/miranum-modeler-webview/vite.config.ts",
+        "deleteOutputPath": false,
+        "watch": {}
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false,
+          "vendorChunk": true
+        }
+      }
+    },
     "build": {
       "executor": "@nrwl/vite:build",
       "defaultConfiguration": "production",
