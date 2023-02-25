@@ -1,7 +1,7 @@
-import {generateProject, generateFile} from "../src/app/generate/api"
+import { generateFile, generateProject } from "../src/app/generate/api";
 import * as fs from "fs";
-import {shouldNotWork, sleep} from "./testHelpers";
-import {Command} from "commander";
+import { shouldNotWork, sleep } from "./testHelpers";
+import { Command } from "commander";
 
 jest.setTimeout(30000);
 
@@ -36,25 +36,25 @@ describe("generate bpmn project", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(generateProject(), "generate",
             ["node", appPath, "generate", "--name", projectName, "--path", myGenerations, "--randomArgument"],
-            "error: unknown option "--randomArgument""
+            "error: unknown option '--randomArgument'",
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(generateProject(), "generate",
             ["node", appPath, "generate", "--path", myGenerations],
-            "error: required option "-n, --name <name>" not specified"
+            "error: required option '-n, --name <name>' not specified",
         );
     });
 });
 
 describe("generate file", () => {
     const filesToGenerate: FileHelper[] = [
-        {name: "my-process", type: "bpmn", extension: ".bpmn", dir: "", content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>`},
-        {name: "my-decision-table", type: "dmn", extension: ".dmn", dir: "", content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">`},
-        {name: "my-form", type: "form", extension: ".form", dir: "forms", content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",`},
-        {name: "my-config", type: "config", extension: ".config.json", dir: "configs", content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [`},
-        {name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates", content: `"name": "my-element-template",`},
+        { name: "my-process", type: "bpmn", extension: ".bpmn", dir: "", content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>` },
+        { name: "my-decision-table", type: "dmn", extension: ".dmn", dir: "", content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">` },
+        { name: "my-form", type: "form", extension: ".form", dir: "forms", content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",` },
+        { name: "my-config", type: "config", extension: ".config.json", dir: "configs", content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [` },
+        { name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates", content: `"name": "my-element-template",` },
     ];
 
     for (const file of filesToGenerate) {
@@ -101,14 +101,14 @@ describe("generate file", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(generateFile(), "generate-file",
             ["node", appPath, "generate-file", "--type", "bpmn", "--name", "name", "--path", myGenerations, "--randomArgument"],
-            "error: unknown option "--randomArgument""
+            "error: unknown option '--randomArgument'",
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(generateFile(), "generate-file",
             ["node", appPath, "generate-file", "--type", "bpmn", "--path", myGenerations],
-            "error: required option "-n, --name <name>" not specified"
+            "error: required option '-n, --name <name>' not specified",
         );
     });
 });
@@ -123,7 +123,7 @@ function checkExistence(path: string, expectation: boolean) {
     try {
         fs.open(path, () => {});
         expect(expectation).toBe(true);
-    } catch(e) {
+    } catch (e) {
         expect(expectation).toBe(false);
     }
 }
@@ -143,5 +143,5 @@ function fileChecks(program: Command, file: FileHelper, args: string[], inputPat
 }
 
 function cleanUpDir() {
-    fs.rm(dirPath, {recursive: true}, () => {});
+    fs.rm(dirPath, { recursive: true }, () => {});
 }

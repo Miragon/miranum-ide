@@ -1,5 +1,5 @@
-import {deployAllFiles, deployFile } from "../src/app/deployment/api"
-import {filesToDeploy, pathToProject, shouldNotWork, sleep} from "./testHelpers";
+import { deployAllFiles, deployFile } from "../src/app/deployment/api";
+import { filesToDeploy, pathToProject, shouldNotWork, sleep } from "./testHelpers";
 // import axios from "axios";
 // import * as colors from "colors";
 
@@ -31,14 +31,14 @@ describe("deploy all files", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(deployAllFiles(), "deploy",
             ["node", appPath, "deploy", "--directory", pathToProject, "--target", target, "--randomArgument"],
-            "error: unknown option "--randomArgument""
+            "error: unknown option '--randomArgument'"
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(deployAllFiles(), "deploy",
             ["node", appPath, "deploy", "--directory", pathToProject],
-            "error: required option "-t, --target <target>" not specified"
+            "error: required option '-t, --target <target>' not specified"
         );
     });
 });
@@ -71,14 +71,14 @@ describe("deploy files", () => {
     it("should not work, due to unknown option", () => {
         shouldNotWork(deployFile(), "deploy-file",
             ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--target", target, "--type", filesToDeploy[0].type, "--randomArgument"],
-            "error: unknown option "--randomArgument""
+            "error: unknown option '--randomArgument'"
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
         shouldNotWork(deployFile(), "deploy-file",
             ["node", appPath, "deploy-file", "--file", filesToDeploy[0].path, "--type", filesToDeploy[0].type],
-            "error: required option "-t, --target <target>" not specified"
+            "error: required option '-t, --target <target>' not specified"
         );
     });
 });
