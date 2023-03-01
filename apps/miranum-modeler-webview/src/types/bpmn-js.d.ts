@@ -1,6 +1,9 @@
 declare module "bpmn-js/lib/Modeler" {
-    const BpmnJS: any;
-    export default BpmnJS;
+    export default class BpmnModeler {
+        importXML(xml: string): void;
+        saveXML({ format: boolean }): Promise<{ xml: string }>;
+        get(service: string): any;
+    }
 }
 
 declare module "bpmn-js-properties-panel" {

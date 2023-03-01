@@ -76,8 +76,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         webviewPanel.webview.onDidReceiveMessage((event) => {
             switch (event.type) {
                 case BpmnModeler.viewType + ".updateFromWebview":
+                    console.log("receivedMsg outer", event.content);
                     if (!isUpdateFromExtension) {
                         isUpdateFromWebview = true;
+                        console.log("receivedMsg inner", event.content);
                         this.updateTextDocument(document, event.content);
                     }
                     isUpdateFromExtension = false;

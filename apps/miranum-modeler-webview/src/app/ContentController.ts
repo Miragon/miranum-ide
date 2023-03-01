@@ -1,7 +1,7 @@
 import { FolderContent } from "../types/VsCode";
-import { debounce } from "debounce";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import { VscController } from "./VscController";
+import { debounce } from "debounce";
 
 const EMPTY_DIAGRAM_XML = `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -21,12 +21,12 @@ const EMPTY_DIAGRAM_XML = `
 
 export class ContentController {
 
-    public sendUpdate = debounce(this.exportDiagram);
+    private sendUpdateDb = debounce(this.sendUpdate);
 
     private eventBus: any;
 
     public constructor(
-        private readonly modeler: typeof BpmnModeler,
+        private readonly modeler: BpmnModeler,
         private readonly vscode: VscController,
         bpmn: string,
         folderContent: string,
@@ -37,6 +37,7 @@ export class ContentController {
     }
 
     public async importDiagram(bpmn: string) {
+        console.log("importDiagram", bpmn);
         const str = (bpmn) ? bpmn : EMPTY_DIAGRAM_XML;
         this.modeler.importXML(str);
         this.vscode.updateState({
@@ -56,11 +57,21 @@ export class ContentController {
         });
     }
 
-    private async exportDiagram() {
-        const xml = await this.modeler.saveXML({ format: true }).xml;
-        this.vscode.postMessage({
-            type: "bpmn-modeler.updateFromWebview",
-            content: xml,
+    private async exportDiagram(): Promise<string> {
+        return (await this.modeler.saveXML({ format: true })).xml;
+    }
+
+    private sendUpdate() {
+        this.exportDiagram().then((xml) => {
+            this.vscode.updateState({
+                ...this.vscode.getState(),
+                bpmn: xml,
+            });
+
+            this.vscode.postMessage({
+                type: "bpmn-modeler.updateFromWebview",
+                content: xml,
+            });
         });
     }
 
@@ -73,7 +84,7 @@ export class ContentController {
         });
         this.modeler.get("elementTemplatesLoader").setTemplates(this.getFilesContent(folderContent)[1]);
 
-        this.eventBus.on("commandStack.changed", this.sendUpdate);
+        this.eventBus.on("commandStack.changed", this.sendUpdateDb);
     }
 
     private getFilesContent(folderContent: FolderContent[]): [(JSON[] | string[]), (JSON[] | string[]), (JSON[] | string[])] {

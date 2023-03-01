@@ -6,10 +6,6 @@ export class VscController {
         private readonly vscode: VsCode,
     ) { }
 
-    public setState(state: VscState): void {
-        this.vscode.setState(state);
-    }
-
     public updateState(state: VscState): void {
         this.vscode.setState(state);
     }
