@@ -67,7 +67,7 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-vue": "^9.8.0",
     "jest": "28.1.3",
-    "jest-environment-jsdom": "28.1.3",
+    "jest-environment-jsdom": "29.4.3",
     "jest-serializer-vue": "^3.0.0",
     "jest-transform-stub": "^2.0.0",
     "jsdom": "~20.0.3",
