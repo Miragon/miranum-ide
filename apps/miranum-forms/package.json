@@ -74,23 +74,23 @@
       "commandPalette": [
         {
           "command": "jsonschema-renderer.togglePreview",
-          "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+          "when": "jsonschema-builder.openCustomEditors > 0"
         },
         {
           "command": "jsonschema-builder.toggleTextEditor",
-          "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+          "when": "jsonschema-builder.openCustomEditors > 0"
         }
       ],
       "editor/title": [
         {
           "command": "jsonschema-renderer.togglePreview",
           "group": "navigation",
-          "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+          "when": "activeWebviewPanelId == 'jsonschema-builder'"
         },
         {
           "command": "jsonschema-builder.toggleTextEditor",
           "group": "navigation",
-          "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+          "when": "activeWebviewPanelId == 'jsonschema-builder'"
         }
       ]
     },
@@ -98,12 +98,12 @@
       {
         "command": "jsonschema-renderer.togglePreview",
         "key": "ctrl+shift+p",
-        "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+        "when": "jsonschema-builder.openCustomEditors > 0"
       },
       {
         "command": "jsonschema-builder.toggleTextEditor",
-        "key": "ctrl+shift+t",
-        "when": "resourceExtname == .form && jsonschema-builder.openCustomEditors > 0"
+        "key": "ctrl+shift+e",
+        "when": "jsonschema-builder.openCustomEditors > 0"
       }
     ]
   }

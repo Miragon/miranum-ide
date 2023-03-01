@@ -212,7 +212,7 @@ export class JsonSchemaBuilderProvider implements vscode.CustomTextEditorProvide
         // CleanUp after Custom Editor was closed.
         webviewPanel.onDidDispose(() => {
             JsonSchemaBuilderProvider.counter--;
-            vscode.commands.executeCommand("setContext", "jsonschema-builder.openCustomEditors", JsonSchemaBuilderProvider.counter);
+            vscode.commands.executeCommand("setContext", `${JsonSchemaBuilderProvider.viewType}.openCustomEditors`, JsonSchemaBuilderProvider.counter);
 
             this.textEditor.close(this.controller.document.fileName);
             this.preview.close();
@@ -229,7 +229,7 @@ export class JsonSchemaBuilderProvider implements vscode.CustomTextEditorProvide
         // Necessary set up for toggle command
         // only enable the command if a custom editor is open
         JsonSchemaBuilderProvider.counter++;
-        vscode.commands.executeCommand("setContext", "jsonschema-builder.openCustomEditors", JsonSchemaBuilderProvider.counter);
+        vscode.commands.executeCommand("setContext", `${JsonSchemaBuilderProvider.viewType}.openCustomEditors`, JsonSchemaBuilderProvider.counter);
 
         // set the document
         try {
