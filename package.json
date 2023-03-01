@@ -42,7 +42,7 @@
     "@types/uuid": "^8.3.4",
     "@types/vscode": "^1.69.0",
     "@typescript-eslint/eslint-plugin": "5.48.2",
-    "@typescript-eslint/parser": "5.48.2",
+    "@typescript-eslint/parser": "5.54.0",
     "@vitest/ui": "^0.25.8",
     "@vitejs/plugin-react": "^3.0.0",
     "@vscode/test-electron": "^2.1.5",
