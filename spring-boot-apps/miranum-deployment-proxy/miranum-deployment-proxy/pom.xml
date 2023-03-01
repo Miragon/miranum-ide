@@ -14,7 +14,7 @@
     </parent>
 
     <properties>
-        <springdoc.openapi.version>1.6.2</springdoc.openapi.version>
+        <springdoc.openapi.version>1.6.14</springdoc.openapi.version>
     </properties>
 
     <dependencies>
