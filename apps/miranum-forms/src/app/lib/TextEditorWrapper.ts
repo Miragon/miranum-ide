@@ -29,6 +29,13 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
                     this._isOpen = false;
                 }
             });
+            // This is necessary because if the user drags the tab into a new group
+            // the tab is considered as closed ???
+            try {
+                this._isOpen = this.getTab(this.textEditor.document.fileName) ? true : this._isOpen;
+            } catch (error) {
+                this._isOpen = false;
+            }
         });
     }
 
