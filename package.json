@@ -93,7 +93,7 @@
     "@muenchen/digiwf-form-builder-settings": "^0.21.3",
     "@muenchen/digiwf-form-renderer": "^0.21.3",
     "@mui/icons-material": "^5.10.14",
-    "@mui/material": "^5.10.14",
+    "@mui/material": "^5.11.11",
     "@svgr/webpack": "^6.5.1",
     "axios": "0.27.2",
     "colors": "^1.4.0",
