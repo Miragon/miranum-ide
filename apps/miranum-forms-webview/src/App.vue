@@ -39,6 +39,7 @@ import {Schema} from "./types/Schema";
 import {DwfFormRenderer, Form} from "@muenchen/digiwf-form-renderer";
 import {DwfFormBuilder} from "@muenchen/digiwf-form-builder";
 import {SettingsEN} from "@muenchen/digiwf-form-builder-settings";
+import debounce from "lodash.debounce";
 
 declare const vscode: VsCode;
 
@@ -63,9 +64,10 @@ export default defineComponent({
         const mode = ref('');
         const componentKey = ref(0);
 
+        const receiveMessage = debounce(getDataFromExtension, 50);
         function getDataFromExtension(event: MessageEvent): void {
             const message = event.data;
-            const newForm: Schema = message.text;
+            const newForm: Schema = JSON.parse(message.text);
 
             switch (message.type) {
                 case 'jsonschema-renderer.updateFromExtension': {
@@ -88,15 +90,15 @@ export default defineComponent({
         }
 
         function sendDataToExtension(form: Schema): void {
-            const formAsStr = JSON.stringify(form);
+            const serialized = JSON.stringify(form);
 
             vscode.setState({
-                text: formAsStr,
+                text: serialized,
                 mode: mode.value
             });
             vscode.postMessage({
                 type: 'jsonschema-builder.updateFromWebview',
-                content: JSON.parse(formAsStr)
+                content: serialized
             });
         }
 
@@ -131,21 +133,32 @@ export default defineComponent({
             });
         }
 
+        function escape(value: string): string {
+            return value
+                .replace(/[\\]/g, '\\\\')
+                .replace(/[\b]/g, '\\b')
+                .replace(/[\f]/g, '\\f')
+                .replace(/[\n]/g, '\\n')
+                .replace(/[\r]/g, '\\r')
+                .replace(/[\t]/g, '\\t')
+                .replace(/\\'/g, "\\'");
+        }
+
         onMounted(() => {
             const state = vscode.getState();
             if (state) {
-                const form: Schema = JSON.parse(state.text);
+                const form: Schema = JSON.parse(escape(state.text));
                 formKey.value = form.key;
                 xDisplay.value = form.schema["x-display"];
                 schema.value = form.schema;
                 mode.value = state.mode;
             }
 
-            window.addEventListener('message', getDataFromExtension);
+            window.addEventListener('message', receiveMessage);
         })
 
         onUnmounted(() => {
-            window.removeEventListener('message', getDataFromExtension);
+            window.removeEventListener('message', receiveMessage);
         })
 
         // Vuetify
