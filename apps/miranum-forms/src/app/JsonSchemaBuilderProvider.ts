@@ -109,7 +109,7 @@ export class JsonSchemaBuilderProvider implements vscode.CustomTextEditorProvide
             if (webviewPanel.visible) {
                 webviewPanel.webview.postMessage({
                     type: msgType,
-                    text: JSON.parse(JSON.stringify(this.controller.content)),
+                    text: JSON.stringify(this.controller.content),
                 })
                     .then((success) => {
                         if (success) {
@@ -124,13 +124,18 @@ export class JsonSchemaBuilderProvider implements vscode.CustomTextEditorProvide
         };
 
         // Receive messages from the webview
-        webviewPanel.webview.onDidReceiveMessage(event => {
-            switch (event.type) {
-                case JsonSchemaBuilderProvider.viewType + ".updateFromWebview": {
-                    isUpdateFromWebview = true;
-                    this.controller.writeData(document.uri, event.content);
-                    break;
+        webviewPanel.webview.onDidReceiveMessage(async (event) => {
+            try {
+                switch (event.type) {
+                    case JsonSchemaBuilderProvider.viewType + ".updateFromWebview": {
+                        isUpdateFromWebview = true;
+                        await this.controller.writeData(document.uri, this.controller.getSchemaFromString(event.content));
+                        break;
+                    }
                 }
+            } catch (error) {
+                isUpdateFromWebview = false;
+                console.log(error);
             }
         }, null, disposables);
 

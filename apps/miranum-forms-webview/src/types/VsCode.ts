@@ -6,7 +6,7 @@ export type VsCode = {
 
 type VscMessage = {
     type: string;
-    content: JSON;
+    content: string;
 };
 
 type VscState = {

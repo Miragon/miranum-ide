@@ -73,7 +73,10 @@ export abstract class Preview<ContentType> implements Updatable<ContentType> {
                 switch (true) {
                     case event.webviewPanel?.visible: {
                         if (this.isBuffer) {
-                            this.update(content);
+                            // todo This makes no sense.
+                            //  content must be the current content and not the content from the creation of the webview
+                            //  How can I get the current file content without a dependency to the documentController?
+                            //this.update(content);
                             this.isBuffer = false;
                         }
                     }
@@ -125,7 +128,7 @@ export abstract class Preview<ContentType> implements Updatable<ContentType> {
         try {
             this.webviewObject[0].webviewPanel.webview.postMessage({
                 type: this.webviewOptions.msgType,
-                text: JSON.parse(JSON.stringify(content)),
+                text: JSON.stringify(content),
             });
         } catch (error) {
             this.isBuffer = true;

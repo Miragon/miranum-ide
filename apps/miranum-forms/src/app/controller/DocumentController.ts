@@ -8,12 +8,12 @@ import * as vscode from "vscode";
 import { IContentController, Preview, TextEditorWrapper, Updatable } from "../lib";
 import { getDefault, Schema } from "../utils";
 import { TextDocument, Uri } from "vscode";
-import { debounce } from "debounce";
+import debounce from "lodash.debounce";
 
 export class DocumentController implements IContentController<TextDocument | Schema> {
 
     /** @hidden */
-    public writeData = debounce(this.writeChangesToDocument);
+    public writeData = this.asyncDebounce(this.writeChangesToDocument, 50);
 
     private static instance: DocumentController;
 
@@ -53,7 +53,7 @@ export class DocumentController implements IContentController<TextDocument | Sch
      * Get the content of the active document.
      **/
     public get content(): Schema {
-        return this.getContentAsSchema(this.document.getText());
+        return this.getSchemaFromString(this.document.getText());
     }
 
     /**
@@ -77,7 +77,7 @@ export class DocumentController implements IContentController<TextDocument | Sch
             try {
                 switch (true) {
                     case observer instanceof Preview: {
-                        const content = this.getContentAsSchema(this.document.getText());
+                        const content = this.getSchemaFromString(this.document.getText());
                         observer.update(content);
                         break;
                     }
@@ -97,7 +97,7 @@ export class DocumentController implements IContentController<TextDocument | Sch
      * @param text
      * @private
      */
-    private getContentAsSchema(text: string): Schema {
+    public getSchemaFromString(text: string): Schema {
         if (text.trim().length === 0) {
             return JSON.parse("{}");
         }
@@ -130,8 +130,7 @@ export class DocumentController implements IContentController<TextDocument | Sch
             try {
                 switch (true) {
                     case observer instanceof Preview: {
-                        const content = this.getContentAsSchema(this.document.getText());
-                        observer.update(content);
+                        observer.update(this.content);
                         break;
                     }
                 }
@@ -147,9 +146,11 @@ export class DocumentController implements IContentController<TextDocument | Sch
      * @param content The data which was sent from the webview.
      * @returns Promise
      */
-    public writeChangesToDocument(uri: Uri, content: Schema): Promise<boolean> {
+    private async writeChangesToDocument(uri: Uri, content: Schema): Promise<boolean> {
         if (this._document && this.document.uri !== uri) {
-            return Promise.reject("Inconsistent document!");
+            return Promise.reject("[DocumentController] Inconsistent document!");
+        } else if (JSON.stringify(this.content) === JSON.stringify(content)) {
+            return Promise.reject("[DocumentController] No changes to apply!");
         }
 
         const edit = new vscode.WorkspaceEdit();
@@ -162,5 +163,28 @@ export class DocumentController implements IContentController<TextDocument | Sch
         );
 
         return Promise.resolve(vscode.workspace.applyEdit(edit));
+    }
+
+    private asyncDebounce<F extends(...args: any[]) => Promise<boolean>>(func: F, wait?: number) {
+        const resolveSet = new Set<(p:boolean)=>void>();
+        const rejectSet = new Set<(p:boolean)=>void>();
+
+        const debounced = debounce((bindSelf, args: Parameters<F>) => {
+            func.bind(bindSelf)(...args)
+                .then((...res) => {
+                    resolveSet.forEach((resolve) => resolve(...res));
+                    resolveSet.clear();
+                })
+                .catch((...res) => {
+                    rejectSet.forEach((reject) => reject(...res));
+                    rejectSet.clear();
+                });
+        }, wait);
+
+        return (...args: Parameters<F>): ReturnType<F> => new Promise((resolve, reject) => {
+            resolveSet.add(resolve);
+            rejectSet.add(reject);
+            debounced(this, args);
+        }) as ReturnType<F>;
     }
 }
