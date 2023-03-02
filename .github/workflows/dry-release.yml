@@ -1,0 +1,48 @@
+name: Dry Release
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm run test
+      - name: Build
+        run: npm run build
+      # miranum-cli
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-cli
+          path: dist/apps/miranum-cli
+      # miranum-console
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-console
+          path: dist/apps/miranum-console
+      # miranum-forms
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-forms
+          path: dist/apps/miranum-forms
+      # miranum-core
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-core
+          path: dist/libs/miranum-core
+      - uses: actions/upload-artifact@v3
+        with:
+          name: spring-boot-apps
+          path: spring-boot-apps
