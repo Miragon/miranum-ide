@@ -1,5 +1,7 @@
 declare module "bpmn-js/lib/Modeler" {
+    import { ViewerOptions } from "diagram-js/lib/model";
     export default class BpmnModeler {
+        constructor(options?: ViewerOptions): BpmnModeler;
         importXML(xml: string): void;
         saveXML({ format: boolean }): Promise<{ xml: string }>;
         get(service: string): any;
