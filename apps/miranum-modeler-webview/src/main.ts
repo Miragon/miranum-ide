@@ -1,4 +1,5 @@
-import { VsCode } from "./types/VsCode";
+import { WebviewApi } from "vscode-webview";
+import { VscState } from "./types/VsCode";
 import { ContentController } from "./app/ContentController";
 import { VscController } from "./app/VscController";
 import BpmnModeler from "bpmn-js/lib/Modeler";
@@ -15,14 +16,14 @@ import TokenSimulationModule from "bpmn-js-token-simulation";
 
 // css
 import "./styles.css";
-import "../../../node_modules/bpmn-js/dist/assets/bpmn-js.css";
-import "../../../node_modules/bpmn-js/dist/assets/diagram-js.css";
-import "../../../node_modules/bpmn-js-properties-panel/dist/assets/properties-panel.css";
-import "../../../node_modules/bpmn-js-properties-panel/dist/assets/element-templates.css";
-import "../../../node_modules/@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
-import "../../../node_modules/bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+import "bpmn-js/dist/assets/bpmn-js.css";
+import "bpmn-js/dist/assets/diagram-js.css";
+import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
+import "bpmn-js-properties-panel/dist/assets/element-templates.css";
+import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
-declare const vscode: VsCode;
+declare const vscode: WebviewApi<VscState>;
 
 const modeler = new BpmnModeler({
     container: "#js-canvas",

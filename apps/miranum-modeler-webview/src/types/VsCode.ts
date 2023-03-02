@@ -1,9 +1,3 @@
-export type VsCode = {
-    postMessage(message: VscMessage): void;
-    getState(): VscState;
-    setState(state: VscState): void;
-};
-
 export type VscMessage = {
     type: string;
     content: any;
