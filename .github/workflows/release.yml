@@ -15,6 +15,10 @@ on:
         description: 'Release miranum-console app (y/n)?'
         required: true
         default: 'y'
+      miranum-forms:
+        description: 'Release miranum-forms app (y/n)?'
+        required: true
+        default: 'y'
       miranum-core:
         description: 'Release miranum-core (y/n)?'
         required: true
@@ -52,6 +56,11 @@ jobs:
         with:
           name: miranum-console
           path: dist/apps/miranum-console
+      # miranum-forms
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-forms
+          path: dist/apps/miranum-forms
       # miranum-core
       - uses: actions/upload-artifact@v3
         with:
@@ -62,7 +71,7 @@ jobs:
           name: spring-boot-apps
           path: spring-boot-apps
 
-  create-release-tag:
+  create-release:
     if: github.event.inputs.release-tag
     runs-on: ubuntu-latest
     needs:
@@ -70,18 +79,33 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Create tag
-        uses: tvdias/github-tagger@v0.0.2
+        uses: actions/github-script@v6
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: "${{ github.event.inputs.release-tag }}"
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ github.event.inputs.release-tag }}',
+              sha: context.sha
+            })
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.release-tag }}
+          release_name: Release ${{ github.event.inputs.release-tag }}
+          draft: false
+          prerelease: false
 
-  # miranum-cli
+  # miranum-console
   publish-miranum-console:
     if: github.event.inputs.miranum-console == 'y'
     runs-on: ubuntu-latest
     needs:
       - build
-      - create-release-tag
+      - create-release
     steps:
       - name: Setup NodeJS 16
         uses: actions/setup-node@v3
@@ -100,13 +124,38 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
+  # miranum-forms
+  publish-miranum-forms:
+    if: github.event.inputs.miranum-forms == 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - create-release
+    steps:
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: miranum-forms
+      - name: Prepare
+        run: npm install && npm install -g vsce
+      - name: Build vsix
+        run: vsce package --out miranum-forms.vsix
+      - name: Publish extension
+        run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
+
   # miranum-cli
   publish-miranum-cli:
     if: github.event.inputs.miranum-cli == 'y'
     runs-on: ubuntu-latest
     needs:
       - build
-      - create-release-tag
+      - create-release
     steps:
       - name: Setup NodeJS 16
         uses: actions/setup-node@v3
@@ -127,7 +176,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-      - create-release-tag
+      - create-release
     steps:
       - name: Setup NodeJS 16
         uses: actions/setup-node@v3
@@ -147,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-      - create-release-tag
+      - create-release
     steps:
       - uses: actions/download-artifact@v3
         with:
