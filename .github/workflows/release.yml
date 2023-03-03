@@ -204,7 +204,8 @@ jobs:
       - name: Install Java and Maven
         uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: '11'
+          distribution: 'adopt'
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
