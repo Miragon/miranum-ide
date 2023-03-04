@@ -1,18 +1,20 @@
 import { WebviewApi } from "vscode-webview";
-import { VscState } from "../types/VsCode";
+import { VscMessage, VscState } from "../types/VsCode";
 
 export class StateController {
 
-    constructor(
-        private readonly vsc: WebviewApi<VscState>,
-    ) {}
+    private vscode: WebviewApi<VscState>;
 
-    public getState(): VscState {
-        return this.vsc.getState() ?? {};
+    constructor() {
+        this.vscode = acquireVsCodeApi();
+    }
+
+    public getState(): VscState | undefined {
+        return this.vscode.getState();
     }
 
     public setState(state: VscState) {
-        this.vsc.setState(state);
+        this.vscode.setState(state);
     }
 
     public updateState(state: Partial<VscState>) {
@@ -20,5 +22,9 @@ export class StateController {
             ...this.getState(),
             ...state,
         });
+    }
+
+    public postMessage(message: VscMessage) {
+        this.vscode.postMessage(message);
     }
 }

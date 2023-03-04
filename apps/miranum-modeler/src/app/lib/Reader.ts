@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Uri } from "vscode";
 import { FolderContent, WorkspaceFolder } from "../types";
-import { MiranumLogger } from "./MiranumLogger";
+import { Logger } from "./Logger";
 
 /**
  * Scan the current working directory for important files.
@@ -11,7 +11,7 @@ export class Reader {
 
     private readonly fs = vscode.workspace.fs;
 
-    public static getFileSystemReader(): Reader {
+    public static get(): Reader {
         if (this.instance === undefined) {
             this.instance = new Reader();
         }
@@ -49,7 +49,7 @@ export class Reader {
             }
         });
 
-        MiranumLogger.LOGGER.info(`[Miranum.Modeler.Reader] Files were read`);
+        Logger.get().info(`[Miranum.Modeler.Reader] Files were read.`);
 
         return filesContent;
     }
@@ -74,12 +74,12 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                MiranumLogger.LOGGER.error(`[Miranum.Modeler.Reader] Failed to read form-key of following files:\n${fileNames}`);
+                Logger.get().error(`[Miranum.Modeler.Reader] Failed to read form-key of following files:\n${fileNames}`);
             }
 
             return fileContent;
         } catch (error) {
-            MiranumLogger.LOGGER.error(`[Miranum.Modeler.Reader] ${error}`);
+            Logger.get().error(`[Miranum.Modeler.Reader] ${error}`);
             return [];
         }
     }
@@ -130,12 +130,12 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                MiranumLogger.LOGGER.error(`[Miranum.Modeler.Reader] Failed to parse following files:\n${fileNames}`);
+                Logger.get().error(`[Miranum.Modeler.Reader] Failed to parse following files:\n${fileNames}`);
             }
 
             return fileContent;
         } catch (error) {
-            MiranumLogger.LOGGER.error(`[Miranum.Modeler.Reader] ${error}`);
+            Logger.get().error(`[Miranum.Modeler.Reader] ${error}`);
             return [];
         }
     }
@@ -213,7 +213,7 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                MiranumLogger.LOGGER.error(`[Miranum.Modeler.Reader] Following files could not be read:\n${JSON.stringify(fileNames)}`);
+                Logger.get().error(`[Miranum.Modeler.Reader] Following files could not be read:\n${JSON.stringify(fileNames)}`);
                 // inform user that a certain file could not be read
                 vscode.window.showInformationMessage(
                     `Could not read following files!

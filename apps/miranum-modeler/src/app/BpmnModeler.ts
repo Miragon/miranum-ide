@@ -1,21 +1,20 @@
 import * as vscode from "vscode";
-import { FolderContent, MessageType, VscMessage, WorkspaceFolder } from "./types";
-import { MiranumLogger, Reader, TextEditor, Watcher } from "./lib";
+import { MessageType, VscMessage, WorkspaceFolder } from "./types";
+import { Logger, Reader, TextEditor, Watcher } from "./lib";
 import debounce from "lodash.debounce";
+import { Uri } from "vscode";
 
 export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
     public static readonly VIEWTYPE = "bpmn-modeler";
-
-    //public static readonly LOGGER = vscode.window.createOutputChannel("Miranum: Modeler", { log: true });
 
     private static counter = 0;
 
     private write = this.asyncDebounce(this.writeChangesToDocument, 100);
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        Logger.get().clear();
         const provider = new BpmnModeler(context);
-        MiranumLogger.LOGGER.clear();
         return vscode.window.registerCustomEditorProvider(BpmnModeler.VIEWTYPE, provider);
     }
 
@@ -33,10 +32,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         const toggleLogger = vscode.commands.registerCommand(
             "bpmn-modeler.toggleLogger",
             () => {
-                if (!MiranumLogger.isOpen) {
-                    MiranumLogger.show();
+                if (!Logger.isOpen) {
+                    Logger.show();
                 } else {
-                    MiranumLogger.hide();
+                    Logger.hide();
                 }
             });
         // <---- Register commands -----
@@ -67,85 +66,84 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         let isBuffer = false;
 
         const projectUri = this.getProjectUri(document.uri);
-
-        let workspaceFolder: WorkspaceFolder[];
-        try {
-            workspaceFolder = await getWorkspace();
-        } catch (error) {
-            workspaceFolder = this.getDefaultWorkspace();
-            const message = (error instanceof Error) ? error.message : "Could not read miranum.json";
-            MiranumLogger.LOGGER.error(`[Miranum.Modeler] ${message}`);
-        }
+        const workspaceFolder = await this.getWorkspace(projectUri);
 
         webviewPanel.webview.options = { enableScripts: true };
         TextEditor.document = document;
 
-        const reader = Reader.getFileSystemReader();
         const watcher = Watcher.getWatcher(projectUri, workspaceFolder);
         watcher.subscribe(document.uri.path, webviewPanel);
         webviewPanel.webview.html = this.getHtmlForWebview(
             webviewPanel.webview,
             this.context.extensionUri,
-            document.getText(),
-            await reader.getAllFiles(projectUri, workspaceFolder),
         );
-
-        async function getWorkspace() {
-            try {
-                const file = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(projectUri, "miranum.json"));
-                const workspace: WorkspaceFolder[] = JSON.parse(Buffer.from(file).toString("utf-8")).workspace;
-                return workspace;
-            } catch (error) {
-                throw new Error(`Could not read miranum.json: ${error}`);
-            }
-        }
 
         webviewPanel.webview.onDidReceiveMessage(async (event: VscMessage) => {
             try {
                 switch (event.type) {
+                    case `${BpmnModeler.VIEWTYPE}.${MessageType.initialize}`: {
+                        Logger.get().info(`${event.content} (Webview: ${webviewPanel.title})`);
+                        postMessage(MessageType.initialize);
+                        break;
+                    }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.updateFromWebview}`: {
                         isUpdateFromWebview = true;
                         if (await this.write(document, event.content)) {
-                            //MiranumLogger.LOGGER.info(`[Miranum.Modeler] Write changes to document ${document.fileName}`);
+                            //MiranumLogger.get().info(`[Miranum.Modeler] Write changes to document ${document.fileName}`);
                         }
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.info}`: {
-                        MiranumLogger.LOGGER.info(event.content);
+                        Logger.get().info(`${event.content}\n\t(Webview: ${webviewPanel.title})`);
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.error}`: {
-                        MiranumLogger.LOGGER.error(event.content);
+                        Logger.get().error(`${event.content}\n\t(Webview: ${webviewPanel.title})`);
                         break;
                     }
                 }
             } catch (error) {
                 isUpdateFromWebview = false;
                 const message = (error instanceof Error) ? error.message : "Error";
-                MiranumLogger.LOGGER.error(`[Miranum.Modeler] ${message}`);
+                Logger.get().error(`[Miranum.Modeler] ${message}`);
             }
         });
 
-        const postMessage = (msgType: MessageType) => {
+        const postMessage = async (msgType: MessageType) => {
             if (webviewPanel.visible) {
+                let content: string;
+                switch (msgType) {
+                    case MessageType.initialize: {
+                        content = JSON.stringify({
+                            bpmn: document.getText(),
+                            files: await Reader.get().getAllFiles(projectUri, workspaceFolder),
+                        });
+                        break;
+                    }
+                    default: {
+                        content = document.getText();
+                        break;
+                    }
+                }
+
                 webviewPanel.webview.postMessage({
                     type: `${BpmnModeler.VIEWTYPE}.${msgType}`,
-                    text: document.getText(),
+                    text: content,
                 })
                     .then((result) => {
                         if (!result) {
-                            MiranumLogger.LOGGER.error(`[Miranum.Modeler] Message could not be sent to the Webview.`);
+                            Logger.get().error(`[Miranum.Modeler] Message could not be sent to the Webview.`);
                         }
                     }, (reason) => {
                         if (!document.isClosed) {
-                            MiranumLogger.LOGGER.error(`[Miranum.Modeler] ${reason}`);
+                            Logger.get().error(`[Miranum.Modeler] ${reason}`);
                         }
                     });
             }
         };
 
         const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument((event) => {
-            MiranumLogger.LOGGER.info(`[Miranum.Modeler] Document was saved (${document.fileName})`);
+            Logger.get().info(`[Miranum.Modeler] Document was saved (${document.fileName})`);
         });
 
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -201,19 +199,14 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             changeDocumentSubscription.dispose();
             saveDocumentSubscription.dispose();
         });
-
-        MiranumLogger.LOGGER.info(`[Miranum.Modeler] Initialized webview ${webviewPanel.title}`);
     }
 
-    private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, initialContent: string, files: FolderContent[]) {
+    private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const pathToWebview = vscode.Uri.joinPath(extensionUri, "miranum-modeler-webview");
 
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.js"));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.css"));
         const fontBpmn = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"));
-
-        const bpmnXML = JSON.stringify(initialContent).replace(/'/g, "\\'");
-        const data = JSON.stringify(files);
 
         const nonce = this.getNonce();
 
@@ -254,16 +247,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 <div class="properties-panel-parent" id="js-properties-panel"></div>
               </div>
 
-              <script type="text/javascript" nonce="${nonce}">
-                const vscode = acquireVsCodeApi();
-                const state = vscode.getState();
-                if (!state) {
-                    vscode.setState({
-                      bpmn: '${bpmnXML}',
-                      files: '${data}'
-                    });
-                }
-              </script>
               <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>
             </body>
             </html>
@@ -324,7 +307,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
      * @param document The URI of the open document
      * @private
      */
-    private getProjectUri(document: vscode.Uri): vscode.Uri {
+    private getProjectUri(document: Uri): Uri {
         const workspaces = vscode.workspace.workspaceFolders;
         let documentParts = document.path.split("/");
         documentParts = documentParts.slice(0, documentParts.length - 1);
@@ -337,14 +320,36 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 }
             }
         }
-        return vscode.Uri.parse(documentParts.join("/"));
+        return Uri.parse(documentParts.join("/"));
     }
 
-    private getDefaultWorkspace(): WorkspaceFolder[] {
-        return [{
-            type: "element-template",
-            path: "element-templates",
-            extension: ".json",
-        }];
+    private async getWorkspace(projectUri: Uri): Promise<WorkspaceFolder[]> {
+        async function getMiranumJson() {
+            // eslint-disable-next-line no-useless-catch
+            try {
+                const file = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(projectUri, "miranum.json"));
+                const workspace: WorkspaceFolder[] = JSON.parse(Buffer.from(file).toString("utf-8")).workspace;
+                return workspace;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function getDefaultWorkspace(): WorkspaceFolder[] {
+            return [{
+                type: "element-template",
+                path: "element-templates",
+                extension: ".json",
+            }];
+        }
+
+        try {
+            return await getMiranumJson();
+        } catch (error) {
+            let message = "Could not read miranum.json";
+            message = (error instanceof Error) ? `${message}: ${error.message}` : message;
+            Logger.get().error(`[Miranum.Modeler] ${message}`);
+            return getDefaultWorkspace();
+        }
     }
 }

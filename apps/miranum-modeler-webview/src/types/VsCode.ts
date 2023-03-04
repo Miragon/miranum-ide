@@ -20,6 +20,7 @@ export interface WorkspaceFolder {
 }
 
 export enum MessageType {
+    "initialize" = "initialize",
     "updateFromExtension" = "updateFromExtension",
     "updateFromWebview" = "updateFromWebview",
     "undo" = "undo",
