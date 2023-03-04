@@ -1,19 +1,12 @@
-export type VsCode = {
-    postMessage(message: VscMessage): void;
-    getState(): VscState;
-    setState(state: VscState): void;
-};
-
-type VscMessage = {
+export interface VscMessage {
     type: string;
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    content: any;
-};
+    content: string;
+}
 
-type VscState = {
-    text: string;
+export interface VscState {
+    bpmn: string;
     files: string;
-};
+}
 
 export interface FolderContent {
     type: string,
@@ -24,4 +17,14 @@ export interface WorkspaceFolder {
     type: string;
     path: string;
     extension: string;
+}
+
+export enum MessageType {
+    "updateFromExtension" = "updateFromExtension",
+    "updateFromWebview" = "updateFromWebview",
+    "undo" = "undo",
+    "redo" = "redo",
+    "reloadFiles" = "reloadFiles",
+    "info" = "info",
+    "error" = "error",
 }

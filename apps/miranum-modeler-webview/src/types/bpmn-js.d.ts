@@ -1,10 +1,61 @@
 declare module "bpmn-js/lib/Modeler" {
+    import EventBus from "diagram-js/lib/core/EventBus";
     import { ViewerOptions } from "diagram-js/lib/model";
     export default class BpmnModeler {
         constructor(options?: ViewerOptions): BpmnModeler;
-        importXML(xml: string): void;
+        importXML(xml: string): Promise<DiagramWarning>;
         saveXML({ format: boolean }): Promise<{ xml: string }>;
-        get(service: string): any;
+        get<T extends ServiceName | string>(service: T): Service<T>;
+        on<T extends Event>(event: T, callback: Callback<T>): void;
+    }
+
+    export type DiagramWarning = {
+        warnings: WarningArray
+    };
+
+    export interface MessageObject {
+        message: string;
+    }
+
+    export type BpmnJsError = {
+        message: string,
+        stack: string,
+    };
+
+    export type WarningArray = [
+        {
+            message: string,
+            error: BpmnJsError,
+        },
+    ];
+
+    export type ErrorArray = [
+        error: BpmnJsError,
+    ];
+
+    export type ElementTemplateEvent =
+        | "elementTemplates.errors";
+
+    export type Event =
+        | ElementTemplateEvent;
+
+    export interface ElementTemplateObject {
+        errors: ErrorArray;
+    }
+
+    export type CallbackObject<T extends Event> =
+        T extends ElementTemplateEvent ? ElementTemplateObject : any;
+
+    export type Callback<T extends Event> = (e: CallbackObject<T>) => void;
+
+    export type ServiceName =
+        | "eventBus"
+        | "elementTemplateLoader";
+
+    export type Service<T extends string> = ServiceMap extends Record<T, infer E> ? E : any;
+
+    interface ServiceMap {
+        eventBus: EventBus;
     }
 }
 

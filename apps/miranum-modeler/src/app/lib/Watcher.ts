@@ -1,6 +1,7 @@
 import { RelativePattern, Uri, Webview, WebviewPanel, window, workspace } from "vscode";
-import { WorkspaceFolder } from "../types";
-import { FileSystemReader } from "./FileSystemReader";
+import { MessageType, WorkspaceFolder } from "../types";
+import { Reader } from "./Reader";
+import { MiranumLogger } from "./MiranumLogger";
 
 export class Watcher {
     private static instances: { [root: string]: Watcher } = {};
@@ -15,7 +16,12 @@ export class Watcher {
         private readonly projectUri: Uri,
         private readonly workspaceFolders: WorkspaceFolder[],
     ) {
-        const watcher = workspace.createFileSystemWatcher(this.createGlobPattern());
+        const pattern = this.createGlobPattern();
+        const watcher = workspace.createFileSystemWatcher(pattern);
+        MiranumLogger.LOGGER.info(`[Miranum.Modeler.Watcher] Watcher was created
+            - basePath: ${pattern.baseUri.path}
+            - pattern: ${pattern.pattern}`,
+        );
 
         watcher.onDidCreate((uri) => {
             this.notify(uri);
@@ -33,7 +39,7 @@ export class Watcher {
     /**
      * Create a unique instance for each workspace or return the instance if it already exists.
      * @param projectUri The URI of the project/workspace
-     * @param workspace List of folders to be monitored within a specific project
+     * @param workspaceFolders
      */
     public static getWatcher(projectUri: Uri, workspaceFolders: WorkspaceFolder[]): Watcher {
         const root = projectUri.path;
@@ -72,7 +78,6 @@ export class Watcher {
             return;
         }
 
-        const reader = FileSystemReader.getFileSystemReader();
         const changedWorkspaceFolders: WorkspaceFolder[] = [];
         for (const dir of this.changes) {
             for (const workspaceFolder of this.workspaceFolders) {
@@ -82,21 +87,11 @@ export class Watcher {
             }
         }
 
-        if (await webviewPanel.webview.postMessage({
-            type: "FileSystemWatcher.reloadFiles",
-            text: await reader.getAllFiles(this.projectUri, changedWorkspaceFolders)
-        })) {
-            delete this.unresponsive[id];
-            if (webviewPanel.visible) {
-                this.showMessage("Files reloaded successfully!");
-            }
-
-        } else {
-            this.unresponsive[id] = webviewPanel.webview;
-            if (webviewPanel.visible) {
-                this.showErrorMessage(id, webviewPanel);
-            }
-            console.log("[FileSystemWatcher] -> Could not post message! (ViewState: " + webviewPanel.visible + ")");
+        try {
+            await this.postMessage(id, webviewPanel, changedWorkspaceFolders);
+            delete this.unresponsive[id]; // message was posted
+        } catch (error) {
+            this.unresponsive[id] = webviewPanel.webview; // remember webview for reloading files as soon as the webview get visible again
         }
 
         if (Object.keys(this.unresponsive).length === 0) {
@@ -110,34 +105,21 @@ export class Watcher {
      * @private
      */
     private async notify(uri: Uri) {
-        const reader = FileSystemReader.getFileSystemReader();
-
         try {
-            const [dir, ext] = this.getDirectoryAndExtension(uri);
+            const [dir] = this.getDirectoryAndExtension(uri);
             const changedWorkspaceFolders: WorkspaceFolder[] = [];
             for (const workspaceFolder of this.workspaceFolders) {
                 if (dir === workspaceFolder.path) {
                     changedWorkspaceFolders.push(workspaceFolder);
                 }
             }
-            const files = await reader.getAllFiles(this.projectUri, changedWorkspaceFolders);
 
             for (const [id, webviewPanel] of this.webviews) {
-                if (await webviewPanel.webview.postMessage({
-                    type: "FileSystemWatcher.reloadFiles",
-                    text: files
-                })) {
-                    delete this.unresponsive[id];
-                    if (webviewPanel.visible) {
-                        this.showMessage("Files reloaded successfully!");
-                    }
-
-                } else {
-                    this.unresponsive[id] = webviewPanel.webview;
-                    if (webviewPanel.visible) {
-                        this.showErrorMessage(id, webviewPanel);
-                    }
-                    console.log("[FileSystemWatcher] -> Could not post message! (ViewState: " + webviewPanel.visible + ")");
+                try {
+                    await this.postMessage(id, webviewPanel, changedWorkspaceFolders);
+                    delete this.unresponsive[id]; // message was posted
+                } catch (error) {
+                    this.unresponsive[id] = webviewPanel.webview; // remember webview for reloading files as soon as the webview get visible again
                 }
 
                 if (Object.keys(this.unresponsive).length > 0) {
@@ -151,7 +133,8 @@ export class Watcher {
             for (const [id, webviewPanel] of this.webviews) {
                 this.unresponsive[id] = webviewPanel.webview;
             }
-            console.log("[FileSystemWatcher]" + error);
+            const message = (error instanceof Error) ? error.message : "Could not notify webview";
+            MiranumLogger.LOGGER.error(`[Miranum.Modeler.Watcher] ${message}`);
         }
     }
 
@@ -231,22 +214,41 @@ export class Watcher {
                 return [folder.path, folder.extension];
             }
         }
-        throw new Error("[FileSystemWatcher] -> Could not find " + dirs[0] + "in the tracked directories!");
+        throw new Error(`Could not find ${dirs[0]} in the tracked directories!`);
+    }
+
+    private async postMessage(id: string, webviewPanel: WebviewPanel, folders: WorkspaceFolder[]) {
+        const reader = Reader.getFileSystemReader();
+        if (await webviewPanel.webview.postMessage({
+            type: `FileSystemWatcher.${MessageType.reloadFiles}`,
+            text: JSON.stringify(await reader.getAllFiles(this.projectUri, folders)),
+        })) {
+            this.showMessage("Files reloaded successfully!");
+            MiranumLogger.LOGGER.info(`[Miranum.Modeler.Watcher] Reloaded webview ${webviewPanel.title} successfully`);
+
+        } else {
+            if (webviewPanel.visible) {
+                this.showErrorMessage(id, webviewPanel);
+            }
+            MiranumLogger.LOGGER.error(`[Miranum.Modeler.Watcher] Could not post message to webview ${webviewPanel.title}` +
+                `(ViewState: ${webviewPanel.visible}`);
+        }
     }
 
     private showMessage(message: string): void {
         window.showInformationMessage(
-            message
+            message,
         );
     }
 
     private showErrorMessage(id: string, webviewPanel: WebviewPanel): void {
         window.showInformationMessage(
-            "Failed to reload modeler!" +
-            "Webview: " + id,
-            ...["Try again"]
-        ).then(() => {
-            this.update(id, webviewPanel);
+            `Failed to reload modeler! Webview: ${id}`,
+            ...["Try again"],
+        ).then((input) => {
+            if (input === "Try again") {
+                this.update(id, webviewPanel);
+            }
         });
     }
 }

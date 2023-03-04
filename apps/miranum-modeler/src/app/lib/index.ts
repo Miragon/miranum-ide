@@ -1,3 +1,4 @@
-export * from "./FileSystemReader";
-export * from "./FileSystemWatcher";
+export * from "./Reader";
+export * from "./Watcher";
 export * from "./TextEditor";
+export * from "./MiranumLogger";
