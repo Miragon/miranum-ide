@@ -8,7 +8,15 @@
     },
     {
       "files": ["*.ts", "*.tsx"],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "no-fallthrough": [
+          "error",
+          {
+            "commentPattern": "break[\\s\\w]*omitted"
+          }
+        ]
+      }
     },
     {
       "files": ["*.js", "*.jsx"],
