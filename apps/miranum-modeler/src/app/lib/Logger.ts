@@ -2,25 +2,22 @@ import * as vscode from "vscode";
 import { LogOutputChannel } from "vscode";
 
 export class Logger {
-    private static _outputChannel: string;
-
     private static _logger: LogOutputChannel;
 
     private static _isOpen = false;
 
-    public static setOutputChannel(channel: string): void {
-        this._outputChannel = channel;
-    }
-
-    public static get(): LogOutputChannel {
-        if (!this._outputChannel) {
-            throw new Error("[Miranum.Modeler.Logger] Please set the output channel");
+    public static get(): LogOutputChannel;
+    public static get(channel: string): LogOutputChannel;
+    public static get(channel?: string): LogOutputChannel {
+        if (this._logger) {
+            return this._logger;
+        } else {
+            if (channel) {
+                return this._logger = vscode.window.createOutputChannel(channel, { log: true });
+            } else {
+                throw new Error("[Miranum.Modeler.Logger] Please set the output channel");
+            }
         }
-
-        if (!this._logger) {
-            return this._logger = vscode.window.createOutputChannel(this._outputChannel, { log: true });
-        }
-        return this._logger;
     }
 
     public static get isOpen(): boolean {
