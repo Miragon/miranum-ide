@@ -4,6 +4,7 @@ import { useEffect, useState } from "@bpmn-io/properties-panel/preact/hooks";
 import { getBusinessObject, is } from "bpmn-js/lib/util/ModelUtil";
 import { without } from "min-dash";
 import { createElement } from "camunda-bpmn-js-behaviors/lib/util/ElementUtil";
+import { getFormKeys } from "../../../utils";
 
 export default function (element: any) {
     return [
@@ -55,9 +56,9 @@ function Form(props: any) {
     };
 
     //fetch forms (from window variable) and fill Forms with it
-    const [ forms, setForms ] = useState([]);
+    const [ forms, setForms ] = useState<string[]>([]);
     useEffect(() => {
-        setForms(window.forms);
+        setForms(getFormKeys()); // window.forms);
     }, [ setForms ]);
 
     const getOptions = () => {
@@ -90,7 +91,7 @@ function addInputParameter(element: any, property: any, bpmnFactory: any, modeli
 
     const businessObject = getBusinessObject(element); //alternativ: element.businessObject
     let extensionElements = businessObject.get("extensionElements");
-    let inputOutput = findExtension(businessObject, "camunda:InputOutput");                            //already as a global variable
+    let inputOutput = findExtension(businessObject, "camunda:InputOutput"); //already as a global variable
     let updatedBusinessObject, update;
 
     //goes through all possibilities and sets updateBusinessObject & update accordingly

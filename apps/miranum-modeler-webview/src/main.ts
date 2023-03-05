@@ -1,5 +1,5 @@
 import { FolderContent, MessageType } from "./types/VsCode";
-import { ContentController, ImportWarning, StateController } from "./app";
+import { ContentController, ImportWarning, setFormKeys, StateController } from "./app";
 import debounce from "lodash.debounce";
 import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 import {
@@ -11,7 +11,7 @@ import {
 import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
 import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-//import miragonProviderModule from "./app/PropertieProvider/provider";
+import miragonProviderModule from "./app/PropertieProvider/provider";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 
 // css
@@ -38,7 +38,7 @@ const modeler = new BpmnModeler({
         BpmnPropertiesProviderModule,
         CamundaPlatformPropertiesProviderModule,
         CamundaPlatformBehaviors,
-        //miragonProviderModule,
+        miragonProviderModule,
         // Element Templates
         ElementTemplatesPropertiesProviderModule,
         ElementTemplateChooserModule,
@@ -128,8 +128,9 @@ function setupListeners(): void {
                     break;
                 }
                 case `FileSystemWatcher.${MessageType.reloadFiles}`: {
-                    const [, elTemps] = getFiles(JSON.parse(message.text));
+                    const [, elTemps, forms] = getFiles(JSON.parse(message.text));
                     const loader = modeler.get("elementTemplatesLoader");
+                    setFormKeys((forms as string[]));
                     loader.setTemplates(elTemps);
                     break;
                 }
@@ -152,8 +153,11 @@ function setupListeners(): void {
 
 function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
     openXML(bpmn);
-    const [, elTemps] = getFiles(files);
+    const [, elTemps, forms] = getFiles(files);
+    setFormKeys((forms as string[]));
     modeler.get("elementTemplatesLoader").setTemplates(elTemps);
+
+    console.log(modeler.get("propertiesPanelLoader"));
 
     postMessage(MessageType.info, "Webview was initialized.");
 }

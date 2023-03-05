@@ -1,6 +1,7 @@
 import { is } from "bpmn-js/lib/util/ModelUtil";
 import formStartProp from "./parts/FormStartProp";
 import formUserProp from "./parts/FormUserProp";
+import { getFormKeys } from "../../utils";
 
 const LOW_PRIORITY = 500;
 
@@ -35,7 +36,7 @@ export default function MiragonProvider(this: any, propertiesPanel: any, transla
         return function (groups: any) {
 
             //checks whether form files where loaded and either uses default property-panel, or Miranum's custom panel
-            if (window.forms.length > 0) {
+            if (getFormKeys().length > 0) { //(window.forms.length > 0) {
                 // Add own "form" group to StartEvent, and remove old Form property
                 if (is(element, "bpmn:StartEvent")) {
                     groups.push(createStartFormGroup(element, translate));

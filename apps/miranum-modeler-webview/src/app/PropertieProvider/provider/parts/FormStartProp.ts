@@ -1,6 +1,7 @@
 import { isSelectEntryEdited, SelectEntry } from "@bpmn-io/properties-panel";
 import { useService } from "bpmn-js-properties-panel";
 import { useEffect, useState } from "@bpmn-io/properties-panel/preact/hooks";
+import { getFormKeys } from "../../../utils";
 
 export default function (element: any) {
     return [
@@ -32,9 +33,9 @@ function Form(props: any) {
     };
 
     //fetch forms (from window variable) and fill Forms with it
-    const [ forms, setForms ] = useState([]);
+    const [ forms, setForms ] = useState<string[]>([]);
     useEffect(() => {
-        setForms(window.forms);
+        setForms(getFormKeys()); // window.forms);
     }, [ setForms ]);
 
     const getOptions = () => {

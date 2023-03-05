@@ -50,7 +50,7 @@ declare module "bpmn-js/lib/Modeler" {
 
     export type ServiceName =
         | "eventBus"
-        | "elementTemplateLoader";
+        | "elementTemplatesLoader";
 
     export type Service<T extends string> = ServiceMap extends Record<T, infer E> ? E : any;
 

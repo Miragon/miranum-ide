@@ -110,6 +110,7 @@
     "commander": "^9.4.0",
     "core-js": "^3.6.5",
     "lodash.debounce": "^4.0.8",
+    "min-dash": "^4.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "regenerator-runtime": "0.13.7",
