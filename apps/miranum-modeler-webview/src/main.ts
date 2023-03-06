@@ -1,6 +1,8 @@
-import { FolderContent, MessageType } from "./types/VsCode";
-import { ContentController, ImportWarning, setFormKeys, StateController } from "./app";
-import debounce from "lodash.debounce";
+import { FolderContent, MessageType, ModelerData } from "./types/types";
+import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys, StateController } from "./app";
+import { debounce, reverse, uniqBy } from "lodash";
+
+// bpmn-js
 import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 import {
     BpmnPropertiesPanelModule,
@@ -65,39 +67,57 @@ async function openXML(bpmn: string | undefined) {
         } else {
             result = (await contentController.loadDiagram(bpmn));
         }
-        stateController.updateState({ bpmn });
+        stateController.updateState({ data: { bpmn } });
 
         const warnings = (result.warnings.length > 0) ? `with following warnings: ${createList(result.warnings)}` : "";
-        postMessage(MessageType.info, `${result.message} ${warnings}`);
+        postMessage(MessageType.info,  undefined, `${result.message} ${warnings}`);
 
     } catch (error) {
         if (error instanceof ImportWarning) {
             const warnings = (error.warnings.length > 0) ? `with following warnings: ${createList(error.warnings)}` : "";
-            postMessage(MessageType.error, `${error.message} ${warnings}`);
+            postMessage(MessageType.error, undefined, `${error.message} ${warnings}`);
         } else {
-            postMessage(MessageType.error, `${error}`);
+            postMessage(MessageType.error, undefined, `${error}`);
         }
     }
 }
 
-function getFiles(data: FolderContent[] | undefined) {
-    function createAndSendMsg(...args: number[]) {
-        const msg = `Files are set:
-            - Configs: ${args[0] ?? 0}
-            - Element Templates: ${args[1] ?? 0}
-            - Forms: ${args[2] ?? 0}`;
-        postMessage(MessageType.info, msg);
+/**
+ * Set/Update the given files.
+ * @param folders
+ */
+function setFiles(folders: FolderContent[] | undefined): void {
+    if (!folders) {
+        return;
     }
 
-    if (data) {
-        const [configs, elTemps, forms] = contentController.getFiles(data);
-        stateController.updateState({ files: JSON.stringify(data) });
-        createAndSendMsg(configs.length, elTemps.length, forms.length);
-        return [configs, elTemps, forms];
-    } else {
-        createAndSendMsg();
-        return [[], [], []];
+    const message: string[] = ["Files were set:"];
+    for (const folder of folders) {
+        switch (folder.type) {
+            case "element-template": {
+                modeler.get("elementTemplatesLoader").setTemplates(folder.files);
+                stateController.updateState({
+                    data: {
+                        additionalFiles: [{ type: folder.type, files: folder.files }],
+                    },
+                });
+                message.push(`\t\t\t- Element Templates: ${folder.files.length}`);
+                break;
+            }
+            case "form": {
+                setFormKeys((folder.files as string[]));
+                stateController.updateState({
+                    data: {
+                        additionalFiles: [{ type: folder.type, files: folder.files }],
+                    },
+                });
+                message.push(`\t\t\t- Forms: ${folder.files.length}`);
+                break;
+            }
+        }
     }
+
+    postMessage(MessageType.info, undefined, message.join("\n"));
 }
 
 async function sendChanges() {
@@ -107,8 +127,8 @@ async function sendChanges() {
     }
 
     const bpmn = await contentController.exportDiagram();
-    stateController.updateState({ bpmn });
-    postMessage(MessageType.updateFromWebview, bpmn);
+    stateController.updateState({ data: { bpmn } });
+    postMessage(MessageType.updateFromWebview, { bpmn }, undefined);
 }
 
 function setupListeners(): void {
@@ -117,76 +137,87 @@ function setupListeners(): void {
             const message = event.data;
             switch (message.type) {
                 case `bpmn-modeler.${MessageType.initialize}`: {
-                    initialize(message.text);
+                    initialize(message.data);
+                    break;
+                }
+                case `bpmn-modeler.${MessageType.restore}`: {
+                    initialize(message.data);
                     break;
                 }
                 case `bpmn-modeler.${MessageType.undo}`:
                 case `bpmn-modeler.${MessageType.redo}`:
                 case `bpmn-modeler.${MessageType.updateFromExtension}`: {
                     isUpdateFromExtension = true;
-                    updateXML(message.text);
+                    updateXML(message.data.bpmn);
                     break;
                 }
                 case `FileSystemWatcher.${MessageType.reloadFiles}`: {
-                    const [, elTemps, forms] = getFiles(JSON.parse(message.text));
-                    const loader = modeler.get("elementTemplatesLoader");
-                    setFormKeys((forms as string[]));
-                    loader.setTemplates(elTemps);
+                    setFiles(message.files);
                     break;
                 }
             }
         } catch (error) {
             const message = (error instanceof Error) ? error.message : "Could not handle message";
-            postMessage(MessageType.error, message);
+            postMessage(MessageType.error, undefined, message);
         }
     });
 
     modeler.on("elementTemplates.errors", (event) => {
         const { errors } = event;
-        postMessage(MessageType.error, `Failed to load element templates with following errors: ${createList(errors)}`);
+        postMessage(MessageType.error, undefined, `Failed to load element templates with following errors: ${createList(errors)}`);
     });
 
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
 
-    postMessage(MessageType.info, "Listeners are set.");
+    postMessage(MessageType.info, undefined, "Listeners are set.");
 }
 
 function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
     openXML(bpmn);
-    const [, elTemps, forms] = getFiles(files);
-    setFormKeys((forms as string[]));
-    modeler.get("elementTemplatesLoader").setTemplates(elTemps);
-
-    console.log(modeler.get("propertiesPanelLoader"));
-
-    postMessage(MessageType.info, "Webview was initialized.");
+    setFiles(files);
+    postMessage(MessageType.info, undefined, "Webview was initialized.");
 }
 
 /**
  * Send initialize webview when it is loaded.
  */
 window.onload = async function () {
-    setupListeners();
     try {
         const state = stateController.getState();
-        if (state) {
-            postMessage(MessageType.info, "State was restored successfully.");
-            const data = state.files ? JSON.parse(state.files) : undefined;
-            return init(state.bpmn, data);
+        if (state && state.data) {
+            postMessage(MessageType.restore, undefined, "State was restored successfully.");
+            let bpmn = state.data.bpmn;
+            let files = state.data.additionalFiles;
+            const newData = await initialized();
+            if (instanceOfModelerData(newData)) {
+                if (newData.bpmn) {
+                    bpmn = newData.bpmn;
+                }
+                if (newData.additionalFiles) {
+                    if (!files) {
+                        files = newData.additionalFiles;
+                    } else {
+                        console.log("[Webview] test");
+                        // replace old values with new ones
+                        files = reverse(uniqBy(reverse(files.concat(newData.additionalFiles)), "type"));
+                    }
+                }
+            }
+            return init(bpmn, files);
         } else {
-            postMessage(MessageType.initialize, "Webview was loaded successfully.");
-            const rawData = await initialized();
-            if (typeof rawData === "string") {
-                const data = JSON.parse(rawData);
-                return init(data.bpmn, data.files);
+            postMessage(MessageType.initialize, undefined, "Webview was loaded successfully.");
+            const data = await initialized();
+            if (instanceOfModelerData(data)) {
+                return init(data.bpmn, data.additionalFiles);
             }
         }
     } catch (error) {
         const message = (error instanceof Error) ? error.message : "Failed to initialize webview.";
-        postMessage(MessageType.error, message);
+        postMessage(MessageType.error, undefined, message);
     }
 };
 
+setupListeners();
 
 // ----------------------------- Helper Functions ----------------------------->
 /**
@@ -206,21 +237,22 @@ function createList(messages: ErrorArray | WarningArray): string {
 /**
  * Post a message to the extension.
  * @param type A string that represents the type of the message.
- * @param content
+ * @param data
+ * @param message
  */
-function postMessage(type: MessageType, content: string): void {
+function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
         case MessageType.updateFromWebview: {
             stateController.postMessage({
                 type: `bpmn-modeler.${type}`,
-                content,
+                data,
             });
             break;
         }
         default: {
             stateController.postMessage({
                 type: `bpmn-modeler.${type}`,
-                content: `[Miranum.Modeler.Webview] ${content}`,
+                message: `[Miranum.Modeler.Webview] ${message}`,
             });
             break;
         }
@@ -233,7 +265,7 @@ function postMessage(type: MessageType, content: string): void {
 function initialized() {
     // this promise resolves when initialize() is called!
     return new Promise((resolve) => {
-        initialize = (response: string) => { resolve(response); };
+        initialize = (response: ModelerData | undefined) => { resolve(response); };
     });
 }
 let initialize: any = null;

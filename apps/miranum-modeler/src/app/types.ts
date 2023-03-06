@@ -1,11 +1,7 @@
-export interface VscMessage {
+export interface WorkspaceFolder {
     type: string;
-    content: string;
-}
-
-export interface VscState {
-    bpmn: string;
-    files: string;
+    path: string;
+    extension: string;
 }
 
 export interface FolderContent {
@@ -13,14 +9,20 @@ export interface FolderContent {
     files: JSON[] | string[]
 }
 
-export interface WorkspaceFolder {
+export interface ModelerData {
+    bpmn?: string;
+    additionalFiles?: FolderContent[];  // e.g element templates, forms
+}
+
+export interface VscMessage {
     type: string;
-    path: string;
-    extension: string;
+    data?: ModelerData;
+    message?: string;
 }
 
 export enum MessageType {
     "initialize" = "initialize",
+    "restore" = "restore",
     "updateFromExtension" = "updateFromExtension",
     "updateFromWebview" = "updateFromWebview",
     "undo" = "undo",

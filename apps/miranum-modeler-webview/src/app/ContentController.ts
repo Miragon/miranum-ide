@@ -1,5 +1,4 @@
 import BpmnModeler, { WarningArray } from "bpmn-js/lib/Modeler";
-import { FolderContent } from "../types/VsCode";
 
 const EMPTY_DIAGRAM_XML = `
     <?xml version="1.0" encoding="UTF-8"?>
@@ -39,7 +38,6 @@ export class ContentController {
     public async loadDiagram(bpmn: string): Promise<ImportWarning> {
         try {
             const { warnings } = await this.modeler.importXML(bpmn);
-            //console.log("[Webview] warnings", warnings);
 
             return new ImportWarning("Imported BPMN 2.0 diagram", warnings);
 
@@ -51,30 +49,5 @@ export class ContentController {
 
     public async exportDiagram(): Promise<string> {
         return (await this.modeler.saveXML({ format: true })).xml;
-    }
-
-    // todo: this is a bit ugly
-    public getFiles(data: FolderContent[]): [configs: JSON[] | string[], elementTemplates: JSON[] | string[], forms: JSON[] | string[]] {
-        let configs: JSON[] | string[] = [];
-        let elTemps: JSON[] | string[] = [];
-        let forms: JSON[] | string[] = [];
-
-        for (const folder of data) {
-            switch (folder.type) {
-                case "config": {
-                    configs = folder.files;
-                    break;
-                }
-                case "element-template": {
-                    elTemps = folder.files;
-                    break;
-                }
-                case "form": {
-                    forms = folder.files;
-                    break;
-                }
-            }
-        }
-        return [configs, elTemps, forms];
     }
 }
