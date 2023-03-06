@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { MessageType, VscMessage, WorkspaceFolder } from "./types";
+import { Uri, window } from "vscode";
+import { MessageType, ModelerData, VscMessage, WorkspaceFolder } from "./types";
 import { Logger, Reader, TextEditor, Watcher } from "./lib";
-import debounce from "lodash.debounce";
-import { Uri } from "vscode";
+import { debounce } from "lodash";
 
 export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
@@ -82,23 +82,29 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             try {
                 switch (event.type) {
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.initialize}`: {
-                        Logger.get().info(`${event.content} (Webview: ${webviewPanel.title})`);
+                        Logger.get().info(`${event.message} (Webview: ${webviewPanel.title})`);
                         postMessage(MessageType.initialize);
+                        break;
+                    }
+                    case `${BpmnModeler.VIEWTYPE}.${MessageType.restore}`: {
+                        //restore();
+                        Logger.get().info(`${event.message} (Webview: ${webviewPanel.title})`);
+                        postMessage(MessageType.restore);
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.updateFromWebview}`: {
                         isUpdateFromWebview = true;
-                        if (await this.write(document, event.content)) {
-                            //MiranumLogger.get().info(`[Miranum.Modeler] Write changes to document ${document.fileName}`);
+                        if (event.data?.bpmn) {
+                            await this.write(document, event.data.bpmn);
                         }
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.info}`: {
-                        Logger.get().info(`${event.content}\n\t(Webview: ${webviewPanel.title})`);
+                        Logger.get().info(`${event.message}\n\t(Webview: ${webviewPanel.title})`);
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.error}`: {
-                        Logger.get().error(`${event.content}\n\t(Webview: ${webviewPanel.title})`);
+                        Logger.get().error(`${event.message}\n\t(Webview: ${webviewPanel.title})`);
                         break;
                     }
                 }
@@ -111,38 +117,69 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
         const postMessage = async (msgType: MessageType) => {
             if (webviewPanel.visible) {
-                let content: string;
+                let data: ModelerData | undefined;
                 switch (msgType) {
                     case MessageType.initialize: {
-                        content = JSON.stringify({
+                        data = {
                             bpmn: document.getText(),
-                            files: await Reader.get().getAllFiles(projectUri, workspaceFolder),
-                        });
+                            additionalFiles: await Reader.get().getAllFiles(projectUri, workspaceFolder),
+                        };
+                        break;
+                    }
+                    case MessageType.restore: {
+                        data = {
+                            bpmn: (isBuffer) ? document.getText() : undefined,
+                            additionalFiles: (watcher.isUnresponsive(document.uri.path)) ? await watcher.getChangedData() : undefined,
+                        };
                         break;
                     }
                     default: {
-                        content = document.getText();
+                        data = {
+                            bpmn: document.getText(),
+                        };
                         break;
                     }
                 }
 
-                webviewPanel.webview.postMessage({
-                    type: `${BpmnModeler.VIEWTYPE}.${msgType}`,
-                    text: content,
-                })
-                    .then((result) => {
-                        if (!result) {
-                            Logger.get().error(`[Miranum.Modeler] Message could not be sent to the Webview.`);
+                try {
+                    if (await webviewPanel.webview.postMessage({
+                        type: `${BpmnModeler.VIEWTYPE}.${msgType}`,
+                        data,
+                    })) {
+                        if (msgType === MessageType.restore) {
+                            watcher.removeUnresponsive(document.uri.path);
+                            isBuffer = false;
                         }
-                    }, (reason) => {
-                        if (!document.isClosed) {
-                            Logger.get().error(`[Miranum.Modeler] ${reason}`);
+                    } else {
+                        if (msgType === MessageType.restore) {
+                            watcher.addUnresponsive(document.uri.path, webviewPanel.webview);
+                            window.showInformationMessage(
+                                `Failed to reload modeler! Webview: ${webviewPanel.title}`,
+                                ...["Try again"],
+                            ).then((input) => {
+                                if (input === "Try again") {
+                                    postMessage(MessageType.restore);
+                                }
+                            });
                         }
-                    });
+                        Logger.get().error(`[Miranum.Modeler] Could not post message ${webviewPanel.title} (Viewtype: ${webviewPanel.visible})`);
+                    }
+                } catch (error) {
+                    if (msgType === MessageType.restore) {
+                        watcher.addUnresponsive(document.uri.path, webviewPanel.webview);
+                    }
+                    if (!document.isClosed) {
+                        window.showInformationMessage(`Failed to reload modeler! Webview: ${webviewPanel.title}`);
+                        const message = (error instanceof Error)
+                            ? error.message
+                            : `Could not post message to ${webviewPanel}`;
+                        Logger.get().error(`[Miranum.Modeler] ${message}`);
+                    }
+                }
             }
         };
 
-        const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument((event) => {
+        const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(() => {
             Logger.get().info(`[Miranum.Modeler] Document was saved (${document.fileName})`);
         });
 
@@ -181,11 +218,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     // break omitted
                 }
                 case wp.webviewPanel.visible: {
-                    if (isBuffer) {
-                        postMessage(MessageType.updateFromExtension);
-                        isBuffer = false;
-                    }
-                    watcher.update(document.uri.path, wp.webviewPanel);
                     break;
                 }
             }
