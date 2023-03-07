@@ -33,4 +33,20 @@ export class Logger {
         this._isOpen = true;
         this._logger.show(true);
     }
+
+    public static info(...args: string[]): void {
+        if (!this._logger) {
+            throw new Error("[Miranum.Modeler.Logger] Logger is not initialized!");
+        }
+        const message = args.join(" ");
+        this._logger.info(message);
+    }
+
+    public static error(...args: string[]): void {
+        if (!this._logger) {
+            throw new Error("[Miranum.Modeler.Logger] Logger is not initialized!");
+        }
+        const message = args.join(" ");
+        this._logger.error(message);
+    }
 }

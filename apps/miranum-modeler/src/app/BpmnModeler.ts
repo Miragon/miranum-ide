@@ -82,13 +82,12 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             try {
                 switch (event.type) {
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.initialize}`: {
-                        Logger.get().info(`${event.message} (Webview: ${webviewPanel.title})`);
+                        Logger.info("[Miranum.Modeler.Webview]", `(Webview: ${webviewPanel.title})`, event.message ?? "");
                         postMessage(MessageType.initialize);
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.restore}`: {
-                        //restore();
-                        Logger.get().info(`${event.message} (Webview: ${webviewPanel.title})`);
+                        Logger.info("[Miranum.Modeler.Webview]", `(Webview: ${webviewPanel.title})`, event.message ?? "");
                         postMessage(MessageType.restore);
                         break;
                     }
@@ -100,18 +99,18 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.info}`: {
-                        Logger.get().info(`${event.message}\n\t(Webview: ${webviewPanel.title})`);
+                        Logger.info("[Miranum.Modeler.Webview]", `(Webview: ${webviewPanel.title})`, event.message ?? "");
                         break;
                     }
                     case `${BpmnModeler.VIEWTYPE}.${MessageType.error}`: {
-                        Logger.get().error(`${event.message}\n\t(Webview: ${webviewPanel.title})`);
+                        Logger.error("[Miranum.Modeler.Webview]", `(Webview: ${webviewPanel.title})`, event.message ?? "");
                         break;
                     }
                 }
             } catch (error) {
                 isUpdateFromWebview = false;
-                const message = (error instanceof Error) ? error.message : "Error";
-                Logger.get().error(`[Miranum.Modeler] ${message}`);
+                const message = (error instanceof Error) ? error.message : `${error}`;
+                Logger.error("[Miranum.Modeler]", `(Webview: ${webviewPanel.title})`, message);
             }
         });
 
@@ -152,7 +151,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                         }
                     } else {
                         if (msgType === MessageType.restore) {
-                            watcher.addUnresponsive(document.uri.path, webviewPanel.webview);
                             window.showInformationMessage(
                                 `Failed to reload modeler! Webview: ${webviewPanel.title}`,
                                 ...["Try again"],
@@ -162,25 +160,22 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                                 }
                             });
                         }
-                        Logger.get().error(`[Miranum.Modeler] Could not post message ${webviewPanel.title} (Viewtype: ${webviewPanel.visible})`);
+                        Logger.error("[Miranum.Modeler]", `(Webview: ${webviewPanel.title})`, `Could not post message (Viewtype: ${webviewPanel.visible})`);
                     }
                 } catch (error) {
-                    if (msgType === MessageType.restore) {
-                        watcher.addUnresponsive(document.uri.path, webviewPanel.webview);
-                    }
                     if (!document.isClosed) {
                         window.showInformationMessage(`Failed to reload modeler! Webview: ${webviewPanel.title}`);
                         const message = (error instanceof Error)
                             ? error.message
                             : `Could not post message to ${webviewPanel}`;
-                        Logger.get().error(`[Miranum.Modeler] ${message}`);
+                        Logger.error("[Miranum.Modeler]", `(Webview: ${webviewPanel.title})`, message);
                     }
                 }
             }
         };
 
         const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(() => {
-            Logger.get().info(`[Miranum.Modeler] Document was saved (${document.fileName})`);
+            Logger.info("[Miranum.Modeler]", `(Webview: ${webviewPanel.title})`, `Document was saved (${document.fileName})`);
         });
 
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -319,7 +314,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
     private async writeChangesToDocument(document: vscode.TextDocument, text: string): Promise<boolean> {
         if (document.getText() === text) {
-            return Promise.reject("[Miranum.Modeler] No changes to apply!");
+            return Promise.reject("No changes to apply!");
         }
 
         const edit = new vscode.WorkspaceEdit();
@@ -378,9 +373,8 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         try {
             return await getMiranumJson();
         } catch (error) {
-            let message = "Could not read miranum.json";
-            message = (error instanceof Error) ? `${message}: ${error.message}` : message;
-            Logger.get().error(`[Miranum.Modeler] ${message}`);
+            const message = (error instanceof Error) ? error.message : `${error}`;
+            Logger.error("[Miranum.Modeler]", "Could not read miranum.json:", `\n${message}`);
             return getDefaultWorkspace();
         }
     }

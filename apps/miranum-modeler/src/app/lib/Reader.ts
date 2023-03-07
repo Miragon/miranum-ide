@@ -49,7 +49,7 @@ export class Reader {
             }
         });
 
-        Logger.get().info(`[Miranum.Modeler.Reader] Files were read.`);
+        Logger.info("[Miranum.Modeler.Reader]", "Files were read.");
 
         return filesContent;
     }
@@ -74,12 +74,13 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                Logger.get().error(`[Miranum.Modeler.Reader] Failed to read form-key of following files:\n${fileNames}`);
+                Logger.error("[Miranum.Modeler.Reader]", `Failed to read form-key of following files:\n${fileNames}`);
             }
 
             return fileContent;
         } catch (error) {
-            Logger.get().error(`[Miranum.Modeler.Reader] ${error}`);
+            const message = (error instanceof Error) ? error.message : "Could not get form keys.";
+            Logger.error("[Miranum.Modeler.Reader]", message);
             return [];
         }
     }
@@ -130,12 +131,13 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                Logger.get().error(`[Miranum.Modeler.Reader] Failed to parse following files:\n${fileNames}`);
+                Logger.error("[Miranum.Modeler.Reader]", `Failed to parse following files:\n${fileNames}`);
             }
 
             return fileContent;
         } catch (error) {
-            Logger.get().error(`[Miranum.Modeler.Reader] ${error}`);
+            const message = (error instanceof Error) ? error.message : "Failed to parse to JSON.";
+            Logger.error("[Miranum.Modeler.Reader]", message);
             return [];
         }
     }
@@ -196,6 +198,7 @@ export class Reader {
         const ext = fileExtension.charAt(0) === "." ? fileExtension.substring(fileExtension.indexOf(".") + 1) : fileExtension;
         const uri = vscode.Uri.joinPath(rootDir, directory);
 
+        // eslint-disable-next-line no-useless-catch
         try {
             const results = await this.fs.readDirectory(uri);
             const fileNames: string[] = [];
@@ -213,11 +216,11 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                Logger.get().error(`[Miranum.Modeler.Reader] Following files could not be read:\n${JSON.stringify(fileNames)}`);
+                Logger.error("[Miranum.Modeler.Reader]", `Following files could not be read:\n${JSON.stringify(fileNames)}`);
                 // inform user that a certain file could not be read
                 vscode.window.showInformationMessage(
                     `Could not read following files!
-                                ${fileNames}`,
+                    ${fileNames}`,
                 );
             }
 
@@ -235,7 +238,7 @@ export class Reader {
             return content;
 
         } catch (error) {
-            throw new Error(`[Miranum.Modeler.Reader] ${error}`);
+            throw error;
         }
     }
 

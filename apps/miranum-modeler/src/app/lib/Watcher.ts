@@ -18,10 +18,9 @@ export class Watcher {
     ) {
         const pattern = this.createGlobPattern();
         const watcher = workspace.createFileSystemWatcher(pattern);
-        Logger.get().info(`[Miranum.Modeler.Watcher] Watcher was created on:
+        Logger.info("[Miranum.Modeler.Watcher]", `Watcher was created on:
             - basePath: ${pattern.baseUri.path}
-            - pattern: ${pattern.pattern}`,
-        );
+            - pattern: ${pattern.pattern}`);
 
         watcher.onDidCreate((uri) => {
             this.notify(uri);
@@ -71,8 +70,9 @@ export class Watcher {
         return !!(this.unresponsive[id]);
     }
 
-    public addUnresponsive(id: string, webview: Webview): void {
+    private addUnresponsive(id: string, webview: Webview): void {
         this.unresponsive[id] = webview; // remember webview for reloading files as soon as the webview get visible again
+        console.log("[Modeler] addUnresponsive()", this.unresponsive);
     }
 
     public removeUnresponsive(id: string): void {
@@ -81,6 +81,7 @@ export class Watcher {
         if (Object.keys(this.unresponsive).length === 0) {
             this.changes = new Set();
         }
+        console.log("[Modeler] removeUnresponsive()", this.unresponsive);
     }
 
     public async getChangedData(): Promise<FolderContent[]> {
@@ -159,7 +160,7 @@ export class Watcher {
                 this.addUnresponsive(id, webviewPanel.webview);
             }
             const message = (error instanceof Error) ? error.message : "Could not notify webview";
-            Logger.get().error(`[Miranum.Modeler.Watcher] ${message}`);
+            Logger.error("[Miranum.Modeler.Watcher]", message);
         }
     }
 
@@ -248,7 +249,7 @@ export class Watcher {
             files: await Reader.get().getAllFiles(this.projectUri, folders),
         })) {
             this.showMessage("Files reloaded successfully!");
-            Logger.get().info(`[Miranum.Modeler.Watcher] Reloaded webview ${webviewPanel.title} successfully`);
+            Logger.info("[Miranum.Modeler.Watcher]", `(Webview: ${webviewPanel.title})`, "Reloaded webview successfully");
 
             return Promise.resolve();
 
@@ -256,8 +257,9 @@ export class Watcher {
             if (webviewPanel.visible) {
                 this.showErrorMessage(id, webviewPanel);
             }
-            Logger.get().error(`[Miranum.Modeler.Watcher] Could not post message to webview ${webviewPanel.title} ` +
-                `(ViewState: ${webviewPanel.visible})`);
+            Logger.error("[Miranum.Modeler.Watcher]",
+                `(Webview: ${webviewPanel.title})`,
+                `Could not post message to webview (ViewState: ${webviewPanel.visible})`);
 
             return Promise.reject();
         }
