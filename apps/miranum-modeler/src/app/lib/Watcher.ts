@@ -72,7 +72,6 @@ export class Watcher {
 
     private addUnresponsive(id: string, webview: Webview): void {
         this.unresponsive[id] = webview; // remember webview for reloading files as soon as the webview get visible again
-        console.log("[Modeler] addUnresponsive()", this.unresponsive);
     }
 
     public removeUnresponsive(id: string): void {
@@ -81,7 +80,6 @@ export class Watcher {
         if (Object.keys(this.unresponsive).length === 0) {
             this.changes = new Set();
         }
-        console.log("[Modeler] removeUnresponsive()", this.unresponsive);
     }
 
     public async getChangedData(): Promise<FolderContent[]> {
