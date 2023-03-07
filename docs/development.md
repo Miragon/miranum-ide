@@ -57,18 +57,26 @@ npx nx deploy miranum-cli
 npx nx create miranum-cli
 ```
 
-### Miranum-Console
+### Miranum VS Code Extensions
 
-In order to start the miranum-console extension in development mode locally, you have to build the extension and webview.
+We have several VS Code Extensions. You can find them under the apps folder.
+In most cases our extensions need a so called [webview](https://code.visualstudio.com/api/extension-guides/webview).
+The source code of the webview is maintained separately.
+This means that `miranum-<extension-name>` and `miranum-<extension-name>-webview` form one VS Code Extension.
+In order to start a extension in development mode locally, you have to build the extension and webview.
 Therefore, you can trigger the watch command:
 ```bash
 # Auto rebuild the extensions on every change
-npx nx observe-all miranum-console
+npx nx observe-all miranum-<extension-name>
 
 # or with nx-build in command:
-npx -c 'nx watch --projects=miranum-console,miranum-console-webview -- npx nx build \$NX_PROJECT_NAME'
+npx -c 'nx watch --projects=miranum-<extension-name>,miranum-console-<extension-name>-webview -- npx nx build \$NX_PROJECT_NAME'
 ```
-Then use the `F5` key or the debug menu option `Run Miranum Console` to start the Extension Development Host.
+If not already done, you have to open this project with VS Code. Then select *Run and Debug* and chose the right extension (see figures below).
+Use the `F5` key or the debug menu option `Run Miranum ...` to start the Extension Development Host.
+
+![vscode_run_and_debug.png](../images/vscode_debu_and_run.png)
+![vscode_chose_extension.png](../images/vscode_chose_extension.png)
 
 > Note: Even though builds will be generated automatically, you have to close and reopen the webview in the Extension Development Host.
 
