@@ -72,11 +72,10 @@ npx nx observe-all miranum-<extension-name>
 # or with nx-build in command:
 npx -c 'nx watch --projects=miranum-<extension-name>,miranum-console-<extension-name>-webview -- npx nx build \$NX_PROJECT_NAME'
 ```
-If not already done, you have to open this project with VS Code. Then select *Run and Debug* and chose the right extension (see figures below).
+If not already done, you have to open this project with VS Code. Then select *Run and Debug* and choose the extension (see figures below).
 Use the `F5` key or the debug menu option `Run Miranum ...` to start the Extension Development Host.
 
-![vscode_run_and_debug.png](../images/vscode_debu_and_run.png)
-![vscode_chose_extension.png](../images/vscode_chose_extension.png)
+![vscode_run_debug.png](../images/vscode_run_debug.png)
 
 > Note: Even though builds will be generated automatically, you have to close and reopen the webview in the Extension Development Host.
 
