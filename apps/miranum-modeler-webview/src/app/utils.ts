@@ -1,6 +1,6 @@
 import { ModelerData } from "../types/types";
 
-let formKeys: string[];
+let formKeys: string[] = [];
 
 export function getFormKeys(): string[] {
     return formKeys;

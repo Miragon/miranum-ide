@@ -77,7 +77,8 @@ async function openXML(bpmn: string | undefined) {
             const warnings = (error.warnings.length > 0) ? `with following warnings: ${createList(error.warnings)}` : "";
             postMessage(MessageType.error, undefined, `${error.message} ${warnings}`);
         } else {
-            postMessage(MessageType.error, undefined, `${error}`);
+            const message = (error instanceof Error) ? error.message : "Failed to open xml.";
+            postMessage(MessageType.error, undefined, message);
         }
     }
 }
@@ -92,6 +93,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
     }
 
     const message: string[] = ["Files were set:"];
+    // right now we only care about element templates and forms
     for (const folder of folders) {
         switch (folder.type) {
             case "element-template": {
@@ -178,9 +180,6 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined): voi
     postMessage(MessageType.info, undefined, "Webview was initialized.");
 }
 
-/**
- * Send initialize webview when it is loaded.
- */
 window.onload = async function () {
     try {
         const state = stateController.getState();
@@ -188,8 +187,9 @@ window.onload = async function () {
             postMessage(MessageType.restore, undefined, "State was restored successfully.");
             let bpmn = state.data.bpmn;
             let files = state.data.additionalFiles;
-            const newData = await initialized();
+            const newData = await initialized();    // await the response form the backend
             if (instanceOfModelerData(newData)) {
+                // we only get new data when the user made changes while the webview was destroyed
                 if (newData.bpmn) {
                     bpmn = newData.bpmn;
                 }
@@ -197,7 +197,6 @@ window.onload = async function () {
                     if (!files) {
                         files = newData.additionalFiles;
                     } else {
-                        console.log("[Webview] test");
                         // replace old values with new ones
                         files = reverse(uniqBy(reverse(files.concat(newData.additionalFiles)), "type"));
                     }
@@ -206,7 +205,7 @@ window.onload = async function () {
             return init(bpmn, files);
         } else {
             postMessage(MessageType.initialize, undefined, "Webview was loaded successfully.");
-            const data = await initialized();
+            const data = await initialized();    // await the response form the backend
             if (instanceOfModelerData(data)) {
                 return init(data.bpmn, data.additionalFiles);
             }
@@ -221,7 +220,7 @@ setupListeners();
 
 // ----------------------------- Helper Functions ----------------------------->
 /**
- * Create the content of a message.
+ * Create a list of information that will be sent to the backend and get logged.
  * @param messages A list of further information.
  */
 function createList(messages: ErrorArray | WarningArray): string {
@@ -236,6 +235,7 @@ function createList(messages: ErrorArray | WarningArray): string {
 
 /**
  * Post a message to the extension.
+ * Depending on the type of message it contains either data or a string which is only logged
  * @param type A string that represents the type of the message.
  * @param data
  * @param message
@@ -252,7 +252,7 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
         default: {
             stateController.postMessage({
                 type: `bpmn-modeler.${type}`,
-                message: `[Miranum.Modeler.Webview] ${message}`,
+                message,
             });
             break;
         }
@@ -260,10 +260,9 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
 }
 
 /**
- * A promise that will resolve if another function is called.
+ * A promise that will resolve if initialize() is called.
  */
 function initialized() {
-    // this promise resolves when initialize() is called!
     return new Promise((resolve) => {
         initialize = (response: ModelerData | undefined) => { resolve(response); };
     });
@@ -271,7 +270,7 @@ function initialized() {
 let initialize: any = null;
 
 /**
- * Makes the debounce function async-friendly
+ * Makes the [lodash.debounce](https://lodash.com/docs/4.17.15#debounce) function async-friendly
  * @param func The function to debounce
  * @param wait The number of milliseconds to delay
  */
