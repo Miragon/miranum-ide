@@ -1,0 +1,92 @@
+{
+  "name": "miranum-jsonforms",
+  "displayName": "Miranum: Json Forms",
+  "description": "",
+  "license": "Apache License 2.0",
+  "version": "0.1.0",
+  "publisher": "miragon-gmbh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlowSquad/miranum-ide/tree/main/apps/miranum-forms"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowSquad/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "icon": "assets/kometLogo.png",
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "main": "main.js",
+  "activationEvents": [
+    "onCustomEditor:jsonform-modeler",
+    "onCommand:jsonform-modeler.toggleTextEditor",
+    "onCommand:jsonform-renderer.togglePreview"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "jsonform-modeler",
+        "id": "jsonform-modeler",
+        "displayName": "Miranum Json Forms",
+        "selector": [
+          {
+            "filenamePattern": "*.jsonform"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "jsonform-renderer.togglePreview",
+        "title": "Miranum: Toggle Preview",
+        "icon": "$(notebook-render-output)"
+      },
+      {
+        "command": "jsonform-modeler.toggleTextEditor",
+        "title": "Miranum: Toggle Standard Text Editor",
+        "icon": "$(notebook-mimetype)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "jsonform-renderer.togglePreview",
+          "when": "jsonform-modeler.openCustomEditors > 0"
+        },
+        {
+          "command": "jsonform-modeler.toggleTextEditor",
+          "when": "jsonform-modeler.openCustomEditors > 0"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "jsonform-renderer.togglePreview",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'jsonform-modeler'"
+        },
+        {
+          "command": "jsonform-modeler.toggleTextEditor",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'jsonform-modeler'"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "jsonform-renderer.togglePreview",
+        "key": "ctrl+shift+p",
+        "when": "jsonform-modeler.openCustomEditors > 0"
+      },
+      {
+        "command": "jsonform-modeler.toggleTextEditor",
+        "key": "ctrl+shift+e",
+        "when": "jsonform-modeler.openCustomEditors > 0"
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "miranum-jsonforms-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-jsonforms-webview/src",
+  "tags": [],
+  "targets": {
+    "observe": {
+      "executor": "@nrwl/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-webview",
+        "configFile": "apps/miranum-jsonforms-webview/vite.config.ts",
+        "deleteOutputPath": false,
+        "watch": {}
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false,
+          "vendorChunk": true
+        }
+      }
+    },
+    "dont-build-yet": {
+      "executor": "@nrwl/vite:build",
+      "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-webview"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production",
+          "filenameHashing": true,
+          "productionSourceMap": true
+        }
+      }
+    },
+    "test": {
+      "executor": "@nrwl/vite:test",
+      "outputs": ["coverage/apps/miranum-jsonforms-webview"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/miranum-jsonforms-webview"
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-jsonforms-webview/**/*.ts"]
+      }
+    }
+  }
+}

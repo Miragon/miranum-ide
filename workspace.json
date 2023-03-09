@@ -9,6 +9,8 @@
     "miranum-deployment-proxy": "spring-boot-apps/miranum-deployment-proxy",
     "miranum-forms": "apps/miranum-forms",
     "miranum-forms-webview": "apps/miranum-forms-webview",
+    "miranum-jsonforms": "apps/miranum-jsonforms",
+    "miranum-jsonforms-webview": "apps/miranum-jsonforms-webview",
     "miranum-modeler": "apps/miranum-modeler",
     "miranum-modeler-webview": "apps/miranum-modeler-webview"
   }
