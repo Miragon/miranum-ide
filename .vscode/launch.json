@@ -24,6 +24,18 @@
       "outFiles": [
         "${workspaceFolder}/dist/apps/miranum-forms"
       ]
+    },
+    {
+      "name": "Run miranum-modeler",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/apps/miranum-modeler"
+      ]
     }
   ]
 }

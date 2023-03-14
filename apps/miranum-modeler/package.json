@@ -1,0 +1,91 @@
+{
+  "name": "bpmn-modeler",
+  "displayName": "Miranum: Modeler",
+  "description": "Edit bpmn and dmn files inside VS Code.",
+  "version": "0.1.0",
+  "license": "Apache License 2.0",
+  "publisher": "miragon-gmbh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlowSquad/miranum-ide/tree/main/apps/miranum-modeler"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowSquad/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "icon": "images/komet.png",
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:bpmn-modeler",
+    "onCommand:bpmn-modeler.toggleTextEditor"
+  ],
+  "main": "main.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "bpmn-modeler",
+        "viewType": "bpmn-modeler",
+        "displayName": "BPMN Modeler",
+        "selector": [
+          {
+            "filenamePattern": "*.bpmn"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "bpmn-modeler.toggleTextEditor",
+        "title": "Miranum: Toggle Standard Text Editor",
+        "icon": "$(notebook-mimetype)"
+      },
+      {
+        "command": "bpmn-modeler.toggleLogger",
+        "title": "Miranum: Toggle Logging Information",
+        "icon": "$(callstack-view-session)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "bpmn-modeler.toggleTextEditor",
+        "key": "ctrl+shift+e",
+        "when": "bpmn-modeler.openCustomEditors > 0"
+      },
+      {
+        "command": "bpmn-modeler.toggleLogger",
+        "key": "ctrl+shift+l",
+        "when": "bpmn-modeler.openCustomEditors > 0"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "bpmn-modeler.toggleTextEditor",
+          "when": "bpmn-modeler.openCustomEditors > 0"
+        },
+        {
+          "command": "bpmn-modeler.toggleLogger",
+          "when": "bpmn-modeler.openCustomEditors > 0"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "bpmn-modeler.toggleTextEditor",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'bpmn-modeler'"
+        },
+        {
+          "command": "bpmn-modeler.toggleLogger",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'bpmn-modeler'"
+        }
+      ]
+    }
+  }
+}

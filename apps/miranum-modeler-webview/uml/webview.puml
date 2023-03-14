@@ -1,0 +1,26 @@
+@startuml
+
+class ContentController {
+    - modeler: BpmnJS
+    + constructor(modeler: BpmnJS): ContentController
+    + newDiagram(): Promise<ImportWarning>
+    + loadDiagram(bpmn: string): Promise<ImportWarning>
+    + exportDiagram(): Promise<string>
+    + getFiles(data: FolderContent[])
+}
+
+class StateController {
+    - vscode: WebviewApi<VscState>
+    + constructor(): StateController
+    + getState(): VscState | undefined
+    + setState(state: VscState): void
+    + updateState(state: Partial<VscState>): void
+    + postMessage(message: VscMessage): void
+}
+
+circle main.ts
+
+main.ts ..|> ContentController : use
+main.ts ..|> StateController : use
+
+@enduml

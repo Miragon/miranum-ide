@@ -5,11 +5,11 @@
     "miranum-cli": "apps/miranum-cli",
     "miranum-console": "apps/miranum-console",
     "miranum-console-webview": "apps/miranum-console-webview",
-    "miranum-console-webview-e2e": "apps/miranum-console-webview-e2e",
     "miranum-core": "libs/miranum-core",
     "miranum-deployment-proxy": "spring-boot-apps/miranum-deployment-proxy",
     "miranum-forms": "apps/miranum-forms",
     "miranum-forms-webview": "apps/miranum-forms-webview",
-    "miranum-forms-webview-e2e": "apps/miranum-forms-webview-e2e"
+    "miranum-modeler": "apps/miranum-modeler",
+    "miranum-modeler-webview": "apps/miranum-modeler-webview"
   }
 }

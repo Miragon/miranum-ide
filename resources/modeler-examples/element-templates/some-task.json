@@ -1,0 +1,52 @@
+{
+  "name": "Some Task",
+  "id": "de.miragon.example.SomeTask",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "properties": [
+    {
+      "label": "Implementation Type",
+      "type": "String",
+      "value": "de.miragon.SomeTaskImpl",
+      "editable": false,
+      "binding": {
+	"type": "property",
+	"name": "camunda:javaDelegate"
+      }
+    },
+    {
+      "label": "Template",
+      "description": "You can use freemarker templates ${...} here",
+      "value": "Hello ${firstName}!",
+      "type": "Text",
+      "binding": {
+	"type": "camunda:inputParameter",
+	"name": "messageBody",
+	"scriptFormat": "freemarker"
+      },
+      "constraints": {
+	"notEmpty": true
+      }
+    },
+    {
+      "label": "Result Status",
+      "description": "Process variable to assign the send result to",
+      "type": "String",
+      "value": "mailSendResult",
+      "binding": {
+	"type": "camunda:outputParameter",
+	"source": "${ resultStatus }"
+      }
+    },
+    {
+      "label": "Send Async?",
+      "type": "Boolean",
+      "value": true,
+      "binding": {
+	"type": "property",
+	"name": "camunda:asyncBefore"
+      }
+    }
+  ]
+}

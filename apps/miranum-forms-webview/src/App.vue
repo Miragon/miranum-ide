@@ -39,7 +39,7 @@ import {Schema} from "./types/Schema";
 import {DwfFormRenderer, Form} from "@muenchen/digiwf-form-renderer";
 import {DwfFormBuilder} from "@muenchen/digiwf-form-builder";
 import {SettingsEN} from "@muenchen/digiwf-form-builder-settings";
-import debounce from "lodash.debounce";
+import {debounce} from "lodash";
 
 declare const vscode: VsCode;
 

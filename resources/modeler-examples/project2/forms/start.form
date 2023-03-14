@@ -1,0 +1,48 @@
+{
+    "key": "Start_Form",
+    "schema": {
+        "key": "MyStartForm",
+        "type": "object",
+        "allOf": [
+            {
+                "title": "Input",
+                "description": "",
+                "type": "object",
+                "x-options": {
+                    "sectionsTitlesClasses": [
+                        "d-none"
+                    ]
+                },
+                "allOf": [
+                    {
+                        "containerType": "group",
+                        "title": "Group",
+                        "description": "",
+                        "x-options": {
+                            "childrenClass": "pl-0"
+                        },
+                        "properties": {
+                            "a67da64e-041c-42a7-b16c-8b45eafe9056": {
+                                "fieldType": "text",
+                                "title": "Eingabe",
+                                "type": "string",
+                                "x-options": {
+                                    "fieldColProps": {
+                                        "cols": 12,
+                                        "sm": 12
+                                    }
+                                },
+                                "x-props": {
+                                    "outlined": true,
+                                    "dense": true
+                                }
+                            }
+                        },
+                        "key": "5183fd93-7640-41bd-a8d1-45586a4abe0b"
+                    }
+                ],
+                "key": "3b8ffffa-05e4-4c0d-b789-7e5c3d098a4a"
+            }
+        ]
+    }
+}

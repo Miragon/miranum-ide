@@ -132,7 +132,7 @@ export abstract class Preview<ContentType> implements Updatable<ContentType> {
             });
         } catch (error) {
             this.isBuffer = true;
-            console.log("[Preview] Can't post message!\n" + error);
+            console.log("[Preview] Can not post message!" + error);
         }
     }
 

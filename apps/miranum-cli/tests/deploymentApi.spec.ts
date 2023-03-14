@@ -1,20 +1,20 @@
-import {deployAllFiles, deployFile } from "../src/app/deployment/api"
-import {filesToDeploy, pathToProject, shouldNotWork, sleep} from "./testHelpers";
-// import axios from 'axios';
+import { deployAllFiles, deployFile } from "../src/app/deployment/api";
+import { filesToDeploy, pathToProject, shouldNotWork, sleep } from "./testHelpers";
+// import axios from "axios";
 // import * as colors from "colors";
 
 const appPath = "dist/apps/miranum-clid/main.js";
 const target = "local"
 
 jest.setTimeout(30000);
-// jest.mock('axios');
+// jest.mock("axios");
 // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // // @ts-ignore
 // axios.get.mockResolvedValue({ data: {success: true} });
 
 describe("deploy all files", () => {
     it(`deploying my-process-automation-project e2e should work`, async () => {
-        // const logSpy = jest.spyOn(console, 'log');
+        // const logSpy = jest.spyOn(console, "log");
         const program = deployAllFiles();
         program.parse(["node", appPath, "deploy", "--directory", pathToProject, "--target", target]);
 
@@ -47,7 +47,7 @@ describe("deploy all files", () => {
 describe("deploy files", () => {
     for (const file of filesToDeploy) {
         it(`${file.type} should work`, async () => {
-            // const logSpy = jest.spyOn(console, 'log');
+            // const logSpy = jest.spyOn(console, "log");
             const program = deployFile();
             program.parse(["node", appPath, "deploy-file", "--file", file.path, "--target", target, "--type", file.type]);
 

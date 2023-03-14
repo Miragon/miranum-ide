@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 import { IContentController, Preview, TextEditorWrapper, Updatable } from "../lib";
 import { getDefault, Schema } from "../utils";
 import { TextDocument, Uri } from "vscode";
-import debounce from "lodash.debounce";
+import { debounce } from "lodash";
 
 export class DocumentController implements IContentController<TextDocument | Schema> {
 
