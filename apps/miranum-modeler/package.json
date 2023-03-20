@@ -1,7 +1,7 @@
 {
   "name": "bpmn-modeler",
   "displayName": "Miranum: Modeler",
-  "description": "Edit bpmn and dmn files inside VS Code.",
+  "description": "Create and edit BPMN 2.0 Diagrams for Camunda 7 inside VS Code.",
   "license": "Apache License 2.0",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
