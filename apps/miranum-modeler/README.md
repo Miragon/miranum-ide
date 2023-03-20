@@ -12,7 +12,7 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="../../images/komet_tp_bg.png" alt="Logo" height="50">
+        <img src="https://github.com/FlowSquad/miranum-ide/blob/main/images/komet_tp_bg.png" alt="Logo" height="50">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
     <p>
@@ -56,7 +56,7 @@ The documentation project is built with technologies we use in our projects:
 
 ## Getting started
 
-For an explanation on how to get started, please refer to the [quickstart doc](../../docs/quickstart.md).
+For an explanation on how to get started, please refer to the [quickstart doc](https://github.com/FlowSquad/miranum-ide/blob/main/docs/quickstart.md).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -84,13 +84,13 @@ Don't forget to give the project a star! Thanks again!
 5. Push to the Branch (`git push origin feat/AmazingFeature`)
 6. Open a Pull Request
 
-More about this in the [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) file.
+More about this in the [CODE_OF_CONDUCT](https://github.com/FlowSquad/miranum-ide/blob/main/CODE_OF_CONDUCT.md) file.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## License
 
-Distributed under the Apache License Version 2.0. See [License](LICENSE) file for mor information.
+Distributed under the Apache License Version 2.0. See [License](https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE) file for mor information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
