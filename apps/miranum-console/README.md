@@ -32,16 +32,15 @@ process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-The Miranum Modeler is one component of our collection of *VS Code Plugins*.
-It allows you to model BPMN 2.0 Diagrams that can be used with Camunda Platform 7.
+The Miranum Console is one component of our collection of *VS Code Plugins*.
+It provides a UI and helps you to scaffold your digitization project and deploy process artefacts.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Features
 
-* Create and edit processes for Camunda Platform 7 and enhance them with technical attributes.
-* Use the text editor for changes directly in the XML file.
-* Use the integrated *Token Simulation* to simulate your process flow.
+* Scaffolding your digitization project.
+* Deploy your process artefacts.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -49,7 +48,8 @@ It allows you to model BPMN 2.0 Diagrams that can be used with Camunda Platform 
 
 The documentation project is built with technologies we use in our projects:
 
-* [BPMN.io](https://bpmn.io/toolkit/bpmn-js/)
+* [Miranum CLI](https://www.npmjs.com/package/@miragon/miranum-cli)
+* [React](https://react.dev/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

@@ -63,11 +63,11 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-forms/custom-webpack.config.js",
         "assets": [
-          { "glob": "images/logo_miranum-forms.png", "input": "./", "output": "/assets" },
           { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
           { "glob": "images/kometLogo.png", "input": "./", "output": "/assets" },
+          { "glob": "LICENSE", "input": "./", "output": "/" },
           { "glob": ".vscodeignore", "input": "./apps/miranum-forms/", "output": "/" },
-          { "glob": "LICENSE", "input": "./", "output": "/" }
+          { "glob": "README.md", "input": "./apps/miranum-forms/", "output": "/" }
         ]
       },
       "configurations": {

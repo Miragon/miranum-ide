@@ -1,10 +1,15 @@
 {
   "name": "miranum-console",
 	"displayName": "Miranum: Console",
-  "version": "0.1.0",
-  "description": "",
+  "description": "A beautiful UI to deploy your process artefacts.",
   "license": "Apache-2.0",
+  "version": "0.1.0",
   "publisher": "miragon-gmbh",
+  "homepage": "https://www.miranum.io/",
+  "galleryBanner": {
+    "color": "#4254E2",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FlowSquad/miranum-ide.git"
@@ -19,10 +24,16 @@
 	"categories": [
 		"Other"
 	],
-	"extensionPack": [
-	  "publisher.extensionName"
-	],
-	"activationEvents": [
+  "extensionPack": [
+    "miragon-gmbh.miranum-console",
+    "miragon-gmbh.miranum-json-forms",
+    "miragon-gmbh.miranum-vs-code-forms",
+    "miragon-gmbh.vs-code-bpmn-modeler"
+  ],
+  "keywords": [
+    "deploy", "Deployment", "CLI", "fontend"
+  ],
+  "activationEvents": [
         "onCommand:miranum.deploy.local",
         "onCommand:miranum.deploy.dev",
         "onCommand:miranum.deploy.test",
