@@ -9,7 +9,7 @@
   "vsce": {
     "baseImagesUrl": "https://github.com/FlowSquad/miranum-ide/tree/main/images",
     "baseContentUrl": "https://github.com/FlowSquad/miranum-ide"
-  }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FlowSquad/miranum-ide.git"
