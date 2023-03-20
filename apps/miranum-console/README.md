@@ -46,8 +46,6 @@ It provides a UI and helps you to scaffold your digitization project and deploy 
 
 ### Built With
 
-The documentation project is built with technologies we use in our projects:
-
 * [Miranum CLI](https://www.npmjs.com/package/@miragon/miranum-cli)
 * [React](https://react.dev/)
 
