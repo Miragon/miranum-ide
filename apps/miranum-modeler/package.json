@@ -6,10 +6,6 @@
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
-  "vsce": {
-    "baseImagesUrl": "https://github.com/FlowSquad/miranum-ide/apps/miranum-modeler",
-    "baseContentUrl": "https://github.com/FlowSquad/miranum-ide/apps/miranum-modeler"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FlowSquad/miranum-ide.git"
