@@ -1,6 +1,6 @@
 {
-  "name": "vs-code-bpmn-modeler",
-  "displayName": "Miranum: Modeler",
+  "name": "modeler-test",
+  "displayName": "Miranum: Modeler Test",
   "description": "Create and edit BPMN 2.0 Diagrams for Camunda 7 inside VS Code.",
   "license": "Apache License 2.0",
   "version": "0.1.0",
