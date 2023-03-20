@@ -32,7 +32,7 @@ process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-The Miranum Modeler is one component of our collection of *VS Code Plugins*.
+**Miranum Modeler** is one component of our collection of *VS Code Plugins*.
 It allows you to model BPMN 2.0 Diagrams that can be used with Camunda Platform 7.
 
 <p align="right">(<a href="#top">back to top</a>)</p>

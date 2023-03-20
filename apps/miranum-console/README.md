@@ -32,7 +32,7 @@ process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-The Miranum Console is one component of our collection of *VS Code Plugins*.
+**Miranum Console** is one component of our collection of *VS Code Plugins*.
 It provides a UI and helps you to scaffold your digitization project and deploy process artefacts.
 
 <p align="right">(<a href="#top">back to top</a>)</p>

@@ -32,8 +32,8 @@ process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-Miranum Forms is one component of our collection of *VS Code Plugins*.
-This allows you to create and edit forms based on [JSON Schema](https://json-schema.org/),
+**Miranum Forms** is one component of our collection of *VS Code Plugins*.
+It allows you to create and edit forms based on [JSON Schema](https://json-schema.org/),
 a specification for annotating and validating JSON documents. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -43,7 +43,7 @@ a specification for annotating and validating JSON documents.
 * Create and edit forms that you can reference in your User Tasks of your BPMN diagram.
 * Use Switches, Multiselect, Dates, and many other fields to create your unique form.
 * Display and test your form with a build in form renderer.
-* Use the text editor for changes directly in the JSON file
+* Use the text editor for changes directly in the JSON file.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
