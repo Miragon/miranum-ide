@@ -25,7 +25,7 @@
 </div>
 
 
-## About The Project
+## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
 Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
 process application in one place.
@@ -66,3 +66,8 @@ Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/
 [issues-url]: https://github.com/FlowSquad/miranum-ide/issues
 [license-shield]: https://img.shields.io/github/license/FlowSquad/miranum-ide.svg?style=for-the-badge
 [license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE
+
+[version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.miranum-console
+[version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
+[installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.miranum-console
+[installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
