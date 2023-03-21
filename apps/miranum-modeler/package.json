@@ -6,6 +6,10 @@
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
+  "galleryBanner": {
+    "color": "#F0F8FF",
+    "theme": "light"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FlowSquad/miranum-ide.git"
@@ -16,15 +20,18 @@
   "engines": {
     "vscode": "^1.76.0"
   },
-  "icon": "assets/kometLogo.png",
+  "icon": "assets/miranum_logo.png",
   "categories": [
-    "Visualization",
-    "Other"
+    "Visualization", "Other"
+  ],
+  "extensionPack": [
+    "miragon-gmbh.miranum-console",
+    "miragon-gmbh.miranum-json-forms",
+    "miragon-gmbh.miranum-vs-code-forms",
+    "miragon-gmbh.vs-code-bpmn-modeler"
   ],
   "keywords": [
-    "BPMN",
-    "Modeler",
-    "Camunda"
+    "BPMN", "Modeler", "Camunda", "Diagram", "business process"
   ],
   "activationEvents": [
     "onCustomEditor:bpmn-modeler",

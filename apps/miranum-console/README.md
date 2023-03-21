@@ -32,20 +32,19 @@ process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-**Miranum Modeler** is one component of our collection of *VS Code Plugins*.
-It allows you to model BPMN 2.0 Diagrams that can be used with Camunda Platform 7.
+**Miranum Console** is one component of our collection of *VS Code Plugins*.
+It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
 
 ## Features
 
-* Create and edit processes for Camunda Platform 7 and enhance them with technical attributes.
-* Use the text editor for changes directly in the XML file.
-* Use the integrated *Token Simulation* to simulate your process flow.
+* Scaffolding your digitization project.
+* Deploy your process artefacts.
 
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create.
-Any contributions you make are **greatly appreciated**.
-
+Any contributions you make are **greatly appreciated**. 
+ 
 For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/FlowSquad/miranum-ide/blob/main/README.md).  
 Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
@@ -68,7 +67,7 @@ Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/
 [license-shield]: https://img.shields.io/github/license/FlowSquad/miranum-ide.svg?style=for-the-badge
 [license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE
 
-[version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.vs-code-bpmn-modeler
-[version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.vs-code-bpmn-modeler
-[installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.vs-code-bpmn-modeler
-[installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.vs-code-bpmn-modeler
+[version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.miranum-console
+[version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
+[installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.miranum-console
+[installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
