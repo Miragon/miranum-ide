@@ -12,7 +12,7 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-ide/feat/add_basic_readmes/images/miranum_logo.png" alt="Logo" height="180">
+        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-ide/feat/add_basic_readmes/images/miranum_logo_blue.png" alt="Logo" height="50">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
     <p>

@@ -20,7 +20,7 @@
   "engines": {
     "vscode": "^1.73.0"
   },
-  "icon": "assets/kometLogo.png",
+  "icon": "assets/miranum_logo.png",
   "categories": [
     "Other", "Visualization"
   ],

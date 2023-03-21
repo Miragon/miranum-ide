@@ -63,7 +63,7 @@
         "webpackConfig": "apps/miranum-modeler/custom-webpack.config.js",
         "assets": [
           { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
-          { "glob": "images/kometLogo.png", "input": "./", "output": "/assets" },
+          { "glob": "images/miranum_logo.png", "input": "./", "output": "/assets" },
           { "glob": "LICENSE", "input": "./", "output": "/" },
           { "glob": ".vscodeignore", "input": "./apps/miranum-modeler/", "output": "/" },
           { "glob": "README.md", "input": "./apps/miranum-modeler/", "output": "/" }
