@@ -48,7 +48,7 @@ Any contributions you make are **greatly appreciated**.
 For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/FlowSquad/miranum-ide/blob/main/README.md).  
 Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
-#### License
+### License
 
 Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE).
 
