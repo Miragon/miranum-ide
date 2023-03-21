@@ -7,8 +7,8 @@
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
   "galleryBanner": {
-    "color": "#4254E2",
-    "theme": "dark"
+    "color": "#F0F8FF",
+    "theme": "light"
   },
   "repository": {
     "type": "git",
