@@ -16,7 +16,7 @@
     "@emotion/styled": "11.10.5",
     "@mdi/font": "^6.9.96",
     "@mdi/js": "^7.0.96",
-    "@nrwl/cli": "15.6.3",
+    "@nrwl/cli": "15.8.7",
     "@nrwl/cypress": "15.6.3",
     "@nrwl/esbuild": "15.6.3",
     "@nrwl/eslint-plugin-nx": "15.6.3",
