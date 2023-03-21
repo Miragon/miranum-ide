@@ -12,7 +12,7 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-ide/main/images/komet_tp_bg.png" alt="Logo" height="50">
+        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-ide/feat/add_basic_readmes/images/miranum_logo.png" alt="Logo" height="180">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
     <p>
@@ -33,61 +33,24 @@ Please find our official docs [here](https://miranum.com/docs/components/miranum
 
 
 **Miranum Console** is one component of our collection of *VS Code Plugins*.
-It provides a UI and helps you to scaffold your digitization project and deploy process artefacts.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
+It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
 
 ## Features
 
 * Scaffolding your digitization project.
 * Deploy your process artefacts.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-### Built With
-
-* [Miranum CLI](https://www.npmjs.com/package/@miragon/miranum-cli)
-* [React](https://react.dev/)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-## Getting started
-
-For an explanation on how to get started, please refer to the [quickstart doc](https://github.com/FlowSquad/miranum-ide/blob/main/docs/quickstart.md).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-<!--
-## Documentation
-
-For all further documentation, please refer to the [documentations doc](docs/extension/documentation.md).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
--->
-
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**. 
-Please use semantic commit messages as described in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
+ 
+For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/FlowSquad/miranum-ide/blob/main/README.md).  
+Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
-If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+#### License
 
-1. Open an issue with the tag "enhancement"
-2. Fork the Project
-3. Create your Feature Branch (`git checkout -b feat/AmazingFeature`)
-4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the Branch (`git push origin feat/AmazingFeature`)
-6. Open a Pull Request
-
-More about this in the [CODE_OF_CONDUCT](https://github.com/FlowSquad/miranum-ide/blob/main/CODE_OF_CONDUCT.md) file.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-## License
-
-Distributed under the Apache License Version 2.0. See [License](https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE) file for mor information.
+Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
