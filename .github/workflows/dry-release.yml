@@ -41,7 +41,7 @@ jobs:
           name: dist
       - name: Build vsix miranum-extension-pack
         run: |
-          pwd
+          ls -Rla
           cd dist/apps/miranum-extension-pack
           npm install -g @vscode/vsce@latest
           vsce package
