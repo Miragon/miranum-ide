@@ -39,25 +39,25 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: dist
-      - name: install vsce
+      - name: Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: Build vsix miranum-extension-pack
         run: |
           cd apps/miranum-extension-pack
-          vsce package
+          vsce package --out miranum-extension-pack.vsix
       - name: Build vsix miranum-console
         run: |
           cd apps/miranum-console
-          vsce package --no-dependencies
+          vsce package --no-dependencies --out miranum-console.vsix
       - name: Build vsix miranum-forms
         run: |
           cd apps/miranum-forms
-          vsce package --no-dependencies
+          vsce package --no-dependencies --out miranum-forms.vsix
       - name: Build vsix miranum-modeler
         run: |
           cd apps/miranum-modeler
-          vsce package --no-dependencies
-      - name: collect vsix
+          vsce package --no-dependencies --out miranum-modeler.vsix
+      - name: Collect vsix
         run: |
           mkdir vsix-packages
           find . -name "*.vsix" -type f -exec cp {} vsix-packages \;
