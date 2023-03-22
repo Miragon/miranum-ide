@@ -41,8 +41,7 @@ jobs:
           name: dist
       - name: Build vsix miranum-extension-pack
         run: |
-          ls -Rla
-          cd dist/apps/miranum-extension-pack
+          cd apps/miranum-extension-pack
           npm install -g @vscode/vsce@latest
           vsce package
       - name: Build vsix miranum-console
@@ -60,8 +59,12 @@ jobs:
           cd ../miranum-modeler
           npm install -g @vscode/vsce@latest
           vsce package
-      - run: cd ../..
+      - name: collect vsix
+        run: |
+          cd ..
+          mkdir vsix-packages
+          cp -r ./*.vsix vsix-packages/.
       - uses: actions/upload-artifact@v3
         with:
           name: vsix-packages
-          path: dist
+          path: vsix-packages
