@@ -46,6 +46,7 @@ jobs:
           vsce package
       - name: Build vsix miranum-console
         run: |
+          ls -Rla
           cd ../miranum-console
           npm install -g @vscode/vsce@latest
           vsce package
