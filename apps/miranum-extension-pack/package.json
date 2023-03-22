@@ -1,0 +1,36 @@
+{
+  "name": "miranum-ide",
+  "displayName": "Miranum IDE",
+  "description": "One IDE for everything!",
+  "license": "Apache License 2.0",
+  "version": "0.1.0",
+  "publisher": "miragon-gmbh",
+  "homepage": "https://www.miranum.io/",
+  "galleryBanner": {
+    "color": "#F0F8FF",
+    "theme": "light"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlowSquad/miranum-ide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowSquad/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "icon": "miranum_logo.png",
+  "extensionPack": [
+    "miragon-gmbh.miranum-console",
+    "miragon-gmbh.miranum-json-forms",
+    "miragon-gmbh.miranum-vs-code-forms",
+    "miragon-gmbh.vs-code-bpmn-modeler"
+  ],
+  "keywords": [
+    "IDE", "Bussiness Process Management", "BPMN", "Camunda", "JSON", "JSON Schema", "Forms", "Formbuilder"
+  ],
+  "categories": [
+    "Extension Packs"
+  ]
+}

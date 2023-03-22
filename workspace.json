@@ -7,6 +7,7 @@
     "miranum-console-webview": "apps/miranum-console-webview",
     "miranum-core": "libs/miranum-core",
     "miranum-deployment-proxy": "spring-boot-apps/miranum-deployment-proxy",
+    "miranum-extension-pack": "apps/miranum-extension-pack",
     "miranum-forms": "apps/miranum-forms",
     "miranum-forms-webview": "apps/miranum-forms-webview",
     "miranum-modeler": "apps/miranum-modeler",
