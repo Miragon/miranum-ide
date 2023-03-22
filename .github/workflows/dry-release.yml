@@ -59,8 +59,8 @@ jobs:
           cd ../miranum-modeler
           npm install -g @vscode/vsce@latest
           vsce package
+      - run: cd ..
       - uses: actions/upload-artifact@v3
-        run: cd ..
         with:
           name: vsix-packages
           path: dist
