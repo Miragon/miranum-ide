@@ -55,7 +55,6 @@ Furthermore, please have a look to our [Code of Conduct](https://miranum.com/doc
 
 Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE).
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->

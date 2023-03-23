@@ -24,12 +24,6 @@
 	"categories": [
 		"Other"
 	],
-  "extensionPack": [
-    "miragon-gmbh.miranum-console",
-    "miragon-gmbh.miranum-json-forms",
-    "miragon-gmbh.miranum-vs-code-forms",
-    "miragon-gmbh.vs-code-bpmn-modeler"
-  ],
   "keywords": [
     "deploy", "Deployment", "CLI", "fontend"
   ],

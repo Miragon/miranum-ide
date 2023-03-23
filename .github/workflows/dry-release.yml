@@ -25,3 +25,43 @@ jobs:
         with:
           name: dist
           path: dist
+
+  vsce-package:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+      - name: Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: Build vsix miranum-extension-pack
+        run: |
+          cd apps/miranum-extension-pack
+          vsce package --out miranum-extension-pack.vsix
+      - name: Build vsix miranum-console
+        run: |
+          cd apps/miranum-console
+          vsce package --no-dependencies --out miranum-console.vsix
+      - name: Build vsix miranum-forms
+        run: |
+          cd apps/miranum-forms
+          vsce package --no-dependencies --out miranum-forms.vsix
+      - name: Build vsix miranum-modeler
+        run: |
+          cd apps/miranum-modeler
+          vsce package --no-dependencies --out miranum-modeler.vsix
+      - name: Collect vsix
+        run: |
+          mkdir vsix-packages
+          find . -name "*.vsix" -type f -exec cp {} vsix-packages \;
+      - uses: actions/upload-artifact@v3
+        with:
+          name: vsix-packages
+          path: vsix-packages

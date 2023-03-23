@@ -24,12 +24,6 @@
   "categories": [
     "Other", "Visualization"
   ],
-  "extensionPack": [
-    "miragon-gmbh.miranum-console",
-    "miragon-gmbh.miranum-json-forms",
-    "miragon-gmbh.miranum-vs-code-forms",
-    "miragon-gmbh.vs-code-bpmn-modeler"
-  ],
   "keywords": [
     "JSON", "JSON Schema", "Forms", "Formbuilder", "Renderer", "rendering"
   ],

@@ -31,20 +31,11 @@ Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage
 process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
-
-**Miranum Console** is one component of our collection of *VS Code Plugins*.
-It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
-
-## Features
-
-* Scaffolding your digitization project.
-* Deploy your process artefacts.
-
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create.
-Any contributions you make are **greatly appreciated**. 
- 
+Any contributions you make are **greatly appreciated**.
+
 For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/FlowSquad/miranum-ide/blob/main/README.md).  
 Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
@@ -66,7 +57,7 @@ Distributed under the [Apache License Version 2.0](https://github.com/FlowSquad/
 [license-shield]: https://img.shields.io/github/license/FlowSquad/miranum-ide.svg?style=for-the-badge
 [license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE
 
-[version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.miranum-console
-[version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
-[installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.miranum-console
-[installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-console
+[version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.miranum-ide
+[version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide
+[installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.miranum-ide
+[installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide

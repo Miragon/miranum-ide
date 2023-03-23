@@ -7,6 +7,10 @@ on:
         description: 'Release Tag'
         required: true
         default: 'release/XXX'
+      miranum-extension-pack:
+        description: 'Release miranum-extension-pack app (y/n)?'
+        required: true
+        default: 'y'
       miranum-cli:
         description: 'Release miranum-cli app (y/n)?'
         required: true
@@ -55,6 +59,11 @@ jobs:
         with:
           name: miranum-cli
           path: dist/apps/miranum-cli
+      # miranum-extension-pack
+      - uses: actions/upload-artifact@v3
+        with:
+          name: miranum-extension-pack
+          path: dist/apps/miranum-extension-pack
       # miranum-console
       - uses: actions/upload-artifact@v3
         with:
@@ -107,6 +116,29 @@ jobs:
           release_name: Release ${{ github.event.inputs.release-tag }}
           draft: false
           prerelease: false
+
+  # miranum-extension-pack
+  publish-miranum-extension-pack:
+    if: github.event.inputs.miranum-extension-pack == 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - create-release
+    steps:
+      - name: Setup NodeJS 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: miranum-extension-pack
+      - name: Prepare
+        run: npm install && npm install -g @vscode/vsce@latest
+      - name: Publish extension
+        run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
   # miranum-console
   publish-miranum-console:
