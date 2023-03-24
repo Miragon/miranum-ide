@@ -5,7 +5,9 @@ io:
                 deploymentHandlers:
                     local: DryHandler
                     dev: RestHandler
-                    test: DryHandler
-                    prod: DryHandler
-        targets:
-            dev: 'http://localhost:39146'
+                    test: RestHandler
+                    prod: RestHandler
+                targets:
+                    dev: http://localhost:39146
+                    test: http://localhost:39146
+                    prod: http://localhost:39146
