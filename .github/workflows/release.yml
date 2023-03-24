@@ -299,4 +299,4 @@ jobs:
           context: ./miranum-deployment-proxy
           push: true
           tags: miragon/miranum-deployment-proxy:${{ env.RELEASE_VERSION }},miragon/miranum-deployment-proxy:latest
-          platforms: linux/amd64, linux/arm64/v8, linux/arm/v7
+          platforms: linux/amd64, linux/arm64/v8
