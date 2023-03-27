@@ -1,24 +1,26 @@
 import { WebviewApi } from "vscode-webview";
-import { VscMessage, VscState } from "../types/types";
+import { VscMessage, VscState } from "@miranum-ide/miranum-vscode";
 import { isArray, mergeWith, reverse, uniqBy } from "lodash";
+import { ModelerData } from "../types";
+
+type State = VscState<ModelerData>;
 
 export class StateController {
-
-    private vscode: WebviewApi<VscState>;
+    private vscode: WebviewApi<State>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): VscState | undefined {
+    public getState(): State | undefined {
         return this.vscode.getState();
     }
 
-    public setState(state: VscState) {
+    public setState(state: State) {
         this.vscode.setState(state);
     }
 
-    public updateState(state: Subset<VscState>) {
+    public updateState(state: Subset<State>) {
         function customizer(objValue: any, srcValue: any): any {
             if (isArray(objValue)) {
                 return reverse(uniqBy(reverse(objValue.concat(srcValue)), "type"));
@@ -31,7 +33,7 @@ export class StateController {
         });
     }
 
-    public postMessage(message: VscMessage) {
+    public postMessage(message: VscMessage<ModelerData>) {
         this.vscode.postMessage(message);
     }
 }

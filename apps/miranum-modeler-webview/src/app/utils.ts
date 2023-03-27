@@ -1,4 +1,4 @@
-import { ModelerData } from "../types/types";
+import { ModelerData } from "../types";
 
 let formKeys: string[] = [];
 
@@ -11,5 +11,5 @@ export function setFormKeys(keys: string[]): void {
 }
 
 export function instanceOfModelerData(object: any): object is ModelerData {
-    return ("bpmn" in object || "additionalFiles" in object);
+    return "bpmn" in object || "additionalFiles" in object;
 }

@@ -1,7 +1,6 @@
-import * as vscode from "vscode";
-import { Uri } from "vscode";
+import { FileType, Uri, ViewColumn, window, workspace } from "vscode";
 import { FolderContent, WorkspaceFolder } from "../types";
-import { Logger } from "./Logger";
+import { Logger } from "../miranum-vscode";
 
 /**
  * Scan the current working directory for important files.
@@ -9,7 +8,7 @@ import { Logger } from "./Logger";
 export class Reader {
     private static instance: Reader;
 
-    private readonly fs = vscode.workspace.fs;
+    private readonly fs = workspace.fs;
 
     public static get(): Reader {
         if (this.instance === undefined) {
@@ -21,17 +20,26 @@ export class Reader {
     /**
      * Get all available files.
      */
-    public async getAllFiles(rootDir: Uri, workspaceFolders: WorkspaceFolder[]): Promise<FolderContent[]> {
+    public async getAllFiles(
+        rootDir: Uri,
+        workspaceFolders: WorkspaceFolder[],
+    ): Promise<FolderContent[]> {
         const promises: Map<string, Promise<JSON[] | string[]>> = new Map();
         for (const folder of workspaceFolders) {
             switch (folder.type) {
                 case "form": {
                     // special case because we only need the form-keys and not the whole file
-                    promises.set(folder.type, this.getForms(rootDir, folder.path, folder.extension));
+                    promises.set(
+                        folder.type,
+                        this.getForms(rootDir, folder.path, folder.extension),
+                    );
                     break;
                 }
                 default: {
-                    promises.set(folder.type, this.getFilesAsJson(rootDir, folder.path, folder.extension));
+                    promises.set(
+                        folder.type,
+                        this.getFilesAsJson(rootDir, folder.path, folder.extension),
+                    );
                     break;
                 }
             }
@@ -60,7 +68,11 @@ export class Reader {
      * @public
      * @async
      */
-    public async getForms(rootDir: Uri, directory: string, extension: string): Promise<string[]> {
+    public async getForms(
+        rootDir: Uri,
+        directory: string,
+        extension: string,
+    ): Promise<string[]> {
         const fileContent: string[] = [];
         try {
             const files = await this.readDirectory(rootDir, directory, extension);
@@ -70,16 +82,25 @@ export class Reader {
                     fileContent.push(this.getFormKey(content));
                 } catch (error) {
                     fileNames.push(path.substring(fileNames.indexOf("#") + 1));
-                    this.showErrorMessage("Failed to read form-key!", rootDir, path, error);
+                    this.showErrorMessage(
+                        "Failed to read form-key!",
+                        rootDir,
+                        path,
+                        error,
+                    );
                 }
             }
             if (fileNames.length > 0) {
-                Logger.error("[Miranum.Modeler.Reader]", `Failed to read form-key of following files:\n${fileNames}`);
+                Logger.error(
+                    "[Miranum.Modeler.Reader]",
+                    `Failed to read form-key of following files:\n${fileNames}`,
+                );
             }
 
             return fileContent;
         } catch (error) {
-            const message = (error instanceof Error) ? error.message : "Could not get form keys.";
+            const message =
+                error instanceof Error ? error.message : "Could not get form keys.";
             Logger.error("[Miranum.Modeler.Reader]", message);
             return [];
         }
@@ -91,7 +112,11 @@ export class Reader {
      * @public
      * @async
      */
-    public async getConfigs(rootDir: Uri, directory: string, extension: string): Promise<JSON[]> {
+    public async getConfigs(
+        rootDir: Uri,
+        directory: string,
+        extension: string,
+    ): Promise<JSON[]> {
         return this.getFilesAsJson(rootDir, directory, extension);
     }
 
@@ -101,7 +126,11 @@ export class Reader {
      * @public
      * @async
      */
-    public async getElementTemplates(rootDir: Uri, directory: string, extension: string): Promise<JSON []> {
+    public async getElementTemplates(
+        rootDir: Uri,
+        directory: string,
+        extension: string,
+    ): Promise<JSON[]> {
         return this.getFilesAsJson(rootDir, directory, extension);
     }
 
@@ -111,7 +140,11 @@ export class Reader {
      * @private
      * @async
      */
-    public async getFilesAsJson(rootDir: Uri, directory: string, extension: string): Promise<JSON[]> {
+    public async getFilesAsJson(
+        rootDir: Uri,
+        directory: string,
+        extension: string,
+    ): Promise<JSON[]> {
         const extParts = extension.split(".");
         const ext = extParts[extParts.length - 1];
         if (ext !== "json") {
@@ -131,12 +164,16 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                Logger.error("[Miranum.Modeler.Reader]", `Failed to parse following files:\n${fileNames}`);
+                Logger.error(
+                    "[Miranum.Modeler.Reader]",
+                    `Failed to parse following files:\n${fileNames}`,
+                );
             }
 
             return fileContent;
         } catch (error) {
-            const message = (error instanceof Error) ? error.message : "Failed to parse to JSON.";
+            const message =
+                error instanceof Error ? error.message : "Failed to parse to JSON.";
             Logger.error("[Miranum.Modeler.Reader]", message);
             return [];
         }
@@ -179,7 +216,7 @@ export class Reader {
 
     private async readFile(uri: Uri): Promise<string> {
         const file = await this.fs.readFile(uri);
-        return Promise.resolve(Buffer.from(file).toString("utf-8"));  // convert Uint8Array to string
+        return Promise.resolve(Buffer.from(file).toString("utf-8")); // convert Uint8Array to string
     }
 
     /**
@@ -191,24 +228,36 @@ export class Reader {
      * @private
      * @async
      */
-    private async readDirectory(rootDir: Uri, directory: string, fileExtension: string): Promise<Map<string, string>> {
+    private async readDirectory(
+        rootDir: Uri,
+        directory: string,
+        fileExtension: string,
+    ): Promise<Map<string, string>> {
         const files: Map<string, Thenable<Uint8Array>> = new Map();
         const content: Map<string, string> = new Map();
 
-        const ext = fileExtension.charAt(0) === "." ? fileExtension.substring(fileExtension.indexOf(".") + 1) : fileExtension;
-        const uri = vscode.Uri.joinPath(rootDir, directory);
+        const ext =
+            fileExtension.charAt(0) === "."
+                ? fileExtension.substring(fileExtension.indexOf(".") + 1)
+                : fileExtension;
+        const uri = Uri.joinPath(rootDir, directory);
 
         // eslint-disable-next-line no-useless-catch
         try {
             const results = await this.fs.readDirectory(uri);
             const fileNames: string[] = [];
             for (const result of results) {
-                if (result[1] === vscode.FileType.File) {   // only files
+                if (result[1] === FileType.File) {
+                    // only files
                     const extension = result[0].substring(result[0].indexOf(".") + 1);
-                    if (extension && extension === ext) {  // only files with given file extension
-                        const fileUri = vscode.Uri.joinPath(uri, result[0]);
+                    if (extension && extension === ext) {
+                        // only files with given file extension
+                        const fileUri = Uri.joinPath(uri, result[0]);
                         try {
-                            files.set(`${directory}/#${result[0]}`, this.fs.readFile(fileUri));
+                            files.set(
+                                `${directory}/#${result[0]}`,
+                                this.fs.readFile(fileUri),
+                            );
                         } catch (error) {
                             fileNames.push(result[0]);
                         }
@@ -216,9 +265,12 @@ export class Reader {
                 }
             }
             if (fileNames.length > 0) {
-                Logger.error("[Miranum.Modeler.Reader]", `Following files could not be read:\n${JSON.stringify(fileNames)}`);
+                Logger.error(
+                    "[Miranum.Modeler.Reader]",
+                    `Following files could not be read:\n${JSON.stringify(fileNames)}`,
+                );
                 // inform user that a certain file could not be read
-                vscode.window.showInformationMessage(
+                window.showInformationMessage(
                     `Could not read following files!
                     ${fileNames}`,
                 );
@@ -230,13 +282,12 @@ export class Reader {
                 if (result.status === "fulfilled") {
                     content.set(
                         filePaths[index],
-                        Buffer.from(result.value).toString("utf-8"),  // convert Uint8Array to string
+                        Buffer.from(result.value).toString("utf-8"), // convert Uint8Array to string
                     );
                 }
             });
 
             return content;
-
         } catch (error) {
             throw error;
         }
@@ -246,23 +297,23 @@ export class Reader {
         const strSplit = path.split("#");
         const dir = strSplit[0];
         const name = strSplit[1];
-        vscode.window.showInformationMessage(
-            `${msg}
+        window
+            .showInformationMessage(
+                `${msg}
             - Folder: ${dir}
             - File: ${name}
             - ${error}`,
-            ...["Goto file"],
-        ).then((input) => {
-            if (input === "Goto file") {
-                const uri = vscode.Uri.joinPath(rootDir, dir, name);
-                vscode.window.showTextDocument(
-                    uri,
-                    {
+                ...["Goto file"],
+            )
+            .then((input) => {
+                if (input === "Goto file") {
+                    const uri = Uri.joinPath(rootDir, dir, name);
+                    window.showTextDocument(uri, {
                         preserveFocus: false,
                         preview: false,
-                        viewColumn: vscode.ViewColumn.Active,
+                        viewColumn: ViewColumn.Active,
                     });
-            }
-        });
+                }
+            });
     }
 }

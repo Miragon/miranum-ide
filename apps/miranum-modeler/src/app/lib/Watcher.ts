@@ -1,7 +1,13 @@
 import { RelativePattern, Uri, Webview, WebviewPanel, window, workspace } from "vscode";
-import { FolderContent, MessageType, WorkspaceFolder } from "../types";
-import { Reader } from "./Reader";
-import { Logger } from "./Logger";
+import {
+    FolderContent,
+    Logger,
+    MessageType,
+    Reader,
+    WorkspaceFolder,
+} from "@miranum-ide/miranum-vscode";
+
+// TODO: Refactor Watcher to make it reusable.
 
 export class Watcher {
     private static instances: { [root: string]: Watcher } = {};
@@ -18,9 +24,12 @@ export class Watcher {
     ) {
         const pattern = this.createGlobPattern();
         const watcher = workspace.createFileSystemWatcher(pattern);
-        Logger.info("[Miranum.Modeler.Watcher]", `Watcher was created on:
+        Logger.info(
+            "[Miranum.Modeler.Watcher]",
+            `Watcher was created on:
             - basePath: ${pattern.baseUri.path}
-            - pattern: ${pattern.pattern}`);
+            - pattern: ${pattern.pattern}`,
+        );
 
         watcher.onDidCreate((uri) => {
             this.notify(uri);
@@ -40,7 +49,10 @@ export class Watcher {
      * @param projectUri The URI of the project/workspace
      * @param workspaceFolders
      */
-    public static getWatcher(projectUri: Uri, workspaceFolders: WorkspaceFolder[]): Watcher {
+    public static getWatcher(
+        projectUri: Uri,
+        workspaceFolders: WorkspaceFolder[],
+    ): Watcher {
         const root = projectUri.path;
         if (this.instances[root] === undefined) {
             this.instances[root] = new Watcher(projectUri, workspaceFolders);
@@ -67,7 +79,7 @@ export class Watcher {
     }
 
     public isUnresponsive(id: string): boolean {
-        return !!(this.unresponsive[id]);
+        return !!this.unresponsive[id];
     }
 
     private addUnresponsive(id: string, webview: Webview): void {
@@ -152,12 +164,12 @@ export class Watcher {
                     this.changes.delete(dir);
                 }
             }
-
         } catch (error) {
             for (const [id, webviewPanel] of this.webviews) {
                 this.addUnresponsive(id, webviewPanel.webview);
             }
-            const message = (error instanceof Error) ? error.message : "Could not notify webview";
+            const message =
+                error instanceof Error ? error.message : "Could not notify webview";
             Logger.error("[Miranum.Modeler.Watcher]", message);
         }
     }
@@ -177,7 +189,7 @@ export class Watcher {
         let folders = "";
         let ext = "";
         let backSteps = 0;
-        const extSet = new Set();  // prevent duplicates
+        const extSet = new Set(); // prevent duplicates
 
         for (const [i, folder] of this.workspaceFolders.entries()) {
             if (folder.type === "bpmn" || folder.type === "dmn") {
@@ -195,7 +207,7 @@ export class Watcher {
                     localBackSteps++;
                 }
             }
-            backSteps = (localBackSteps > backSteps) ? localBackSteps : backSteps;
+            backSteps = localBackSteps > backSteps ? localBackSteps : backSteps;
 
             extSet.add(folder.extension.substring(folder.extension.indexOf(".") + 1));
 
@@ -230,10 +242,10 @@ export class Watcher {
      * @private
      */
     private getDirectoryAndExtension(uri: Uri): [dir: string, ext: string] {
-        const path = uri.path;  // e.g. "/Users/peterheinemann/Projects/miranum/miranum-vs-code-modeler/examples/forms/control.form"
+        const path = uri.path; // e.g. "/Users/peterheinemann/Projects/miranum/miranum-vs-code-modeler/examples/forms/control.form"
         const dirs = path.split("/");
         for (const folder of this.workspaceFolders) {
-            const wsPath = folder.path.split("/");  //  todo: make it windows compatible
+            const wsPath = folder.path.split("/"); //  todo: make it windows compatible
             if (wsPath[wsPath.length - 1] === dirs[dirs.length - 2]) {
                 return [folder.path, folder.extension];
             }
@@ -241,42 +253,53 @@ export class Watcher {
         throw new Error(`Could not find ${dirs[0]} in the tracked directories!`);
     }
 
-    private async postMessage(id: string, webviewPanel: WebviewPanel, folders: WorkspaceFolder[]) {
-        if (await webviewPanel.webview.postMessage({
-            type: `FileSystemWatcher.${MessageType.reloadFiles}`,
-            files: await Reader.get().getAllFiles(this.projectUri, folders),
-        })) {
+    private async postMessage(
+        id: string,
+        webviewPanel: WebviewPanel,
+        folders: WorkspaceFolder[],
+    ) {
+        if (
+            await webviewPanel.webview.postMessage({
+                type: `FileSystemWatcher.${MessageType.RELOADFILES}`,
+                files: await Reader.get().getAllFiles(this.projectUri, folders),
+            })
+        ) {
             this.showMessage("Files reloaded successfully!");
-            Logger.info("[Miranum.Modeler.Watcher]", `(Webview: ${webviewPanel.title})`, "Reloaded webview successfully");
+            Logger.info(
+                "[Miranum.Modeler.Watcher]",
+                `(Webview: ${webviewPanel.title})`,
+                "Reloaded webview successfully",
+            );
 
             return Promise.resolve();
-
         } else {
             if (webviewPanel.visible) {
                 this.showErrorMessage(id, webviewPanel);
             }
-            Logger.error("[Miranum.Modeler.Watcher]",
+            Logger.error(
+                "[Miranum.Modeler.Watcher]",
                 `(Webview: ${webviewPanel.title})`,
-                `Could not post message to webview (ViewState: ${webviewPanel.visible})`);
+                `Could not post message to webview (ViewState: ${webviewPanel.visible})`,
+            );
 
             return Promise.reject();
         }
     }
 
     private showMessage(message: string): void {
-        window.showInformationMessage(
-            message,
-        );
+        window.showInformationMessage(message);
     }
 
     private showErrorMessage(id: string, webviewPanel: WebviewPanel): void {
-        window.showInformationMessage(
-            `Failed to reload modeler! Webview: ${id}`,
-            ...["Try again"],
-        ).then((input) => {
-            if (input === "Try again") {
-                this.update(id, webviewPanel);
-            }
-        });
+        window
+            .showInformationMessage(
+                `Failed to reload modeler! Webview: ${id}`,
+                ...["Try again"],
+            )
+            .then((input) => {
+                if (input === "Try again") {
+                    this.update(id, webviewPanel);
+                }
+            });
     }
 }

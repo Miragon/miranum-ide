@@ -1,5 +1,11 @@
-import { FolderContent, MessageType, ModelerData } from "./types/types";
-import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys, StateController } from "./app";
+import { ModelerData } from "./types";
+import {
+    ContentController,
+    ImportWarning,
+    instanceOfModelerData,
+    setFormKeys,
+    StateController,
+} from "./app";
 import { debounce, reverse, uniqBy } from "lodash";
 
 // bpmn-js
@@ -24,7 +30,7 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-
+import { FolderContent, MessageType } from "@miranum-ide/miranum-vscode";
 
 const modeler = new BpmnModeler({
     container: "#js-canvas",
@@ -57,28 +63,33 @@ const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
 
-
 const updateXML = asyncDebounce(openXML, 100);
 async function openXML(bpmn: string | undefined) {
     try {
         let result: ImportWarning;
         if (!bpmn) {
-            result = (await contentController.newDiagram());
+            result = await contentController.newDiagram();
         } else {
-            result = (await contentController.loadDiagram(bpmn));
+            result = await contentController.loadDiagram(bpmn);
         }
         stateController.updateState({ data: { bpmn } });
 
-        const warnings = (result.warnings.length > 0) ? `with following warnings: ${createList(result.warnings)}` : "";
-        postMessage(MessageType.info,  undefined, `${result.message} ${warnings}`);
-
+        const warnings =
+            result.warnings.length > 0
+                ? `with following warnings: ${createList(result.warnings)}`
+                : "";
+        postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
     } catch (error) {
         if (error instanceof ImportWarning) {
-            const warnings = (error.warnings.length > 0) ? `with following warnings: ${createList(error.warnings)}` : "";
-            postMessage(MessageType.error, undefined, `${error.message} ${warnings}`);
+            const warnings =
+                error.warnings.length > 0
+                    ? `with following warnings: ${createList(error.warnings)}`
+                    : "";
+            postMessage(MessageType.ERROR, undefined, `${error.message} ${warnings}`);
         } else {
-            const message = (error instanceof Error) ? error.message : "Failed to open xml.";
-            postMessage(MessageType.error, undefined, message);
+            const message =
+                error instanceof Error ? error.message : "Failed to open xml.";
+            postMessage(MessageType.ERROR, undefined, message);
         }
     }
 }
@@ -107,7 +118,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
                 break;
             }
             case "form": {
-                setFormKeys((folder.files as string[]));
+                setFormKeys(folder.files as string[]);
                 stateController.updateState({
                     data: {
                         additionalFiles: [{ type: folder.type, files: folder.files }],
@@ -119,7 +130,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
         }
     }
 
-    postMessage(MessageType.info, undefined, message.join("\n"));
+    postMessage(MessageType.INFO, undefined, message.join("\n"));
 }
 
 async function sendChanges() {
@@ -130,7 +141,7 @@ async function sendChanges() {
 
     const bpmn = await contentController.exportDiagram();
     stateController.updateState({ data: { bpmn } });
-    postMessage(MessageType.updateFromWebview, { bpmn }, undefined);
+    postMessage(MessageType.UPDATEFROMWEBVIEW, { bpmn }, undefined);
 }
 
 function setupListeners(): void {
@@ -138,56 +149,67 @@ function setupListeners(): void {
         try {
             const message = event.data;
             switch (message.type) {
-                case `bpmn-modeler.${MessageType.initialize}`: {
+                case `bpmn-modeler.${MessageType.INITIALIZE}`: {
                     initialize(message.data);
                     break;
                 }
-                case `bpmn-modeler.${MessageType.restore}`: {
+                case `bpmn-modeler.${MessageType.RESTORE}`: {
                     initialize(message.data);
                     break;
                 }
-                case `bpmn-modeler.${MessageType.undo}`:
-                case `bpmn-modeler.${MessageType.redo}`:
-                case `bpmn-modeler.${MessageType.updateFromExtension}`: {
+                case `bpmn-modeler.${MessageType.UNDO}`:
+                case `bpmn-modeler.${MessageType.REDO}`:
+                case `bpmn-modeler.${MessageType.UPDATEFROMEXTENSION}`: {
                     isUpdateFromExtension = true;
                     updateXML(message.data.bpmn);
                     break;
                 }
-                case `FileSystemWatcher.${MessageType.reloadFiles}`: {
+                case `FileSystemWatcher.${MessageType.RELOADFILES}`: {
                     setFiles(message.files);
                     break;
                 }
             }
         } catch (error) {
-            const message = (error instanceof Error) ? error.message : "Could not handle message";
-            postMessage(MessageType.error, undefined, message);
+            const message =
+                error instanceof Error ? error.message : "Could not handle message";
+            postMessage(MessageType.ERROR, undefined, message);
         }
     });
 
     modeler.on("elementTemplates.errors", (event) => {
         const { errors } = event;
-        postMessage(MessageType.error, undefined, `Failed to load element templates with following errors: ${createList(errors)}`);
+        postMessage(
+            MessageType.ERROR,
+            undefined,
+            `Failed to load element templates with following errors: ${createList(
+                errors,
+            )}`,
+        );
     });
 
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
 
-    postMessage(MessageType.info, undefined, "Listeners are set.");
+    postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
 function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
     openXML(bpmn);
     setFiles(files);
-    postMessage(MessageType.info, undefined, "Webview was initialized.");
+    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
 
 window.onload = async function () {
     try {
         const state = stateController.getState();
         if (state && state.data) {
-            postMessage(MessageType.restore, undefined, "State was restored successfully.");
+            postMessage(
+                MessageType.RESTORE,
+                undefined,
+                "State was restored successfully.",
+            );
             let bpmn = state.data.bpmn;
             let files = state.data.additionalFiles;
-            const newData = await initialized();    // await the response form the backend
+            const newData = await initialized(); // await the response form the backend
             if (instanceOfModelerData(newData)) {
                 // we only get new data when the user made changes while the webview was destroyed
                 if (newData.bpmn) {
@@ -198,21 +220,31 @@ window.onload = async function () {
                         files = newData.additionalFiles;
                     } else {
                         // replace old values with new ones
-                        files = reverse(uniqBy(reverse(files.concat(newData.additionalFiles)), "type"));
+                        files = reverse(
+                            uniqBy(
+                                reverse(files.concat(newData.additionalFiles)),
+                                "type",
+                            ),
+                        );
                     }
                 }
             }
             return init(bpmn, files);
         } else {
-            postMessage(MessageType.initialize, undefined, "Webview was loaded successfully.");
-            const data = await initialized();    // await the response form the backend
+            postMessage(
+                MessageType.INITIALIZE,
+                undefined,
+                "Webview was loaded successfully.",
+            );
+            const data = await initialized(); // await the response form the backend
             if (instanceOfModelerData(data)) {
                 return init(data.bpmn, data.additionalFiles);
             }
         }
     } catch (error) {
-        const message = (error instanceof Error) ? error.message : "Failed to initialize webview.";
-        postMessage(MessageType.error, undefined, message);
+        const message =
+            error instanceof Error ? error.message : "Failed to initialize webview.";
+        postMessage(MessageType.ERROR, undefined, message);
     }
 };
 
@@ -242,7 +274,7 @@ function createList(messages: ErrorArray | WarningArray): string {
  */
 function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
-        case MessageType.updateFromWebview: {
+        case MessageType.UPDATEFROMWEBVIEW: {
             stateController.postMessage({
                 type: `bpmn-modeler.${type}`,
                 data,
@@ -264,7 +296,9 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
  */
 function initialized() {
     return new Promise((resolve) => {
-        initialize = (response: ModelerData | undefined) => { resolve(response); };
+        initialize = (response: ModelerData | undefined) => {
+            resolve(response);
+        };
     });
 }
 let initialize: any = null;
@@ -274,9 +308,12 @@ let initialize: any = null;
  * @param func The function to debounce
  * @param wait The number of milliseconds to delay
  */
-function asyncDebounce<F extends(...args: any[]) => Promise<any>>(func: F, wait?: number) {
-    const resolveSet = new Set<(p:any)=>void>();
-    const rejectSet = new Set<(p:any)=>void>();
+function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
+    func: F,
+    wait?: number,
+) {
+    const resolveSet = new Set<(p: any) => void>();
+    const rejectSet = new Set<(p: any) => void>();
 
     const debounced = debounce((args: Parameters<F>) => {
         func(...args)
@@ -290,10 +327,11 @@ function asyncDebounce<F extends(...args: any[]) => Promise<any>>(func: F, wait?
             });
     }, wait);
 
-    return (...args: Parameters<F>): ReturnType<F> => new Promise((resolve, reject) => {
-        resolveSet.add(resolve);
-        rejectSet.add(reject);
-        debounced(args);
-    }) as ReturnType<F>;
+    return (...args: Parameters<F>): ReturnType<F> =>
+        new Promise((resolve, reject) => {
+            resolveSet.add(resolve);
+            rejectSet.add(reject);
+            debounced(args);
+        }) as ReturnType<F>;
 }
 // <---------------------------- Helper Functions ------------------------------
