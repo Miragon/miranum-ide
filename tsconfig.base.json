@@ -23,7 +23,8 @@
       "@miranum-ide/digiwf-deployment-plugin-rest": [
         "libs/digiwf-deployment-plugin-rest/src/index.ts"
       ],
-      "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"]
+      "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"],
+      "@miranum-ide/miranum-vscode": ["libs/miranum-vscode/src/index.ts"]
     }
   },
   "exclude": ["miranum-ide/node_modules", "tmp"]

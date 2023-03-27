@@ -11,6 +11,7 @@
     "miranum-forms": "apps/miranum-forms",
     "miranum-forms-webview": "apps/miranum-forms-webview",
     "miranum-modeler": "apps/miranum-modeler",
-    "miranum-modeler-webview": "apps/miranum-modeler-webview"
+    "miranum-modeler-webview": "apps/miranum-modeler-webview",
+    "miranum-vscode": "libs/miranum-vscode"
   }
 }
