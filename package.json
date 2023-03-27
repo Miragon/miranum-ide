@@ -32,7 +32,7 @@
     "@nrwl/workspace": "15.6.3",
     "@nx-plus/vue": "^15.0.0-rc.0",
     "@nxrocks/nx-spring-boot": "^6.2.1",
-    "@openapitools/openapi-generator-cli": "^2.5.1",
+    "@openapitools/openapi-generator-cli": "^2.5.2",
     "@testing-library/react": "13.4.0",
     "@types/jest": "28.1.8",
     "@types/lodash": "^4.14.191",
