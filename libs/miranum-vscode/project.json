@@ -10,20 +10,6 @@
       "options": {
         "lintFilePatterns": ["libs/miranum-vscode/**/*.ts"]
       }
-    },
-    "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "libs/miranum-vscode/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
-      }
     }
   },
   "tags": []
