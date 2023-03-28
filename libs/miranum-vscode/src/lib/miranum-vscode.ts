@@ -1,18 +1,18 @@
-import { LogOutputChannel, window } from "vscode";
+import * as vscode from "vscode";
 
 export class Logger {
-    private static _logger: LogOutputChannel;
+    private static _logger: vscode.LogOutputChannel;
 
     private static _isOpen = false;
 
-    public static get(): LogOutputChannel;
-    public static get(channel: string): LogOutputChannel;
-    public static get(channel?: string): LogOutputChannel {
+    public static get(): vscode.LogOutputChannel;
+    public static get(channel: string): vscode.LogOutputChannel;
+    public static get(channel?: string): vscode.LogOutputChannel {
         if (this._logger) {
             return this._logger;
         } else {
             if (channel) {
-                return (this._logger = window.createOutputChannel(channel, {
+                return (this._logger = vscode.window.createOutputChannel(channel, {
                     log: true,
                 }));
             } else {

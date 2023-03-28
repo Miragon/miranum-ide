@@ -13,6 +13,13 @@ export default defineConfig({
                 find: "@miranum-ide/miranum-vscode",
                 replacement: path.resolve(__dirname, "../../libs/miranum-vscode/src"),
             },
+            {
+                find: "vscode",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/miranum-vscode/src/vite/dummyModule.ts",
+                ),
+            },
         ],
     },
 
@@ -41,7 +48,6 @@ export default defineConfig({
                 entryFileNames: `[name].js`,
                 assetFileNames: `[name].[ext]`,
             },
-            external: ["vscode"],
         },
     },
 

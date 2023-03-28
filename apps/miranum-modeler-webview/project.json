@@ -6,16 +6,6 @@
   "tags": [],
   "targets": {
     "observe": {
-      "executor": "nx:run-commands",
-      "parallel": false,
-      "options": {
-        "commands": [
-          "npx nx observe-webview miranum-modeler-webview",
-          "sleep 10 && sed -i --verbose 's/import\"vscode\";//' dist/apps/miranum-modeler/miranum-modeler-webview/index.js"
-        ]
-      }
-    },
-    "observe-webview": {
       "executor": "@nrwl/vite:build",
       "outputs": ["{options.outputPath}"],
       "options": {
@@ -34,16 +24,6 @@
       }
     },
     "build": {
-      "executor": "nx:run-commands",
-      "parallel": false,
-      "options": {
-        "commands": [
-          "npx nx build-bundle miranum-modeler-webview",
-          "sleep 10 && sed -i --verbose 's/import\"vscode\";//' dist/apps/miranum-modeler/miranum-modeler-webview/index.js"
-        ]
-      }
-    },
-    "build-bundle": {
       "executor": "@nrwl/vite:build",
       "defaultConfiguration": "production",
       "outputs": ["{options.outputPath}"],
