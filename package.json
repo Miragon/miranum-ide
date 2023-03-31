@@ -17,7 +17,7 @@
     "@mdi/font": "^6.9.96",
     "@mdi/js": "^7.0.96",
     "@nrwl/cli": "15.8.7",
-    "@nrwl/cypress": "15.6.3",
+    "@nrwl/cypress": "15.9.1",
     "@nrwl/esbuild": "15.6.3",
     "@nrwl/eslint-plugin-nx": "15.8.8",
     "@nrwl/jest": "15.6.3",
