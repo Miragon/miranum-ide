@@ -1,0 +1,16 @@
+{
+  "name": "vscode-miranum-vscode",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/vscode/miranum-vscode/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/vscode/miranum-vscode/**/*.ts"]
+      }
+    }
+  },
+  "tags": []
+}

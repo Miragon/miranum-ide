@@ -1,7 +1,7 @@
 import { WebviewApi } from "vscode-webview";
-import { VscMessage, VscState } from "@miranum-ide/miranum-vscode";
 import { isArray, mergeWith, reverse, uniqBy } from "lodash";
-import { ModelerData } from "../types";
+import { VscMessage, VscState } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
 type State = VscState<ModelerData>;
 

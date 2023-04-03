@@ -1,14 +1,3 @@
-export interface WorkspaceFolder {
-    type: string;
-    path: string;
-    extension: string;
-}
-
-export interface FolderContent {
-    type: string;
-    files: JSON[] | string[];
-}
-
 export interface VscMessage<T> {
     type: string;
     data?: T;
@@ -29,4 +18,9 @@ export enum MessageType {
     RELOADFILES = "reloadFiles",
     INFO = "info",
     ERROR = "error",
+}
+
+export interface FolderContent {
+    type: string;
+    files: JSON[] | string[];
 }

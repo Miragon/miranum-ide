@@ -1,4 +1,3 @@
-import { ModelerData } from "./types";
 import {
     ContentController,
     ImportWarning,
@@ -7,6 +6,8 @@ import {
     StateController,
 } from "./app";
 import { debounce, reverse, uniqBy } from "lodash";
+import { FolderContent, MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
 // bpmn-js
 import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
@@ -30,7 +31,6 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import { FolderContent, MessageType } from "@miranum-ide/miranum-vscode";
 
 const modeler = new BpmnModeler({
     container: "#js-canvas",

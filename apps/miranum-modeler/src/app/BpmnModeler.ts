@@ -1,14 +1,9 @@
 import * as vscode from "vscode";
 import { Uri, window } from "vscode";
 import { debounce } from "lodash";
-import {
-    Logger,
-    MessageType,
-    Reader,
-    VscMessage,
-    WorkspaceFolder,
-} from "@miranum-ide/miranum-vscode";
-import { ModelerData } from "./types";
+import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
+import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { TextEditor, Watcher } from "./lib";
 
 export class BpmnModeler implements vscode.CustomTextEditorProvider {

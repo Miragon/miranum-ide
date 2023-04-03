@@ -1,11 +1,6 @@
 import { RelativePattern, Uri, Webview, WebviewPanel, window, workspace } from "vscode";
-import {
-    FolderContent,
-    Logger,
-    MessageType,
-    Reader,
-    WorkspaceFolder,
-} from "@miranum-ide/miranum-vscode";
+import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
+import { FolderContent, MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 // TODO: Refactor Watcher to make it reusable.
 

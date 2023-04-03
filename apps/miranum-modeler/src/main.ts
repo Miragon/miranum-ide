@@ -1,5 +1,5 @@
 import { ExtensionContext } from "vscode";
-import { Logger } from "@miranum-ide/miranum-vscode";
+import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 import { BpmnModeler } from "./app/BpmnModeler";
 
 export function activate(context: ExtensionContext) {

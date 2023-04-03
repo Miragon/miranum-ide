@@ -1,4 +1,4 @@
-import { ModelerData } from "../types";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
 let formKeys: string[] = [];
 

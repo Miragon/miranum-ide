@@ -1,4 +1,4 @@
-import { FolderContent } from "@miranum-ide/miranum-vscode";
+import { FolderContent } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 export interface ModelerData {
     bpmn?: string;

@@ -10,14 +10,24 @@ export default defineConfig({
     resolve: {
         alias: [
             {
-                find: "@miranum-ide/miranum-vscode",
-                replacement: path.resolve(__dirname, "../../libs/miranum-vscode/src"),
-            },
-            {
-                find: "vscode",
+                find: "@miranum-ide/vscode/miranum-vscode",
                 replacement: path.resolve(
                     __dirname,
-                    "../../libs/miranum-vscode/src/vite/dummyModule.ts",
+                    "../../libs/vscode/miranum-vscode/src",
+                ),
+            },
+            {
+                find: "@miranum-ide/vscode/miranum-vscode-webview",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/miranum-vscode-webview/src",
+                ),
+            },
+            {
+                find: "@miranum-ide/vscode/shared/miranum-modeler",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/shared/miranum-modeler/src",
                 ),
             },
         ],

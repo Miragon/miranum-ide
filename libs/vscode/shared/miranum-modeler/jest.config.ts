@@ -1,7 +1,7 @@
 /* eslint-disable */
 export default {
-    displayName: "miranum-vscode",
-    preset: "../../jest.preset.js",
+    displayName: "shared-shared-modeler",
+    preset: "../../../../jest.preset.js",
     globals: {
         "ts-jest": {
             tsconfig: "<rootDir>/tsconfig.spec.json",
@@ -12,5 +12,5 @@ export default {
         "^.+\\.[tj]sx?$": "ts-jest",
     },
     moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
-    coverageDirectory: "../../coverage/libs/miranum-vscode",
+    coverageDirectory: "../../../../coverage/libs/vscode/shared/miranum-modeler",
 };

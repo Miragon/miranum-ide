@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
-import { FolderContent, WorkspaceFolder } from "../types";
-import { Logger } from "../miranum-vscode";
+import { Logger } from "../Logger";
+import { FolderContent } from "@miranum-ide/vscode/miranum-vscode-webview";
+
+export interface WorkspaceFolder {
+    type: string;
+    path: string;
+    extension: string;
+}
 
 /**
  * Scan the current working directory for important files.
