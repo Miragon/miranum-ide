@@ -84,9 +84,9 @@ export class PreviewComponent extends Preview<DocumentManager<FormBuilderData>> 
         });
 
         webviewPanel.webview.onDidReceiveMessage(
-            async (message: VscMessage<FormBuilderData>) => {
+            async (msg: VscMessage<FormBuilderData>) => {
                 try {
-                    switch (message.type) {
+                    switch (msg.type) {
                         case `${this.viewType}.${MessageType.INITIALIZE}`: {
                             await this.update({
                                 type: `${this.viewType}.${MessageType.INITIALIZE}`,
