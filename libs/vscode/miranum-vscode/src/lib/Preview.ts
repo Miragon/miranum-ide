@@ -3,14 +3,14 @@ import { Observer, UIComponent } from "./types";
 import { Disposable, Uri, Webview, WebviewPanel } from "vscode";
 
 export enum CloseCaller {
-    "explicit" = "explicit",
-    "implicit" = "implicit",
-    "undefined" = "",
+    EXPLICIT = "explicit",
+    IMPLICIT = "implicit",
+    UNDEFINED = "",
 }
 
 export enum ViewState {
-    "open" = "open",
-    "closed" = "closed",
+    OPEN = "open",
+    CLOSED = "closed",
 }
 
 interface WebviewObject {
@@ -30,11 +30,11 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
 
     protected abstract webviewOptions: WebviewOptions;
 
-    protected closeCaller: CloseCaller = CloseCaller.undefined;
+    protected closeCaller: CloseCaller = CloseCaller.UNDEFINED;
 
     protected isBuffer = false;
 
-    protected _lastViewState: ViewState = ViewState.open;
+    protected _lastViewState: ViewState = ViewState.OPEN;
 
     private webviews: WebviewObject[] = [];
 
@@ -105,7 +105,7 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
     public open(...data: T[]): void {
         // eslint-disable-next-line no-useless-catch
         try {
-            this._lastViewState = ViewState.open;
+            this._lastViewState = ViewState.OPEN;
             this._isOpen = true;
 
             // Setup webview
@@ -146,8 +146,8 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
      * Close the active preview window.
      */
     public close(): void {
-        if (this.closeCaller !== CloseCaller.explicit) {
-            this.closeCaller = CloseCaller.implicit;
+        if (this.closeCaller !== CloseCaller.EXPLICIT) {
+            this.closeCaller = CloseCaller.IMPLICIT;
         }
 
         // eslint-disable-next-line no-useless-catch
@@ -161,7 +161,7 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
 
     public toggle(...data: T[]): void {
         if (this.isOpen) {
-            this.closeCaller = CloseCaller.explicit;
+            this.closeCaller = CloseCaller.EXPLICIT;
             this.close();
         } else {
             this.open(...data);

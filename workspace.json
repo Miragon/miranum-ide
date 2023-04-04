@@ -14,6 +14,7 @@
     "miranum-modeler-webview": "apps/miranum-modeler-webview",
     "vscode-miranum-vscode": "libs/vscode/miranum-vscode",
     "vscode-miranum-vscode-webview": "libs/vscode/miranum-vscode-webview",
+    "vscode-shared-miranum-forms": "libs/vscode/shared/miranum-forms",
     "vscode-shared-miranum-modeler": "libs/vscode/shared/miranum-modeler"
   }
 }

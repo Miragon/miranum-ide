@@ -3,8 +3,8 @@ import { TextDocument, TextEditor } from "vscode";
 import { Observer, UIComponent } from "./types";
 
 export enum TextEditorShowOption {
-    "Tab" = "Tab",
-    "Group" = "Group",
+    TAB = "Tab",
+    GROUP = "Group",
 }
 
 export abstract class TextEditorWrapper implements Observer, UIComponent<TextDocument> {

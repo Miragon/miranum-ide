@@ -28,6 +28,9 @@
       "@miranum-ide/vscode/miranum-vscode-webview": [
         "libs/vscode/miranum-vscode-webview/src/index.ts"
       ],
+      "@miranum-ide/vscode/shared/miranum-forms": [
+        "libs/vscode/shared/miranum-forms/src/index.ts"
+      ],
       "@miranum-ide/vscode/shared/miranum-modeler": [
         "libs/vscode/shared/miranum-modeler/src/index.ts"
       ]
