@@ -24,7 +24,7 @@ export class PreviewComponent extends Preview<DocumentManager<FormBuilderData>> 
     /** Object that contains information for the webview. */
     protected readonly webviewOptions: WebviewOptions = {
         title: "JsonSchema Renderer",
-        icon: Uri.joinPath(this.extensionUri, "resources/logo_blau.png"),
+        icon: Uri.joinPath(this.extensionUri, "assets/miranum_logo.png"),
     };
 
     constructor(protected readonly extensionUri: Uri) {

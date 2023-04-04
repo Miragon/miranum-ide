@@ -18,7 +18,7 @@
     "url": "https://github.com/FlowSquad/miranum-ide/issues"
   },
   "engines": {
-    "vscode": "^1.73.0"
+    "vscode": "^1.76.0"
   },
   "icon": "assets/miranum_logo.png",
   "categories": [
@@ -31,7 +31,8 @@
   "activationEvents": [
     "onCustomEditor:jsonschema-builder",
     "onCommand:jsonschema-renderer.togglePreview",
-    "onCommand:jsonschema-builder.toggleTextEditor"
+    "onCommand:jsonschema-builder.toggleTextEditor",
+    "onCommand:jsonschema-builder.toggleLogger"
   ],
   "contributes": {
     "customEditors": [
@@ -75,6 +76,11 @@
         "command": "jsonschema-builder.toggleTextEditor",
         "title": "Miranum: Toggle Standard Text Editor",
         "icon": "$(notebook-mimetype)"
+      },
+      {
+        "command": "jsonschema-builder.toggleLogger",
+        "title": "Miranum: Toggle Logging Information",
+        "icon": "$(callstack-view-session)"
       }
     ],
     "menus": {
@@ -85,6 +91,10 @@
         },
         {
           "command": "jsonschema-builder.toggleTextEditor",
+          "when": "jsonschema-builder.openCustomEditors > 0"
+        },
+        {
+          "command": "jsonschema-builder.toggleLogger",
           "when": "jsonschema-builder.openCustomEditors > 0"
         }
       ],
@@ -98,6 +108,11 @@
           "command": "jsonschema-builder.toggleTextEditor",
           "group": "navigation",
           "when": "activeWebviewPanelId == 'jsonschema-builder'"
+        },
+        {
+          "command": "jsonschema-builder.toggleLogger",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'jsonschema-builder'"
         }
       ]
     },
@@ -109,7 +124,12 @@
       },
       {
         "command": "jsonschema-builder.toggleTextEditor",
-        "key": "ctrl+shift+e",
+        "key": "ctrl+shift+t",
+        "when": "jsonschema-builder.openCustomEditors > 0"
+      },
+      {
+        "command": "jsonschema-builder.toggleLogger",
+        "key": "ctrl+shift+l",
         "when": "jsonschema-builder.openCustomEditors > 0"
       }
     ]
