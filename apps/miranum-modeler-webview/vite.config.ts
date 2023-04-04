@@ -10,13 +10,6 @@ export default defineConfig({
     resolve: {
         alias: [
             {
-                find: "@miranum-ide/vscode/miranum-vscode",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/vscode/miranum-vscode/src",
-                ),
-            },
-            {
                 find: "@miranum-ide/vscode/miranum-vscode-webview",
                 replacement: path.resolve(
                     __dirname,
