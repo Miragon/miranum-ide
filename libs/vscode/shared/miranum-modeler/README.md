@@ -1,11 +1,22 @@
 # vscode-shared-miranum-modeler
 
-This library was generated with [Nx](https://nx.dev).
+This library provides modules that are used for [miranum-modeler](apps/miranum-modeler) and [miranum-modeler-webview](apps/miranum-modeler-webview).
 
-## Running unit tests
-
-Run `nx test vscode-shared-miranum-modeler` to execute the unit tests via [Jest](https://jestjs.io).
-
-## Running lint
-
-Run `nx lint vscode-shared-miranum-modeler` to execute the lint via [ESLint](https://eslint.org/).
+If you use this lib you have to add following to your `vite.config.ts`:
+```ts
+export default defineConfig({
+    // ...
+    resolve: {
+        alias: [
+            {
+                find: "@miranum-ide/vscode/shared/miranum-modeler",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/shared/miranum-modeler/src"
+                )
+            }
+        ]
+    },
+    // ...
+});
+```

@@ -1,11 +1,22 @@
-# vscode-shared-miranum-forms
+# Shared-Miranum-Forms
 
-This library was generated with [Nx](https://nx.dev).
+This library provides modules that are used for [miranum-forms](apps/miranum-forms) and [miranum-forms-webview](apps/miranum-forms-webview).
 
-## Running unit tests
-
-Run `nx test vscode-shared-miranum-forms` to execute the unit tests via [Jest](https://jestjs.io).
-
-## Running lint
-
-Run `nx lint vscode-shared-miranum-forms` to execute the lint via [ESLint](https://eslint.org/).
+If you use this lib you have to add following to your `vite.config.ts`:
+```ts
+export default defineConfig({
+    // ...
+    resolve: {
+        alias: [
+            {
+                find: "@miranum-ide/vscode/shared/miranum-forms",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/shared/miranum-forms/src"
+                )
+            }
+        ]
+    },
+    // ...
+});
+```

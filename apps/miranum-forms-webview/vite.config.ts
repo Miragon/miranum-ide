@@ -24,10 +24,10 @@ export default defineConfig({
                 ),
             },
             {
-                find: "@miranum-ide/vscode/shared/miranum-modeler",
+                find: "@miranum-ide/vscode/shared/miranum-forms",
                 replacement: path.resolve(
                     __dirname,
-                    "../../libs/vscode/shared/miranum-modeler/src",
+                    "../../libs/vscode/shared/miranum-forms/src",
                 ),
             },
         ],
