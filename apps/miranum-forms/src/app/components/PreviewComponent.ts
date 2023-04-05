@@ -63,23 +63,23 @@ export class PreviewComponent extends Preview<DocumentManager<FormBuilderData>> 
         const disposables: Disposable[] = [];
 
         workspace.onDidChangeTextDocument(async (event) => {
-            if (
-                event.document.uri.toString() === document.document.uri.toString() &&
-                event.contentChanges.length !== 0
-            ) {
-                try {
+            try {
+                if (
+                    event.document.uri.toString() === document.document.uri.toString() &&
+                    event.contentChanges.length !== 0
+                ) {
                     await this.update({
                         type: `${this.viewType}.${MessageType.UPDATEFROMEXTENSION}`,
                         data: document.content,
                     });
-                } catch (error) {
-                    const message = error instanceof Error ? error.message : `${error}`;
-                    Logger.error(
-                        "[Miranum.JsonSchema.Preview]",
-                        `(Webview: ${webviewPanel.title})`,
-                        message,
-                    );
                 }
+            } catch (error) {
+                const message = error instanceof Error ? error.message : `${error}`;
+                Logger.error(
+                    "[Miranum.JsonSchema.Preview]",
+                    `(Webview: ${webviewPanel.title})`,
+                    message,
+                );
             }
         });
 

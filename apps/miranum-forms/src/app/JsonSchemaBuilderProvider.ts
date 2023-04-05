@@ -77,7 +77,7 @@ export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
             },
         );
         const togglePreview = commands.registerCommand(
-            `${JsonSchemaBuilderProvider.VIEWTYPE}.togglePreview`,
+            `${this.preview.viewType}.togglePreview`,
             () => {
                 this.preview.toggle(this.controller);
             },
@@ -303,13 +303,19 @@ export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
                             }
                             // break omitted
                         }
+                        case webviewPanel.visible: {
+                            break;
+                        }
                         /* ------- Panel is NOT active/visible ------- */
                         case !webviewPanel.active: {
                             if (!this.preview.active && this.closePreview) {
+                                // TODO: Switching between Editor and Preview only works
+                                //  because of the break in the case webviewPanel.visible.
+                                //  This should be analyzed and maybe changed.
                                 this.preview.close();
                             }
                             this.closePreview = true; // reset
-                            // break omitted
+                            break;
                         }
                     }
                 } catch (error) {

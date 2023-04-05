@@ -1,6 +1,6 @@
 <template>
     <v-app>
-        <v-row v-if="mode === 'builder'" align="center" >
+        <v-row v-if="mode === 'jsonschema-builder'" align="center" >
             <v-text-field
                 label="Form Key"
                 class="input"
@@ -10,7 +10,7 @@
                 outlined rounded dense hide-details="auto">
             </v-text-field>
             <v-select
-                label="x-display"
+                label="Display"
                 class="input"
                 v-model="xDisplay"
                 :items="xDisplayOptions"
@@ -24,9 +24,9 @@
             :builder-settings="builderSettings"
             :value="schema"
             @input="schemaChanged"
-            v-if="mode === 'builder'">
+            v-if="mode === 'jsonschema-builder'">
         </DwfFormBuilder>
-        <div style="background-color: white; padding: 10px" v-if="mode === 'renderer'">
+        <div style="background-color: white; padding: 10px" v-if="mode === 'jsonschema-renderer'">
             <DwfFormRenderer :options="{}" :value="{}" :schema="schema" :key="componentKey"></DwfFormRenderer>
         </div>
     </v-app>
@@ -67,7 +67,12 @@ export default defineComponent({
             { name:"Tabs", value:"tabs" },
             { name:"Stepper", value:"stepper" }
         ];
-        const schema = ref<Form>();
+        const schema = ref<Form>({
+                key: "MyStartForm",
+                type: "object",
+                "x-display": "stepper",
+                allOf: [],
+            });
         const builderSettings = SettingsEN;
 
         const mode = ref(globalViewType);
@@ -95,29 +100,30 @@ export default defineComponent({
                 const data = message.data.data;
 
                 switch (type) {
-                    case `jsonforms-builder.${MessageType.INITIALIZE}`: {
+                    case `jsonschema-builder.${MessageType.INITIALIZE}`: {
                         initialize(data);
                         break;
                     }
-                    case `jsonforms-builder.${MessageType.RESTORE}`: {
+                    case `jsonschema-builder.${MessageType.RESTORE}`: {
                         initialize(data);
                         break;
                     }
-                    case `jsonforms-builder.${MessageType.UNDO}`:
-                    case `jsonforms-builder.${MessageType.REDO}`:
-                    case `jsonforms-builder.${MessageType.UPDATEFROMEXTENSION}`: {
+                    case `jsonschema-builder.${MessageType.UNDO}`:
+                    case `jsonschema-builder.${MessageType.REDO}`:
+                    case `jsonschema-builder.${MessageType.UPDATEFROMEXTENSION}`: {
                         updateForm(data);
                         break;
                     }
-                    case `jsonforms-renderer.${MessageType.INITIALIZE}`: {
+                    case `jsonschema-renderer.${MessageType.INITIALIZE}`: {
                         initialize(data);
                         break;
                     }
-                    case `jsonforms-renderer.${MessageType.RESTORE}`: {
+                    case `jsonschema-renderer.${MessageType.RESTORE}`: {
                         initialize(data);
                         break;
                     }
-                    case `jsonforms-renderer.${MessageType.UPDATEFROMEXTENSION}`: {
+                    case `jsonschema-renderer.${MessageType.UPDATEFROMEXTENSION}`: {
+                        componentKey.value += 1;  // renders the renderer again :)
                         updateForm(data);
                         break;
                     }
@@ -143,14 +149,18 @@ export default defineComponent({
         }
 
         function schemaChanged(update: Form): void {
+            isUpdateFromExtension = false;
             sendChangesToExtension({key: formKey.value!, schema: update});
         }
 
         function keyChanged(update: string): void {
+            isUpdateFromExtension = false;
             sendChangesToExtension({key: update, schema: schema.value!});
         }
 
         function xDisplayChanged(update: string): void {
+            isUpdateFromExtension = false;
+            schema.value["x-display"] = update;
             sendChangesToExtension({
                 schema: {
                     key: schema.value!.key,
@@ -184,7 +194,6 @@ export default defineComponent({
         onBeforeMount(async () => {
             window.addEventListener("message", getDataFromExtension);
             try {
-                isUpdateFromExtension = true;
                 const state = stateController.getState();
                 if (state && state.data) {
                     postMessage(MessageType.RESTORE, undefined, "State was restored successfully.");
@@ -214,7 +223,7 @@ export default defineComponent({
         })
 
         onUnmounted(() => {
-            window.removeEventListener('message', receiveMessage);
+            window.removeEventListener('message', getDataFromExtension);
         })
 
         // Vuetify
