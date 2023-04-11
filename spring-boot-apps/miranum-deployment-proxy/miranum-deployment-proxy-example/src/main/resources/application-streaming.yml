@@ -1,0 +1,54 @@
+io:
+    miragon:
+        miranum:
+            miranum-deployment-proxy:
+                deployment-handlers:
+                    environments:
+                        -   local:
+                                handler: "SpringCloudStreamHandler"
+                                target: "dwf-cocreation-local-01"
+                        -   dev:
+                                handler: "SpringCloudStreamHandler"
+                                target: "dwf-cocreation-local-01"
+                        -   test:
+                                handler: "SpringCloudStreamHandler"
+                                target: "dwf-cocreation-local-01"
+
+spring:
+    cloud:
+        function:
+            definition: deploymentStatus;deploy;
+        stream:
+            bindings:
+                deploymentStatus-in-0:
+                    group: "miranum-deployment-proxy"
+                    destination: "dwf-cocreation-local-01"
+                deploy-out-0:
+                    destination: "dwf-cocreation-local-01"
+            kafka:
+                binder:
+                    brokers: "${KAFKA_BOOTSTRAP_SERVER:localhost}:${KAFKA_BOOTSTRAP_SERVER_PORT:29092}"
+                    producerProperties:
+                        value:
+                            serializer: org.springframework.kafka.support.serializer.JsonSerializer
+                        key:
+                            serializer: org.springframework.kafka.support.serializer.JsonSerializer
+                    consumerProperties:
+                        auto:
+                            offset:
+                                reset: latest
+                        value:
+                            deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+                        key:
+                            deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+                    configuration:
+                        security:
+                            protocol: "${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}"
+    kafka:
+        consumer:
+            properties:
+                spring:
+                    json:
+                        trusted:
+                            packages: "*"
+

@@ -23,6 +23,11 @@
         <org.mapstruct.version>1.5.3.Final</org.mapstruct.version>
         <maven.surfire.plugin.version>3.0.0</maven.surfire.plugin.version>
         <jacoco.version>0.8.9</jacoco.version>
+        <org.hibernate.validator.version>6.2.5.Final</org.hibernate.validator.version>
+        <javax.validation.api.version>2.0.1.Final</javax.validation.api.version>
+        <glassfish.el.version>3.0.0</glassfish.el.version>
+        <org.json.version>20230227</org.json.version>
+        <spring.cloud.version>2021.0.6</spring.cloud.version>
     </properties>
 
     <modules>
@@ -39,6 +44,14 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <!-- Import dependency management from Spring Cloud -->
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

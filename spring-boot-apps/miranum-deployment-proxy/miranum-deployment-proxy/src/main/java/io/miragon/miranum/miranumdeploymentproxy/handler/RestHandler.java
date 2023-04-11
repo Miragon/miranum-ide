@@ -12,19 +12,17 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Map;
 
 @RequiredArgsConstructor
 @Slf4j
 public class RestHandler implements DeploymentHandler {
 
     private final HttpClient client = HttpClient.newBuilder().build();
-    private final Map<String, String> targetEnvs;
+    private final String deploymentTargetBaseUrl;
 
     @Override
     public DeploymentSuccessDto deploy(final DeploymentDto deploymentDto) {
         try {
-            final String baseUrl = targetEnvs.get(deploymentDto.getTarget()) + "/rest/";
             HttpRequest.Builder request = HttpRequest.newBuilder();
             switch (deploymentDto.getArtifact().getType()) {
                 case "bpmn":
@@ -36,17 +34,17 @@ public class RestHandler implements DeploymentHandler {
                     json.put("file", deploymentDto.getArtifact().getFile().getContent());
                     json.put("artifactType", deploymentDto.getArtifact().getType());
                     request = request
-                        .uri(new URI(baseUrl + "deployment"))
+                        .uri(new URI(deploymentTargetBaseUrl + "deployment"))
                         .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
                     break;
                 case "form":
                     request = request
-                        .uri(new URI(baseUrl + "jsonschema"))
+                        .uri(new URI(deploymentTargetBaseUrl + "jsonschema"))
                         .POST(HttpRequest.BodyPublishers.ofString(deploymentDto.getArtifact().getFile().getContent()));
                     break;
                 case "config":
                     request = request
-                        .uri(new URI(baseUrl + "processconfig"))
+                        .uri(new URI(deploymentTargetBaseUrl + "processconfig"))
                         .POST(HttpRequest.BodyPublishers.ofString(deploymentDto.getArtifact().getFile().getContent()));
                     break;
                 default:
@@ -71,8 +69,7 @@ public class RestHandler implements DeploymentHandler {
                 .deployment(deploymentDto)
                 .message(message)
                 .build();
-        }
-        catch (URISyntaxException | IOException | InterruptedException ex) {
+        } catch (URISyntaxException | IOException | InterruptedException ex) {
             log.warn(ex.getMessage());
             return DeploymentSuccessDto.builder()
                 .success(false)

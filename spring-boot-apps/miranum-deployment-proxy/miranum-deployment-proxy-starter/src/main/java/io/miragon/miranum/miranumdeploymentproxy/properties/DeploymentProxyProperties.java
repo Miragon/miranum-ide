@@ -4,12 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.List;
 import java.util.Map;
 
 @Setter
 @Getter
-@ConfigurationProperties(prefix = "io.miragon.miranum.miranum-deployment-proxy")
+@ConfigurationProperties(prefix = "io.miragon.miranum.miranum-deployment-proxy.deployment-handlers")
 public class DeploymentProxyProperties {
-    private Map<String, String> deploymentHandlers;
-    private Map<String, String> targets;
+    private List<Map<String, DeploymentHandlerProperty>> environments;
 }
