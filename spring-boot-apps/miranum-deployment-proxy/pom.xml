@@ -22,7 +22,7 @@
         <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
         <org.mapstruct.version>1.5.3.Final</org.mapstruct.version>
         <maven.surfire.plugin.version>3.0.0</maven.surfire.plugin.version>
-        <jacoco.version>0.8.8</jacoco.version>
+        <jacoco.version>0.8.9</jacoco.version>
     </properties>
 
     <modules>
