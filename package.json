@@ -107,7 +107,7 @@
     "camunda-bpmn-js-behaviors": "^0.4.0",
     "camunda-bpmn-moddle": "^7.0.1",
     "colors": "^1.4.0",
-    "commander": "^9.4.0",
+    "commander": "^10.0.1",
     "core-js": "^3.29.1",
     "lodash": "^4.17.21",
     "min-dash": "^4.0.0",
