@@ -1,52 +1,39 @@
-import { FolderContent, MessageType, ModelerData } from "./types/types";
-import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys, StateController } from "./app";
-import { debounce, reverse, uniqBy } from "lodash";
+import { MessageType, ModelerData } from "./types/types";
+import { ContentController, ImportWarning, instanceOfModelerData, StateController } from "./app";
+import { debounce } from "lodash";
 
-// bpmn-js
-import DmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
+// dmn-js
+import DmnModeler, { ErrorArray, WarningArray } from "dmn-js/lib/Modeler";
+
 import {
-    BpmnPropertiesPanelModule,
-    BpmnPropertiesProviderModule,
-    CamundaPlatformPropertiesProviderModule,
-    ElementTemplatesPropertiesProviderModule,
-} from "bpmn-js-properties-panel";
-import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
-import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
-import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider";
-import TokenSimulationModule from "bpmn-js-token-simulation";
+    DmnPropertiesPanelModule,
+    DmnPropertiesProviderModule,
+} from "dmn-js-properties-panel";
+import camundaModdleDescriptors from "camunda-dmn-moddle/resources/camunda.json";
 
 // css
 import "./styles.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
-import "bpmn-js-properties-panel/dist/assets/element-templates.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
-import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-
+import "dmn-js/dist/assets/diagram-js.css";
+import "dmn-js/dist/assets/dmn-js-decision-table.css";
+import "dmn-js/dist/assets/dmn-js-drd.css";
+import "dmn-js/dist/assets/dmn-js-literal-expression.css";
+import "dmn-js/dist/assets/dmn-js-shared.css";
+import "dmn-js-properties-panel/dist/assets/properties-panel.css";
 
 const modeler = new DmnModeler({
+    drd: {
+        propertiesPanel: {
+            parent: "#js-properties-panel",
+        },
+        additionalModules: [
+            DmnPropertiesPanelModule,
+            DmnPropertiesProviderModule,
+        ],
+    },
     container: "#js-canvas",
     keyboard: {
         bindTo: document,
     },
-    propertiesPanel: {
-        parent: "#js-properties-panel",
-    },
-    additionalModules: [
-        // Properties Panel
-        BpmnPropertiesPanelModule,
-        BpmnPropertiesProviderModule,
-        CamundaPlatformPropertiesProviderModule,
-        CamundaPlatformBehaviors,
-        miragonProviderModule,
-        // Element Templates
-        ElementTemplatesPropertiesProviderModule,
-        ElementTemplateChooserModule,
-        // Other Plugins
-        TokenSimulationModule,
-    ],
     moddleExtensions: {
         camunda: camundaModdleDescriptors,
     },
@@ -56,7 +43,6 @@ const stateController = new StateController();
 const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
-
 
 const updateXML = asyncDebounce(openXML, 100);
 async function openXML(dmn: string | undefined) {
@@ -81,45 +67,6 @@ async function openXML(dmn: string | undefined) {
             postMessage(MessageType.error, undefined, message);
         }
     }
-}
-
-/**
- * Set/Update the given files.
- * @param folders
- */
-function setFiles(folders: FolderContent[] | undefined): void {
-    if (!folders) {
-        return;
-    }
-
-    const message: string[] = ["Files were set:"];
-    // right now we only care about element templates and forms
-    for (const folder of folders) {
-        switch (folder.type) {
-            case "element-template": {
-                modeler.get("elementTemplatesLoader").setTemplates(folder.files);
-                stateController.updateState({
-                    data: {
-                        additionalFiles: [{ type: folder.type, files: folder.files }],
-                    },
-                });
-                message.push(`\t\t\t- Element Templates: ${folder.files.length}`);
-                break;
-            }
-            case "form": {
-                setFormKeys((folder.files as string[]));
-                stateController.updateState({
-                    data: {
-                        additionalFiles: [{ type: folder.type, files: folder.files }],
-                    },
-                });
-                message.push(`\t\t\t- Forms: ${folder.files.length}`);
-                break;
-            }
-        }
-    }
-
-    postMessage(MessageType.info, undefined, message.join("\n"));
 }
 
 async function sendChanges() {
@@ -153,10 +100,6 @@ function setupListeners(): void {
                     updateXML(message.data.dmn);
                     break;
                 }
-                case `FileSystemWatcher.${MessageType.reloadFiles}`: {
-                    setFiles(message.files);
-                    break;
-                }
             }
         } catch (error) {
             const message = (error instanceof Error) ? error.message : "Could not handle message";
@@ -164,19 +107,14 @@ function setupListeners(): void {
         }
     });
 
-    modeler.on("elementTemplates.errors", (event) => {
-        const { errors } = event;
-        postMessage(MessageType.error, undefined, `Failed to load element templates with following errors: ${createList(errors)}`);
-    });
-
-    modeler.get("eventBus").on("commandStack.changed", sendChanges);
+    // console.log(modeler.get("eventBus"));
+    // modeler.get("eventBus");//.on("commandStack.changed", sendChanges);
 
     postMessage(MessageType.info, undefined, "Listeners are set.");
 }
 
-function init(dmn: string | undefined, files: FolderContent[] | undefined): void {
+function init(dmn: string | undefined): void {
     openXML(dmn);
-    setFiles(files);
     postMessage(MessageType.info, undefined, "Webview was initialized.");
 }
 
@@ -186,28 +124,19 @@ window.onload = async function () {
         if (state && state.data) {
             postMessage(MessageType.restore, undefined, "State was restored successfully.");
             let dmn = state.data.dmn;
-            let files = state.data.additionalFiles;
             const newData = await initialized();    // await the response form the backend
             if (instanceOfModelerData(newData)) {
                 // we only get new data when the user made changes while the webview was destroyed
                 if (newData.dmn) {
                     dmn = newData.dmn;
                 }
-                if (newData.additionalFiles) {
-                    if (!files) {
-                        files = newData.additionalFiles;
-                    } else {
-                        // replace old values with new ones
-                        files = reverse(uniqBy(reverse(files.concat(newData.additionalFiles)), "type"));
-                    }
-                }
             }
-            return init(dmn, files);
+            return init(dmn);
         } else {
             postMessage(MessageType.initialize, undefined, "Webview was loaded successfully.");
             const data = await initialized();    // await the response form the backend
             if (instanceOfModelerData(data)) {
-                return init(data.dmn, data.additionalFiles);
+                return init(data.dmn);
             }
         }
     } catch (error) {

@@ -25,7 +25,6 @@ export enum MessageType {
     "updateFromWebview" = "updateFromWebview",
     "undo" = "undo",
     "redo" = "redo",
-    "reloadFiles" = "reloadFiles",
     "info" = "info",
     "error" = "error",
 }

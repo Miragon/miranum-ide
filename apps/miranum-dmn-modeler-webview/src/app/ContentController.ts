@@ -1,24 +1,28 @@
-import DmnModeler, { WarningArray } from "bpmn-js/lib/Modeler";
+import DmnModeler, { WarningArray } from "dmn-js/lib/Modeler";
 
 const EMPTY_DIAGRAM_XML =
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
-    "<bpmn:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
-                      "xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
-                      "xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" " +
-                      "xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" " +
-                      "targetNamespace=\"http://bpmn.io/schema/bpmn\" " +
-                      "id=\"Definitions_1\">" +
-        "<bpmn:process id=\"Process_1\" isExecutable=\"false\">" +
-            "<bpmn:startEvent id=\"StartEvent_1\"/>" +
-        "</bpmn:process>" +
-        "<bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">" +
-            "<bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">" +
-                "<bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEvent_1\">" +
-                    "<dc:Bounds height=\"36.0\" width=\"36.0\" x=\"173.0\" y=\"102.0\"/>" +
-                "</bpmndi:BPMNShape>" +
-            "</bpmndi:BPMNPlane>" +
-        "</bpmndi:BPMNDiagram>" +
-    "</bpmn:definitions>";
+    `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="Definitions_1y42u6n" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.8.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.18.0">
+      <decision id="Decision_16wqg49" name="Decision 1">
+        <decisionTable id="DecisionTable_1wi1sbd">
+          <input id="Input_1">
+            <inputExpression id="InputExpression_1" typeRef="string">
+              <text></text>
+            </inputExpression>
+          </input>
+          <output id="Output_1" typeRef="string" />
+        </decisionTable>
+      </decision>
+      <dmndi:DMNDI>
+        <dmndi:DMNDiagram>
+          <dmndi:DMNShape dmnElementRef="Decision_16wqg49">
+            <dc:Bounds height="80" width="180" x="160" y="100" />
+          </dmndi:DMNShape>
+        </dmndi:DMNDiagram>
+      </dmndi:DMNDI>
+    </definitions>
+    `;
 
 export class ImportWarning extends Error {
     warnings: WarningArray;

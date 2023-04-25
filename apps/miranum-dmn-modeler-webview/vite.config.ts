@@ -1,20 +1,18 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
-
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-dmn-modeler-webview",
 
+    cacheDir: "../../node_modules/.vite/miranum-dmn-modeler-webview",
     plugins: [
         viteStaticCopy({
             targets: [
-                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**", dest: "css/" },
-                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**", dest: "font/" },
+                { src: "../../node_modules/dmn-js/dist/assets/dmn-font/css/**", dest: "css/" },
+                { src: "../../node_modules/dmn-js/dist/assets/dmn-font/font/**", dest: "font/" },
             ],
         }),
     ],
-
     build: {
         target: "es2021",
         commonjsOptions: { transformMixedEsModules: true },

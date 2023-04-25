@@ -233,7 +233,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
 
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.js"));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "index.css"));
-        const frontDmn = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"));
+        const frontDmn = webview.asWebviewUri(vscode.Uri.joinPath(pathToWebview, "css", "dmn.css"));
 
         const nonce = this.getNonce();
 
