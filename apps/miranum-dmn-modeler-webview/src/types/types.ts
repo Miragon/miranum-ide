@@ -1,16 +1,9 @@
-export interface WorkspaceFolder {
-    type: string;
-    path: string;
-    extension: string;
-}
-
 export interface FolderContent {
     type: string,
     files: JSON[] | string[]
 }
 
 export interface ModelerData {
-    bpmn?: string;
     dmn?: string;
     additionalFiles?: FolderContent[];  // e.g element templates, forms
 }
@@ -19,6 +12,10 @@ export interface VscMessage {
     type: string;
     data?: ModelerData;
     message?: string;
+}
+
+export interface VscState {
+    data?: ModelerData;
 }
 
 export enum MessageType {

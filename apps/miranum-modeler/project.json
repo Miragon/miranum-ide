@@ -4,7 +4,8 @@
   "sourceRoot": "apps/miranum-modeler/src",
   "projectType": "application",
   "implicitDependencies": [
-    "miranum-modeler-webview"
+    "miranum-modeler-webview",
+    "miranum-dmn-modeler-webview"
   ],
   "targets": {
     "observe-all": {
@@ -21,6 +22,11 @@
             "command": "npx nx observe miranum-modeler-webview",
             "prefix": "miranum-modeler-webview",
             "color": "red"
+          },
+          {
+            "command": "npx nx observe miranum-dmn-modeler-webview",
+            "prefix": "miranum-dmn-modeler-webview",
+            "color": "green"
           }
         ]
       }
