@@ -3,20 +3,23 @@
  * It handles a text editor which can be used for direct changes inside the document.
  * @module TextEditorComponent
  */
-
-import { TextEditorShowOption, TextEditorWrapper } from "../lib";
-import * as vscode from "vscode";
-import { ConfigurationChangeEvent, ExtensionContext } from "vscode";
+import {
+    Logger,
+    TextEditorShowOption,
+    TextEditorWrapper,
+} from "@miranum-ide/vscode/miranum-vscode";
 
 export class TextEditorComponent extends TextEditorWrapper {
+    public readonly viewType = "jsonforms-textEditor";
 
     private static instance: TextEditorComponent;
 
     /** The default option how the text editor will be displayed. */
-    protected showOption: TextEditorShowOption = TextEditorShowOption.Tab;
+    protected showOption: TextEditorShowOption = TextEditorShowOption.TAB;
 
     private constructor() {
         super();
+        Logger.info("[Miranum.JsonSchema.TextEditor]", "Text editor was created.");
     }
 
     /**
@@ -27,43 +30,5 @@ export class TextEditorComponent extends TextEditorWrapper {
             this.instance = new TextEditorComponent();
         }
         return this.instance;
-    }
-
-    /**
-     * Sets the {@link showOption} according to the settings and register an event if the settings changes.
-     * @param context
-     */
-    public setShowOption(context: ExtensionContext) {
-        const config = vscode.workspace.getConfiguration("jsonSchemaBuilder").get<string>("toggleTextEditor", "Group");
-        switch (true) {
-            case config === "Group": {
-                this.showOption = TextEditorShowOption.Group;
-                break;
-            }
-            case config === "Tab": {
-                this.showOption = TextEditorShowOption.Tab;
-                break;
-            }
-        }
-
-        // Event when user change the config
-        const changeConfig = vscode.workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
-            if (event.affectsConfiguration("jsonSchemaBuilder.toggleTextEditor")) {
-                // eslint-disable-next-line @typescript-eslint/no-shadow
-                const config = vscode.workspace.getConfiguration("jsonSchemaBuilder").get<string>("toggleTextEditor", "Group");
-                switch (true) {
-                    case config === "Group": {
-                        this.showOption = TextEditorShowOption.Group;
-                        break;
-                    }
-                    case config === "Tab": {
-                        this.showOption = TextEditorShowOption.Tab;
-                        break;
-                    }
-                }
-            }
-        });
-
-        context.subscriptions.push(changeConfig);
     }
 }
