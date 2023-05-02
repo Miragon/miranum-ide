@@ -1,18 +1,14 @@
 import * as vscode from "vscode";
 import { TextDocument, TextEditor } from "vscode";
-import { Updatable } from "./types";
-
+import { Observer, UIComponent } from "./types";
 
 export enum TextEditorShowOption {
-    "Tab" = "Tab",
-    "Group" = "Group",
+    TAB = "Tab",
+    GROUP = "Group",
 }
 
-export abstract class TextEditorWrapper implements Updatable<TextDocument> {
-
-    protected abstract showOption: TextEditorShowOption;
-
-    private _textEditor: TextEditor | undefined;
+export abstract class TextEditorWrapper implements Observer, UIComponent<TextDocument> {
+    private _textEditor?: TextEditor;
 
     private _isOpen = false;
 
@@ -23,19 +19,13 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
     protected constructor() {
         vscode.window.tabGroups.onDidChangeTabs((tabs) => {
             tabs.closed.forEach((tab) => {
-                if (tab.input instanceof vscode.TabInputText &&
-                    tab.input.uri.path === this.textEditor.document.fileName) {
-
+                if (
+                    tab.input instanceof vscode.TabInputText &&
+                    tab.input.uri.path === this.textEditor.document.fileName
+                ) {
                     this._isOpen = false;
                 }
             });
-            // This is necessary because if the user drags the tab into a new group
-            // the tab is considered as closed ???
-            try {
-                this._isOpen = this.getTab(this.textEditor.document.fileName) ? true : this._isOpen;
-            } catch (error) {
-                this._isOpen = false;
-            }
         });
     }
 
@@ -52,27 +42,30 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
             if (this._isOpen) {
                 this.close(document.fileName);
             } else {
-                this.create(document);
+                this.open(document);
             }
         } catch (error) {
             console.error("", error);
         }
     }
 
-    public async create(document: TextDocument): Promise<boolean> {
+    public async open(document: TextDocument): Promise<boolean> {
         try {
             if (!this._isOpen) {
-                this._textEditor = await vscode.window.showTextDocument(document, this.getShowOptions())
-                    .then((textEditor) => {
-                        this._isOpen = true;
-                        return textEditor;
-                    }, (reason) => {
-                        throw new Error(reason);
-                    });
+                this._textEditor = await vscode.window
+                    .showTextDocument(document, this.getShowOptions())
+                    .then(
+                        (textEditor) => {
+                            this._isOpen = true;
+                            return textEditor;
+                        },
+                        (reason) => {
+                            throw new Error(reason);
+                        },
+                    );
             }
 
             return await Promise.resolve(true);
-
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
         }
@@ -85,14 +78,17 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
 
         try {
             const tab = this.getTab(fileName);
-            return await Promise.resolve(vscode.window.tabGroups.close(tab)
-                .then((result) => {
-                    this._isOpen = false;
-                    return result;
-                }, (reason) => {
-                    throw new Error(reason);
-                }));
-
+            return await Promise.resolve(
+                vscode.window.tabGroups.close(tab).then(
+                    (result) => {
+                        this._isOpen = false;
+                        return result;
+                    },
+                    (reason) => {
+                        throw new Error(reason);
+                    },
+                ),
+            );
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
         }
@@ -100,28 +96,23 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
 
     public async update(document: TextDocument): Promise<boolean> {
         try {
-            if (this._isOpen && this.textEditor.document.uri.toString() !== document.uri.toString()) {
+            if (
+                this._isOpen &&
+                this.textEditor.document.uri.toString() !== document.uri.toString()
+            ) {
                 if (await this.close(this.textEditor.document.fileName)) {
-                    return await Promise.resolve(this.create(document));
+                    return await Promise.resolve(this.open(document));
                 }
             }
 
             return await Promise.resolve(true);
-
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
         }
     }
 
-    private getShowOptions(): vscode.TextDocumentShowOptions {
-        switch (this.showOption) {
-            case "Group": {
-                return {
-                    preserveFocus: false,
-                    preview: true,
-                    viewColumn: vscode.ViewColumn.Beside,
-                };
-            }
+    private getShowOptions(showOption = "Group"): vscode.TextDocumentShowOptions {
+        switch (showOption) {
             case "Tab": {
                 return {
                     preserveFocus: false,
@@ -130,7 +121,12 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
                 };
             }
             default: {
-                return {};
+                // Opens text editor in a new tab-group
+                return {
+                    preserveFocus: false,
+                    preview: true,
+                    viewColumn: vscode.ViewColumn.Beside,
+                };
             }
         }
     }
@@ -138,9 +134,10 @@ export abstract class TextEditorWrapper implements Updatable<TextDocument> {
     private getTab(fileName: string): vscode.Tab {
         for (const tabGroup of vscode.window.tabGroups.all) {
             for (const tab of tabGroup.tabs) {
-                if (tab.input instanceof vscode.TabInputText &&
-                    tab.input.uri.path === fileName) {
-
+                if (
+                    tab.input instanceof vscode.TabInputText &&
+                    tab.input.uri.path === fileName
+                ) {
                     return tab;
                 }
             }

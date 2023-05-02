@@ -1,6 +1,6 @@
 <template>
     <v-app>
-        <v-row v-if="mode === 'builder'" align="center" >
+        <v-row v-if="mode === 'jsonschema-builder'" align="center" >
             <v-text-field
                 label="Form Key"
                 class="input"
@@ -10,7 +10,7 @@
                 outlined rounded dense hide-details="auto">
             </v-text-field>
             <v-select
-                label="x-display"
+                label="Display"
                 class="input"
                 v-model="xDisplay"
                 :items="xDisplayOptions"
@@ -24,24 +24,30 @@
             :builder-settings="builderSettings"
             :value="schema"
             @input="schemaChanged"
-            v-if="mode === 'builder'">
+            v-if="mode === 'jsonschema-builder'">
         </DwfFormBuilder>
-        <div style="background-color: white; padding: 10px" v-if="mode === 'renderer'">
+        <div style="background-color: white; padding: 10px" v-if="mode === 'jsonschema-renderer'">
             <DwfFormRenderer :options="{}" :value="{}" :schema="schema" :key="componentKey"></DwfFormRenderer>
         </div>
     </v-app>
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, onUnmounted, ref} from 'vue';
-import {VsCode} from "./types/VsCode";
-import {Schema} from "./types/Schema";
+import {defineComponent, onBeforeMount, onUnmounted, ref} from 'vue';
 import {DwfFormRenderer, Form} from "@muenchen/digiwf-form-renderer";
 import {DwfFormBuilder} from "@muenchen/digiwf-form-builder";
 import {SettingsEN} from "@muenchen/digiwf-form-builder-settings";
 import {debounce} from "lodash";
+import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { FormBuilderData } from "@miranum-ide/vscode/shared/miranum-forms"
+import {
+    initialize,
+    initialized,
+    instanceOfFormBuilderData,
+    StateController
+} from "./composables";
 
-declare const vscode: VsCode;
+declare const globalViewType: string;
 
 export default defineComponent({
     name: 'App',
@@ -50,6 +56,9 @@ export default defineComponent({
         DwfFormBuilder
     },
     setup() {
+        const stateController = new StateController();
+        let isUpdateFromExtension = false;
+
         const formKey = ref<string>();
         const xDisplay = ref<string>();
         const xDisplayOptions = [
@@ -58,71 +67,101 @@ export default defineComponent({
             { name:"Tabs", value:"tabs" },
             { name:"Stepper", value:"stepper" }
         ];
-        const schema = ref<Form>();
+        const schema = ref<Form>({
+                key: "MyStartForm",
+                type: "object",
+                "x-display": "stepper",
+                allOf: [],
+            });
         const builderSettings = SettingsEN;
 
-        const mode = ref('');
+        const mode = ref(globalViewType);
         const componentKey = ref(0);
 
-        const receiveMessage = debounce(getDataFromExtension, 50);
-        function getDataFromExtension(event: MessageEvent): void {
-            const message = event.data;
-            const newForm: Schema = JSON.parse(message.text);
-
-            switch (message.type) {
-                case 'jsonschema-renderer.updateFromExtension': {
-                    componentKey.value += 1;  // renders the component again
-                    updateForm(newForm);
-                    break;
-                }
-                case 'jsonschema-builder.updateFromExtension': {
-                    updateForm(newForm);
-                    break;
-                }
-                case 'jsonschema-builder.undo':
-                case 'jsonschema-builder.redo': {
-                    updateForm(newForm);
-                    break;
-                }
-                default:
-                    break;
+        function updateForm(newSchema?: FormBuilderData): void {
+            if (newSchema !== undefined) {
+                formKey.value = newSchema.key;
+                schema.value = newSchema.schema;
+                xDisplay.value = newSchema.schema["x-display"];
+                stateController.updateState({
+                    mode: globalViewType,
+                    data: newSchema
+                });
             }
         }
 
-        function sendDataToExtension(form: Schema): void {
-            const serialized = JSON.stringify(form);
+        const getDataFromExtension = debounce(receiveMessage, 50);
 
-            vscode.setState({
-                text: serialized,
-                mode: mode.value
-            });
-            vscode.postMessage({
-                type: 'jsonschema-builder.updateFromWebview',
-                content: serialized
-            });
+        function receiveMessage(message: MessageEvent<VscMessage<FormBuilderData>>): void {
+            try {
+                isUpdateFromExtension = true;
+
+                const type = message.data.type;
+                const data = message.data.data;
+
+                switch (type) {
+                    case `jsonschema-builder.${MessageType.INITIALIZE}`: {
+                        initialize(data);
+                        break;
+                    }
+                    case `jsonschema-builder.${MessageType.RESTORE}`: {
+                        initialize(data);
+                        break;
+                    }
+                    case `jsonschema-builder.${MessageType.UNDO}`:
+                    case `jsonschema-builder.${MessageType.REDO}`:
+                    case `jsonschema-builder.${MessageType.UPDATEFROMEXTENSION}`: {
+                        updateForm(data);
+                        break;
+                    }
+                    case `jsonschema-renderer.${MessageType.INITIALIZE}`: {
+                        initialize(data);
+                        break;
+                    }
+                    case `jsonschema-renderer.${MessageType.RESTORE}`: {
+                        initialize(data);
+                        break;
+                    }
+                    case `jsonschema-renderer.${MessageType.UPDATEFROMEXTENSION}`: {
+                        componentKey.value += 1;  // renders the renderer again :)
+                        updateForm(data);
+                        break;
+                    }
+                }
+            } catch (error) {
+                const message = error instanceof Error ? error.message : `${error}`;
+                postMessage(MessageType.ERROR, undefined, message);
+            }
         }
 
-        function updateForm(newForm: Schema): void {
-            vscode.setState({
-                text: JSON.stringify(newForm),
-                mode: mode.value
-            });
+        const sendChangesToExtension = debounce(updateFile, 100);
 
-            formKey.value = newForm.key;
-            xDisplay.value = newForm.schema["x-display"];
-            schema.value = newForm.schema;
+        function updateFile(data: FormBuilderData) {
+            if (isUpdateFromExtension) {
+                isUpdateFromExtension = false;
+                return;
+            }
+            stateController.updateState({
+                mode: globalViewType,
+                data
+            });
+            postMessage(MessageType.UPDATEFROMWEBVIEW, data);
         }
 
         function schemaChanged(update: Form): void {
-            sendDataToExtension({key: formKey.value!, schema: update});
+            isUpdateFromExtension = false;
+            sendChangesToExtension({key: formKey.value!, schema: update});
         }
 
         function keyChanged(update: string): void {
-            sendDataToExtension({key: update, schema: schema.value!});
+            isUpdateFromExtension = false;
+            sendChangesToExtension({key: update, schema: schema.value!});
         }
 
         function xDisplayChanged(update: string): void {
-            sendDataToExtension({
+            isUpdateFromExtension = false;
+            schema.value["x-display"] = update;
+            sendChangesToExtension({
                 schema: {
                     key: schema.value!.key,
                     type: schema.value!.type,
@@ -133,32 +172,58 @@ export default defineComponent({
             });
         }
 
-        function escape(value: string): string {
-            return value
-                .replace(/[\\]/g, '\\\\')
-                .replace(/[\b]/g, '\\b')
-                .replace(/[\f]/g, '\\f')
-                .replace(/[\n]/g, '\\n')
-                .replace(/[\r]/g, '\\r')
-                .replace(/[\t]/g, '\\t')
-                .replace(/\\'/g, "\\'");
+        function postMessage(type: MessageType, data?: FormBuilderData, message?: string): void {
+            switch (type) {
+                case MessageType.UPDATEFROMWEBVIEW: {
+                    stateController.postMessage({
+                        type: `${globalViewType}.${type}`,
+                        data: JSON.parse(JSON.stringify(data))
+                    });
+                    break;
+                }
+                default: {
+                    stateController.postMessage({
+                        type: `${globalViewType}.${type}`,
+                        message
+                    });
+                    break;
+                }
+            }
         }
 
-        onMounted(() => {
-            const state = vscode.getState();
-            if (state) {
-                const form: Schema = JSON.parse(escape(state.text));
-                formKey.value = form.key;
-                xDisplay.value = form.schema["x-display"];
-                schema.value = form.schema;
-                mode.value = state.mode;
+        onBeforeMount(async () => {
+            window.addEventListener("message", getDataFromExtension);
+            try {
+                const state = stateController.getState();
+                if (state && state.data) {
+                    postMessage(MessageType.RESTORE, undefined, "State was restored successfully.");
+                    mode.value = state.mode;
+                    let data = state.data;
+                    const newData = await initialized(); // await the response form the backend
+                    if (newData && instanceOfFormBuilderData(newData)) {
+                        // we only get new data when the user made changes while the webview was destroyed
+                        if (newData.schema) {
+                            data = newData;
+                        }
+                    }
+                    updateForm(data);
+                } else {
+                    postMessage(MessageType.INITIALIZE, undefined, "Webview was loaded successfully.");
+                    const data = await initialized(); // await the response form the backend
+                    if (data && instanceOfFormBuilderData(data)) {
+                        updateForm(data);
+                    }
+                }
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Failed to initialize webview.";
+                postMessage(MessageType.ERROR, undefined, message);
             }
 
-            window.addEventListener('message', receiveMessage);
+            postMessage(MessageType.INFO, undefined, "Webview was initialized.");
         })
 
         onUnmounted(() => {
-            window.removeEventListener('message', receiveMessage);
+            window.removeEventListener('message', getDataFromExtension);
         })
 
         // Vuetify

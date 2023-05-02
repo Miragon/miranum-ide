@@ -1,5 +1,6 @@
 import BpmnModeler, { WarningArray } from "bpmn-js/lib/Modeler";
 
+// prettier-ignore
 const EMPTY_DIAGRAM_XML =
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
     "<bpmn:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
@@ -30,11 +31,7 @@ export class ImportWarning extends Error {
 }
 
 export class ContentController {
-
-    constructor(
-        private readonly modeler: BpmnModeler,
-    ) {
-    }
+    constructor(private readonly modeler: BpmnModeler) {}
 
     public async newDiagram(): Promise<ImportWarning> {
         return this.loadDiagram(EMPTY_DIAGRAM_XML);
@@ -45,13 +42,12 @@ export class ContentController {
             const { warnings } = await this.modeler.importXML(bpmn);
 
             return new ImportWarning("Imported BPMN 2.0 diagram", warnings);
-
         } catch (error: any) {
             const { warnings } = error;
             if (warnings) {
                 throw new ImportWarning("Failed to import BPMN 2.0 diagram", warnings);
             } else {
-                const message = (error instanceof Error) ? error.message : "";
+                const message = error instanceof Error ? error.message : "";
                 throw new Error(`Failed to import Bpmn 2.0 diagram ${message}`);
             }
         }

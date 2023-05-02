@@ -56,15 +56,15 @@ function Form(props: any) {
     };
 
     //fetch forms (from window variable) and fill Forms with it
-    const [ forms, setForms ] = useState<string[]>([]);
+    const [forms, setForms] = useState<string[]>([]);
     useEffect(() => {
         setForms(getFormKeys()); // window.forms);
-    }, [ setForms ]);
+    }, [setForms]);
 
     const getOptions = () => {
         return [
             { label: "<none>", value: undefined },
-            ...forms.map(form => ({
+            ...forms.map((form) => ({
                 label: form,
                 value: form,
             })),
@@ -83,11 +83,13 @@ function Form(props: any) {
 }
 
 //add or change
-function addInputParameter(element: any, property: any, bpmnFactory: any, modeling: any) {
-    const {
-        binding,
-        value,
-    } = property;
+function addInputParameter(
+    element: any,
+    property: any,
+    bpmnFactory: any,
+    modeling: any,
+) {
+    const { binding, value } = property;
 
     const businessObject = getBusinessObject(element); //alternativ: element.businessObject
     let extensionElements = businessObject.get("extensionElements");
@@ -123,12 +125,15 @@ function addInputParameter(element: any, property: any, bpmnFactory: any, modeli
 
         const inputParameter = createInputParameter(binding, value, bpmnFactory);
         inputParameter.$parent = inputOutput;
-        update = { inputParameters: inputOutput.get("camunda:inputParameters").concat(inputParameter) };
+        update = {
+            inputParameters: inputOutput
+                .get("camunda:inputParameters")
+                .concat(inputParameter),
+        };
     }
     //write into xml
     modeling.updateModdleProperties(element, updatedBusinessObject, update);
 }
-
 
 function removeInputParameter(element: any, binding: any, modeling: any) {
     const businessObject = getBusinessObject(element);
@@ -144,7 +149,6 @@ function removeInputParameter(element: any, binding: any, modeling: any) {
     });
 }
 
-
 //     -----------------------------HELPERS-----------------------------     \\
 
 function createExtensionElements(businessObject: any, bpmnFactory: any) {
@@ -156,12 +160,22 @@ function createExtensionElements(businessObject: any, bpmnFactory: any) {
     );
 }
 
-function createInputOutput(binding: any, value: any, bpmnFactory: any, extensionElements: any) {
+function createInputOutput(
+    binding: any,
+    value: any,
+    bpmnFactory: any,
+    extensionElements: any,
+) {
     const inputParameter = createInputParameter(binding, value, bpmnFactory);
-    const inputOutput = createElement("camunda:InputOutput", {
-        inputParameters: [ inputParameter ],
-        outputParameters: [],
-    }, extensionElements, bpmnFactory);
+    const inputOutput = createElement(
+        "camunda:InputOutput",
+        {
+            inputParameters: [inputParameter],
+            outputParameters: [],
+        },
+        extensionElements,
+        bpmnFactory,
+    );
 
     inputParameter.$parent = inputOutput;
     return inputOutput;
@@ -178,13 +192,9 @@ function createInputOutput(binding: any, value: any, bpmnFactory: any, extension
  * @return {ModdleElement}
  */
 function createInputParameter(binding: any, value: any, bpmnFactory: any) {
-    const {
-        name,
-        scriptFormat,
-    } = binding;
+    const { name, scriptFormat } = binding;
 
-    let parameterValue,
-        parameterDefinition;
+    let parameterValue, parameterDefinition;
 
     if (scriptFormat) {
         parameterDefinition = bpmnFactory.create("camunda:Script", {
