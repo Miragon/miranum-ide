@@ -33,15 +33,15 @@ function Form(props: any) {
     };
 
     //fetch forms (from window variable) and fill Forms with it
-    const [ forms, setForms ] = useState<string[]>([]);
+    const [forms, setForms] = useState<string[]>([]);
     useEffect(() => {
         setForms(getFormKeys()); // window.forms);
-    }, [ setForms ]);
+    }, [setForms]);
 
     const getOptions = () => {
         return [
             { label: "<none>", value: undefined },
-            ...forms.map(form => ({
+            ...forms.map((form) => ({
                 label: form,
                 value: form,
             })),

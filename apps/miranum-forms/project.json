@@ -39,7 +39,7 @@
         "webpackConfig": "apps/miranum-forms/custom-webpack.config.js",
         "assets": [
           { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
-          { "glob": "images/logo_miranum-forms.png", "input": "./", "output": "/assets" },
+          { "glob": "images/miranum_logo.png", "input": "./", "output": "/assets" },
           { "glob": ".vscodeignore", "input": "./apps/miranum-forms/", "output": "/" },
           { "glob": "LICENSE", "input": "./", "output": "/" }
         ]

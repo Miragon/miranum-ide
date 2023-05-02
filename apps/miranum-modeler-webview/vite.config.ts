@@ -2,15 +2,41 @@
 import { defineConfig } from "vite";
 
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import path from "path";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-webview",
 
+    resolve: {
+        alias: [
+            {
+                find: "@miranum-ide/vscode/miranum-vscode-webview",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/miranum-vscode-webview/src",
+                ),
+            },
+            {
+                find: "@miranum-ide/vscode/shared/miranum-modeler",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/vscode/shared/miranum-modeler/src",
+                ),
+            },
+        ],
+    },
+
     plugins: [
         viteStaticCopy({
             targets: [
-                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**", dest: "css/" },
-                { src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**", dest: "font/" },
+                {
+                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**",
+                    dest: "css/",
+                },
+                {
+                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**",
+                    dest: "font/",
+                },
             ],
         }),
     ],

@@ -12,40 +12,46 @@ const LOW_PRIORITY = 500;
  * @param {PropertiesPanel} propertiesPanel
  * @param {Function} translate
  */
-export default function MiragonProvider(this: any, propertiesPanel: any, translate: any) {
-
+export default function MiragonProvider(
+    this: any,
+    propertiesPanel: any,
+    translate: any,
+) {
     // API ////////
 
     /**
-   * Return the groups provided for the given element.
-   *
-   * @param {DiagramElement} element
-   *
-   * @return {(Object[]) => (Object[])} groups middleware
-   */
-    this.getGroups = function (element: any) {
-
-        /**
-     * We return a middleware that modifies
-     * the existing groups.
+     * Return the groups provided for the given element.
      *
-     * @param {Object[]} groups
+     * @param {DiagramElement} element
      *
-     * @return {Object[]} modified groups
+     * @return {(Object[]) => (Object[])} groups middleware
      */
+    this.getGroups = function (element: any) {
+        /**
+         * We return a middleware that modifies
+         * the existing groups.
+         *
+         * @param {Object[]} groups
+         *
+         * @return {Object[]} modified groups
+         */
         return function (groups: any) {
-
             //checks whether form files where loaded and either uses default property-panel, or Miranum's custom panel
-            if (getFormKeys().length > 0) { //(window.forms.length > 0) {
+            if (getFormKeys().length > 0) {
+                //(window.forms.length > 0) {
                 // Add own "form" group to StartEvent, and remove old Form property
                 if (is(element, "bpmn:StartEvent")) {
                     groups.push(createStartFormGroup(element, translate));
-                    groups = groups.filter((obj: any) => obj.id !== "CamundaPlatform__Form");
+                    groups = groups.filter(
+                        (obj: any) => obj.id !== "CamundaPlatform__Form",
+                    );
                 }
                 // Add own "form" group to UserTask, and remove old Form property
                 if (is(element, "bpmn:UserTask")) {
                     groups.push(createUserFormGroup(element, translate));
-                    groups = groups.filter((obj: any) => obj.id !== "CamundaPlatform__Form");
+                    groups = groups.filter(
+                        (obj: any) => obj.id !== "CamundaPlatform__Form",
+                    );
                 }
             }
 
@@ -58,8 +64,7 @@ export default function MiragonProvider(this: any, propertiesPanel: any, transla
     propertiesPanel.registerProvider(LOW_PRIORITY, this);
 }
 
-MiragonProvider.$inject = [ "propertiesPanel", "translate" ];
-
+MiragonProvider.$inject = ["propertiesPanel", "translate"];
 
 //   -------------------------Custom Groups-------------------------   \\
 // due to prefix 'ElementTemplates__' it will stay displayed even with templates active
