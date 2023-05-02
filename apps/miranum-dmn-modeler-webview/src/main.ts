@@ -1,5 +1,11 @@
-import { MessageType, ModelerData } from "./types/types";
-import { ContentController, ImportWarning, instanceOfModelerData, StateController } from "./app";
+import { MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import {
+    ContentController,
+    ImportWarning,
+    instanceOfModelerData,
+    StateController,
+} from "./app";
 import { debounce } from "lodash";
 
 // dmn-js
@@ -25,10 +31,7 @@ const modeler = new DmnModeler({
         propertiesPanel: {
             parent: "#js-properties-panel",
         },
-        additionalModules: [
-            DmnPropertiesPanelModule,
-            DmnPropertiesProviderModule,
-        ],
+        additionalModules: [DmnPropertiesPanelModule, DmnPropertiesProviderModule],
     },
     container: "#js-canvas",
     keyboard: {
@@ -45,26 +48,33 @@ const contentController = new ContentController(modeler);
 let isUpdateFromExtension = false;
 
 const updateXML = asyncDebounce(openXML, 100);
+
 async function openXML(dmn: string | undefined) {
     try {
         let result: ImportWarning;
         if (!dmn) {
-            result = (await contentController.newDiagram());
+            result = await contentController.newDiagram();
         } else {
-            result = (await contentController.loadDiagram(dmn));
+            result = await contentController.loadDiagram(dmn);
         }
         stateController.updateState({ data: { dmn } });
 
-        const warnings = (result.warnings.length > 0) ? `with following warnings: ${createList(result.warnings)}` : "";
-        postMessage(MessageType.info,  undefined, `${result.message} ${warnings}`);
-
+        const warnings =
+            result.warnings.length > 0
+                ? `with following warnings: ${createList(result.warnings)}`
+                : "";
+        postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
     } catch (error) {
         if (error instanceof ImportWarning) {
-            const warnings = (error.warnings.length > 0) ? `with following warnings: ${createList(error.warnings)}` : "";
-            postMessage(MessageType.error, undefined, `${error.message} ${warnings}`);
+            const warnings =
+                error.warnings.length > 0
+                    ? `with following warnings: ${createList(error.warnings)}`
+                    : "";
+            postMessage(MessageType.ERROR, undefined, `${error.message} ${warnings}`);
         } else {
-            const message = (error instanceof Error) ? error.message : "Failed to open xml.";
-            postMessage(MessageType.error, undefined, message);
+            const message =
+                error instanceof Error ? error.message : "Failed to open xml.";
+            postMessage(MessageType.ERROR, undefined, message);
         }
     }
 }
@@ -77,7 +87,7 @@ async function sendChanges() {
 
     const dmn = await contentController.exportDiagram();
     stateController.updateState({ data: { dmn } });
-    postMessage(MessageType.updateFromWebview, { dmn }, undefined);
+    postMessage(MessageType.UPDATEFROMWEBVIEW, { dmn }, undefined);
 }
 
 function setupListeners(): void {
@@ -85,46 +95,51 @@ function setupListeners(): void {
         try {
             const message = event.data;
             switch (message.type) {
-                case `dmn-modeler.${MessageType.initialize}`: {
+                case `dmn-modeler.${MessageType.INITIALIZE}`: {
                     initialize(message.data);
                     break;
                 }
-                case `dmn-modeler.${MessageType.restore}`: {
+                case `dmn-modeler.${MessageType.RESTORE}`: {
                     initialize(message.data);
                     break;
                 }
-                case `dmn-modeler.${MessageType.undo}`:
-                case `dmn-modeler.${MessageType.redo}`:
-                case `dmn-modeler.${MessageType.updateFromExtension}`: {
+                case `dmn-modeler.${MessageType.UNDO}`:
+                case `dmn-modeler.${MessageType.REDO}`:
+                case `dmn-modeler.${MessageType.UPDATEFROMEXTENSION}`: {
                     isUpdateFromExtension = true;
                     updateXML(message.data.dmn);
                     break;
                 }
             }
         } catch (error) {
-            const message = (error instanceof Error) ? error.message : "Could not handle message";
-            postMessage(MessageType.error, undefined, message);
+            const message =
+                error instanceof Error ? error.message : "Could not handle message";
+            postMessage(MessageType.ERROR, undefined, message);
         }
     });
 
     // console.log(modeler.get("eventBus"));
     // modeler.get("eventBus");//.on("commandStack.changed", sendChanges);
 
-    postMessage(MessageType.info, undefined, "Listeners are set.");
+    postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
 function init(dmn: string | undefined): void {
     openXML(dmn);
-    postMessage(MessageType.info, undefined, "Webview was initialized.");
+    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
 
 window.onload = async function () {
     try {
         const state = stateController.getState();
         if (state && state.data) {
-            postMessage(MessageType.restore, undefined, "State was restored successfully.");
+            postMessage(
+                MessageType.RESTORE,
+                undefined,
+                "State was restored successfully.",
+            );
             let dmn = state.data.dmn;
-            const newData = await initialized();    // await the response form the backend
+            const newData = await initialized(); // await the response form the backend
             if (instanceOfModelerData(newData)) {
                 // we only get new data when the user made changes while the webview was destroyed
                 if (newData.dmn) {
@@ -133,15 +148,20 @@ window.onload = async function () {
             }
             return init(dmn);
         } else {
-            postMessage(MessageType.initialize, undefined, "Webview was loaded successfully.");
-            const data = await initialized();    // await the response form the backend
+            postMessage(
+                MessageType.INITIALIZE,
+                undefined,
+                "Webview was loaded successfully.",
+            );
+            const data = await initialized(); // await the response form the backend
             if (instanceOfModelerData(data)) {
                 return init(data.dmn);
             }
         }
     } catch (error) {
-        const message = (error instanceof Error) ? error.message : "Failed to initialize webview.";
-        postMessage(MessageType.error, undefined, message);
+        const message =
+            error instanceof Error ? error.message : "Failed to initialize webview.";
+        postMessage(MessageType.ERROR, undefined, message);
     }
 };
 
@@ -171,7 +191,7 @@ function createList(messages: ErrorArray | WarningArray): string {
  */
 function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
-        case MessageType.updateFromWebview: {
+        case MessageType.UPDATEFROMWEBVIEW: {
             stateController.postMessage({
                 type: `dmn-modeler.${type}`,
                 data,
@@ -193,9 +213,12 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
  */
 function initialized() {
     return new Promise((resolve) => {
-        initialize = (response: ModelerData | undefined) => { resolve(response); };
+        initialize = (response: ModelerData | undefined) => {
+            resolve(response);
+        };
     });
 }
+
 let initialize: any = null;
 
 /**
@@ -203,9 +226,12 @@ let initialize: any = null;
  * @param func The function to debounce
  * @param wait The number of milliseconds to delay
  */
-function asyncDebounce<F extends(...args: any[]) => Promise<any>>(func: F, wait?: number) {
-    const resolveSet = new Set<(p:any)=>void>();
-    const rejectSet = new Set<(p:any)=>void>();
+function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
+    func: F,
+    wait?: number,
+) {
+    const resolveSet = new Set<(p: any) => void>();
+    const rejectSet = new Set<(p: any) => void>();
 
     const debounced = debounce((args: Parameters<F>) => {
         func(...args)
@@ -219,10 +245,12 @@ function asyncDebounce<F extends(...args: any[]) => Promise<any>>(func: F, wait?
             });
     }, wait);
 
-    return (...args: Parameters<F>): ReturnType<F> => new Promise((resolve, reject) => {
-        resolveSet.add(resolve);
-        rejectSet.add(reject);
-        debounced(args);
-    }) as ReturnType<F>;
+    return (...args: Parameters<F>): ReturnType<F> =>
+        new Promise((resolve, reject) => {
+            resolveSet.add(resolve);
+            rejectSet.add(reject);
+            debounced(args);
+        }) as ReturnType<F>;
 }
+
 // <---------------------------- Helper Functions ------------------------------
