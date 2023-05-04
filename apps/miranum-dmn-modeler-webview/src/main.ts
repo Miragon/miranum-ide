@@ -1,10 +1,9 @@
-import { MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import {
     ContentController,
     ImportWarning,
     instanceOfModelerData,
-    StateController,
 } from "./app";
 import { debounce } from "lodash";
 

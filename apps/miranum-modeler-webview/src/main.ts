@@ -3,10 +3,9 @@ import {
     ImportWarning,
     instanceOfModelerData,
     setFormKeys,
-    StateController,
 } from "./app";
 import { debounce, reverse, uniqBy } from "lodash";
-import { FolderContent, MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
 // bpmn-js
