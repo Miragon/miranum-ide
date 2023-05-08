@@ -57,7 +57,7 @@ const modeler = new BpmnModeler({
     },
 });
 
-const stateController = new StateController();
+const stateController = new StateController<ModelerData>();
 const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
