@@ -163,7 +163,7 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miranum-ide/m
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/my-app"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/my-app"
+        "${workspaceFolder}/dist/apps/my-app/**/*.js"
       ],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/dist/apps/my-app/**",
