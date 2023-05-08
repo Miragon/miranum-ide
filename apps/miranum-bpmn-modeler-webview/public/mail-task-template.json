@@ -1,9 +1,7 @@
 {
   "name": "Mail Task",
   "id": "de.miragon.example.MailTask",
-  "appliesTo": [
-    "bpmn:ServiceTask"
-  ],
+  "appliesTo": ["bpmn:ServiceTask"],
   "properties": [
     {
       "label": "Implementation Type",

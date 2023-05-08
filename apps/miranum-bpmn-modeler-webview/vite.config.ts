@@ -5,7 +5,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import path from "path";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-modeler-webview",
+    cacheDir: "../../node_modules/.vite/miranum-bpmn-modeler-webview",
 
     resolve: {
         alias: [

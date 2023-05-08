@@ -292,7 +292,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const pathToWebview = vscode.Uri.joinPath(
             extensionUri,
-            "miranum-modeler-webview",
+            "miranum-bpmn-modeler-webview",
         );
 
         const scriptUri = webview.asWebviewUri(

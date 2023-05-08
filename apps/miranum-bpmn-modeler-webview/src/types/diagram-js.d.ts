@@ -5,7 +5,7 @@ declare module "diagram-js/lib/core/EventBus" {
 
     export type EventCallback<T extends string = any> = (
         event: EventType<T>,
-        data: any
+        data: any,
     ) => any;
 
     export type EventType<T extends string> = EventMap extends Record<T, infer E>
@@ -13,7 +13,7 @@ declare module "diagram-js/lib/core/EventBus" {
         : InternalEvent;
 
     interface EventMap {
-        "commandStack.changed": CommandStackChangedEvent
+        "commandStack.changed": CommandStackChangedEvent;
     }
 
     export interface InternalEvent {
