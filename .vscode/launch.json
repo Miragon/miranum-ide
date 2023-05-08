@@ -10,7 +10,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-console"
+        "${workspaceFolder}/dist/apps/miranum-console/**/*.js"
       ],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/dist/apps/miranum-console/**",
@@ -30,7 +30,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-forms"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-forms"
+        "${workspaceFolder}/dist/apps/miranum-forms/**/*.js"
       ],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/dist/apps/miranum-forms/**",
@@ -50,7 +50,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-modeler"
+        "${workspaceFolder}/dist/apps/miranum-modeler/**/*.js"
       ],
       "resolveSourceMapLocations": [
         "${workspaceFolder}/dist/apps/miranum-modeler/**",
