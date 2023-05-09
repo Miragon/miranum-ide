@@ -1,16 +1,16 @@
-import { MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import {
-    ContentController,
-    ImportWarning,
-    instanceOfModelerData,
-} from "./app";
+    MessageType,
+    StateController,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { ContentController, ImportWarning, instanceOfModelerData } from "./app";
 import { debounce } from "lodash";
 
 // dmn-js
 import DmnModeler, { ErrorArray, WarningArray } from "dmn-js/lib/Modeler";
 
 import {
+    CamundaPropertiesProviderModule,
     DmnPropertiesPanelModule,
     DmnPropertiesProviderModule,
 } from "dmn-js-properties-panel";
@@ -20,6 +20,7 @@ import camundaModdleDescriptors from "camunda-dmn-moddle/resources/camunda.json"
 import "./styles.css";
 import "dmn-js/dist/assets/diagram-js.css";
 import "dmn-js/dist/assets/dmn-js-decision-table.css";
+import "dmn-js/dist/assets/dmn-js-decision-table-controls.css";
 import "dmn-js/dist/assets/dmn-js-drd.css";
 import "dmn-js/dist/assets/dmn-js-literal-expression.css";
 import "dmn-js/dist/assets/dmn-js-shared.css";
@@ -30,7 +31,45 @@ const modeler = new DmnModeler({
         propertiesPanel: {
             parent: "#js-properties-panel",
         },
-        additionalModules: [DmnPropertiesPanelModule, DmnPropertiesProviderModule],
+        additionalModules: [
+            DmnPropertiesPanelModule,
+            DmnPropertiesProviderModule,
+            CamundaPropertiesProviderModule,
+        ],
+    },
+    common: {
+        expressionLanguages: {
+            options: [
+                {
+                    value: "feel",
+                    label: "FEEL",
+                },
+                {
+                    value: "juel",
+                    label: "JUEL",
+                },
+                {
+                    value: "javascript",
+                    label: "JavaScript",
+                },
+                {
+                    value: "groovy",
+                    label: "Groovy",
+                },
+                {
+                    value: "python",
+                    label: "Python",
+                },
+                {
+                    value: "jruby",
+                    label: "JRuby",
+                },
+            ],
+            defaults: {
+                editor: "feel",
+            },
+        },
+        dataTypes: ["string", "boolean", "integer", "long", "double", "date"],
     },
     container: "#js-canvas",
     keyboard: {
@@ -51,17 +90,20 @@ const updateXML = asyncDebounce(openXML, 100);
 async function openXML(dmn: string | undefined) {
     try {
         let result: ImportWarning;
+
         if (!dmn) {
             result = await contentController.newDiagram();
         } else {
             result = await contentController.loadDiagram(dmn);
         }
+
         stateController.updateState({ data: { dmn } });
 
         const warnings =
             result.warnings.length > 0
                 ? `with following warnings: ${createList(result.warnings)}`
                 : "";
+
         postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
     } catch (error) {
         if (error instanceof ImportWarning) {
@@ -119,7 +161,8 @@ function setupListeners(): void {
 
     waitForActiveViewToBeLoaded().then(() => {
         const activeEditor = modeler.getActiveViewer();
-        activeEditor.get("eventBus").on("commandStack.changed", sendChanges);
+        const eventBus = activeEditor.get("eventBus");
+        eventBus.on("commandStack.changed", sendChanges);
     });
 
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
