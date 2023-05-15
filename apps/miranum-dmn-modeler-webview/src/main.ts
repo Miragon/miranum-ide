@@ -160,15 +160,13 @@ function setupListeners(): void {
     });
 
     modeler.on("views.changed", () => {
-        activeEditor = modeler.getActiveViewer();
+        const activeEditor = modeler.getActiveViewer();
         const eventBus = activeEditor.get("eventBus");
         eventBus.on("commandStack.changed", sendChanges);
     });
 
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
-
-let activeEditor = undefined;
 
 function init(dmn: string | undefined): void {
     openXML(dmn);
