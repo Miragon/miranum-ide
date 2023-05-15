@@ -159,14 +159,16 @@ function setupListeners(): void {
         }
     });
 
-    waitForActiveViewToBeLoaded().then(() => {
-        const activeEditor = modeler.getActiveViewer();
+    modeler.on("views.changed", () => {
+        activeEditor = modeler.getActiveViewer();
         const eventBus = activeEditor.get("eventBus");
         eventBus.on("commandStack.changed", sendChanges);
     });
 
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
+
+let activeEditor = undefined;
 
 function init(dmn: string | undefined): void {
     openXML(dmn);
@@ -212,19 +214,6 @@ window.onload = async function () {
 setupListeners();
 
 // ----------------------------- Helper Functions ----------------------------->
-/**
- * A Promise that resolves when the modelers active view is loaded (!= undefined).
- */
-function waitForActiveViewToBeLoaded(): Promise<void> {
-    return new Promise((resolve) => {
-        const intervalId = setInterval(() => {
-            if (typeof modeler.getActiveView() != undefined) {
-                clearInterval(intervalId);
-                resolve();
-            }
-        }, 100);
-    });
-}
 
 /**
  * Create a list of information that will be sent to the backend and get logged.

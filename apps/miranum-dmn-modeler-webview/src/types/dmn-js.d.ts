@@ -10,6 +10,8 @@ declare module "dmn-js/lib/Modeler" {
         getActiveView(): any;
 
         getActiveViewer(): any;
+
+        on(event: string, callback: () => void): void;
     }
 
     export type DiagramWarning = {
