@@ -73,7 +73,7 @@
     "jest-serializer-vue": "^3.0.0",
     "jest-transform-stub": "^2.0.0",
     "jsdom": "~20.0.3",
-    "nx": "15.6.3",
+    "nx": "16.1.4",
     "prettier": "^2.8.7",
     "react-test-renderer": "18.2.0",
     "sass": "~1.32",
