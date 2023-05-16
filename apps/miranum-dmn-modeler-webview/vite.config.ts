@@ -1,11 +1,10 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
-
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import path from "path";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-modeler-webview",
+    cacheDir: "../../node_modules/.vite/miranum-dmn-modeler-webview",
 
     resolve: {
         alias: [
@@ -30,11 +29,11 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
-                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**",
+                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/css/**",
                     dest: "css/",
                 },
                 {
-                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**",
+                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/font/**",
                     dest: "font/",
                 },
             ],

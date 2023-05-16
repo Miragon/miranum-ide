@@ -10,7 +10,7 @@ declare module "bpmn-js/lib/Modeler" {
     }
 
     export type DiagramWarning = {
-        warnings: WarningArray
+        warnings: WarningArray;
     };
 
     export interface MessageObject {
@@ -18,41 +18,38 @@ declare module "bpmn-js/lib/Modeler" {
     }
 
     export type BpmnJsError = {
-        message: string,
-        stack: string,
+        message: string;
+        stack: string;
     };
 
     export type WarningArray = [
         {
-            message: string,
-            error: BpmnJsError,
+            message: string;
+            error: BpmnJsError;
         },
     ];
 
-    export type ErrorArray = [
-        error: BpmnJsError,
-    ];
+    export type ErrorArray = [error: BpmnJsError];
 
-    export type ElementTemplateEvent =
-        | "elementTemplates.errors";
+    export type ElementTemplateEvent = "elementTemplates.errors";
 
-    export type Event =
-        | ElementTemplateEvent;
+    export type Event = ElementTemplateEvent;
 
     export interface ElementTemplateObject {
         errors: ErrorArray;
     }
 
-    export type CallbackObject<T extends Event> =
-        T extends ElementTemplateEvent ? ElementTemplateObject : any;
+    export type CallbackObject<T extends Event> = T extends ElementTemplateEvent
+        ? ElementTemplateObject
+        : any;
 
     export type Callback<T extends Event> = (e: CallbackObject<T>) => void;
 
-    export type ServiceName =
-        | "eventBus"
-        | "elementTemplatesLoader";
+    export type ServiceName = "eventBus" | "elementTemplatesLoader";
 
-    export type Service<T extends string> = ServiceMap extends Record<T, infer E> ? E : any;
+    export type Service<T extends string> = ServiceMap extends Record<T, infer E>
+        ? E
+        : any;
 
     interface ServiceMap {
         eventBus: EventBus;

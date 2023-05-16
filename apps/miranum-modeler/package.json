@@ -25,11 +25,13 @@
     "Visualization", "Other"
   ],
   "keywords": [
-    "BPMN", "Modeler", "Camunda", "Diagram", "business process"
+    "BPMN", "Modeler", "Camunda", "Diagram", "business process", "DMN"
   ],
   "activationEvents": [
     "onCustomEditor:bpmn-modeler",
-    "onCommand:bpmn-modeler.toggleTextEditor"
+    "onCommand:bpmn-modeler.toggleTextEditor",
+    "onCustomEditor:dmn-modeler",
+    "onCommand:dmn-modeler.toggleTextEditor"
   ],
   "main": "main.js",
   "contributes": {
@@ -44,6 +46,17 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "id": "dmn-modeler",
+        "viewType": "dmn-modeler",
+        "displayName": "DMN Modeler",
+        "selector": [
+          {
+            "filenamePattern": "*.dmn"
+          }
+        ],
+        "priority": "default"
       }
     ],
     "commands": [
@@ -54,6 +67,16 @@
       },
       {
         "command": "bpmn-modeler.toggleLogger",
+        "title": "Miranum: Toggle Logging Information",
+        "icon": "$(callstack-view-session)"
+      },
+      {
+        "command": "dmn-modeler.toggleTextEditor",
+        "title": "Miranum: Toggle Standard Text Editor",
+        "icon": "$(notebook-mimetype)"
+      },
+      {
+        "command": "dmn-modeler.toggleLogger",
         "title": "Miranum: Toggle Logging Information",
         "icon": "$(callstack-view-session)"
       }
@@ -91,6 +114,16 @@
           "command": "bpmn-modeler.toggleLogger",
           "group": "navigation",
           "when": "activeWebviewPanelId == 'bpmn-modeler'"
+        },
+        {
+          "command": "dmn-modeler.toggleTextEditor",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'dmn-modeler'"
+        },
+        {
+          "command": "dmn-modeler.toggleLogger",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'dmn-modeler'"
         }
       ]
     }

@@ -1,39 +1,30 @@
 import * as vscode from "vscode";
 import { Uri, window } from "vscode";
-import { debounce } from "lodash";
 import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { TextEditor, Watcher } from "./lib";
+import { debounce } from "lodash";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
-export class BpmnModeler implements vscode.CustomTextEditorProvider {
-    public static readonly VIEWTYPE = "bpmn-modeler";
+export class DmnModeler implements vscode.CustomTextEditorProvider {
+    public static readonly VIEWTYPE = "dmn-modeler";
 
     private static counter = 0;
 
     private write = this.asyncDebounce(this.writeChangesToDocument, 100);
-
-    public static register(context: vscode.ExtensionContext): vscode.Disposable {
-        Logger.get().clear();
-        const provider = new BpmnModeler(context);
-        return vscode.window.registerCustomEditorProvider(
-            BpmnModeler.VIEWTYPE,
-            provider,
-        );
-    }
 
     private constructor(private readonly context: vscode.ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
         TextEditor.register(context);
         // ----- Register commands ---->
         const toggleTextEditor = vscode.commands.registerCommand(
-            "bpmn-modeler.toggleTextEditor",
+            "dmn-modeler.toggleTextEditor",
             () => {
                 TextEditor.toggle();
             },
         );
         const toggleLogger = vscode.commands.registerCommand(
-            "bpmn-modeler.toggleLogger",
+            "dmn-modeler.toggleLogger",
             () => {
                 if (!Logger.isOpen) {
                     Logger.show();
@@ -45,6 +36,12 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         // <---- Register commands -----
 
         context.subscriptions.push(toggleTextEditor, toggleLogger);
+    }
+
+    public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        Logger.get().clear();
+        const provider = new DmnModeler(context);
+        return vscode.window.registerCustomEditorProvider(DmnModeler.VIEWTYPE, provider);
     }
 
     /**
@@ -62,11 +59,11 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         await vscode.commands.executeCommand("workbench.action.keepEditor");
 
         // Set context for when clause in vscode commands
-        BpmnModeler.counter++;
+        DmnModeler.counter++;
         vscode.commands.executeCommand(
             "setContext",
-            `${BpmnModeler.VIEWTYPE}.openCustomEditor`,
-            BpmnModeler.counter,
+            `${DmnModeler.VIEWTYPE}.openCustomEditor`,
+            DmnModeler.counter,
         );
 
         let isUpdateFromWebview = false;
@@ -89,42 +86,42 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             async (event: VscMessage<ModelerData>) => {
                 try {
                     switch (event.type) {
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.INITIALIZE}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.INITIALIZE}`: {
                             Logger.info(
-                                "[Miranum.Modeler.Webview]",
+                                "[Miranum.DmnModeler.Webview]",
                                 `(Webview: ${webviewPanel.title})`,
                                 event.message ?? "",
                             );
                             await postMessage(MessageType.INITIALIZE);
                             break;
                         }
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.RESTORE}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.RESTORE}`: {
                             Logger.info(
-                                "[Miranum.Modeler.Webview]",
+                                "[Miranum.DmnModeler.Webview]",
                                 `(Webview: ${webviewPanel.title})`,
                                 event.message ?? "",
                             );
                             await postMessage(MessageType.RESTORE);
                             break;
                         }
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.UPDATEFROMWEBVIEW}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.UPDATEFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
-                            if (event.data?.bpmn) {
-                                await this.write(document, event.data.bpmn);
+                            if (event.data?.dmn) {
+                                await this.write(document, event.data.dmn);
                             }
                             break;
                         }
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.INFO}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.INFO}`: {
                             Logger.info(
-                                "[Miranum.Modeler.Webview]",
+                                "[Miranum.DmnModeler.Webview]",
                                 `(Webview: ${webviewPanel.title})`,
                                 event.message ?? "",
                             );
                             break;
                         }
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.ERROR}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.ERROR}`: {
                             Logger.error(
-                                "[Miranum.Modeler.Webview]",
+                                "[Miranum.DmnModeler.Webview]",
                                 `(Webview: ${webviewPanel.title})`,
                                 event.message ?? "",
                             );
@@ -135,7 +132,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     isUpdateFromWebview = false;
                     const message = error instanceof Error ? error.message : `${error}`;
                     Logger.error(
-                        "[Miranum.Modeler]",
+                        "[Miranum.DmnModeler]",
                         `(Webview: ${webviewPanel.title})`,
                         message,
                     );
@@ -149,7 +146,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
                         data = {
-                            bpmn: document.getText(),
+                            dmn: document.getText(),
                             additionalFiles: await Reader.get().getAllFiles(
                                 projectUri,
                                 workspaceFolder,
@@ -159,7 +156,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     }
                     case MessageType.RESTORE: {
                         data = {
-                            bpmn: isBuffer ? document.getText() : undefined,
+                            dmn: isBuffer ? document.getText() : undefined,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
                                 : undefined,
@@ -168,7 +165,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     }
                     default: {
                         data = {
-                            bpmn: document.getText(),
+                            dmn: document.getText(),
                         };
                         break;
                     }
@@ -177,7 +174,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 try {
                     if (
                         await webviewPanel.webview.postMessage({
-                            type: `${BpmnModeler.VIEWTYPE}.${msgType}`,
+                            type: `${DmnModeler.VIEWTYPE}.${msgType}`,
                             data,
                         })
                     ) {
@@ -199,7 +196,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                                 });
                         }
                         Logger.error(
-                            "[Miranum.Modeler]",
+                            "[Miranum.DmnModeler]",
                             `(Webview: ${webviewPanel.title})`,
                             `Could not post message (Viewtype: ${webviewPanel.visible})`,
                         );
@@ -214,7 +211,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                                 ? error.message
                                 : `Could not post message to ${webviewPanel}`;
                         Logger.error(
-                            "[Miranum.Modeler]",
+                            "[Miranum.DmnModeler]",
                             `(Webview: ${webviewPanel.title})`,
                             message,
                         );
@@ -225,7 +222,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
         const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(() => {
             Logger.info(
-                "[Miranum.Modeler]",
+                "[Miranum.DmnModeler]",
                 `(Webview: ${webviewPanel.title})`,
                 `Document was saved (${document.fileName})`,
             );
@@ -276,11 +273,11 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         });
 
         webviewPanel.onDidDispose(() => {
-            BpmnModeler.counter--;
+            DmnModeler.counter--;
             vscode.commands.executeCommand(
                 "setContext",
-                `${BpmnModeler.VIEWTYPE}.openCustomEditor`,
-                BpmnModeler.counter,
+                `${DmnModeler.VIEWTYPE}.openCustomEditor`,
+                DmnModeler.counter,
             );
 
             watcher.unsubscribe(document.uri.path);
@@ -292,7 +289,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const pathToWebview = vscode.Uri.joinPath(
             extensionUri,
-            "miranum-bpmn-modeler-webview",
+            "miranum-dmn-modeler-webview",
         );
 
         const scriptUri = webview.asWebviewUri(
@@ -301,8 +298,8 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         const styleUri = webview.asWebviewUri(
             vscode.Uri.joinPath(pathToWebview, "index.css"),
         );
-        const fontBpmn = webview.asWebviewUri(
-            vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"),
+        const frontDmn = webview.asWebviewUri(
+            vscode.Uri.joinPath(pathToWebview, "css", "dmn.css"),
         );
 
         const nonce = this.getNonce();
@@ -322,7 +319,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
                 <link href="${styleUri}" rel="stylesheet" type="text/css" />
-                <link href="${fontBpmn}" rel="stylesheet" type="text/css" />
+                <link href="${frontDmn}" rel="stylesheet" type="text/css" />
 
                 <title>Custom Texteditor Template</title>
             </head>
@@ -331,7 +328,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
                 <div class="message error">
                   <div class="note">
-                    <p>Ooops, we could not display the BPMN 2.0 diagram.</p>
+                    <p>Ooops, we could not display the DMN diagram.</p>
 
                     <div class="details">
                       <span>Import Error Details</span>
@@ -455,7 +452,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         } catch (error) {
             const message = error instanceof Error ? error.message : `${error}`;
             Logger.error(
-                "[Miranum.Modeler]",
+                "[Miranum.DmnModeler]",
                 "Could not read miranum.json:",
                 `\n${message}`,
             );
