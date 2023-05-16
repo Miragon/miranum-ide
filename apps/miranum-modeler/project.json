@@ -4,7 +4,8 @@
   "sourceRoot": "apps/miranum-modeler/src",
   "projectType": "application",
   "implicitDependencies": [
-    "miranum-modeler-webview"
+    "miranum-bpmn-modeler-webview",
+    "miranum-dmn-modeler-webview"
   ],
   "targets": {
     "observe-all": {
@@ -18,9 +19,14 @@
             "color": "blue"
           },
           {
-            "command": "npx nx observe miranum-modeler-webview",
-            "prefix": "miranum-modeler-webview",
+            "command": "npx nx observe miranum-bpmn-modeler-webview",
+            "prefix": "miranum-bpmn-modeler-webview",
             "color": "red"
+          },
+          {
+            "command": "npx nx observe miranum-dmn-modeler-webview",
+            "prefix": "miranum-dmn-modeler-webview",
+            "color": "green"
           }
         ]
       }
@@ -38,9 +44,21 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-modeler/custom-webpack.config.js",
         "assets": [
-          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
-          { "glob": ".vscodeignore", "input": "./apps/miranum-modeler/", "output": "/" },
-          { "glob": "LICENSE", "input": "./", "output": "/" }
+          {
+            "glob": "images/komet.svg",
+            "input": "./",
+            "output": "/assets"
+          },
+          {
+            "glob": ".vscodeignore",
+            "input": "./apps/miranum-modeler/",
+            "output": "/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
         ]
       },
       "configurations": {
@@ -62,11 +80,31 @@
         "generatePackageJson": true,
         "webpackConfig": "apps/miranum-modeler/custom-webpack.config.js",
         "assets": [
-          { "glob": "images/komet.svg", "input": "./", "output": "/assets" },
-          { "glob": "images/miranum_logo.png", "input": "./", "output": "/assets" },
-          { "glob": "LICENSE", "input": "./", "output": "/" },
-          { "glob": ".vscodeignore", "input": "./apps/miranum-modeler/", "output": "/" },
-          { "glob": "README.md", "input": "./apps/miranum-modeler/", "output": "/" }
+          {
+            "glob": "images/komet.svg",
+            "input": "./",
+            "output": "/assets"
+          },
+          {
+            "glob": "images/miranum_logo.png",
+            "input": "./",
+            "output": "/assets"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          },
+          {
+            "glob": ".vscodeignore",
+            "input": "./apps/miranum-modeler/",
+            "output": "/"
+          },
+          {
+            "glob": "README.md",
+            "input": "./apps/miranum-modeler/",
+            "output": "/"
+          }
         ]
       },
       "configurations": {

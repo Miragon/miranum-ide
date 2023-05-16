@@ -2,6 +2,8 @@
   "$schema": "miranum-ide/node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
+    "miranum-bpmn-modeler-webview": "apps/miranum-bpmn-modeler-webview",
+    "miranum-dmn-modeler-webview": "apps/miranum-dmn-modeler-webview",
     "miranum-cli": "apps/miranum-cli",
     "miranum-console": "apps/miranum-console",
     "miranum-console-webview": "apps/miranum-console-webview",
@@ -11,7 +13,6 @@
     "miranum-forms": "apps/miranum-forms",
     "miranum-forms-webview": "apps/miranum-forms-webview",
     "miranum-modeler": "apps/miranum-modeler",
-    "miranum-modeler-webview": "apps/miranum-modeler-webview",
     "vscode-miranum-vscode": "libs/vscode/miranum-vscode",
     "vscode-miranum-vscode-webview": "libs/vscode/miranum-vscode-webview",
     "vscode-shared-miranum-forms": "libs/vscode/shared/miranum-forms",

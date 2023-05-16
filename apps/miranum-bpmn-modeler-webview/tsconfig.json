@@ -16,7 +16,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "useDefineForClassFields": true,
+    "useDefineForClassFields": true
   },
   "include": ["src"],
   "references": [
