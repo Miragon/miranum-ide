@@ -46,7 +46,7 @@
         "development": {
           "extractLicenses": false,
           "optimization": false,
-          "sourceMap": false
+          "sourceMap": true
         }
       }
     },

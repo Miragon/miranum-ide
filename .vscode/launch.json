@@ -10,8 +10,16 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-console"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-console"
-      ]
+        "${workspaceFolder}/dist/apps/miranum-console/**/*.js"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/dist/apps/miranum-console/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-console/*"
+      }
     },
     {
       "name": "Run miranum-forms",
@@ -22,8 +30,16 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-forms"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-forms"
-      ]
+        "${workspaceFolder}/dist/apps/miranum-forms/**/*.js"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/dist/apps/miranum-forms/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-forms/*"
+      }
     },
     {
       "name": "Run miranum-modeler",
@@ -34,8 +50,16 @@
         "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-modeler"
-      ]
+        "${workspaceFolder}/dist/apps/miranum-modeler/**/*.js"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/dist/apps/miranum-modeler/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-modeler/*"
+      }
     }
   ]
 }
