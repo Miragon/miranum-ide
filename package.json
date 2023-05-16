@@ -99,7 +99,7 @@
     "@muenchen/digiwf-form-renderer": "^0.21.3",
     "@mui/icons-material": "^5.10.14",
     "@mui/material": "^5.12.3",
-    "@svgr/webpack": "^6.5.1",
+    "@svgr/webpack": "^8.0.1",
     "axios": "^1.0.0",
     "bpmn-js": "^11.5.0",
     "bpmn-js-properties-panel": "^1.19.1",
