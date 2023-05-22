@@ -1,8 +1,8 @@
 {
   "name": "miranum-console",
-	"displayName": "Miranum: Console",
+  "displayName": "Miranum: Console",
   "description": "A beautiful UI to deploy your process artefacts.",
-  "license": "Apache-2.0",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
@@ -10,6 +10,18 @@
     "color": "#F0F8FF",
     "theme": "light"
   },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+      "href": "https://twitter.com/miragon_io",
+      "description": "Our Twitter profile."
+    },
+    {
+      "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+      "href": "https://www.linkedin.com/company/miragon-io",
+      "description": "Our LinkedIn profile."
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Miragon/miranum-ide.git"
@@ -18,95 +30,98 @@
     "url": "https://github.com/Miragon/miranum-ide/issues"
   },
   "engines": {
-		"vscode": "^1.73.0"
-	},
+    "vscode": "^1.73.0"
+  },
   "icon": "assets/miranum_logo.png",
-	"categories": [
-		"Other"
-	],
+  "categories": [
+    "Other"
+  ],
   "keywords": [
-    "deploy", "Deployment", "CLI", "fontend"
+    "deploy",
+    "Deployment",
+    "CLI",
+    "fontend"
   ],
   "activationEvents": [
-        "onCommand:miranum.deploy.local",
-        "onCommand:miranum.deploy.dev",
-        "onCommand:miranum.deploy.test",
-        "onCommand:miranum.deployAll.local",
-        "onCommand:miranum.deployAll.dev",
-        "onCommand:miranum.deployAll.test",
-        "onCommand:miranum.generateFile",
-        "onCommand:miranum.generateProject"
-	],
-	"main": "main.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "miranum.deploy.local",
-				"title": "Deploy file to local environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.deploy.dev",
-				"title": "Deploy file to dev environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.deploy.test",
-				"title": "Deploy file to test environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.deployAll.local",
-				"title": "Deploy directory to local environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.deployAll.dev",
-				"title": "Deploy directory to dev environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.deployAll.test",
-				"title": "Deploy directory to test environment",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.generateFile",
-				"title": "Generate new file",
-				"category": "Miranum"
-			},
-			{
-				"command": "miranum.generateProject",
-				"title": "Generate new project",
-				"category": "Miranum"
-			}
-		],
-		"viewsContainers": {
-			"activitybar": [
-			  {
+    "onCommand:miranum.deploy.local",
+    "onCommand:miranum.deploy.dev",
+    "onCommand:miranum.deploy.test",
+    "onCommand:miranum.deployAll.local",
+    "onCommand:miranum.deployAll.dev",
+    "onCommand:miranum.deployAll.test",
+    "onCommand:miranum.generateFile",
+    "onCommand:miranum.generateProject"
+  ],
+  "main": "main.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "miranum.deploy.local",
+        "title": "Deploy file to local environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.deploy.dev",
+        "title": "Deploy file to dev environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.deploy.test",
+        "title": "Deploy file to test environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.deployAll.local",
+        "title": "Deploy directory to local environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.deployAll.dev",
+        "title": "Deploy directory to dev environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.deployAll.test",
+        "title": "Deploy directory to test environment",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.generateFile",
+        "title": "Generate new file",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.generateProject",
+        "title": "Generate new project",
+        "category": "Miranum"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
           "id": "miranum-ide",
           "title": "Miranum-IDE",
           "icon": "assets/komet.svg"
-			  }
-			]
+        }
+      ]
     },
     "views": {
-			"miranum-ide": [
-			  {
+      "miranum-ide": [
+        {
           "id": "bpmn-project",
           "name": "Files"
-			  },
-			  {
+        },
+        {
           "id": "commands",
           "name": "Commands"
-			  }
-			]
+        }
+      ]
     },
     "viewsWelcome": [
-			{
-				"view": "commands",
-				"contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
-			}
+      {
+        "view": "commands",
+        "contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
+      }
     ],
     "menus": {
       "explorer/context": [
@@ -126,34 +141,34 @@
           "when": "explorerResourceIsFolder"
         }
       ],
-      "deploy.submenu":[
+      "deploy.submenu": [
         {
-            "command": "miranum.deploy.local"
+          "command": "miranum.deploy.local"
         },
         {
-            "command": "miranum.deploy.dev"
+          "command": "miranum.deploy.dev"
         },
         {
-            "command": "miranum.deploy.test"
+          "command": "miranum.deploy.test"
         }
       ],
-      "deployAll.submenu":[
+      "deployAll.submenu": [
         {
-            "command": "miranum.deployAll.local"
+          "command": "miranum.deployAll.local"
         },
         {
-            "command": "miranum.deployAll.dev"
+          "command": "miranum.deployAll.dev"
         },
         {
-            "command": "miranum.deployAll.test"
+          "command": "miranum.deployAll.test"
         }
       ],
-      "generate.submenu":[
+      "generate.submenu": [
         {
-            "command": "miranum.generateFile"
+          "command": "miranum.generateFile"
         },
         {
-            "command": "miranum.generateProject"
+          "command": "miranum.generateProject"
         }
       ]
     },
@@ -171,5 +186,5 @@
         "label": "Generate"
       }
     ]
-	}
+  }
 }

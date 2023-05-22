@@ -65,7 +65,8 @@
           { "glob": "images/miranum_logo.png", "input": "./", "output": "/assets" },
           { "glob": "LICENSE", "input": "./", "output": "/" },
           { "glob": ".vscodeignore", "input": "./apps/miranum-console/", "output": "/" },
-          { "glob": "README.md", "input": "./apps/miranum-console/", "output": "/" }
+          { "glob": "README.md", "input": "./apps/miranum-console/", "output": "/" },
+          { "glob": "CHANGELOG.md", "input": "./apps/miranum-console/", "output": "/" }
         ]
       },
       "configurations": {

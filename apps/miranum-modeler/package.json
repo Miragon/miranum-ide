@@ -2,7 +2,7 @@
   "name": "vs-code-bpmn-modeler",
   "displayName": "Miranum: Modeler",
   "description": "Create and edit BPMN 2.0 Diagrams for Camunda 7 inside VS Code.",
-  "license": "Apache License 2.0",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
@@ -10,6 +10,18 @@
     "color": "#F0F8FF",
     "theme": "light"
   },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+      "href": "https://twitter.com/miragon_io",
+      "description": "Our Twitter profile."
+    },
+    {
+      "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+      "href": "https://www.linkedin.com/company/miragon-io",
+      "description": "Our LinkedIn profile."
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Miragon/miranum-ide.git"
@@ -22,10 +34,17 @@
   },
   "icon": "assets/miranum_logo.png",
   "categories": [
-    "Visualization", "Other"
+    "Visualization",
+    "Other"
   ],
   "keywords": [
-    "BPMN", "Modeler", "Camunda", "Diagram", "business process", "DMN"
+    "BPMN",
+    "DMN",
+    "Modeler",
+    "Camunda",
+    "Diagram",
+    "business process",
+    "decision table"
   ],
   "activationEvents": [
     "onCustomEditor:bpmn-modeler",

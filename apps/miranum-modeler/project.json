@@ -104,6 +104,11 @@
             "glob": "README.md",
             "input": "./apps/miranum-modeler/",
             "output": "/"
+          },
+          {
+            "glob": "CHANGELOG.md",
+            "input": "./apps/miranum-modeler/",
+            "output": "/"
           }
         ]
       },

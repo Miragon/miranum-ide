@@ -15,6 +15,12 @@
         <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miranum_logo.png" alt="Logo" height="120">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
+    <a href="https://twitter.com/miragon_io" target="_blank" rel="noreferrer noopener nofollow">
+        <img src="https://img.shields.io/badge/follow-@miragon__io-1DA1F2?logo=twitter&style=social" alt="Twitter Follow">
+    </a>
+    <a href="https://www.linkedin.com/company/miragon-io" target="_blank" rel="noreferrer noopener nofollow">
+        <img src="https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue" alt="LinkedIn Follow">
+    </a>
     <p>
         <i>One IDE for everything!</i>
         <br />

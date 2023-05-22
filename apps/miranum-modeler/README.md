@@ -15,6 +15,12 @@
         <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miranum_logo.png" alt="Logo" height="120">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
+    <a href="https://twitter.com/miragon_io" target="_blank" rel="noreferrer noopener nofollow">
+        <img src="https://img.shields.io/badge/follow-@miragon__io-1DA1F2?logo=twitter&style=social" alt="Twitter Follow">
+    </a>
+    <a href="https://www.linkedin.com/company/miragon-io" target="_blank" rel="noreferrer noopener nofollow">
+        <img src="https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue" alt="LinkedIn Follow">
+    </a>
     <p>
         <i>One IDE for everything!</i>
         <br />
@@ -24,20 +30,21 @@
     </p>
 </div>
 
-
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
+[Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
 process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
 **Miranum Modeler** is one component of our collection of *VS Code Plugins*.
-It allows you to model BPMN 2.0 Diagrams that can be used with Camunda Platform 7.
+It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7. With the version >= 0.4.3 you can now
+create and edit DMN 1.3 diagrams.
 
 ## Features
 
 * Create and edit processes for Camunda Platform 7 and enhance them with technical attributes.
+* Create and edit decision tables.
 * Use the text editor for changes directly in the XML file.
 * Use the integrated *Token Simulation* to simulate your process flow.
 
