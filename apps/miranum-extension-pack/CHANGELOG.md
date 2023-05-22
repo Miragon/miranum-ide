@@ -10,3 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Miranum Modeler now supports DMN 1.3 (#219)
+
+
+
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.2...HEAD
