@@ -12,15 +12,15 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-ide/main/images/miranum_logo.png" alt="Logo" height="180">
+        <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miranum_logo.png" alt="Logo" height="180">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
     <p>
         <i>One IDE for everything!</i>
         <br />
-        <a href="https://github.com/FlowSquad/miranum-ide/issues">Report Bug</a>
+        <a href="https://github.com/Miragon/miranum-ide/issues">Report Bug</a>
         ·
-        <a href="https://github.com/FlowSquad/miranum-ide/pulls">Request Feature</a>
+        <a href="https://github.com/Miragon/miranum-ide/pulls">Request Feature</a>
     </p>
 </div>
 
@@ -83,22 +83,22 @@ Distributed under the [Apache License Version 2.0](LICENSE).
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/FlowSquad/miragon-process-ide.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/Miragon/miragon-process-ide.svg?style=for-the-badge
 
-[contributors-url]: https://github.com/FlowSquad/miranum-ide/graphs/contributors
+[contributors-url]: https://github.com/Miragon/miranum-ide/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/FlowSquad/miragon-process-ide.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/Miragon/miragon-process-ide.svg?style=for-the-badge
 
-[forks-url]: https://github.com/FlowSquad/miranum-ide/network/members
+[forks-url]: https://github.com/Miragon/miranum-ide/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/FlowSquad/miragon-process-ide.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/Miragon/miragon-process-ide.svg?style=for-the-badge
 
-[stars-url]: https://github.com/FlowSquad/miranum-ide/stargazers
+[stars-url]: https://github.com/Miragon/miranum-ide/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/FlowSquad/miragon-process-ide.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/Miragon/miragon-process-ide.svg?style=for-the-badge
 
-[issues-url]: https://github.com/FlowSquad/miranum-ide/issues
+[issues-url]: https://github.com/Miragon/miranum-ide/issues
 
-[license-shield]: https://img.shields.io/github/license/FlowSquad/miragon-process-ide.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/Miragon/miragon-process-ide.svg?style=for-the-badge
 
-[license-url]: https://github.com/FlowSquad/miranum-ide/blob/main/LICENSE
+[license-url]: https://github.com/Miragon/miranum-ide/blob/main/LICENSE

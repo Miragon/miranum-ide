@@ -49,7 +49,7 @@ flowchart LR
 
 Before you release a new version make sure to edit the projects version in its `package.json` and `pom.xml`.
 
-Go to the [actions section in github](https://github.com/FlowSquad/miranum-ide/actions/workflows/release.yml) and trigger the `release.yml` action manually.
+Go to the [actions section in github](https://github.com/Miragon/miranum-ide/actions/workflows/release.yml) and trigger the `release.yml` action manually.
 In the workflow dispatch window you can select the apps and libs you want to publish.
 Additionally, you can name the release to automatically create a tag in github.
 
