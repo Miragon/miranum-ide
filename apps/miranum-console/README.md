@@ -19,7 +19,7 @@
         <img src="https://img.shields.io/badge/follow-@miragon__io-1DA1F2?logo=twitter&style=social" alt="Twitter Follow">
     </a>
     <a href="https://www.linkedin.com/company/miragon-io" target="_blank" rel="noreferrer noopener nofollow">
-        <img src="https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io" alt="LinkedIn Follow">
+        <img src="https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue" alt="LinkedIn Follow">
     </a>
     <p>
         <i>One IDE for everything!</i>
