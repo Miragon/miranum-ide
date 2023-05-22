@@ -43,7 +43,7 @@ export function generateFile(): Command {
 
 /**
  * this command generates a bpmn project with all necessary form-/config-files and element-templates.
- * The bpmn project is based on the structure [miranum](https://github.com/FlowSquad/miranum-ide/tree/main/resources/templates/project-template) suggests.
+ * The bpmn project is based on the structure [miranum](https://github.com/Miragon/miranum-ide/tree/main/resources/templates/project-template) suggests.
  * The user has the possibility to select a certain destination directory with -p.
  *
  * @example

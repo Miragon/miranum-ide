@@ -100,7 +100,7 @@ If you want to run the tests of a specific app or lib use `npx nx test <app|lib>
 
 ### Code Coverage Reports
 
-We use CodeCov ([https://app.codecov.io/gh/FlowSquad/miranum-ide](https://app.codecov.io/gh/FlowSquad/miranum-ide)) to
+We use CodeCov ([https://app.codecov.io/gh/Miragon/miranum-ide](https://app.codecov.io/gh/Miragon/miranum-ide)) to
 visualize our code coverage.
 
 If you want to check out the code coverage locally, execute the tests with the flag `--coverage` (

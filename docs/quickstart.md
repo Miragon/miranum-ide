@@ -117,10 +117,10 @@ npx nx g @nrwl/node:lib my-awesome-lib --publishable --importPath @miranum-ide/m
         },
         "repository": {
             "type": "git",
-            "url": "https://github.com/FlowSquad/miranum-ide.git"
+            "url": "https://github.com/Miragon/miranum-ide.git"
         },
         "bugs": {
-            "url": "https://github.com/FlowSquad/miranum-ide/issues"
+            "url": "https://github.com/Miragon/miranum-ide/issues"
         },
         "engines": {
             "vscode": "^1.76.0"
