@@ -39,11 +39,12 @@
   ],
   "keywords": [
     "BPMN",
+    "DMN",
     "Modeler",
     "Camunda",
     "Diagram",
     "business process",
-    "DMN"
+    "decision table"
   ],
   "activationEvents": [
     "onCustomEditor:bpmn-modeler",

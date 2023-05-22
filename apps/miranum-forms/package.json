@@ -2,7 +2,7 @@
   "name": "miranum-vs-code-forms",
   "displayName": "Miranum: Form Builder",
   "description": "Edit JSON Schema files with an modern easy to use editor.",
-  "license": "Apache License 2.0",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
@@ -10,6 +10,18 @@
     "color": "#F0F8FF",
     "theme": "light"
   },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+      "href": "https://twitter.com/miragon_io",
+      "description": "Our Twitter profile."
+    },
+    {
+      "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+      "href": "https://www.linkedin.com/company/miragon-io",
+      "description": "Our LinkedIn profile."
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Miragon/miranum-ide.git"
@@ -22,10 +34,16 @@
   },
   "icon": "assets/miranum_logo.png",
   "categories": [
-    "Other", "Visualization"
+    "Other",
+    "Visualization"
   ],
   "keywords": [
-    "JSON", "JSON Schema", "Forms", "Formbuilder", "Renderer", "rendering"
+    "JSON",
+    "JSON Schema",
+    "Forms",
+    "Formbuilder",
+    "Renderer",
+    "rendering"
   ],
   "main": "main.js",
   "activationEvents": [
