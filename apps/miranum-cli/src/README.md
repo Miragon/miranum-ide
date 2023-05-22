@@ -6,7 +6,7 @@
 - Defines a standard structure for automation projects
 - Deploys artifacts to your digiwf instance
 
-- [documentation](https://github.com/FlowSquad/miranum-ide/tree/main/docs)
+- [documentation](https://github.com/Miragon/miranum-ide/tree/main/docs)
 
 ## Getting started
 

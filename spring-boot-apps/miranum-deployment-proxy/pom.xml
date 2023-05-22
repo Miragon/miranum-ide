@@ -9,7 +9,7 @@
     <name>miranum-deployment-proxy-parent</name>
     <packaging>pom</packaging>
     <description>Deployment proxy for Miranum plattform</description>
-    <url>https://github.com/FlowSquad/miranum-ide</url>
+    <url>https://github.com/Miragon/miranum-ide</url>
 
     <properties>
         <maven.compiler.target>11</maven.compiler.target>
@@ -214,9 +214,9 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/FlowSquad/miranum-ide</url>
-        <connection>scm:git:git@github.com:FlowSquad/miranum-ide.git</connection>
-        <developerConnection>scm:git:git@github.com:FlowSquad/miranum-ide.git</developerConnection>
+        <url>https://github.com/Miragon/miranum-ide</url>
+        <connection>scm:git:git@github.com:Miragon/miranum-ide.git</connection>
+        <developerConnection>scm:git:git@github.com:Miragon/miranum-ide.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
