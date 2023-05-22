@@ -26,6 +26,18 @@ updates:
       prefix: fix
       prefix-development: chore
       include: scope
+  - package-ecosystem: maven
+    directory: "/spring-boot-apps/miranum-engine-deployment"
+    schedule:
+      interval: weekly
+      time: "05:00"
+    target-branch: "main"
+    labels:
+      - "Technical Dept"
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope
   # Fetch and update latest `github-actions` packages
   - package-ecosystem: github-actions
     directory: "/"

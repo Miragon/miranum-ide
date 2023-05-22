@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.miragon.miranum</groupId>
-    <artifactId>miranum-deployment-proxy-parent</artifactId>
-    <version>0.1.4</version>
-    <name>miranum-deployment-proxy-parent</name>
+    <artifactId>miranum-engine-deployment-parent</artifactId>
+    <version>0.1.4-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <description>Deployment proxy for Miranum plattform</description>
-    <url>https://github.com/FlowSquad/miranum-ide</url>
+    <name>miranum-engine-deployment-parent</name>
+    <description>Spring Boot Starter that adds deployment endpoints to engines</description>
 
     <properties>
         <maven.compiler.target>11</maven.compiler.target>
@@ -22,17 +20,13 @@
         <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
         <org.mapstruct.version>1.5.3.Final</org.mapstruct.version>
         <maven.surfire.plugin.version>3.0.0</maven.surfire.plugin.version>
-        <org.hibernate.validator.version>6.2.5.Final</org.hibernate.validator.version>
-        <javax.validation.api.version>2.0.1.Final</javax.validation.api.version>
-        <glassfish.el.version>3.0.0</glassfish.el.version>
-        <org.json.version>20230227</org.json.version>
         <spring.cloud.version>2021.0.6</spring.cloud.version>
     </properties>
 
     <modules>
-        <module>miranum-deployment-proxy</module>
-        <module>miranum-deployment-proxy-starter</module>
-        <module>miranum-deployment-proxy-example</module>
+        <module>miranum-engine-deployment</module>
+        <module>miranum-engine-deployment-starter</module>
+        <module>miranum-engine-deployment-example</module>
     </modules>
 
     <dependencyManagement>

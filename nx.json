@@ -15,17 +15,27 @@
     "default": {
       "runner": "@nrwl/nx-cloud",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "e2e"],
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test",
+          "e2e"
+        ],
         "accessToken": "NjZhNTdlY2EtNTg1Ny00OWQ5LWI0NzYtOWI3Y2M4MmUyOTRjfHJlYWQtd3JpdGU="
       }
     }
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
-      "inputs": ["default", "^default"]
+      "inputs": [
+        "default",
+        "^default"
+      ]
     }
   },
   "workspaceLayout": {
@@ -33,7 +43,9 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": ["@nxrocks/nx-spring-boot"],
+  "plugins": [
+    "@nxrocks/nx-spring-boot"
+  ],
   "generators": {
     "@nrwl/react": {
       "application": {

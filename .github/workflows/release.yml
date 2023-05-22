@@ -272,10 +272,20 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+      # miranum-deployment-proxy
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
           directory: miranum-deployment-proxy
+          gpg_private_key: ${{ secrets.PGP_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
+          nexus_username: ${{ secrets.NEXUS_USERNAME }}
+          nexus_password: ${{ secrets.NEXUS_PASSWORD }}
+      # miranum-engine-deployment
+      - name: Release maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          directory: miranum-engine-deployment
           gpg_private_key: ${{ secrets.PGP_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
           nexus_username: ${{ secrets.NEXUS_USERNAME }}
@@ -299,4 +309,11 @@ jobs:
           context: ./miranum-deployment-proxy
           push: true
           tags: miragon/miranum-deployment-proxy:${{ env.RELEASE_VERSION }},miragon/miranum-deployment-proxy:latest
+          platforms: linux/amd64, linux/arm64/v8
+      - name: Build and push miranum-deployment-proxy
+        uses: docker/build-push-action@v4
+        with:
+          context: ./miranum-engine-deployment
+          push: true
+          tags: miragon/miranum-engine-deployment-example:${{ env.RELEASE_VERSION }},miragon/miranum-engine-deployment-example:latest
           platforms: linux/amd64, linux/arm64/v8
