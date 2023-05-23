@@ -13,7 +13,7 @@
   },
   "tasksRunnerOptions": {
     "default": {
-      "runner": "@nrwl/nx-cloud",
+      "runner": "nx-cloud",
       "options": {
         "cacheableOperations": ["build", "lint", "test", "e2e"],
         "accessToken": "NjZhNTdlY2EtNTg1Ny00OWQ5LWI0NzYtOWI3Y2M4MmUyOTRjfHJlYWQtd3JpdGU="
@@ -35,7 +35,18 @@
   "defaultProject": "miranum-cli",
   "plugins": ["@nxrocks/nx-spring-boot"],
   "generators": {
-    "@nrwl/react": {
+    "@nx/web:application": {
+      "style": "css",
+      "linter": "eslint",
+      "unitTestRunner": "vitest",
+      "e2eTestRunner": "cypress"
+    },
+    "@nx/web:library": {
+      "style": "css",
+      "linter": "eslint",
+      "unitTestRunner": "vitest"
+    },
+    "@nx/react": {
       "application": {
         "style": "css",
         "unitTestRunner": "jest",
@@ -50,17 +61,6 @@
         "unitTestRunner": "jest",
         "linter": "eslint"
       }
-    },
-    "@nrwl/web:application": {
-      "style": "css",
-      "linter": "eslint",
-      "unitTestRunner": "vitest",
-      "e2eTestRunner": "cypress"
-    },
-    "@nrwl/web:library": {
-      "style": "css",
-      "linter": "eslint",
-      "unitTestRunner": "vitest"
     }
   }
 }

@@ -1,4 +1,5 @@
 {
+  "name": "miranum-deployment-proxy",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "spring-boot-apps/miranum-deployment-proxy/src",
   "projectType": "library",

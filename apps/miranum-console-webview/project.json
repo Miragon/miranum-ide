@@ -5,7 +5,7 @@
   "projectType": "application",
   "targets": {
     "observe": {
-      "executor": "@nrwl/vite:build",
+      "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
@@ -24,7 +24,7 @@
       }
     },
     "build": {
-      "executor": "@nrwl/vite:build",
+      "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
@@ -57,7 +57,7 @@
       }
     },
     "serve": {
-      "executor": "@nrwl/vite:dev-server",
+      "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "miranum-console-webview:build",
@@ -74,16 +74,14 @@
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"
-        ]
+        "lintFilePatterns": ["apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/miranum-console-webview/jest.config.ts",
@@ -91,7 +89,7 @@
       }
     },
     "preview": {
-      "executor": "@nrwl/vite:preview-server",
+      "executor": "@nx/vite:preview-server",
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "miranum-console-webview:build"
