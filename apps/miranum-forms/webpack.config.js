@@ -2,7 +2,7 @@
 const { merge } = require("webpack-merge");
 const { composePlugins, withNx } = require("@nx/webpack");
 
-module.exports = composePlugins(withNx(), (config, context) => {
+module.exports = composePlugins(withNx(), (config) => {
     return merge(config, {
         // overwrite values here
         externals: {
