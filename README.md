@@ -55,12 +55,16 @@ For all further documentation, please refer to the [documentations doc](docs/REA
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
+
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
+contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Please use semantic commit messages as described in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).  
+If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and
+create a pull request. You can also simply open an issue with the tag "enhancement".
+Please use semantic commit messages as described
+in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).  
 Don't forget to give the project a star! Thanks again!
 
 1. Open an issue with the tag "enhancement"
@@ -83,22 +87,23 @@ Distributed under the [Apache License Version 2.0](LICENSE).
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Miragon/miragon-process-ide.svg?style=for-the-badge
+
+[contributors-shield]: https://img.shields.io/github/contributors/Miragon/miranum-ide.svg?style=for-the-badge
 
 [contributors-url]: https://github.com/Miragon/miranum-ide/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/Miragon/miragon-process-ide.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/Miragon/miranum-ide.svg?style=for-the-badge
 
 [forks-url]: https://github.com/Miragon/miranum-ide/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/Miragon/miragon-process-ide.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/Miragon/miranum-ide.svg?style=for-the-badge
 
 [stars-url]: https://github.com/Miragon/miranum-ide/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/Miragon/miragon-process-ide.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/Miragon/miranum-ide.svg?style=for-the-badge
 
 [issues-url]: https://github.com/Miragon/miranum-ide/issues
 
-[license-shield]: https://img.shields.io/github/license/Miragon/miragon-process-ide.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/Miragon/miranum-ide.svg?style=for-the-badge
 
 [license-url]: https://github.com/Miragon/miranum-ide/blob/main/LICENSE
