@@ -5,13 +5,14 @@
   "sourceRoot": "apps/miranum-forms-webview/src",
   "targets": {
     "observe": {
-      "executor": "@nrwl/vite:build",
+      "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "development",
       "options": {
+        "watch": true,
         "outputPath": "dist/apps/miranum-forms/miranum-forms-webview",
         "configFile": "apps/miranum-forms-webview/vite.config.ts",
-        "deleteOutputPath": false,
-        "watch": {}
+        "emptyOutDir": false
       },
       "configurations": {
         "development": {
@@ -23,35 +24,34 @@
       }
     },
     "build": {
-      "executor": "@nrwl/vite:build",
-      "defaultConfiguration": "production",
+      "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/miranum-forms/miranum-forms-webview"
+        "outputPath": "dist/apps/miranum-forms/miranum-forms-webview",
+        "configFile": "apps/miranum-forms-webview/vite.config.ts"
       },
       "configurations": {
         "production": {
-          "mode": "production",
-          "filenameHashing": true,
-          "productionSourceMap": true
+          "mode": "production"
         }
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["apps/miranum-forms-webview/**/*.{ts,tsx,vue}"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/miranum-forms-webview/jest.config.ts",
         "passWithNoTests": true
       }
-    },
+    }
   },
   "tags": []
 }

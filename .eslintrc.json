@@ -1,7 +1,7 @@
 {
   "root": true,
   "ignorePatterns": ["**/*"],
-  "plugins": ["@nrwl/nx", "@typescript-eslint"],
+  "plugins": ["@nx", "@typescript-eslint"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -15,7 +15,7 @@
         "react-app"
       ],
       "rules": {
-        "@nrwl/nx/enforce-module-boundaries": [
+        "@nx/enforce-module-boundaries": [
           "error",
           {
             "enforceBuildableLibDependency": true,
@@ -35,14 +35,12 @@
             "allowTemplateLiterals": true
           }
         ],
-        "@typescript-eslint/indent": [
-          "error", 4
-        ]
+        "@typescript-eslint/indent": ["error", 4]
       }
     },
     {
       "files": ["*.ts", "*.tsx"],
-      "extends": ["plugin:@nrwl/nx/typescript"],
+      "extends": ["plugin:@nx/typescript"],
       "rules": {
         "@typescript-eslint/no-explicit-any": "error",
         "import/no-extraneous-dependencies": "off"
@@ -50,7 +48,7 @@
     },
     {
       "files": ["*.js", "*.jsx"],
-      "extends": ["plugin:@nrwl/nx/javascript"],
+      "extends": ["plugin:@nx/javascript"],
       "rules": {}
     }
   ]

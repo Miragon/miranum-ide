@@ -2,24 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "Node",
-    "strict": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "noEmit": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"]
+    "types": ["node"]
   },
-  "exclude": ["**/*.spec.ts", "**/*.spec.tsx"],
-  "include": ["**/*.ts", "**/*.tsx", "**/*.vue"]
+  "exclude": ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
+  "include": ["src/**/*.ts"]
 }

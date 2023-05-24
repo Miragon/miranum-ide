@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * The modeler now supports DMN 1.3 (#219)
 
+### Changed
+
+* Update dependencies and migrate to Nx Version 16 (#246)
+
 ### Fixed
 
 * Unresolved breakpoints when debugging (#227)
