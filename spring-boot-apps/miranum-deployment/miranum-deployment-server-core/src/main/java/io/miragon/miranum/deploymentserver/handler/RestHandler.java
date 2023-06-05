@@ -1,7 +1,7 @@
 package io.miragon.miranum.deploymentserver.handler;
 
-import io.miragon.miranum.deploymentserver.dto.DeploymentDto;
-import io.miragon.miranum.deploymentserver.dto.DeploymentSuccessDto;
+import io.miragon.miranum.deploymentserver.application.dto.DeploymentDto;
+import io.miragon.miranum.deploymentserver.application.dto.DeploymentSuccessDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;

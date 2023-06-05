@@ -7,14 +7,14 @@
     "build": {
       "executor": "@nxrocks/nx-spring-boot:build",
       "options": {
-        "root": ""
+        "root": "spring-boot-apps/miranum-deployment"
       }
     },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-example.jar"
+          "java -jar miranum-deployment-service/target/miranum-deployment-service.jar"
         ],
         "cwd": "spring-boot-apps/miranum-deployment"
       }

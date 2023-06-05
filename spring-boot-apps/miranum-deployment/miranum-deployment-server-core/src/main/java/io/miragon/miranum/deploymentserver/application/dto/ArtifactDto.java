@@ -1,4 +1,4 @@
-package io.miragon.miranum.deploymentserver.dto;
+package io.miragon.miranum.deploymentserver.application.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

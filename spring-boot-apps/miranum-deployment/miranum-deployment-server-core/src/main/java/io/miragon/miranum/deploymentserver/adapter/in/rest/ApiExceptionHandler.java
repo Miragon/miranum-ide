@@ -1,6 +1,6 @@
-package io.miragon.miranum.deploymentserver.controller;
+package io.miragon.miranum.deploymentserver.adapter.in.rest;
 
-import io.miragon.miranum.deploymentserver.dto.DeploymentSuccessDto;
+import io.miragon.miranum.deploymentserver.application.dto.DeploymentSuccessDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
