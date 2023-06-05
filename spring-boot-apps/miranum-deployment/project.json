@@ -1,5 +1,5 @@
 {
-  "name": "miranum-deployment-proxy",
+  "name": "miranum-deployment",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "/src",
   "projectType": "library",
@@ -14,9 +14,9 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-proxy-example.jar"
+          "java -jar miranum-deployment-proxy-example/target/miranum-deployment-example.jar"
         ],
-        "cwd": "spring-boot-apps/miranum-deployment-proxy"
+        "cwd": "spring-boot-apps/miranum-deployment"
       }
     },
     "test": {
