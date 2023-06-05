@@ -13,6 +13,10 @@
         <version>0.1.4</version>
     </parent>
 
+    <properties>
+        <springdoc.openapi.version>1.7.0</springdoc.openapi.version>
+    </properties>
+
     <dependencies>
         <!-- Spring boot libraries -->
         <dependency>
@@ -35,6 +39,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <version>${spring.boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring.boot.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>${springdoc.openapi.version}</version>
         </dependency>
 
         <!-- miranum-deployment-receiver library -->
