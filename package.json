@@ -28,7 +28,7 @@
     "@nx/vite": "16.2.1",
     "@nx/web": "16.2.1",
     "@nx/webpack": "16.2.1",
-    "@nx/workspace": "16.2.1",
+    "@nx/workspace": "16.3.2",
     "@nxrocks/nx-spring-boot": "^8.0.3",
     "@openapitools/openapi-generator-cli": "^2.6.0",
     "@testing-library/react": "13.4.0",
