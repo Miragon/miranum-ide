@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
-import { MessageType } from "@miranum-ide/vscode/shared/miranum-console";
+import { FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
 import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";
 import { ConsolePanel } from "../ConsolePanel";
-import { Cache } from "../types";
 
 // TODO fixme
 // We should use proper event sourcing and rethink the architecture of this console
@@ -20,7 +19,7 @@ export async function registerGenerateCommands(
         async (path: vscode.Uri) => {
             const panel = ConsolePanel.createOrShow(context.extensionUri);
 
-            const cache: Cache = {
+            const cache: FileData = {
                 name: "",
                 type: "",
                 path: "",
@@ -106,7 +105,7 @@ export async function registerGenerateCommands(
         async (path: vscode.Uri) => {
             const panel = ConsolePanel.createOrShow(context.extensionUri);
 
-            const cache = {
+            const cache: FileData = {
                 name: "",
                 path: "",
             };

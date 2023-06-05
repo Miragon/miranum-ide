@@ -98,6 +98,9 @@ export class ConsolePanel {
         </head>
         <body>
             <div id="root"></div>
+            <script type="text/javascript">
+              const globalViewType = '${ConsolePanel.viewType}'
+            </script>
             <script type="text/javascript" src="${scriptUri}"></script>
         </body>
         </html>`;

@@ -1,12 +1,15 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+import { FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
+
+declare const globalViewType: string;
 const vs = acquireVsCodeApi();
 
-export const useVsMessage = (message: string) => {
-    return (data?: object) => {
+export const useVsMessage = (message: MessageType) => {
+    return (data?: FileData) => {
         vs.postMessage({
-            message: message,
-            data: data
-        })
-    }
-}
+            type: `${globalViewType}.${message}`,
+            data: data,
+        });
+    };
+};

@@ -6,13 +6,17 @@ export interface ConsoleData {
     miranumJson?: MiranumConfig;
 }
 
-interface FileData {
-    name: string;
-    path: string;
+export interface FileData {
+    name?: string;
+    path?: string;
     type?: string;
     artifact?: Artifact | Artifact[];
 }
 
 export enum MessageType {
     SHOW = "show",
+    GENERATEPROJECT = "generateProject",
+    GENERATEARTIFACT = "generateArtifact",
+    OPENFILEPICKER = "openFilePicker",
+    CHANGEDINPUT = "changedInput",
 }
