@@ -11,8 +11,8 @@ export interface VscState<T> {
 export enum MessageType {
     INITIALIZE = "initialize",
     RESTORE = "restore",
-    UPDATEFROMEXTENSION = "updateFromExtension",
-    UPDATEFROMWEBVIEW = "updateFromWebview",
+    MSGFROMEXTENSION = "msgFromExtension",
+    MSGFROMWEBVIEW = "msgFromWebview",
     UNDO = "undo",
     REDO = "redo",
     RELOADFILES = "reloadFiles",

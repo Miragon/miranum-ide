@@ -197,7 +197,7 @@ export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
                             postMessage(MessageType.RESTORE);
                             break;
                         }
-                        case `${JsonSchemaBuilderProvider.VIEWTYPE}.${MessageType.UPDATEFROMWEBVIEW}`: {
+                        case `${JsonSchemaBuilderProvider.VIEWTYPE}.${MessageType.MSGFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
                             if (event.data) {
                                 await this.controller.writeToDocument(event.data);
@@ -276,7 +276,7 @@ export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
                             break;
                         }
                         case undefined: {
-                            postMessage(MessageType.UPDATEFROMEXTENSION);
+                            postMessage(MessageType.MSGFROMEXTENSION);
                             break;
                         }
                     }

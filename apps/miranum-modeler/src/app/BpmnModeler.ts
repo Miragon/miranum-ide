@@ -13,15 +13,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
     private write = this.asyncDebounce(this.writeChangesToDocument, 100);
 
-    public static register(context: vscode.ExtensionContext): vscode.Disposable {
-        Logger.get().clear();
-        const provider = new BpmnModeler(context);
-        return vscode.window.registerCustomEditorProvider(
-            BpmnModeler.VIEWTYPE,
-            provider,
-        );
-    }
-
     private constructor(private readonly context: vscode.ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
         TextEditor.register(context);
@@ -45,6 +36,15 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         // <---- Register commands -----
 
         context.subscriptions.push(toggleTextEditor, toggleLogger);
+    }
+
+    public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        Logger.get().clear();
+        const provider = new BpmnModeler(context);
+        return vscode.window.registerCustomEditorProvider(
+            BpmnModeler.VIEWTYPE,
+            provider,
+        );
     }
 
     /**
@@ -107,7 +107,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                             await postMessage(MessageType.RESTORE);
                             break;
                         }
-                        case `${BpmnModeler.VIEWTYPE}.${MessageType.UPDATEFROMWEBVIEW}`: {
+                        case `${BpmnModeler.VIEWTYPE}.${MessageType.MSGFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
                             if (event.data?.bpmn) {
                                 await this.write(document, event.data.bpmn);
@@ -254,7 +254,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                             break;
                         }
                         case undefined: {
-                            postMessage(MessageType.UPDATEFROMEXTENSION);
+                            postMessage(MessageType.MSGFROMEXTENSION);
                             break;
                         }
                     }

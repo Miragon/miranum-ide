@@ -1,9 +1,9 @@
-import { Artifact } from "@miranum-ide/miranum-core";
+import { Artifact, MiranumConfig } from "@miranum-ide/miranum-core";
 
 export interface ConsoleData {
     command: string;
     fileData: FileData;
-    miranumJson?: string;
+    miranumJson?: MiranumConfig;
 }
 
 interface FileData {
@@ -11,4 +11,8 @@ interface FileData {
     path: string;
     type?: string;
     artifact?: Artifact | Artifact[];
+}
+
+export enum MessageType {
+    SHOW = "show",
 }

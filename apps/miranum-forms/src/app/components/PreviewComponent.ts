@@ -69,7 +69,7 @@ export class PreviewComponent extends Preview<DocumentManager<FormBuilderData>> 
                     event.contentChanges.length !== 0
                 ) {
                     await this.update({
-                        type: `${this.viewType}.${MessageType.UPDATEFROMEXTENSION}`,
+                        type: `${this.viewType}.${MessageType.MSGFROMEXTENSION}`,
                         data: document.content,
                     });
                 }

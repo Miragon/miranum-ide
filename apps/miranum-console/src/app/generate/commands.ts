@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
+import { MessageType } from "@miranum-ide/vscode/shared/miranum-console";
 import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";
 import { ConsolePanel } from "../ConsolePanel";
@@ -12,10 +13,6 @@ export async function registerGenerateCommands(
     miranumCore: MiranumCore,
 ): Promise<vscode.Disposable[]> {
     const commands: vscode.Disposable[] = [];
-    const pathToWebview = vscode.Uri.joinPath(
-        context.extensionUri,
-        "miranum-console-webview",
-    );
 
     // TODO switch this to a single command
     const generateFileCommand = vscode.commands.registerCommand(
@@ -40,17 +37,19 @@ export async function registerGenerateCommands(
 
             // init event
             panel.postMessage({
-                type: "show",
-                command: "generateFile",
+                type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
                 data: {
-                    name: cache.name,
-                    type: cache.type,
-                    path: cache.path,
+                    command: "generateFile",
                     miranumJson: miranumCore.projectConfig,
+                    fileData: {
+                        name: cache.name,
+                        path: cache.path,
+                        type: cache.type,
+                    },
                 },
             });
 
-            panel.onDidReceiveMessage(cache, miranumCore, async (event) => {
+            panel.onDidReceiveMessage(async (event) => {
                 switch (event.message) {
                     case "generateArtifact":
                         await generate(event.data.artifact, event.data.path);
@@ -61,13 +60,15 @@ export async function registerGenerateCommands(
                                 if (files.length > 0) {
                                     cache.path = files[0].path;
                                     panel.postMessage({
-                                        type: "show",
-                                        command: "generateFile",
+                                        type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
                                         data: {
-                                            name: cache.name,
-                                            type: cache.type,
-                                            path: cache.path,
+                                            command: "generateFile",
                                             miranumJson: miranumCore.projectConfig,
+                                            fileData: {
+                                                name: cache.name,
+                                                type: cache.type,
+                                                path: cache.path,
+                                            },
                                         },
                                     });
                                 }
@@ -84,19 +85,17 @@ export async function registerGenerateCommands(
                         break;
                 }
             });
-            panel.onDidChangeViewState(cache, miranumCore, () => {
-                if (panel.visible) {
-                    postMessage({
-                        type: "show",
-                        command: "generateFile",
-                        data: {
-                            name: cache.name,
-                            type: cache.type,
-                            path: cache.path,
-                            miranumJson: miranumCore.projectConfig,
-                        },
-                    });
-                }
+            panel.onDidChangeViewState(() => {
+                postMessage({
+                    type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
+                    command: "generateFile",
+                    data: {
+                        name: cache.name,
+                        type: cache.type,
+                        path: cache.path,
+                        miranumJson: miranumCore.projectConfig,
+                    },
+                });
             });
         },
     );
@@ -123,15 +122,17 @@ export async function registerGenerateCommands(
 
             // init event
             panel.postMessage({
-                type: "show", //this is for later, to enable update events
-                command: "generateProject",
+                type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
                 data: {
-                    name: cache.name,
-                    path: cache.path,
+                    command: "generateProject",
+                    fileData: {
+                        name: cache.name,
+                        path: cache.path,
+                    },
                 },
             });
 
-            panel.webview.onDidReceiveMessage(async (event) => {
+            panel.onDidReceiveMessage(async (event) => {
                 switch (event.message) {
                     case "generateProject":
                         for (const artifact of event.data.artifacts) {
@@ -146,12 +147,14 @@ export async function registerGenerateCommands(
                             .then((files) => {
                                 if (files.length > 0) {
                                     cache.path = files[0].path;
-                                    sendEvent({
-                                        type: "show",
-                                        command: "generateProject",
+                                    panel.postMessage({
+                                        type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
                                         data: {
-                                            name: cache.name,
-                                            currentPath: cache.path,
+                                            command: "generateProject",
+                                            fileData: {
+                                                name: cache.name,
+                                                path: cache.path,
+                                            },
                                         },
                                     });
                                 }
@@ -169,16 +172,16 @@ export async function registerGenerateCommands(
             });
 
             panel.onDidChangeViewState(() => {
-                if (panel.visible) {
-                    sendEvent({
-                        type: "show",
+                panel.postMessage({
+                    type: `${ConsolePanel.viewType}.${MessageType.SHOW}`, // "show",
+                    data: {
                         command: "generateProject",
-                        data: {
+                        fileData: {
                             name: cache.name,
-                            currentPath: cache.path,
+                            path: cache.path,
                         },
-                    });
-                }
+                    },
+                });
             });
         },
     );

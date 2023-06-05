@@ -6,12 +6,6 @@ export interface Cache {
     path: string;
 }
 
-export interface MessageEvent {
-    type: string;
-    command: string;
-    data: MessageData;
-}
-
-interface MessageData extends Cache {
+export interface MessageData extends Cache {
     miranumJson?: MiranumConfig;
 }
