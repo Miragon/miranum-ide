@@ -19,23 +19,16 @@ export function App() {
 
     window.addEventListener("message", (event: CustomMessageEvent) => {
         const message = event.data;
-        const data = message.data;
-        if (data) {
+        if (message.data) {
+            const data = message.data;
             setView(data.command);
             switch (data.command) {
                 case "generateFile":
                 case "generateProject":
-                    if (
-                        data.miranumJson &&
-                        data.fileData.name &&
-                        data.fileData.path &&
-                        data.fileData.type
-                    ) {
-                        setName(data.fileData.name);
-                        setCurrentPath(data.fileData.path);
-                        setType(data.fileData.type);
-                        setConfig(data.miranumJson);
-                    }
+                    if (data.fileData.name) setName(data.fileData.name);
+                    if (data.fileData.path) setCurrentPath(data.fileData.path);
+                    if (data.fileData.type) setType(data.fileData.type);
+                    if (data.miranumJson) setConfig(data.miranumJson);
                     break;
             }
         }

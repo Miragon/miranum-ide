@@ -40,7 +40,7 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/miranum_logo.png",
+            "glob": "images/komet.svg",
             "input": "./",
             "output": "/assets"
           }

@@ -9,7 +9,9 @@ export const useVsMessage = (message: MessageType) => {
     return (data?: FileData) => {
         vs.postMessage({
             type: `${globalViewType}.${message}`,
-            data: data,
+            data: {
+                fileData: data,
+            },
         });
     };
 };

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
-import { FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
+import { VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ConsoleData, FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
 import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";
 import { ConsolePanel } from "../ConsolePanel";
@@ -48,12 +49,22 @@ export async function registerGenerateCommands(
                 },
             });
 
-            panel.onDidReceiveMessage(async (event) => {
-                switch (event.message) {
-                    case "generateArtifact":
-                        await generate(event.data.artifact, event.data.path);
+            panel.onDidReceiveMessage(async (event: VscMessage<ConsoleData>) => {
+                const data = event.data?.fileData;
+                switch (event.type) {
+                    case `${ConsolePanel.viewType}.${MessageType.GENERATEARTIFACT}`:
+                        // case "generateArtifact":
+                        if (
+                            data &&
+                            data.artifact &&
+                            !Array.isArray(data.artifact) &&
+                            data.path
+                        ) {
+                            await generate(data.artifact, data.path);
+                        }
                         break;
-                    case "openFilePicker":
+                    case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:
+                        // case "openFilePicker":
                         selectFiles()
                             .then((files) => {
                                 if (files.length > 0) {
@@ -78,9 +89,12 @@ export async function registerGenerateCommands(
                                 );
                             });
                         break;
-                    case "changedInput":
-                        cache.name = event.data.name;
-                        cache.type = event.data.type;
+                    case `${ConsolePanel.viewType}.${MessageType.CHANGEDINPUT}`:
+                        // case "changedInput":
+                        if (data && data.name && data.type) {
+                            cache.name = data.name;
+                            cache.type = data.type;
+                        }
                         break;
                 }
             });
@@ -131,17 +145,19 @@ export async function registerGenerateCommands(
                 },
             });
 
-            panel.onDidReceiveMessage(async (event) => {
-                switch (event.message) {
-                    case "generateProject":
-                        for (const artifact of event.data.artifacts) {
-                            await generate(
-                                artifact,
-                                `${event.data.path}/${event.data.name}`,
-                            );
+            panel.onDidReceiveMessage(async (event: VscMessage<ConsoleData>) => {
+                const data = event.data?.fileData;
+                switch (event.type) {
+                    case `${ConsolePanel.viewType}.${MessageType.GENERATEPROJECT}`:
+                        // case "generateProject":
+                        if (data && data.artifact && Array.isArray(data.artifact)) {
+                            for (const artifact of data.artifact) {
+                                await generate(artifact, `${data.path}/${data.name}`);
+                            }
                         }
                         break;
-                    case "openFilePicker":
+                    case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:
+                        // case "openFilePicker":
                         selectFiles()
                             .then((files) => {
                                 if (files.length > 0) {
@@ -164,8 +180,11 @@ export async function registerGenerateCommands(
                                 );
                             });
                         break;
-                    case "changedInput":
-                        cache.name = event.data.name;
+                    case `${ConsolePanel.viewType}.${MessageType.CHANGEDINPUT}`:
+                        // case "changedInput":
+                        if (data && data.name) {
+                            cache.name = data.name;
+                        }
                         break;
                 }
             });

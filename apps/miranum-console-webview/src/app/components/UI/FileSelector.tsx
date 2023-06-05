@@ -37,7 +37,7 @@ const FileSelector: React.FC<Props> = (props) => {
                         variant="outlined"
                         startIcon={<Add />}
                         style={{ padding: "3px 12px" }}
-                        onClick={() => openFilePicker({})}
+                        onClick={() => openFilePicker()}
                     >
                         Choose Path
                     </Button>
