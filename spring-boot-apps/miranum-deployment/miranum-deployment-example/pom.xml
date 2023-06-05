@@ -19,14 +19,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- DeploymentProxy starter -->
-        <dependency>
-            <groupId>io.miragon.miranum</groupId>
-            <artifactId>miranum-deployment-proxy-starter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
+        
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -20,9 +20,27 @@
     </properties>
 
     <dependencies>
+        <!-- miranum-deployment-server -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>miranum-deployment-server-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>miranum-deployment-server-rest-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>miranum-deployment-server-embedded-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- miranum-deployment-receiver -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>miranum-deployment-receiver-rest-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

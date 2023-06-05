@@ -26,9 +26,13 @@
     </properties>
 
     <modules>
+        <module>miranum-deployment-receiver-core</module>
+        <module>miranum-deployment-receiver-rest-starter</module>
         <module>miranum-deployment-server-core</module>
-        <module>miranum-deployment-server-starter</module>
+        <module>miranum-deployment-server-embedded-starter</module>
+        <module>miranum-deployment-server-rest-starter</module>
         <module>miranum-deployment-example</module>
+        <module>miranum-deployment-service</module>
         <module>miranum-deployment-coverage</module>
     </modules>
 
