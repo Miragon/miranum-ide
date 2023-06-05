@@ -24,9 +24,13 @@
         "libs/digiwf-deployment-plugin-rest/src/index.ts"
       ],
       "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"],
+      "@miranum-ide/shared/shared-console": ["libs/shared/shared-console/src/index.ts"],
       "@miranum-ide/vscode/miranum-vscode": ["libs/vscode/miranum-vscode/src/index.ts"],
       "@miranum-ide/vscode/miranum-vscode-webview": [
         "libs/vscode/miranum-vscode-webview/src/index.ts"
+      ],
+      "@miranum-ide/vscode/shared/miranum-console": [
+        "libs/vscode/shared/miranum-console/src/index.ts"
       ],
       "@miranum-ide/vscode/shared/miranum-forms": [
         "libs/vscode/shared/miranum-forms/src/index.ts"

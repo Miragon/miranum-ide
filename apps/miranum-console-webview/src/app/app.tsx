@@ -13,7 +13,7 @@ export function App() {
     const [currentPath, setCurrentPath] = useState<string>("");
     const [config, setConfig] = useState();
 
-    window.addEventListener("message", event => {
+    window.addEventListener("message", (event) => {
         const message = event.data;
         if (message.command) {
             setView(message.command);
@@ -21,7 +21,7 @@ export function App() {
                 case "generateFile":
                 case "generateProject":
                     setName(message.data.name);
-                    setCurrentPath(message.data.currentPath);
+                    setCurrentPath(message.data.path);
                     setType(message.data.type);
                     setConfig(message.data.miranumJson);
                     break;
@@ -34,8 +34,17 @@ export function App() {
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                {view === "generateFile" && <GenerateInput currentPath={currentPath} name={name} type={type} config={config}/>}
-                {view === "generateProject" && <GenerateProjectInput currentPath={currentPath} name={name}/>}
+                {view === "generateFile" && (
+                    <GenerateInput
+                        currentPath={currentPath}
+                        name={name}
+                        type={type}
+                        config={config}
+                    />
+                )}
+                {view === "generateProject" && (
+                    <GenerateProjectInput currentPath={currentPath} name={name} />
+                )}
             </Container>
         </ThemeProvider>
     );
