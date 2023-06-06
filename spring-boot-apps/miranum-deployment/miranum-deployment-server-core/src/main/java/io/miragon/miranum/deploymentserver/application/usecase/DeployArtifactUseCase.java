@@ -32,12 +32,15 @@ public class DeployArtifactUseCase implements DeployArtifact {
         final String namespace = deploymentDto.getArtifact().getProject().replace(" ", "");
         // TODO tags not supported yet
 
-        final DeploymentStatus status = this.deployArtifactPort.deploy(Deployment.builder()
-            .file(file)
-            .type(type)
-            .namespace(namespace)
-            .tags(List.of())
-            .build());
+
+        final DeploymentStatus status = this.deployArtifactPort.deploy(
+            Deployment.builder()
+                .file(file)
+                .type(type)
+                .namespace(namespace)
+                .tags(List.of())
+                .build(),
+            deploymentDto.getTarget());
 
         return DeploymentSuccessDto.builder()
             .success(status.isSuccess())

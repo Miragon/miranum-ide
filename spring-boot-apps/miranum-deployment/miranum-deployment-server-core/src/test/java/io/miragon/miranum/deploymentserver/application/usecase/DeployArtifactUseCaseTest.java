@@ -36,7 +36,7 @@ class DeployArtifactUseCaseTest {
         deploymentDto.setArtifact(artifactDto);
 
         final DeploymentStatus deploymentStatus = new DeploymentStatus(true, "Deployment successful");
-        when(deployFilePort.deploy(Mockito.any(Deployment.class))).thenReturn(deploymentStatus);
+        when(deployFilePort.deploy(Mockito.any(Deployment.class), Mockito.anyString())).thenReturn(deploymentStatus);
 
 
         final DeploymentSuccessDto result = this.deployArtifactUseCase.deploy(deploymentDto);
@@ -61,7 +61,7 @@ class DeployArtifactUseCaseTest {
         deploymentDto.setArtifact(artifactDto);
 
         final DeploymentStatus deploymentStatus = new DeploymentStatus(false, "Deployment failed");
-        when(deployFilePort.deploy(Mockito.any(Deployment.class))).thenReturn(deploymentStatus);
+        when(deployFilePort.deploy(Mockito.any(Deployment.class), Mockito.anyString())).thenReturn(deploymentStatus);
 
 
         final DeploymentSuccessDto result = this.deployArtifactUseCase.deploy(deploymentDto);

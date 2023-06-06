@@ -23,6 +23,7 @@
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
         <maven.surfire.plugin.version>3.0.0</maven.surfire.plugin.version>
         <jacoco.version>0.8.10</jacoco.version>
+        <feign.version>12.3</feign.version>
     </properties>
 
     <modules>

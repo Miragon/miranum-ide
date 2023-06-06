@@ -37,6 +37,13 @@
             <version>${spring.boot.version}</version>
         </dependency>
 
+        <!-- feign client -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+            <version>${feign.version}</version>
+        </dependency>
+
         <!-- miranum-deployment -->
         <dependency>
             <groupId>io.miragon.miranum</groupId>

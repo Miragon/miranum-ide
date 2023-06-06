@@ -5,6 +5,6 @@ import io.miragon.miranum.deploymentserver.domain.DeploymentStatus;
 
 public interface DeployFilePort {
 
-    DeploymentStatus deploy(final Deployment deployment);
+    DeploymentStatus deploy(final Deployment deployment, final String target);
 
 }
