@@ -22,7 +22,7 @@
     "test": {
       "executor": "@nxrocks/nx-spring-boot:test",
       "options": {
-        "root": ""
+        "root": "spring-boot-apps/miranum-deployment"
       }
     },
     "clean": {
