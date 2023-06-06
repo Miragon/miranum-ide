@@ -28,19 +28,19 @@
     "clean": {
       "executor": "@nxrocks/nx-spring-boot:clean",
       "options": {
-        "root": ""
+        "root": "spring-boot-apps/miranum-deployment"
       }
     },
     "format": {
       "executor": "@nxrocks/nx-spring-boot:format",
       "options": {
-        "root": ""
+        "root": "spring-boot-apps/miranum-deployment"
       }
     },
     "format-check": {
       "executor": "@nxrocks/nx-spring-boot:format-check",
       "options": {
-        "root": ""
+        "root": "spring-boot-apps/miranum-deployment"
       }
     }
   },
