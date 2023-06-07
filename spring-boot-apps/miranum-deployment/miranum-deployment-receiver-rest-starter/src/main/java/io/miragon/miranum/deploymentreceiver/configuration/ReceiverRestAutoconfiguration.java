@@ -1,8 +1,8 @@
 package io.miragon.miranum.deploymentreceiver.configuration;
 
-import io.miragon.miranum.deploymentreceiver.adapter.out.MiranumDeploymentImpl;
+import io.miragon.miranum.deploymentreceiver.adapter.out.MiranumDeploymentReceiverImpl;
 import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
-import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeployment;
+import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.application.usecase.DeployFileUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -17,13 +17,13 @@ public class ReceiverRestAutoconfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public MiranumDeployment miranumDeployment() {
-        return new MiranumDeploymentImpl();
+    public MiranumDeploymentReceiver miranumDeployment() {
+        return new MiranumDeploymentReceiverImpl();
     }
 
     @ConditionalOnMissingBean
     @Bean
-    public DeployFile deployFile(final MiranumDeployment miranumDeployment) {
+    public DeployFile deployFile(final MiranumDeploymentReceiver miranumDeployment) {
         return new DeployFileUseCase(miranumDeployment);
     }
 

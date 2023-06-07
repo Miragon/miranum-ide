@@ -2,7 +2,7 @@ package io.miragon.miranum.deploymentreceiver.application.usecase;
 
 import io.miragon.miranum.deploymentreceiver.application.DeploymentFailedException;
 import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
-import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeployment;
+import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DeployFileUseCase implements DeployFile {
 
-    private final MiranumDeployment miranumDeployment;
+    private final MiranumDeploymentReceiver miranumDeployment;
 
     private final String DEFAULT_TAG = "LATEST";
 

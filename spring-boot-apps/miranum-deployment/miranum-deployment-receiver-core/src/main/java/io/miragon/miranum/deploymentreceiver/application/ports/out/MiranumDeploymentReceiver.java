@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Interface for miranum deployment.
  */
-public interface MiranumDeployment {
+public interface MiranumDeploymentReceiver {
 
     /**
      * Deploy a file.

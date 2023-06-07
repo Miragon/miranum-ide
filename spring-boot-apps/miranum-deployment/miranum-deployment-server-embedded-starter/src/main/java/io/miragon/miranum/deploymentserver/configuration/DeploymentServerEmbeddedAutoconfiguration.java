@@ -1,8 +1,8 @@
 package io.miragon.miranum.deploymentserver.configuration;
 
-import io.miragon.miranum.deploymentreceiver.adapter.out.MiranumDeploymentImpl;
+import io.miragon.miranum.deploymentreceiver.adapter.out.MiranumDeploymentReceiverImpl;
 import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
-import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeployment;
+import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.application.usecase.DeployFileUseCase;
 import io.miragon.miranum.deploymentserver.adapter.out.MiranumEmbeddedDeployment;
 import io.miragon.miranum.deploymentserver.application.ports.in.DeployArtifact;
@@ -32,14 +32,14 @@ public class DeploymentServerEmbeddedAutoconfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public DeployFile deployFile(final MiranumDeployment miranumDeployment) {
+    public DeployFile deployFile(final MiranumDeploymentReceiver miranumDeployment) {
         return new DeployFileUseCase(miranumDeployment);
     }
 
     @ConditionalOnMissingBean
     @Bean
-    public MiranumDeployment miranumDeployment() {
-        return new MiranumDeploymentImpl();
+    public MiranumDeploymentReceiver miranumDeployment() {
+        return new MiranumDeploymentReceiverImpl();
     }
 
 }

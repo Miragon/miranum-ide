@@ -1,7 +1,7 @@
 package io.miragon.miranum.deploymentreceiver.application.usecase;
 
 import io.miragon.miranum.deploymentreceiver.application.DeploymentFailedException;
-import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeployment;
+import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +13,7 @@ import java.util.List;
 
 class DeployFileUseCaseTest {
 
-    private final MiranumDeployment miranumDeployment = Mockito.mock(MiranumDeployment.class);
+    private final MiranumDeploymentReceiver miranumDeployment = Mockito.mock(MiranumDeploymentReceiver.class);
     private final DeployFileUseCase deployFileUseCase = new DeployFileUseCase(miranumDeployment);
 
     @Test
@@ -26,7 +26,7 @@ class DeployFileUseCaseTest {
             .build();
 
         final DeploymentStatus result = deployFileUseCase.deploy(deployment);
-        
+
         final ArgumentCaptor<List<String>> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
         Mockito.verify(miranumDeployment).deploy(

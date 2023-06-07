@@ -40,6 +40,11 @@
         <!-- miranum-deployment-receiver -->
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>miranum-deployment-receiver-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>miranum-deployment-receiver-rest-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
