@@ -42,16 +42,6 @@
     "CLI",
     "fontend"
   ],
-  "activationEvents": [
-    "onCommand:miranum.deploy.local",
-    "onCommand:miranum.deploy.dev",
-    "onCommand:miranum.deploy.test",
-    "onCommand:miranum.deployAll.local",
-    "onCommand:miranum.deployAll.dev",
-    "onCommand:miranum.deployAll.test",
-    "onCommand:miranum.generateFile",
-    "onCommand:miranum.generateProject"
-  ],
   "main": "main.js",
   "contributes": {
     "commands": [
@@ -99,6 +89,11 @@
         "command": "miranum.treeView.openFile",
         "title": "Open File",
         "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.delete",
+        "title": "Delete",
+        "category": "Miranum"
       }
     ],
     "viewsContainers": {
@@ -117,14 +112,14 @@
           "name": "My Project"
         },
         {
-          "id": "commands",
-          "name": "Commands"
+          "id": "miranum-commands",
+          "name": "Miranum Commands"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "commands",
+        "view": "miranum-commands",
         "contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
       }
     ],
@@ -144,6 +139,27 @@
           "submenu": "generate.submenu",
           "group": "1_modification",
           "when": "explorerResourceIsFolder"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "miranum.treeView.delete",
+          "when": "viewItem == treeItem"
+        },
+        {
+          "submenu": "deploy.submenu",
+          "group": "1_modification",
+          "when": "viewItem == treeItem && resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .config"
+        },
+        {
+          "submenu": "deployAll.submenu",
+          "group": "1_modification",
+          "when": "viewItem == treeItem && explorerResourceIsFolder"
+        },
+        {
+          "submenu": "generate.submenu",
+          "group": "1_modification",
+          "when": "viewItem == treeItem && explorerResourceIsFolder"
         }
       ],
       "deploy.submenu": [

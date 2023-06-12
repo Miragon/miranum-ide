@@ -22,11 +22,21 @@ export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
     constructor(workspace?: WorkspaceFolder) {
         this.workspace = workspace;
 
+        // register commands
         vscode.commands.registerCommand("miranum.treeView.openFile", (path: Uri) => {
             vscode.commands.executeCommand("vscode.open", path);
         });
+        vscode.commands.registerCommand("miranum.treeView.delete", (...args) => {
+            const treeItem: Artifact = args[0];
+            if (treeItem.fileType === FileType.Directory) {
+                vscode.workspace.fs.delete(treeItem.path, { recursive: true });
+            } else if (treeItem.fileType === FileType.File) {
+                vscode.workspace.fs.delete(treeItem.path, { recursive: false });
+            }
+            this.refresh();
+        });
 
-        // Update tree view on workspace changes
+        // react on changes in explorer view
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
             this.refresh();
         });
@@ -74,9 +84,10 @@ export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
         }
 
         const artifacts: Artifact[] = [];
-        let files: [string, FileType][] = await vscode.workspace.fs.readDirectory(path);
+        let workspaceItems: [string, FileType][] =
+            await vscode.workspace.fs.readDirectory(path);
 
-        files = files.sort((a, b) => {
+        workspaceItems = workspaceItems.sort((a, b) => {
             if (a[1] === b[1]) {
                 // sort filenames alphabetically
                 const filenameA = a[0].toLowerCase();
@@ -92,26 +103,32 @@ export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
             return b[1] - a[1];
         });
 
-        for (const file of files) {
-            switch (file[1]) {
+        for (const item of workspaceItems) {
+            const itemUri = Uri.joinPath(path, item[0]);
+            switch (item[1]) {
                 case FileType.Directory: {
                     artifacts.push(
-                        new Artifact(file[0], TreeItemCollapsibleState.Collapsed),
+                        new Artifact(
+                            item[0],
+                            TreeItemCollapsibleState.Collapsed,
+                            itemUri,
+                            FileType.Directory,
+                        ),
                     );
                     break;
                 }
                 case FileType.File: {
-                    const fileUri = Uri.joinPath(path, file[0]);
                     artifacts.push(
                         new Artifact(
-                            file[0],
+                            item[0],
                             TreeItemCollapsibleState.None,
+                            itemUri,
+                            FileType.File,
                             {
-                                arguments: [fileUri],
+                                arguments: [itemUri],
                                 command: "miranum.treeView.openFile",
                                 title: "Open",
                             },
-                            fileUri,
                         ),
                     );
                     break;
@@ -132,21 +149,37 @@ class Artifact extends TreeItem {
     // @ts-ignore
     public readonly collapsibleState: TreeItemCollapsibleState;
 
+    private readonly _path: Uri;
+
+    private readonly _fileType: FileType;
+
     constructor(
         label: string,
         collapsibleState: TreeItemCollapsibleState,
+        path: Uri,
+        fileType: FileType,
         command?: Command,
-        path?: Uri,
     ) {
         super(label, collapsibleState);
 
         this.label = label;
         this.collapsibleState = collapsibleState;
+        this.contextValue = "treeItem";
         this.command = command;
         this.resourceUri = path;
-
         if (collapsibleState === TreeItemCollapsibleState.None) {
             this.iconPath = ThemeIcon.File;
         }
+
+        this._path = path;
+        this._fileType = fileType;
+    }
+
+    public get path(): Uri {
+        return this._path;
+    }
+
+    public get fileType(): FileType {
+        return this._fileType;
     }
 }
