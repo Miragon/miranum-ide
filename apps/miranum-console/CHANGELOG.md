@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Update dependencies and migrate to Nx Version 16 (#246)
 
+### Fixed
+
+* Use a single webview when the user triggers the available commands (#125)
 
 
 [unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.2...HEAD
