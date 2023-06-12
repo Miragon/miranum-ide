@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import {
     Command,
+    Event,
+    EventEmitter,
     FileType,
     ThemeIcon,
     TreeDataProvider,
@@ -13,12 +15,34 @@ import {
 export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
     private readonly workspace?: WorkspaceFolder;
 
+    private _onDidChangeTreeData: EventEmitter<any> = new EventEmitter<any>();
+
+    readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
+
     constructor(workspace?: WorkspaceFolder) {
         this.workspace = workspace;
 
         vscode.commands.registerCommand("miranum.treeView.openFile", (path: Uri) => {
             vscode.commands.executeCommand("vscode.open", path);
         });
+
+        // Update tree view on workspace changes
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            this.refresh();
+        });
+        vscode.workspace.onDidRenameFiles(() => {
+            this.refresh();
+        });
+        vscode.workspace.onDidCreateFiles(() => {
+            this.refresh();
+        });
+        vscode.workspace.onDidDeleteFiles(() => {
+            this.refresh();
+        });
+    }
+
+    refresh(): void {
+        this._onDidChangeTreeData.fire(undefined);
     }
 
     getChildren(element?: Artifact): Thenable<Artifact[]> {
