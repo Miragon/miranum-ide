@@ -94,6 +94,11 @@
         "command": "miranum.generateProject",
         "title": "Generate new project",
         "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.openFile",
+        "title": "Open File",
+        "category": "Miranum"
       }
     ],
     "viewsContainers": {
@@ -108,8 +113,8 @@
     "views": {
       "miranum-ide": [
         {
-          "id": "bpmn-project",
-          "name": "Files"
+          "id": "project-view",
+          "name": "My Project"
         },
         {
           "id": "commands",
