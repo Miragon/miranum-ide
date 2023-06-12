@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Uri } from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
 import { VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ConsoleData, FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
@@ -151,9 +152,18 @@ export async function registerGenerateCommands(
                     case `${ConsolePanel.viewType}.${MessageType.GENERATEPROJECT}`:
                         // case "generateProject":
                         if (data && data.artifact && Array.isArray(data.artifact)) {
+                            const workspace: Uri = Uri.file(`${data.path}/${data.name}`);
+
                             for (const artifact of data.artifact) {
                                 await generate(artifact, `${data.path}/${data.name}`);
                             }
+
+                            // FIXME: This will switch to the "explorer" view.
+                            // open new created workspace
+                            vscode.commands.executeCommand(
+                                "vscode.openFolder",
+                                workspace,
+                            );
                         }
                         break;
                     case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:
