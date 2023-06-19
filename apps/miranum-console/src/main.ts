@@ -3,7 +3,7 @@ import { initMiranumCore } from "./app/shared/fs-helpers";
 import { registerDeploymentCommands } from "./app/deployment/commands";
 import { showErrorMessage } from "./app/shared/message";
 import { registerGenerateCommands } from "./app/generate/commands";
-import { MiranumTreeDataProvider } from "./app/MiranumTreeDataProvider";
+import { MiranumTreeDataProvider } from "./app/vscode/MiranumTreeDataProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
     const miranumCore = await initMiranumCore();
@@ -31,6 +31,6 @@ export async function activate(context: vscode.ExtensionContext) {
             : undefined;
     vscode.window.registerTreeDataProvider(
         "project-view",
-        new MiranumTreeDataProvider(workspace),
+        new MiranumTreeDataProvider(context.extensionUri, workspace),
     );
 }

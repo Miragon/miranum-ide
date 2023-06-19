@@ -149,19 +149,7 @@
       "view/item/context": [
         {
           "command": "miranum.treeView.delete",
-          "when": "viewItem == treeItem || viewItem == treeItemFolder || viewItem == treeItemFile || viewItem == treeItemDeployable"
-        },
-        {
-          "submenu": "deploy.submenu",
-          "when": "viewItem == treeItemDeployable"
-        },
-        {
-          "submenu": "deployAll.submenu",
-          "when": "viewItem == treeItemFolder"
-        },
-        {
-          "submenu": "generate.submenu",
-          "when": "viewItem == treeItemFolder"
+          "when": "viewItem == treeItem || viewItem == treeItemFolder || viewItem == treeItemFile"
         }
       ],
       "deploy.submenu": [

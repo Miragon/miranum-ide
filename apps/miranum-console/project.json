@@ -40,9 +40,14 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/komet.svg",
-            "input": "./",
+            "glob": "komet.svg",
+            "input": "./images",
             "output": "/assets"
+          },
+          {
+            "glob": "*.png",
+            "input": "./apps/miranum-console/icons",
+            "output": "/assets/icons"
           }
         ]
       },
@@ -70,14 +75,19 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/komet.svg",
-            "input": "./",
+            "glob": "komet.svg",
+            "input": "./images",
             "output": "/assets"
           },
           {
-            "glob": "images/miranum_logo.png",
-            "input": "./",
+            "glob": "miranum_logo.png",
+            "input": "./images",
             "output": "/assets"
+          },
+          {
+            "glob": "*.png",
+            "input": "./apps/miranum-console/icons",
+            "output": "/"
           },
           {
             "glob": "LICENSE",
