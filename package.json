@@ -117,7 +117,7 @@
     "react-dom": "18.2.0",
     "regenerator-runtime": "0.13.11",
     "squirrelly": "^8.0.8",
-    "tslib": "^2.5.2",
+    "tslib": "^2.5.3",
     "uuid": "^9.0.0",
     "vue": "^2.7.10",
     "vuetify": "^2.6.0"
