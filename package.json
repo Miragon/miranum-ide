@@ -55,7 +55,7 @@
     "babel-jest": "29.5.0",
     "cypress": "12.12.0",
     "esbuild": "0.17.19",
-    "eslint": "~8.41.0",
+    "eslint": "~8.43.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-config-react-app": "^7.0.1",
