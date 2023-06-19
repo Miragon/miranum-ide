@@ -62,6 +62,7 @@ export async function registerGenerateCommands(
                             data.path
                         ) {
                             await generate(data.artifact, data.path);
+                            vscode.commands.executeCommand("miranum.treeView.refresh");
                         }
                         break;
                     case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:

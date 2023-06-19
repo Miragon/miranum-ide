@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import {
     Command,
-    Event,
-    EventEmitter,
     FileType,
     ThemeIcon,
     TreeDataProvider,
@@ -15,9 +13,12 @@ import {
 export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
     private readonly workspace?: WorkspaceFolder;
 
-    private _onDidChangeTreeData: EventEmitter<any> = new EventEmitter<any>();
+    private _onDidChangeTreeData: vscode.EventEmitter<
+    Artifact | undefined | null | void
+    > = new vscode.EventEmitter<Artifact | undefined | null | void>();
 
-    readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
+    readonly onDidChangeTreeData: vscode.Event<Artifact | undefined | null | void> =
+        this._onDidChangeTreeData.event;
 
     constructor(workspace?: WorkspaceFolder) {
         this.workspace = workspace;
@@ -26,13 +27,16 @@ export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
         vscode.commands.registerCommand("miranum.treeView.openFile", (path: Uri) => {
             vscode.commands.executeCommand("vscode.open", path);
         });
-        vscode.commands.registerCommand("miranum.treeView.delete", (...args) => {
+        vscode.commands.registerCommand("miranum.treeView.delete", async (...args) => {
             const treeItem: Artifact = args[0];
             if (treeItem.fileType === FileType.Directory) {
-                vscode.workspace.fs.delete(treeItem.path, { recursive: true });
+                await vscode.workspace.fs.delete(treeItem.path, { recursive: true });
             } else if (treeItem.fileType === FileType.File) {
-                vscode.workspace.fs.delete(treeItem.path, { recursive: false });
+                await vscode.workspace.fs.delete(treeItem.path, { recursive: false });
             }
+            this.refresh();
+        });
+        vscode.commands.registerCommand("miranum.treeView.refresh", () => {
             this.refresh();
         });
 
@@ -52,7 +56,7 @@ export class MiranumTreeDataProvider implements TreeDataProvider<Artifact> {
     }
 
     refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+        this._onDidChangeTreeData.fire();
     }
 
     getChildren(element?: Artifact): Thenable<Artifact[]> {
@@ -164,7 +168,7 @@ class Artifact extends TreeItem {
 
         this.label = label;
         this.collapsibleState = collapsibleState;
-        this.contextValue = "treeItem";
+
         this.command = command;
         this.resourceUri = path;
         if (collapsibleState === TreeItemCollapsibleState.None) {
@@ -173,6 +177,9 @@ class Artifact extends TreeItem {
 
         this._path = path;
         this._fileType = fileType;
+
+        const ext = this.path.fsPath.split(".");
+        this.contextValue = this.setContextValue(this.fileType, ext[ext.length - 1]);
     }
 
     public get path(): Uri {
@@ -181,5 +188,22 @@ class Artifact extends TreeItem {
 
     public get fileType(): FileType {
         return this._fileType;
+    }
+
+    private setContextValue(fileType: FileType, extension: string): string {
+        if (fileType === FileType.Directory) {
+            return "treeItemFolder";
+        } else if (fileType === FileType.File) {
+            switch (extension) {
+                case "bpmn":
+                case "dmn":
+                case "config":
+                case "form":
+                    return "treeItemDeployable";
+                default:
+                    return "treeItemFile";
+            }
+        }
+        return "treeItem";
     }
 }

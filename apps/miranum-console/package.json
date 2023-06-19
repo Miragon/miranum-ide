@@ -94,6 +94,11 @@
         "command": "miranum.treeView.delete",
         "title": "Delete",
         "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.refresh",
+        "title": "Refresh",
+        "category": "Miranum"
       }
     ],
     "viewsContainers": {
@@ -144,22 +149,19 @@
       "view/item/context": [
         {
           "command": "miranum.treeView.delete",
-          "when": "viewItem == treeItem"
+          "when": "viewItem == treeItem || viewItem == treeItemFolder || viewItem == treeItemFile || viewItem == treeItemDeployable"
         },
         {
           "submenu": "deploy.submenu",
-          "group": "1_modification",
-          "when": "viewItem == treeItem && resourceExtname == .bpmn || resourceExtname == .form || resourceExtname == .dmn || resourceExtname == .config"
+          "when": "viewItem == treeItemDeployable"
         },
         {
           "submenu": "deployAll.submenu",
-          "group": "1_modification",
-          "when": "viewItem == treeItem && explorerResourceIsFolder"
+          "when": "viewItem == treeItemFolder"
         },
         {
           "submenu": "generate.submenu",
-          "group": "1_modification",
-          "when": "viewItem == treeItem && explorerResourceIsFolder"
+          "when": "viewItem == treeItemFolder"
         }
       ],
       "deploy.submenu": [
