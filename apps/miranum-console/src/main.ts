@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 import { initMiranumCore } from "./app/shared/fs-helpers";
 import { registerDeploymentCommands } from "./app/deployment/commands";
 import { showErrorMessage } from "./app/shared/message";
@@ -6,6 +7,8 @@ import { registerGenerateCommands } from "./app/generate/commands";
 import { MiranumTreeDataProvider } from "./app/vscode/MiranumTreeDataProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
+    context.subscriptions.push(Logger.get("Miranum: Console"));
+
     const miranumCore = await initMiranumCore();
 
     // generate

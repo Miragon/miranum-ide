@@ -10,6 +10,7 @@ import {
 import { checkIfSupportedType, MiranumCore } from "@miranum-ide/miranum-core";
 import { FolderItem, MiranumCommand } from "./MiranumTreeItems";
 import { miranumCommands, TreeItemType } from "./types";
+import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 
 export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
     private readonly extensionUri: Uri;
@@ -44,8 +45,10 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
 
     getChildren(element?: FolderItem): Thenable<TreeItem[]> {
         if (!this.workspace) {
-            vscode.window.showInformationMessage("No workspace open!");
-            return Promise.resolve([]);
+            const errMsg = "[Miranum.Console] Please open a workspace!";
+            vscode.window.showErrorMessage(errMsg);
+            Logger.error(errMsg);
+            throw Error(errMsg);
         }
 
         if (element) {
@@ -125,11 +128,6 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
      * @private
      */
     private async getTreeItems(path: Uri, fileType: FileType): Promise<TreeItem[]> {
-        if (!this.workspace) {
-            // TODO: Log error
-            throw Error("No workspace is open!");
-        }
-
         let treeItems: TreeItem[] = [];
         let dirContent: [string, FileType][] = [];
 
@@ -240,8 +238,12 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
     private async getCommands(id: string, path: Uri): Promise<MiranumCommand[]> {
         const commandList = miranumCommands.get(id);
 
-        // FIXME: Use Logger and better error message
-        if (!commandList) throw Error("Invalid Command");
+        if (!commandList) {
+            const errMsg = "[Miranum.Console] Invalid command!";
+            Logger.error(errMsg);
+            vscode.window.showErrorMessage(errMsg);
+            throw Error(errMsg);
+        }
 
         const commandItems: MiranumCommand[] = [];
 
