@@ -7,11 +7,14 @@ import {
     Uri,
     WorkspaceFolder,
 } from "vscode";
+import { checkIfSupportedType, MiranumCore } from "@miranum-ide/miranum-core";
 import { FolderItem, MiranumCommand } from "./MiranumTreeItems";
 import { miranumCommands, TreeItemType } from "./types";
 
 export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
     private readonly extensionUri: Uri;
+
+    private readonly miranumCore: MiranumCore;
 
     private readonly workspace?: WorkspaceFolder;
 
@@ -22,11 +25,61 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
     readonly onDidChangeTreeData: vscode.Event<FolderItem | undefined | null | void> =
         this._onDidChangeTreeData.event;
 
-    constructor(extensionUri: Uri, workspace?: WorkspaceFolder) {
+    constructor(
+        extensionUri: Uri,
+        miranumCore: MiranumCore,
+        workspace?: WorkspaceFolder,
+    ) {
         this.extensionUri = extensionUri;
+        this.miranumCore = miranumCore;
         this.workspace = workspace;
 
-        // register commands
+        this.registerTreeViewCommands();
+        this.registerEventHandler();
+    }
+
+    refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
+
+    getChildren(element?: FolderItem): Thenable<TreeItem[]> {
+        if (!this.workspace) {
+            vscode.window.showInformationMessage("No workspace open!");
+            return Promise.resolve([]);
+        }
+
+        if (element) {
+            // User expanded a command container
+            if (element instanceof MiranumCommand) {
+                return Promise.resolve(
+                    this.getCommands(element.label, element.itemPath),
+                );
+            }
+
+            // User expanded a directory
+            if (element.fileType === FileType.Directory) {
+                return Promise.resolve(
+                    this.getTreeItems(element.itemPath, FileType.Directory),
+                );
+            } else {
+                // User expanded a file
+                return Promise.resolve(
+                    this.getTreeItems(element.itemPath, FileType.File),
+                );
+            }
+        } else {
+            // User opened the custom view the first time
+            return Promise.resolve(
+                this.getTreeItems(Uri.joinPath(this.workspace.uri), FileType.Directory),
+            );
+        }
+    }
+
+    getTreeItem(element: FolderItem): TreeItem | Thenable<TreeItem> {
+        return element;
+    }
+
+    private registerTreeViewCommands(): void {
         vscode.commands.registerCommand("miranum.treeView.openFile", (path: Uri) => {
             vscode.commands.executeCommand("vscode.open", path);
         });
@@ -44,7 +97,9 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
         vscode.commands.registerCommand("miranum.treeView.refresh", () => {
             this.refresh();
         });
+    }
 
+    private registerEventHandler(): void {
         // react on changes in explorer view
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
             this.refresh();
@@ -60,49 +115,15 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
         });
     }
 
-    refresh(): void {
-        this._onDidChangeTreeData.fire();
-    }
-
-    getChildren(element?: FolderItem): Thenable<TreeItem[]> {
-        if (!this.workspace) {
-            vscode.window.showInformationMessage("No workspace open!");
-            return Promise.resolve([]);
-        }
-
-        if (element) {
-            if (element instanceof MiranumCommand) {
-                return Promise.resolve(
-                    this.getCommands(element.label, element.itemPath),
-                );
-            }
-
-            if (element.fileType === FileType.Directory) {
-                return Promise.resolve(
-                    this.getTreeItems(
-                        Uri.joinPath(this.workspace.uri, element.label),
-                        FileType.Directory,
-                    ),
-                );
-            } else {
-                return Promise.resolve(
-                    this.getTreeItems(
-                        Uri.joinPath(this.workspace.uri, element.label),
-                        FileType.File,
-                    ),
-                );
-            }
-        } else {
-            return Promise.resolve(
-                this.getTreeItems(Uri.joinPath(this.workspace.uri), FileType.Directory),
-            );
-        }
-    }
-
-    getTreeItem(element: FolderItem): TreeItem | Thenable<TreeItem> {
-        return element;
-    }
-
+    /**
+     * Create the TreeItems.
+     * The following TreeItems exist:
+     *   - FolderItem (Directory or File)
+     *   - MiranumCommand (e.g. Deploy-Command)
+     * @param path
+     * @param fileType
+     * @private
+     */
     private async getTreeItems(path: Uri, fileType: FileType): Promise<TreeItem[]> {
         if (!this.workspace) {
             // TODO: Log error
@@ -110,23 +131,46 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
         }
 
         let treeItems: TreeItem[] = [];
+        let dirContent: [string, FileType][] = [];
 
+        // Get all items (file or directory) of the curren directory and create
+        // the FolderItems
         if (fileType === FileType.Directory) {
-            treeItems = await this.getFolderItems(path);
+            dirContent = await vscode.workspace.fs.readDirectory(path);
+            treeItems = await this.getFolderItems(path, dirContent);
         }
 
-        // Create container for commands
+        // Initialize container for commands
         if (fileType === FileType.Directory) {
-            treeItems.push(
-                new MiranumCommand(
-                    TreeItemType.DEFAULT,
-                    "Deploy All",
-                    TreeItemCollapsibleState.Collapsed,
-                    path,
-                    this.extensionUri,
-                ),
-            );
-        } else if (fileType === FileType.File) {
+            // TODO: This works only for the Deploy-Commands.
+            //  If more commands are added in the future, a better architecture must be found.
+            // Expandable container for "Deploy All"
+            // The "Deploy All"-Option is only displayed if there is a deployable file
+            let deployable = false;
+            for (const item of dirContent.sort((a, b) => a[1] - b[1])) {
+                if (item[1] === FileType.File) {
+                    deployable = this.checkDeployable(item[0]);
+                } else if (item[1] === FileType.Directory) {
+                    deployable = await this.searchForDeployable(
+                        Uri.joinPath(path, item[0]),
+                    );
+                }
+
+                if (deployable) {
+                    treeItems.push(
+                        new MiranumCommand(
+                            TreeItemType.DEFAULT,
+                            "Deploy All",
+                            TreeItemCollapsibleState.Collapsed,
+                            path,
+                            this.extensionUri,
+                        ),
+                    );
+                    break;
+                }
+            }
+        } else if (fileType === FileType.File && this.checkDeployable(path.path)) {
+            // Expandable container for "Deploy"
             treeItems.push(
                 new MiranumCommand(
                     TreeItemType.DEFAULT,
@@ -141,13 +185,13 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
         return treeItems;
     }
 
-    private async getFolderItems(path: Uri): Promise<FolderItem[]> {
+    private async getFolderItems(
+        path: Uri,
+        directoryContent: [string, FileType][],
+    ): Promise<FolderItem[]> {
         const folderItems: FolderItem[] = [];
 
-        let directoryContent: [string, FileType][] =
-            await vscode.workspace.fs.readDirectory(path);
-
-        directoryContent = directoryContent.sort((a, b) => {
+        const dirContent = directoryContent.sort((a, b) => {
             if (a[1] === b[1]) {
                 // sort filenames alphabetically
                 const filenameA = a[0].toLowerCase();
@@ -163,17 +207,12 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
             return b[1] - a[1];
         });
 
-        for (const item of directoryContent) {
+        for (const item of dirContent) {
             const itemUri = Uri.joinPath(path, item[0]);
             switch (item[1]) {
                 case FileType.Directory: {
                     folderItems.push(
-                        new FolderItem(
-                            item[0],
-                            itemUri,
-                            FileType.Directory,
-                            this.getExecutable(FileType.Directory, itemUri.fsPath),
-                        ),
+                        new FolderItem(item[0], itemUri, FileType.Directory, true),
                     );
                     break;
                 }
@@ -183,7 +222,7 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
                             item[0],
                             itemUri,
                             FileType.File,
-                            this.getExecutable(FileType.File, itemUri.fsPath),
+                            this.checkDeployable(itemUri.fsPath),
                             {
                                 arguments: [itemUri],
                                 command: "miranum.treeView.openFile",
@@ -226,23 +265,50 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
         return commandItems;
     }
 
-    private getExecutable(fileType: FileType, path: string): boolean {
-        if (fileType === FileType.Directory) {
-            return true;
-        } else if (fileType === FileType.File) {
-            const segments = path.split(".");
-            const ext = segments[segments.length - 1];
-            switch (ext) {
-                case "bpmn":
-                case "dmn":
-                case "config.json":
-                case "form":
-                    return true;
-                default:
-                    return false;
+    /**
+     * Search recursively for deployable files inside a given directory.
+     * @private
+     */
+    private async searchForDeployable(path: Uri): Promise<boolean> {
+        const items = (await vscode.workspace.fs.readDirectory(path)).sort((a, b) => {
+            return a[1] - b[1];
+        });
+
+        for (const item of items) {
+            if (item[1] === FileType.Directory) {
+                return this.searchForDeployable(Uri.joinPath(path, item[0]));
+            }
+            if (this.checkDeployable(item[0])) {
+                return true;
             }
         }
-
         return false;
+    }
+
+    /**
+     * Check if a given file can be deployed.
+     * @param filePath
+     * @private
+     */
+    private checkDeployable(filePath: string): boolean {
+        if (!this.miranumCore.projectConfig) {
+            return false;
+        }
+
+        // Map file extension to artifact type
+        const ext = this.getFileExtension(filePath);
+        const item = this.miranumCore.projectConfig.workspace.find(
+            (wsItem) => wsItem.extension === `.${ext}`,
+        );
+
+        if (item) {
+            return checkIfSupportedType(item.type);
+        }
+        return false;
+    }
+
+    private getFileExtension(path: string): string {
+        const segments = path.split(/\.(.*)/s);
+        return segments[segments.length - 2];
     }
 }

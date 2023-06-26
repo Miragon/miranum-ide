@@ -15,7 +15,7 @@ export enum TreeItemType {
     DEPLOY = "deploy",
 }
 
-// TODO: Find a better way
+// TODO: Find a better way to manage our commands
 export const miranumCommands = new Map<string, Map<string, string>>([
     [
         "Deploy All",

@@ -31,6 +31,6 @@ export async function activate(context: vscode.ExtensionContext) {
             : undefined;
     vscode.window.registerTreeDataProvider(
         "project-view",
-        new MiranumTreeDataProvider(context.extensionUri, workspace),
+        new MiranumTreeDataProvider(context.extensionUri, miranumCore, workspace),
     );
 }
