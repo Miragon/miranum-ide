@@ -87,7 +87,7 @@
           {
             "glob": "*.png",
             "input": "./apps/miranum-console/icons",
-            "output": "/"
+            "output": "/assets/icons"
           },
           {
             "glob": "LICENSE",
