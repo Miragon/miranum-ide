@@ -43,6 +43,9 @@
     "fontend"
   ],
   "main": "main.js",
+  "activationEvents": [
+    "onWebviewPanel:miranum-console"
+  ],
   "contributes": {
     "commands": [
       {
