@@ -41,7 +41,7 @@ Please find our official docs [here](https://miranum.com/docs/components/miranum
 It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7. With the version >= 0.4.3 you can now
 create and edit DMN 1.3 diagrams.
 
-![create-process.gif](./assets/create-process.gif)
+![create-process.gif](https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-modeler/docs/create-process.gif?raw=true)
 
 ## Features
 
