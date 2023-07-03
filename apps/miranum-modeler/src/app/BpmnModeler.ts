@@ -3,7 +3,7 @@ import { Uri, window } from "vscode";
 import { debounce } from "lodash";
 import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { TextEditor, Watcher } from "./lib";
 
 export class BpmnModeler implements vscode.CustomTextEditorProvider {
@@ -143,12 +143,30 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             },
         );
 
+        const getModelerExecutionPlatformVersion = (xmlString: string): ExecutionPlatformVersion => {
+            const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
+
+            const match = xmlString.match(regex);
+
+            if (match) {
+                const version = match[1];
+
+                if (version === "7") {
+                    return ExecutionPlatformVersion.Camunda7;
+                } else if (version === "8") {
+                    return ExecutionPlatformVersion.Camunda8;
+                }
+            }
+            return ExecutionPlatformVersion.None;
+        };
+
         const postMessage = async (msgType: MessageType) => {
             if (webviewPanel.visible) {
                 let data: ModelerData | undefined;
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
                         data = {
+                            executionPlatformVersion: getModelerExecutionPlatformVersion(document.getText()),
                             bpmn: document.getText(),
                             additionalFiles: await Reader.get().getAllFiles(
                                 projectUri,
@@ -160,6 +178,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     case MessageType.RESTORE: {
                         data = {
                             bpmn: isBuffer ? document.getText() : undefined,
+                            executionPlatformVersion: isBuffer ? getModelerExecutionPlatformVersion(document.getText()) : ExecutionPlatformVersion.None,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
                                 : undefined,
@@ -169,6 +188,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     default: {
                         data = {
                             bpmn: document.getText(),
+                            executionPlatformVersion: getModelerExecutionPlatformVersion(document.getText()),
                         };
                         break;
                     }

@@ -1,16 +1,7 @@
-import {
-    ContentController,
-    ImportWarning,
-    instanceOfModelerData,
-    setFormKeys,
-} from "./app";
+import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys } from "./app";
 import { debounce, reverse, uniqBy } from "lodash";
-import {
-    FolderContent,
-    MessageType,
-    StateController,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
 // bpmn-js
 import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
@@ -35,34 +26,10 @@ import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
-const modeler = new BpmnModeler({
-    container: "#js-canvas",
-    keyboard: {
-        bindTo: document,
-    },
-    propertiesPanel: {
-        parent: "#js-properties-panel",
-    },
-    additionalModules: [
-        // Properties Panel
-        BpmnPropertiesPanelModule,
-        BpmnPropertiesProviderModule,
-        CamundaPlatformPropertiesProviderModule,
-        CamundaPlatformBehaviors,
-        miragonProviderModule,
-        // Element Templates
-        ElementTemplatesPropertiesProviderModule,
-        ElementTemplateChooserModule,
-        // Other Plugins
-        TokenSimulationModule,
-    ],
-    moddleExtensions: {
-        camunda: camundaModdleDescriptors,
-    },
-});
+let modeler: BpmnModeler;
+let contentController: ContentController;
 
 const stateController = new StateController<ModelerData>();
-const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
 
@@ -180,6 +147,43 @@ function setupListeners(): void {
         }
     });
 
+    postMessage(MessageType.INFO, undefined, "Listeners are set.");
+}
+
+function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion = ExecutionPlatformVersion.Camunda7): void {
+
+    modeler = new BpmnModeler({
+        container: "#js-canvas",
+        keyboard: {
+            bindTo: document,
+        },
+        propertiesPanel: {
+            parent: "#js-properties-panel",
+        },
+        additionalModules: [
+        // Properties Panel
+            BpmnPropertiesPanelModule,
+            BpmnPropertiesProviderModule,
+            CamundaPlatformPropertiesProviderModule,
+            CamundaPlatformBehaviors,
+            miragonProviderModule,
+            // Element Templates
+            ElementTemplatesPropertiesProviderModule,
+            ElementTemplateChooserModule,
+            // Other Plugins
+            TokenSimulationModule,
+        ],
+        moddleExtensions: {
+            camunda: camundaModdleDescriptors,
+        },
+    });
+
+    contentController = new ContentController(modeler);
+
+    stateController.updateState({ data: { executionPlatformVersion } } );
+    openXML(bpmn);
+    setFiles(files);
+
     modeler.on("elementTemplates.errors", (event) => {
         const { errors } = event;
         postMessage(
@@ -193,12 +197,6 @@ function setupListeners(): void {
 
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
 
-    postMessage(MessageType.INFO, undefined, "Listeners are set.");
-}
-
-function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
-    openXML(bpmn);
-    setFiles(files);
     postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
 
@@ -241,8 +239,9 @@ window.onload = async function () {
                 "Webview was loaded successfully.",
             );
             const data = await initialized(); // await the response form the backend
+            console.log(data);
             if (instanceOfModelerData(data)) {
-                return init(data.bpmn, data.additionalFiles);
+                return init(data.bpmn, data.additionalFiles, data.executionPlatformVersion);
             }
         }
     } catch (error) {
