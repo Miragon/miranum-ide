@@ -1,59 +1,76 @@
 <template>
     <v-app>
-        <v-row v-if="mode === 'jsonschema-builder'" align="center" >
+        <v-row v-if="mode === 'jsonschema-builder'" align="center">
             <v-text-field
-                label="Form Key"
-                class="input"
-                :value="formKey"
-                @input="keyChanged"
                 :rules="rules"
-                outlined rounded dense hide-details="auto">
+                :value="formKey"
+                class="input"
+                dense
+                hide-details="auto"
+                label="Form Key"
+                outlined
+                rounded
+                @input="keyChanged"
+            >
             </v-text-field>
             <v-select
-                label="Display"
-                class="input"
                 v-model="xDisplay"
                 :items="xDisplayOptions"
+                class="input"
+                dense
+                hide-details="auto"
                 item-text="name"
                 item-value="value"
+                label="Display"
+                outlined
+                rounded
                 @input="xDisplayChanged"
-                outlined rounded dense hide-details="auto">
+            >
             </v-select>
         </v-row>
         <DwfFormBuilder
+            v-if="mode === 'jsonschema-builder'"
             :builder-settings="builderSettings"
             :value="schema"
             @input="schemaChanged"
-            v-if="mode === 'jsonschema-builder'">
+        >
         </DwfFormBuilder>
-        <div style="background-color: white; padding: 10px" v-if="mode === 'jsonschema-renderer'">
-            <DwfFormRenderer :options="{}" :value="{}" :schema="schema" :key="componentKey"></DwfFormRenderer>
+        <div
+            v-if="mode === 'jsonschema-renderer'"
+            style="background-color: white; padding: 10px"
+        >
+            <DwfFormRenderer
+                :key="componentKey"
+                :options="{}"
+                :schema="schema"
+                :value="{}"
+            ></DwfFormRenderer>
         </div>
     </v-app>
 </template>
 
 <script lang="ts">
-import {defineComponent, onBeforeMount, onUnmounted, ref} from 'vue';
-import {DwfFormRenderer, Form} from "@muenchen/digiwf-form-renderer";
-import {DwfFormBuilder} from "@muenchen/digiwf-form-builder";
-import {SettingsEN} from "@muenchen/digiwf-form-builder-settings";
-import {debounce} from "lodash";
+import { defineComponent, onBeforeMount, onUnmounted, ref } from "vue";
+import { DwfFormRenderer, Form } from "@muenchen/digiwf-form-renderer";
+import { DwfFormBuilder } from "@muenchen/digiwf-form-builder";
+import { SettingsEN } from "@muenchen/digiwf-form-builder-settings";
+import { debounce } from "lodash";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { FormBuilderData } from "@miranum-ide/vscode/shared/miranum-forms"
+import { FormBuilderData } from "@miranum-ide/vscode/shared/miranum-forms";
 import {
     initialize,
     initialized,
     instanceOfFormBuilderData,
-    StateController
+    StateController,
 } from "./composables";
 
 declare const globalViewType: string;
 
 export default defineComponent({
-    name: 'App',
+    name: "App",
     components: {
         DwfFormRenderer,
-        DwfFormBuilder
+        DwfFormBuilder,
     },
     setup() {
         const stateController = new StateController();
@@ -62,17 +79,17 @@ export default defineComponent({
         const formKey = ref<string>();
         const xDisplay = ref<string>();
         const xDisplayOptions = [
-            { name:"Single Page", value:"" },
-            { name:"Expansion Panels", value:"expansion-panels" },
-            { name:"Tabs", value:"tabs" },
-            { name:"Stepper", value:"stepper" }
+            { name: "Single Page", value: "" },
+            { name: "Expansion Panels", value: "expansion-panels" },
+            { name: "Tabs", value: "tabs" },
+            { name: "Stepper", value: "stepper" },
         ];
         const schema = ref<Form>({
-                key: "MyStartForm",
-                type: "object",
-                "x-display": "stepper",
-                allOf: [],
-            });
+            key: "MyStartForm",
+            type: "object",
+            "x-display": "stepper",
+            allOf: [],
+        });
         const builderSettings = SettingsEN;
 
         const mode = ref(globalViewType);
@@ -85,14 +102,16 @@ export default defineComponent({
                 xDisplay.value = newSchema.schema["x-display"];
                 stateController.updateState({
                     mode: globalViewType,
-                    data: newSchema
+                    data: newSchema,
                 });
             }
         }
 
         const getDataFromExtension = debounce(receiveMessage, 50);
 
-        function receiveMessage(message: MessageEvent<VscMessage<FormBuilderData>>): void {
+        function receiveMessage(
+            message: MessageEvent<VscMessage<FormBuilderData>>,
+        ): void {
             try {
                 isUpdateFromExtension = true;
 
@@ -110,7 +129,7 @@ export default defineComponent({
                     }
                     case `jsonschema-builder.${MessageType.UNDO}`:
                     case `jsonschema-builder.${MessageType.REDO}`:
-                    case `jsonschema-builder.${MessageType.UPDATEFROMEXTENSION}`: {
+                    case `jsonschema-builder.${MessageType.MSGFROMEXTENSION}`: {
                         updateForm(data);
                         break;
                     }
@@ -122,8 +141,8 @@ export default defineComponent({
                         initialize(data);
                         break;
                     }
-                    case `jsonschema-renderer.${MessageType.UPDATEFROMEXTENSION}`: {
-                        componentKey.value += 1;  // renders the renderer again :)
+                    case `jsonschema-renderer.${MessageType.MSGFROMEXTENSION}`: {
+                        componentKey.value += 1; // renders the renderer again :)
                         updateForm(data);
                         break;
                     }
@@ -143,19 +162,19 @@ export default defineComponent({
             }
             stateController.updateState({
                 mode: globalViewType,
-                data
+                data,
             });
-            postMessage(MessageType.UPDATEFROMWEBVIEW, data);
+            postMessage(MessageType.MSGFROMWEBVIEW, data);
         }
 
         function schemaChanged(update: Form): void {
             isUpdateFromExtension = false;
-            sendChangesToExtension({key: formKey.value!, schema: update});
+            sendChangesToExtension({ key: formKey.value!, schema: update });
         }
 
         function keyChanged(update: string): void {
             isUpdateFromExtension = false;
-            sendChangesToExtension({key: update, schema: schema.value!});
+            sendChangesToExtension({ key: update, schema: schema.value! });
         }
 
         function xDisplayChanged(update: string): void {
@@ -168,23 +187,27 @@ export default defineComponent({
                     "x-display": update,
                     allOf: schema.value!.allOf,
                 },
-                key: formKey.value!
+                key: formKey.value!,
             });
         }
 
-        function postMessage(type: MessageType, data?: FormBuilderData, message?: string): void {
+        function postMessage(
+            type: MessageType,
+            data?: FormBuilderData,
+            message?: string,
+        ): void {
             switch (type) {
-                case MessageType.UPDATEFROMWEBVIEW: {
+                case MessageType.MSGFROMWEBVIEW: {
                     stateController.postMessage({
                         type: `${globalViewType}.${type}`,
-                        data: JSON.parse(JSON.stringify(data))
+                        data: JSON.parse(JSON.stringify(data)),
                     });
                     break;
                 }
                 default: {
                     stateController.postMessage({
                         type: `${globalViewType}.${type}`,
-                        message
+                        message,
                     });
                     break;
                 }
@@ -196,7 +219,11 @@ export default defineComponent({
             try {
                 const state = stateController.getState();
                 if (state && state.data) {
-                    postMessage(MessageType.RESTORE, undefined, "State was restored successfully.");
+                    postMessage(
+                        MessageType.RESTORE,
+                        undefined,
+                        "State was restored successfully.",
+                    );
                     mode.value = state.mode;
                     let data = state.data;
                     const newData = await initialized(); // await the response form the backend
@@ -208,28 +235,36 @@ export default defineComponent({
                     }
                     updateForm(data);
                 } else {
-                    postMessage(MessageType.INITIALIZE, undefined, "Webview was loaded successfully.");
+                    postMessage(
+                        MessageType.INITIALIZE,
+                        undefined,
+                        "Webview was loaded successfully.",
+                    );
                     const data = await initialized(); // await the response form the backend
                     if (data && instanceOfFormBuilderData(data)) {
                         updateForm(data);
                     }
                 }
             } catch (error) {
-                const message = error instanceof Error ? error.message : "Failed to initialize webview.";
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to initialize webview.";
                 postMessage(MessageType.ERROR, undefined, message);
             }
 
             postMessage(MessageType.INFO, undefined, "Webview was initialized.");
-        })
+        });
 
         onUnmounted(() => {
-            window.removeEventListener('message', getDataFromExtension);
-        })
+            window.removeEventListener("message", getDataFromExtension);
+        });
 
         // Vuetify
         const rules = [
-            (value: string) => !!value || 'Required.',
-            (value: string) => /^[a-zA-Z0-9_.-]+$/.test(value) || 'Allowed characters [a-zA-Z0-9_.-]'
+            (value: string) => !!value || "Required.",
+            (value: string) =>
+                /^[a-zA-Z0-9_.-]+$/.test(value) || "Allowed characters [a-zA-Z0-9_.-]",
         ];
 
         return {
@@ -243,9 +278,9 @@ export default defineComponent({
             rules,
             schemaChanged,
             keyChanged,
-            xDisplayChanged
-        }
-    }
+            xDisplayChanged,
+        };
+    },
 });
 </script>
 
@@ -256,6 +291,7 @@ export default defineComponent({
     padding-top: 40px !important;
     padding-left: 20px !important;
 }
+
 .input.theme--light.v-input > .v-input__control > .v-input__slot {
     flex-direction: row !important;
     flex-wrap: nowrap !important;

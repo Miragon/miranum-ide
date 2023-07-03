@@ -67,6 +67,7 @@ const contentController = new ContentController(modeler);
 let isUpdateFromExtension = false;
 
 const updateXML = asyncDebounce(openXML, 100);
+
 async function openXML(bpmn: string | undefined) {
     try {
         let result: ImportWarning;
@@ -144,7 +145,7 @@ async function sendChanges() {
 
     const bpmn = await contentController.exportDiagram();
     stateController.updateState({ data: { bpmn } });
-    postMessage(MessageType.UPDATEFROMWEBVIEW, { bpmn }, undefined);
+    postMessage(MessageType.MSGFROMWEBVIEW, { bpmn }, undefined);
 }
 
 function setupListeners(): void {
@@ -162,7 +163,7 @@ function setupListeners(): void {
                 }
                 case `bpmn-modeler.${MessageType.UNDO}`:
                 case `bpmn-modeler.${MessageType.REDO}`:
-                case `bpmn-modeler.${MessageType.UPDATEFROMEXTENSION}`: {
+                case `bpmn-modeler.${MessageType.MSGFROMEXTENSION}`: {
                     isUpdateFromExtension = true;
                     updateXML(message.data.bpmn);
                     break;
@@ -277,7 +278,7 @@ function createList(messages: ErrorArray | WarningArray): string {
  */
 function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
-        case MessageType.UPDATEFROMWEBVIEW: {
+        case MessageType.MSGFROMWEBVIEW: {
             stateController.postMessage({
                 type: `bpmn-modeler.${type}`,
                 data,
@@ -304,6 +305,7 @@ function initialized() {
         };
     });
 }
+
 let initialize: any = null;
 
 /**
@@ -337,4 +339,5 @@ function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
             debounced(args);
         }) as ReturnType<F>;
 }
+
 // <---------------------------- Helper Functions ------------------------------

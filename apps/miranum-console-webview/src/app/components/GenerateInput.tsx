@@ -1,10 +1,21 @@
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useVsMessage } from "./Hooks/Message";
-import { Avatar, Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
+import {
+    Avatar,
+    Box,
+    Button,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { Description } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
 import { Artifact, MiranumConfig, MiranumCore } from "@miranum-ide/miranum-core";
+import { MessageType } from "@miranum-ide/vscode/shared/miranum-console";
 
 interface Props {
     config?: MiranumConfig;
@@ -13,14 +24,14 @@ interface Props {
     type: string;
 }
 
-const GenerateInput: React.FC<Props> = props => {
+const GenerateInput: React.FC<Props> = (props) => {
     const [name, setName] = useState<string>(props.name);
     const [type, setType] = useState<string>(props.type);
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
-    const inputChange = useVsMessage("changedInput");
-    const sendArtifactMessage = useVsMessage("generateArtifact");
+    const inputChange = useVsMessage(MessageType.CHANGEDINPUT); // "changedInput");
+    const sendArtifactMessage = useVsMessage(MessageType.GENERATEARTIFACT); // "generateArtifact");
     const miranumCore = useMemo(() => {
         return props.config ? new MiranumCore(props.config) : new MiranumCore();
     }, [props.config]);
@@ -31,7 +42,13 @@ const GenerateInput: React.FC<Props> = props => {
 
     const generate = useCallback(() => {
         if (name !== "" && path !== "") {
-            miranumCore.generateArtifact(name, type, miranumCore.projectConfig?.name ?? "", path)
+            miranumCore
+                .generateArtifact(
+                    name,
+                    type,
+                    miranumCore.projectConfig?.name ?? "",
+                    path,
+                )
                 .then((artifact: Artifact) => {
                     sendArtifactMessage({
                         path: path,
@@ -53,7 +70,7 @@ const GenerateInput: React.FC<Props> = props => {
             }}
         >
             <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-                <Description/>
+                <Description />
             </Avatar>
             <Typography component="h2" variant="h5">
                 GENERATE A NEW FILE
@@ -67,13 +84,15 @@ const GenerateInput: React.FC<Props> = props => {
                     label="Name"
                     name="name"
                     value={name}
-                    onChange={e => {
+                    onChange={(e) => {
                         setName(e.target.value);
                         inputChange({ name: e.target.value, type: type });
                     }}
                     autoFocus
                     error={name === ""}
-                    helperText={(name === "" && pressed) ? "You have to insert a name!" : " "}
+                    helperText={
+                        name === "" && pressed ? "You have to insert a name!" : " "
+                    }
                 />
                 <FormControl fullWidth required>
                     <InputLabel id="typeLabel">Type</InputLabel>
@@ -82,8 +101,8 @@ const GenerateInput: React.FC<Props> = props => {
                         labelId="typeLabel"
                         name="type"
                         value={type}
-                        sx={{ mb:"28px" }}
-                        onChange={e => {
+                        sx={{ mb: "28px" }}
+                        onChange={(e) => {
                             setType(e.target.value);
                             inputChange({ name: name, type: e.target.value });
                         }}
@@ -95,12 +114,9 @@ const GenerateInput: React.FC<Props> = props => {
                         <MenuItem value="config">config</MenuItem>
                     </Select>
                 </FormControl>
-                {!miranumCore.projectConfig &&
-                    <FileSelector
-                        path={path}
-                        setPath={(p: string) => setPath(p)}
-                    />
-                }
+                {!miranumCore.projectConfig && (
+                    <FileSelector path={path} setPath={(p: string) => setPath(p)} />
+                )}
                 <Button
                     onClick={() => {
                         setPressed(!name || !path);
@@ -110,8 +126,14 @@ const GenerateInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{ mt: 3, mb: 2 }}
-                >generate</Button>
-                {error !== "" && <Typography variant="h6" color="red" textAlign="center">{error}</Typography>}
+                >
+                    generate
+                </Button>
+                {error !== "" && (
+                    <Typography variant="h6" color="red" textAlign="center">
+                        {error}
+                    </Typography>
+                )}
             </Box>
         </FormControl>
     );

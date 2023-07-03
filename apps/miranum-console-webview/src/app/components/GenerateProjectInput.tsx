@@ -5,20 +5,23 @@ import { Avatar, Box, Button, FormControl, TextField, Typography } from "@mui/ma
 import { CreateNewFolder } from "@mui/icons-material";
 import FileSelector from "./UI/FileSelector";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
+import { MessageType } from "@miranum-ide/vscode/shared/miranum-console";
 
 interface Props {
     currentPath: string;
     name: string;
 }
 
-const GenerateProjectInput: React.FC<Props> = props => {
+const GenerateProjectInput: React.FC<Props> = (props) => {
     const [name, setName] = useState<string>(props.name);
     const [path, setPath] = useState<string>(props.currentPath);
     const [pressed, setPressed] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
-    const inputChange = useVsMessage("changedInput");
-    const sendProjectMessage = useVsMessage("generateProject");
-    const miranumCore = useMemo(() => {return new MiranumCore();}, []);
+    const inputChange = useVsMessage(MessageType.CHANGEDINPUT); // "changedInput");
+    const sendProjectMessage = useVsMessage(MessageType.GENERATEPROJECT); // "generateProject");
+    const miranumCore = useMemo(() => {
+        return new MiranumCore();
+    }, []);
 
     useEffect(() => {
         setPath(props.currentPath);
@@ -26,12 +29,13 @@ const GenerateProjectInput: React.FC<Props> = props => {
 
     const generate = useCallback(() => {
         if (name !== "" && path !== "") {
-            miranumCore.initProject(name)
+            miranumCore
+                .initProject(name)
                 .then((artifacts: Artifact[]) => {
                     sendProjectMessage({
                         name: name,
                         path: path,
-                        artifacts: artifacts,
+                        artifact: artifacts,
                     });
                 })
                 .then(() => setError(""))
@@ -52,7 +56,7 @@ const GenerateProjectInput: React.FC<Props> = props => {
                 <CreateNewFolder />
             </Avatar>
             <Typography component="h2" variant="h5">
-                    GENERATE A NEW PROJECT
+                GENERATE A NEW PROJECT
             </Typography>
             <Box component="form" noValidate sx={{ mt: 1 }}>
                 <TextField
@@ -63,18 +67,17 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     label="Name"
                     name="name"
                     value={name}
-                    onChange={e => {
+                    onChange={(e) => {
                         setName(e.target.value);
                         inputChange({ name: e.target.value });
                     }}
                     autoFocus
                     error={name === ""}
-                    helperText={(name === "" && pressed) ? "You have to insert a name!" : " "}
+                    helperText={
+                        name === "" && pressed ? "You have to insert a name!" : " "
+                    }
                 />
-                <FileSelector
-                    path={path}
-                    setPath={ (p:string) => setPath(p)}
-                />
+                <FileSelector path={path} setPath={(p: string) => setPath(p)} />
                 <Button
                     onClick={() => {
                         setPressed(!name || !path);
@@ -84,9 +87,15 @@ const GenerateProjectInput: React.FC<Props> = props => {
                     variant="contained"
                     color="secondary"
                     sx={{ mt: 3, mb: 2 }}
-                >generate</Button>
+                >
+                    generate
+                </Button>
             </Box>
-            {error !== "" && <Typography variant="subtitle1" borderColor="red">{error}</Typography>}
+            {error !== "" && (
+                <Typography variant="subtitle1" borderColor="red">
+                    {error}
+                </Typography>
+            )}
         </FormControl>
     );
 };
