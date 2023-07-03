@@ -98,11 +98,6 @@
             "output": "/"
           },
           {
-            "input": "./apps/miranum-modeler/assets/",
-            "glob": "create-process.gif",
-            "output": "/assets"
-          },
-          {
             "glob": "README.md",
             "input": "./apps/miranum-modeler/",
             "output": "/"
