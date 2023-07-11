@@ -150,7 +150,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
             if (match) {
                 const version = match[1];
-
                 if (version === "7") {
                     return ExecutionPlatformVersion.Camunda7;
                 } else if (version === "8") {

@@ -30,9 +30,9 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+import { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 
-
-let modeler: any;
+let modeler: BpmnModeler;
 let contentController: ContentController;
 
 const stateController = new StateController<ModelerData>();
@@ -156,60 +156,12 @@ function setupListeners(): void {
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
-function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion): void {
-
-    switch (executionPlatformVersion) {
-        case ExecutionPlatformVersion.Camunda7: {
-            modeler = new BpmnModeler({
-                container: "#js-canvas",
-                keyboard: {
-                    bindTo: document,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                additionalModules: [
-                    // Properties Panel
-                    BpmnPropertiesPanelModule,
-                    BpmnPropertiesProviderModule,
-                    CamundaPlatformPropertiesProviderModule,
-                    CamundaPlatformBehaviors,
-                    miragonProviderModule,
-                    // Element Templates
-                    ElementTemplatesPropertiesProviderModule,
-                    ElementTemplateChooserModule,
-                    // Other Plugins
-                    TokenSimulationModule,
-                ],
-                moddleExtensions: {
-                    camunda: camundaModdleDescriptors,
-                },
-            });
-            break;
-        }
-        case ExecutionPlatformVersion.Camunda8: {
-            modeler = new BpmnModeler({
-                container: "#js-canvas",
-                keyboard: {
-                    bindTo: document,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                additionalModules: [
-                    // Properties Panel
-                    BpmnPropertiesPanelModule,
-                    BpmnPropertiesProviderModule,
-                    ZeebePropertiesProviderModule,
-                    // Other Plugins
-                    TokenSimulationModule,
-                ],
-                moddleExtensions: {
-                    camunda: ZeebeBpmnModdle,
-                },
-            });
-        }
+function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion | undefined): void {
+    if (executionPlatformVersion === undefined) {
+        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
+        return;
     }
+    modeler = createBpmnModeler(executionPlatformVersion);
 
     contentController = new ContentController(modeler);
 
@@ -217,7 +169,7 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined, exec
     openXML(bpmn);
     setFiles(files);
 
-    modeler.on("elementTemplates.errors", (event) => {
+    modeler.on("elementTemplates.errors", (event: any) => {
         const { errors } = event;
         postMessage(
             MessageType.ERROR,
@@ -369,6 +321,83 @@ function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
             rejectSet.add(reject);
             debounced(args);
         }) as ReturnType<F>;
+}
+
+function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): BpmnModeler {
+    let bpmnModeler;
+    switch (executionPlatformVersion) {
+        case ExecutionPlatformVersion.Camunda7: {
+            bpmnModeler = new BpmnModeler({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    // Properties Panel
+                    BpmnPropertiesPanelModule,
+                    BpmnPropertiesProviderModule,
+                    CamundaPlatformPropertiesProviderModule,
+                    CamundaPlatformBehaviors,
+                    miragonProviderModule,
+                    // Element Templates
+                    ElementTemplatesPropertiesProviderModule,
+                    ElementTemplateChooserModule,
+                    // Other Plugins
+                    TokenSimulationModule,
+                ],
+                moddleExtensions: {
+                    camunda: camundaModdleDescriptors,
+                },
+            });
+            break;
+        }
+        case ExecutionPlatformVersion.Camunda8: {
+            bpmnModeler = new BpmnModeler({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    // Properties Panel
+                    BpmnPropertiesPanelModule,
+                    BpmnPropertiesProviderModule,
+                    ZeebePropertiesProviderModule,
+                    // Other Plugins
+                    TokenSimulationModule,
+                ],
+                moddleExtensions: {
+                    camunda: ZeebeBpmnModdle,
+                },
+            });
+            break;
+        }
+        case ExecutionPlatformVersion.None: {
+            bpmnModeler = new BpmnModeler({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    // Properties Panel
+                    BpmnPropertiesPanelModule,
+                    BpmnPropertiesProviderModule,
+                    // Other Plugins
+                    TokenSimulationModule,
+                ],
+            });
+            break;
+        }
+    }
+    return bpmnModeler;
 }
 
 // <---------------------------- Helper Functions ------------------------------
