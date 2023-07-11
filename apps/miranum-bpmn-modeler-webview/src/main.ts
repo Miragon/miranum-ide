@@ -326,6 +326,7 @@ function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
 function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): BpmnModeler {
     let bpmnModeler;
     switch (executionPlatformVersion) {
+        case ExecutionPlatformVersion.None:
         case ExecutionPlatformVersion.Camunda7: {
             bpmnModeler = new BpmnModeler({
                 container: "#js-canvas",
@@ -374,25 +375,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 moddleExtensions: {
                     camunda: ZeebeBpmnModdle,
                 },
-            });
-            break;
-        }
-        case ExecutionPlatformVersion.None: {
-            bpmnModeler = new BpmnModeler({
-                container: "#js-canvas",
-                keyboard: {
-                    bindTo: document,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                additionalModules: [
-                    // Properties Panel
-                    BpmnPropertiesPanelModule,
-                    BpmnPropertiesProviderModule,
-                    // Other Plugins
-                    TokenSimulationModule,
-                ],
             });
             break;
         }
