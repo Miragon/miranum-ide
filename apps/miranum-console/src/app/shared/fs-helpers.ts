@@ -7,6 +7,7 @@ import {
     MiranumDeploymentTarget,
 } from "@miranum-ide/miranum-core";
 import * as vscode from "vscode";
+import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 
 const fs = vscode.workspace.fs;
 
@@ -109,8 +110,9 @@ export async function getArtifacts(
             }
         }
         return artifacts;
-    } catch (err) {
-        console.log(err);
+    } catch (error) {
+        const errMsg = error instanceof Error ? error.message : `${error}`;
+        Logger.error("[Miranum.Console]", errMsg);
         return Promise.reject();
     }
 }

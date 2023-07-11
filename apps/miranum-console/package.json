@@ -42,17 +42,10 @@
     "CLI",
     "fontend"
   ],
-  "activationEvents": [
-    "onCommand:miranum.deploy.local",
-    "onCommand:miranum.deploy.dev",
-    "onCommand:miranum.deploy.test",
-    "onCommand:miranum.deployAll.local",
-    "onCommand:miranum.deployAll.dev",
-    "onCommand:miranum.deployAll.test",
-    "onCommand:miranum.generateFile",
-    "onCommand:miranum.generateProject"
-  ],
   "main": "main.js",
+  "activationEvents": [
+    "onWebviewPanel:miranum-console"
+  ],
   "contributes": {
     "commands": [
       {
@@ -94,6 +87,21 @@
         "command": "miranum.generateProject",
         "title": "Generate new project",
         "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.openFile",
+        "title": "Open File",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.delete",
+        "title": "Delete",
+        "category": "Miranum"
+      },
+      {
+        "command": "miranum.treeView.refresh",
+        "title": "Refresh",
+        "category": "Miranum"
       }
     ],
     "viewsContainers": {
@@ -108,18 +116,18 @@
     "views": {
       "miranum-ide": [
         {
-          "id": "bpmn-project",
-          "name": "Files"
+          "id": "project-view",
+          "name": "My Project"
         },
         {
-          "id": "commands",
-          "name": "Commands"
+          "id": "miranum-commands",
+          "name": "Miranum Commands"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "commands",
+        "view": "miranum-commands",
         "contents": "[Generate a new file](command:miranum.generateFile) \n [Generate a new project](command:miranum.generateProject)"
       }
     ],
@@ -139,6 +147,12 @@
           "submenu": "generate.submenu",
           "group": "1_modification",
           "when": "explorerResourceIsFolder"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "miranum.treeView.delete",
+          "when": "viewItem == treeItem || viewItem == treeItemFolder || viewItem == treeItemFile"
         }
       ],
       "deploy.submenu": [

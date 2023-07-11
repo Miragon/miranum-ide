@@ -1,13 +1,14 @@
 import * as vscode from "vscode";
+import { Uri } from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
 import { VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ConsoleData, FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
+import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";
-import { ConsolePanel } from "../ConsolePanel";
+import { ConsolePanel } from "../vscode/ConsolePanel";
 
-// TODO fixme
-// We should use proper event sourcing and rethink the architecture of this console
+// FIXME We should use proper event sourcing and rethink the architecture of this console
 export async function registerGenerateCommands(
     context: vscode.ExtensionContext,
     miranumCore: MiranumCore,
@@ -28,7 +29,7 @@ export async function registerGenerateCommands(
 
             // initialization
 
-            // path or workspacefolders may be undefined
+            // path or workspaceFolders may be undefined
             if (path) {
                 cache.path = path.fsPath;
             } else if (vscode.workspace.workspaceFolders) {
@@ -61,6 +62,7 @@ export async function registerGenerateCommands(
                             data.path
                         ) {
                             await generate(data.artifact, data.path);
+                            vscode.commands.executeCommand("miranum.treeView.refresh");
                         }
                         break;
                     case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:
@@ -151,9 +153,18 @@ export async function registerGenerateCommands(
                     case `${ConsolePanel.viewType}.${MessageType.GENERATEPROJECT}`:
                         // case "generateProject":
                         if (data && data.artifact && Array.isArray(data.artifact)) {
+                            const workspace: Uri = Uri.file(`${data.path}/${data.name}`);
+
                             for (const artifact of data.artifact) {
                                 await generate(artifact, `${data.path}/${data.name}`);
                             }
+
+                            // FIXME: This will switch to the "explorer" view.
+                            // open new created workspace
+                            vscode.commands.executeCommand(
+                                "vscode.openFolder",
+                                workspace,
+                            );
                         }
                         break;
                     case `${ConsolePanel.viewType}.${MessageType.OPENFILEPICKER}`:
@@ -211,7 +222,9 @@ export async function registerGenerateCommands(
 async function generate(artifact: Artifact, path: string): Promise<void> {
     try {
         if (!artifact.file.pathInProject) {
-            throw Error(`Could not create file ${artifact.file.name}`);
+            const errMsg = `[Miranum.Console] Could not create file ${artifact.file.name}`;
+            Logger.error(errMsg);
+            throw Error(errMsg);
         }
         const file = `${path}/${artifact.file.pathInProject}`.replace("//", "/");
         await saveFile(file, artifact.file.content);
