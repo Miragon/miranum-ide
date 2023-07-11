@@ -3,13 +3,12 @@ import { debounce, reverse, uniqBy } from "lodash";
 import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
-// bpmn-js
-import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 import {
     BpmnPropertiesPanelModule,
     BpmnPropertiesProviderModule,
     CamundaPlatformPropertiesProviderModule,
     ElementTemplatesPropertiesProviderModule,
+    ZeebePropertiesProviderModule,
 } from "bpmn-js-properties-panel";
 import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
 import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
@@ -26,7 +25,13 @@ import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
-let modeler: BpmnModeler;
+
+import BpmnModelerCamunda8 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
+import BpmnModelerCamunda7 from "camunda-bpmn-js/lib/base/Modeler";
+
+import ZeebeBpmnModdle from "zeebe-bpmn-moddle/resources/zeebe.json";
+
+let modeler: any;
 let contentController: ContentController;
 
 const stateController = new StateController<ModelerData>();
@@ -150,33 +155,66 @@ function setupListeners(): void {
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
-function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion = ExecutionPlatformVersion.Camunda7): void {
+function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion): void {
 
-    modeler = new BpmnModeler({
-        container: "#js-canvas",
-        keyboard: {
-            bindTo: document,
-        },
-        propertiesPanel: {
-            parent: "#js-properties-panel",
-        },
-        additionalModules: [
-        // Properties Panel
-            BpmnPropertiesPanelModule,
-            BpmnPropertiesProviderModule,
-            CamundaPlatformPropertiesProviderModule,
-            CamundaPlatformBehaviors,
-            miragonProviderModule,
-            // Element Templates
-            ElementTemplatesPropertiesProviderModule,
-            ElementTemplateChooserModule,
-            // Other Plugins
-            TokenSimulationModule,
-        ],
-        moddleExtensions: {
-            camunda: camundaModdleDescriptors,
-        },
-    });
+    switch (executionPlatformVersion) {
+        case ExecutionPlatformVersion.Camunda7: {
+            modeler = new BpmnModelerCamunda7({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    // Properties Panel
+                    BpmnPropertiesPanelModule,
+                    BpmnPropertiesProviderModule,
+                    CamundaPlatformPropertiesProviderModule,
+                    CamundaPlatformBehaviors,
+                    miragonProviderModule,
+                    // Element Templates
+                    ElementTemplatesPropertiesProviderModule,
+                    ElementTemplateChooserModule,
+                    // Other Plugins
+                    TokenSimulationModule,
+                ],
+                moddleExtensions: {
+                    camunda: camundaModdleDescriptors,
+                },
+            });
+            break;
+        }
+        case ExecutionPlatformVersion.Camunda8: {
+            modeler = new BpmnModelerCamunda8({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    // Properties Panel
+                    BpmnPropertiesPanelModule,
+                    BpmnPropertiesProviderModule,
+                    ZeebePropertiesProviderModule,
+                    CamundaPlatformPropertiesProviderModule,
+                    CamundaPlatformBehaviors,
+                    // miragonProviderModule,
+                    // Element Templates
+                    // ElementTemplatesPropertiesProviderModule,
+                    // ElementTemplateChooserModule,
+                    // Other Plugins
+                    TokenSimulationModule,
+                ],
+                moddleExtensions: {
+                    camunda: ZeebeBpmnModdle,
+                },
+            });
+        }
+    }
 
     contentController = new ContentController(modeler);
 
@@ -231,7 +269,7 @@ window.onload = async function () {
                     }
                 }
             }
-            return init(bpmn, files);
+            return init(bpmn, files, state.data.executionPlatformVersion);
         } else {
             postMessage(
                 MessageType.INITIALIZE,
@@ -239,7 +277,6 @@ window.onload = async function () {
                 "Webview was loaded successfully.",
             );
             const data = await initialized(); // await the response form the backend
-            console.log(data);
             if (instanceOfModelerData(data)) {
                 return init(data.bpmn, data.additionalFiles, data.executionPlatformVersion);
             }

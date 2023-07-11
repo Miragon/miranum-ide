@@ -61,6 +61,7 @@ declare module "bpmn-js-properties-panel" {
     export const BpmnPropertiesProviderModule: any;
     export const CamundaPlatformPropertiesProviderModule: any;
     export const ElementTemplatesPropertiesProviderModule: any;
+    export const ZeebePropertiesProviderModule: any;
     export const useService: any;
 }
 
