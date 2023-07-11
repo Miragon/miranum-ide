@@ -11,10 +11,16 @@ import {
     ZeebePropertiesProviderModule,
 } from "bpmn-js-properties-panel";
 import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
-import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
 import TokenSimulationModule from "bpmn-js-token-simulation";
+
+// Camunda 7 descriptor
+import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
+// Camunda 8 descriptor
+import ZeebeBpmnModdle from "zeebe-bpmn-moddle/resources/zeebe.json";
+
+import BpmnModeler from "camunda-bpmn-js/lib/base/Modeler";
 
 // css
 import "./styles.css";
@@ -25,11 +31,6 @@ import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
-
-import BpmnModelerCamunda8 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
-import BpmnModelerCamunda7 from "camunda-bpmn-js/lib/base/Modeler";
-
-import ZeebeBpmnModdle from "zeebe-bpmn-moddle/resources/zeebe.json";
 
 let modeler: any;
 let contentController: ContentController;
@@ -159,7 +160,7 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined, exec
 
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.Camunda7: {
-            modeler = new BpmnModelerCamunda7({
+            modeler = new BpmnModeler({
                 container: "#js-canvas",
                 keyboard: {
                     bindTo: document,
@@ -187,7 +188,7 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined, exec
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
-            modeler = new BpmnModelerCamunda8({
+            modeler = new BpmnModeler({
                 container: "#js-canvas",
                 keyboard: {
                     bindTo: document,
@@ -200,12 +201,6 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined, exec
                     BpmnPropertiesPanelModule,
                     BpmnPropertiesProviderModule,
                     ZeebePropertiesProviderModule,
-                    CamundaPlatformPropertiesProviderModule,
-                    CamundaPlatformBehaviors,
-                    // miragonProviderModule,
-                    // Element Templates
-                    // ElementTemplatesPropertiesProviderModule,
-                    // ElementTemplateChooserModule,
                     // Other Plugins
                     TokenSimulationModule,
                 ],
