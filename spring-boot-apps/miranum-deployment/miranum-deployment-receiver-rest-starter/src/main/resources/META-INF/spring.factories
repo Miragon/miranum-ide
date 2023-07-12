@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  io.miragon.miranum.deploymentreceiver.configuration.ReceiverRestConfiguration
+  io.miragon.miranum.deploymentreceiver.configuration.ReceiverRestAutoconfiguration

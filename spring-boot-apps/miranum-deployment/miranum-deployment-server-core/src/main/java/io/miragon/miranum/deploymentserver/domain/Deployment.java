@@ -2,6 +2,7 @@ package io.miragon.miranum.deploymentserver.domain;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
@@ -9,7 +10,7 @@ import java.util.List;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class Deployment {
+public class Deployment implements Serializable {
     private String file;
     private String type;
     private String namespace;

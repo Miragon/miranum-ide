@@ -1,13 +1,15 @@
 package io.miragon.miranum.deploymentserver.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@AllArgsConstructor
-@Builder
+import java.io.Serializable;
+
 @Data
-public class DeploymentStatus {
+@Builder
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+public class DeploymentStatus implements Serializable {
     private boolean success;
     private String message;
 }

@@ -23,15 +23,15 @@ public class DeploymentServerRestAutoconfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DeployArtifact deployArtifact(final DeployFilePort deployFilePort) {
-        return new DeployArtifactUseCase(deployFilePort);
+    @ConditionalOnProperty(name = "io.miranum.deploymentserver.rest.enabled", havingValue = "true")
+    public DeployFilePort deployFilePort() {
+        return new MiranumRestDeployment(this.deploymentServerRestProperties.getTargets());
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(name = "rest.enabled", havingValue = "true")
-    public DeployFilePort deployFilePort() {
-        return new MiranumRestDeployment(this.deploymentServerRestProperties.getTargets());
+    public DeployArtifact deployArtifact(final DeployFilePort deployFilePort) {
+        return new DeployArtifactUseCase(deployFilePort);
     }
 
 }

@@ -10,12 +10,12 @@ import org.mockito.Mockito;
 
 class DeploymentControllerTest {
 
-    private DeploymentController deploymentController;
+    private DeploymentReceiverController deploymentController;
     private final DeployFile deployFile = Mockito.mock(DeployFile.class);
 
     @BeforeEach
     void setUp() {
-        this.deploymentController = new DeploymentController(this.deployFile);
+        this.deploymentController = new DeploymentReceiverController(this.deployFile);
     }
 
     @Test

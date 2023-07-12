@@ -8,8 +8,8 @@ import java.util.Map;
 
 @Setter
 @Getter
-@ConfigurationProperties(prefix = "miranum.deploymentserver.rest")
+@ConfigurationProperties(prefix = "io.miranum.deploymentserver.rest")
 public class DeploymentServerRestProperties {
-    private boolean enabled = true;
+    private boolean enabled;
     private Map<String, Map<String, String>> targets;
 }

@@ -1,13 +1,23 @@
 io:
-    miragon:
-        miranum:
-            miranum-deployment-proxy:
-                deploymentHandlers:
-                    local: DryHandler
-                    dev: RestHandler
-                    test: RestHandler
-                    prod: RestHandler
+    miranum:
+        deploymentserver:
+            rest:
+                enabled: true
                 targets:
-                    dev: http://localhost:39146
-                    test: http://localhost:39146
-                    prod: http://localhost:39146
+                    dev:
+                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_PORT}/rest/deployment'
+                    test:
+                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_PORT}/rest/deployment'
+                    prod:
+                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_PORT}/rest/deployment'
+server:
+    port: '${MIRANUM_DEPLOYMENT_SERVICE_PORT:8080}'

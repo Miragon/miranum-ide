@@ -8,14 +8,13 @@ import io.miragon.miranum.deploymentserver.adapter.out.MiranumEmbeddedDeployment
 import io.miragon.miranum.deploymentserver.application.ports.in.DeployArtifact;
 import io.miragon.miranum.deploymentserver.application.ports.out.DeployFilePort;
 import io.miragon.miranum.deploymentserver.application.usecase.DeployArtifactUseCase;
-import io.miragon.miranum.deploymentserver.mapper.DeploymentMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ComponentScan(basePackages = {"io.miragon.miranum.deploymentserver.adapter.out", "io.miragon.miranum.deploymentserver.adapter.in.rest"})
+@ComponentScan(basePackages = {"io.miragon.miranum.deploymentserver.adapter.out", "io.miragon.miranum.deploymentserver.adapter.in.rest", "io.miragon.miranum.deploymentserver.mapper"})
 public class DeploymentServerEmbeddedAutoconfiguration {
 
     @Bean
@@ -26,8 +25,8 @@ public class DeploymentServerEmbeddedAutoconfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DeployFilePort deployFilePort(final DeployFile deployFile, final DeploymentMapper deploymentMapper) {
-        return new MiranumEmbeddedDeployment(deployFile, deploymentMapper);
+    public DeployFilePort deployFilePort(final DeployFile deployFile) {
+        return new MiranumEmbeddedDeployment(deployFile);
     }
 
     @ConditionalOnMissingBean

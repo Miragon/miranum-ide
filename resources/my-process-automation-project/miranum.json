@@ -2,12 +2,36 @@
   "projectVersion": "1.0.0",
   "name": "my-process-automation-project",
   "workspace": [
-    { "type": "bpmn", "path": "", "extension": ".bpmn" },
-    { "type": "dmn", "path": "", "extension": ".dmn" },
-    { "type": "form", "path": "forms", "extension": ".form" },
-    { "type": "form", "path": "my-other-forms", "extension": ".json" },
-    { "type": "element-template", "path": "my-templates", "extension": ".json" },
-    { "type": "config", "path": "configs", "extension": ".config.json" }
+    {
+      "type": "bpmn",
+      "path": "",
+      "extension": ".bpmn"
+    },
+    {
+      "type": "dmn",
+      "path": "",
+      "extension": ".dmn"
+    },
+    {
+      "type": "form",
+      "path": "forms",
+      "extension": ".form"
+    },
+    {
+      "type": "form",
+      "path": "my-other-forms",
+      "extension": ".json"
+    },
+    {
+      "type": "element-template",
+      "path": "my-templates",
+      "extension": ".json"
+    },
+    {
+      "type": "config",
+      "path": "configs",
+      "extension": ".config.json"
+    }
   ],
   "deployment": [
     {
@@ -15,15 +39,19 @@
       "targetEnvironments": [
         {
           "name": "local",
-          "url": "http://localhost:8080"
+          "url": "http://localhost:9002"
         },
         {
           "name": "dev",
-          "url": "http://localhost:8080"
+          "url": "http://localhost:9001"
         },
         {
           "name": "test",
-          "url": "http://localhost:8080"
+          "url": "http://localhost:9001"
+        },
+        {
+          "name": "prod",
+          "url": "http://localhost:9001"
         }
       ]
     }

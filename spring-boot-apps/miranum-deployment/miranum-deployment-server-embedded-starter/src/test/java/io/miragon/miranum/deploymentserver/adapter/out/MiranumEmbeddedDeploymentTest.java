@@ -4,7 +4,6 @@ import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
 import io.miragon.miranum.deploymentserver.application.ports.out.DeployFilePort;
 import io.miragon.miranum.deploymentserver.domain.Deployment;
 import io.miragon.miranum.deploymentserver.domain.DeploymentStatus;
-import io.miragon.miranum.deploymentserver.mapper.DeploymentMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,11 +13,10 @@ class MiranumEmbeddedDeploymentTest {
 
     private DeployFilePort miranumEmbeddedDeployment;
     private final DeployFile deployFile = Mockito.mock(DeployFile.class);
-    private final DeploymentMapper mapper = Mockito.mock(DeploymentMapper.class);
 
     @BeforeEach
     void setup() {
-        miranumEmbeddedDeployment = new MiranumEmbeddedDeployment(this.deployFile, this.mapper);
+        miranumEmbeddedDeployment = new MiranumEmbeddedDeployment(this.deployFile);
     }
 
     @Test
@@ -44,9 +42,6 @@ class MiranumEmbeddedDeploymentTest {
             .success(deploymentStatus.isSuccess())
             .message(deploymentStatus.getMessage())
             .build();
-
-        Mockito.when(this.mapper.mapDeployment(deployment)).thenReturn(mappedDeployment);
-        Mockito.when(this.mapper.mapDeploymentStatus(mappedDeploymentStatus)).thenReturn(deploymentStatus);
 
         Mockito.when(deployFile.deploy(mappedDeployment)).thenReturn(mappedDeploymentStatus);
 

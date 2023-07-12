@@ -19,11 +19,25 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Deployment starter -->
+        <dependency>
+            <groupId>io.miragon.miranum</groupId>
+            <artifactId>miranum-deployment-receiver-rest-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Deployment embedded server starter -->
+        <dependency>
+            <groupId>io.miragon.miranum</groupId>
+            <artifactId>miranum-deployment-server-embedded-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
