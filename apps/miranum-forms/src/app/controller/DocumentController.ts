@@ -21,13 +21,36 @@ export class DocumentController<ContentType extends FormBuilderData>
     /** Array of all subscribed components. */
     private observers: Observer[] = [];
 
-    /** @hidden */
-    private _document?: TextDocument;
-
     public constructor() {
         Logger.info(
             "[Miranum.JsonSchema.DocumentController] DocumentController was created.",
         );
+    }
+
+    /** @hidden */
+    private _document?: TextDocument;
+
+    public get document(): TextDocument {
+        if (!this._document) {
+            throw Error("Document is not set!");
+        }
+        return this._document;
+    }
+
+    /**
+     * Set a new document.
+     * @param document The new document.
+     */
+    public set document(document: TextDocument) {
+        this._document = document;
+        this.notify();
+    }
+
+    /**
+     * Get the content of the active document.
+     **/
+    public get content(): ContentType {
+        return this.getJsonSchemaFromString(this.document.getText());
     }
 
     /**
@@ -65,35 +88,12 @@ export class DocumentController<ContentType extends FormBuilderData>
         );
     }
 
-    /**
-     * Set a new document.
-     * @param document The new document.
-     */
-    public set document(document: TextDocument) {
-        this._document = document;
-        this.notify();
-    }
-
-    public get document(): TextDocument {
-        if (!this._document) {
-            throw Error("Document is not set!");
-        }
-        return this._document;
-    }
-
-    /**
-     * Get the content of the active document.
-     **/
-    public get content(): ContentType {
-        return this.getJsonSchemaFromString(this.document.getText());
-    }
-
     public async notify() {
         for (const observer of this.observers) {
             try {
                 if (observer instanceof PreviewComponent) {
                     await observer.update({
-                        type: `${observer.viewType}.${MessageType.UPDATEFROMEXTENSION}`,
+                        type: `${observer.viewType}.${MessageType.MSGFROMEXTENSION}`,
                         data: this.content,
                     });
                 } else if (observer instanceof TextEditorComponent) {

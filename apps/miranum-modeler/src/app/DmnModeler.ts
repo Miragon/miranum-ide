@@ -104,7 +104,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
                             await postMessage(MessageType.RESTORE);
                             break;
                         }
-                        case `${DmnModeler.VIEWTYPE}.${MessageType.UPDATEFROMWEBVIEW}`: {
+                        case `${DmnModeler.VIEWTYPE}.${MessageType.MSGFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
                             if (event.data?.dmn) {
                                 await this.write(document, event.data.dmn);
@@ -251,7 +251,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
                             break;
                         }
                         case undefined: {
-                            postMessage(MessageType.UPDATEFROMEXTENSION);
+                            postMessage(MessageType.MSGFROMEXTENSION);
                             break;
                         }
                     }

@@ -128,7 +128,7 @@ async function sendChanges() {
 
     const dmn = await contentController.exportDiagram();
     stateController.updateState({ data: { dmn } });
-    postMessage(MessageType.UPDATEFROMWEBVIEW, { dmn }, undefined);
+    postMessage(MessageType.MSGFROMWEBVIEW, { dmn }, undefined);
 }
 
 function setupListeners(): void {
@@ -146,7 +146,7 @@ function setupListeners(): void {
                 }
                 case `dmn-modeler.${MessageType.UNDO}`:
                 case `dmn-modeler.${MessageType.REDO}`:
-                case `dmn-modeler.${MessageType.UPDATEFROMEXTENSION}`: {
+                case `dmn-modeler.${MessageType.MSGFROMEXTENSION}`: {
                     isUpdateFromExtension = true;
                     updateXML(message.data.dmn);
                     break;
@@ -236,7 +236,7 @@ function createList(messages: ErrorArray | WarningArray): string {
  */
 function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
-        case MessageType.UPDATEFROMWEBVIEW: {
+        case MessageType.MSGFROMWEBVIEW: {
             stateController.postMessage({
                 type: `dmn-modeler.${type}`,
                 data,

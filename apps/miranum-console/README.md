@@ -44,6 +44,7 @@ It provides a UI that helps you to scaffold a new digitization project and deplo
 ## Features
 
 * Scaffolding your digitization project.
+* Manage your project-files inside a custom tree view.
 * Deploy your process artefacts.
 
 ## Contributing
