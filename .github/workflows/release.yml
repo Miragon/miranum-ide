@@ -8,33 +8,40 @@ on:
         required: true
         default: 'release/XXX'
       miranum-extension-pack:
-        description: 'Release miranum-extension-pack app (y/n)?'
+        description: 'Release miranum-extension-pack app?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       miranum-cli:
-        description: 'Release miranum-cli app (y/n)?'
+        description: 'Release miranum-cli app?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       miranum-console:
-        description: 'Release miranum-console app (y/n)?'
+        description: 'Release miranum-console app?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       miranum-forms:
-        description: 'Release miranum-forms app (y/n)?'
+        description: 'Release miranum-forms app?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       miranum-modeler:
-        description: 'Release miranum-modeler app (y/n)?'
+        description: 'Release miranum-modeler app?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       miranum-core:
-        description: 'Release miranum-core (y/n)?'
+        description: 'Release miranum-core?'
+        type: boolean
         required: true
-        default: 'y'
+        default: true
       spring-boot-apps:
-        description: 'Release spring boot services (y/n)?'
+        description: 'Release spring boot services?'
+        type: boolean
         required: true
-        default: 'n'
+        default: false
 
 jobs:
   build:
@@ -119,7 +126,7 @@ jobs:
 
   # miranum-extension-pack
   publish-miranum-extension-pack:
-    if: github.event.inputs.miranum-extension-pack == 'y'
+    if: github.event.inputs.miranum-extension-pack == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -142,7 +149,7 @@ jobs:
 
   # miranum-console
   publish-miranum-console:
-    if: github.event.inputs.miranum-console == 'y'
+    if: github.event.inputs.miranum-console == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -167,7 +174,7 @@ jobs:
 
   # miranum-forms
   publish-miranum-forms:
-    if: github.event.inputs.miranum-forms == 'y'
+    if: github.event.inputs.miranum-forms == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -192,7 +199,7 @@ jobs:
 
   # miranum-modeler
   publish-miranum-modeler:
-    if: github.event.inputs.miranum-modeler == 'y'
+    if: github.event.inputs.miranum-modeler == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -217,7 +224,7 @@ jobs:
 
   # miranum-cli
   publish-miranum-cli:
-    if: github.event.inputs.miranum-cli == 'y'
+    if: github.event.inputs.miranum-cli == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -238,7 +245,7 @@ jobs:
 
   # miranum-core
   publish-miranum-core:
-    if: github.event.inputs.miranum-core == 'y'
+    if: github.event.inputs.miranum-core == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -258,7 +265,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
   publish-spring-boot-apps:
-    if: github.event.inputs.spring-boot-apps == 'y'
+    if: github.event.inputs.spring-boot-apps == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
