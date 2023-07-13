@@ -16,6 +16,8 @@ jobs:
                 run: npm run lint
             -   name: Test
                 run: npm run test
+            -   name: Build
+                run: npm run build
             -   name: Upload coverage to Codecov
                 uses: codecov/codecov-action@v3
                 with:
@@ -25,5 +27,3 @@ jobs:
                     flags: unittests
                     name: miranum-ide
                     verbose: true
-            -   name: Build
-                run: npm run build
