@@ -31,7 +31,7 @@
     "@nx/workspace": "16.3.2",
     "@nxrocks/nx-spring-boot": "^8.0.3",
     "@openapitools/openapi-generator-cli": "^2.6.0",
-    "@testing-library/react": "13.4.0",
+    "@testing-library/react": "14.0.0",
     "@types/jest": "29.5.1",
     "@types/lodash": "^4.14.194",
     "@types/node": "18.15.11",
