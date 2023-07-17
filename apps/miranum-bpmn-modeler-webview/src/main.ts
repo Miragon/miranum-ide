@@ -1,30 +1,14 @@
-import {
-    ContentController,
-    ImportWarning,
-    instanceOfModelerData,
-    setFormKeys,
-} from "./app";
+import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys } from "./app";
 import { debounce, reverse, uniqBy } from "lodash";
-import {
-    FolderContent,
-    MessageType,
-    StateController,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
-// bpmn-js
-import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
-import {
-    BpmnPropertiesPanelModule,
-    BpmnPropertiesProviderModule,
-    CamundaPlatformPropertiesProviderModule,
-    ElementTemplatesPropertiesProviderModule,
-} from "bpmn-js-properties-panel";
-import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
-import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
 import TokenSimulationModule from "bpmn-js-token-simulation";
+
+import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
+import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 
 // css
 import "./styles.css";
@@ -34,35 +18,13 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+import Modeler from "camunda-bpmn-js/lib/base/Modeler";
+import { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 
-const modeler = new BpmnModeler({
-    container: "#js-canvas",
-    keyboard: {
-        bindTo: document,
-    },
-    propertiesPanel: {
-        parent: "#js-properties-panel",
-    },
-    additionalModules: [
-        // Properties Panel
-        BpmnPropertiesPanelModule,
-        BpmnPropertiesProviderModule,
-        CamundaPlatformPropertiesProviderModule,
-        CamundaPlatformBehaviors,
-        miragonProviderModule,
-        // Element Templates
-        ElementTemplatesPropertiesProviderModule,
-        ElementTemplateChooserModule,
-        // Other Plugins
-        TokenSimulationModule,
-    ],
-    moddleExtensions: {
-        camunda: camundaModdleDescriptors,
-    },
-});
+let modeler: Modeler;
+let contentController: ContentController;
 
 const stateController = new StateController<ModelerData>();
-const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
 
@@ -180,7 +142,11 @@ function setupListeners(): void {
         }
     });
 
-    modeler.on("elementTemplates.errors", (event) => {
+    postMessage(MessageType.INFO, undefined, "Listeners are set.");
+}
+
+function setupBpmnModelerListener() {
+    modeler.on("elementTemplates.errors", (event: any) => {
         const { errors } = event;
         postMessage(
             MessageType.ERROR,
@@ -192,13 +158,22 @@ function setupListeners(): void {
     });
 
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
-
-    postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
-function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
+function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion | undefined): void {
+    if (executionPlatformVersion === undefined) {
+        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
+        return;
+    }
+    modeler = createBpmnModeler(executionPlatformVersion);
+    setupBpmnModelerListener();
+
+    contentController = new ContentController(modeler);
+
+    stateController.updateState({ data: { executionPlatformVersion } } );
     openXML(bpmn);
     setFiles(files);
+
     postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
 
@@ -233,7 +208,7 @@ window.onload = async function () {
                     }
                 }
             }
-            return init(bpmn, files);
+            return init(bpmn, files, state.data.executionPlatformVersion);
         } else {
             postMessage(
                 MessageType.INITIALIZE,
@@ -242,7 +217,7 @@ window.onload = async function () {
             );
             const data = await initialized(); // await the response form the backend
             if (instanceOfModelerData(data)) {
-                return init(data.bpmn, data.additionalFiles);
+                return init(data.bpmn, data.additionalFiles, data.executionPlatformVersion);
             }
         }
     } catch (error) {
@@ -338,6 +313,51 @@ function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
             rejectSet.add(reject);
             debounced(args);
         }) as ReturnType<F>;
+}
+
+function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
+    let bpmnModeler;
+    const commonModules = [
+        // Token Simulation
+        TokenSimulationModule,
+        // Element Templates
+        ElementTemplateChooserModule,
+    ];
+    switch (executionPlatformVersion) {
+        case ExecutionPlatformVersion.None:
+        case ExecutionPlatformVersion.Camunda7: {
+            bpmnModeler = new BpmnModeler7({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    ...commonModules,
+                    miragonProviderModule,
+                ],
+            });
+            break;
+        }
+        case ExecutionPlatformVersion.Camunda8: {
+            bpmnModeler = new BpmnModeler8({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    ...commonModules,
+                ],
+            });
+            break;
+        }
+    }
+    return bpmnModeler;
 }
 
 // <---------------------------- Helper Functions ------------------------------

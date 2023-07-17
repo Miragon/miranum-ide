@@ -38,14 +38,15 @@ Please find our official docs [here](https://miranum.com/docs/components/miranum
 
 
 **Miranum Modeler** is one component of our collection of *VS Code Plugins*.
-It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7. With the version >= 0.4.3 you can now
-create and edit DMN 1.3 diagrams.
+It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7 and 8.
+Editing Camunda Platform 8 specific diagram is still under development and therefore a bit more restricted.
+With the version >= 0.4.3 you can now create and edit DMN 1.3 diagrams.
 
 ![create-process.gif](https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-modeler/docs/create-process.gif?raw=true)
 
 ## Features
 
-* Create and edit BPMN processes and enhance them with technical attributes for Camunda Platform 7.
+* Create and edit BPMN processes for Camunda Platform 7 and 8 and enhance them with technical attributes.
 * Create and edit decision tables.
 * Use the text editor for changes directly in the XML file.
 * Use the integrated *Token Simulation* to simulate your process flow.
