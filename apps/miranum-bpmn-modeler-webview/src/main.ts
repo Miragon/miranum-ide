@@ -74,8 +74,6 @@ function setFiles(folders: FolderContent[] | undefined): void {
     for (const folder of folders) {
         switch (folder.type) {
             case "element-template": {
-                console.log(modeler.get("elementTemplatesLoader"));
-                console.log(folder.files);
                 modeler.get("elementTemplatesLoader").setTemplates(folder.files);
                 stateController.updateState({
                     data: {
