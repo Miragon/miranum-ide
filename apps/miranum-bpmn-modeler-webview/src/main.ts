@@ -19,10 +19,7 @@ import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
-import {
-    ErrorArray,
-    WarningArray,
-} from "bpmn-js/lib/Modeler";
+import { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 
 let modeler: Modeler;
 let contentController: ContentController;
@@ -148,31 +145,34 @@ function setupListeners(): void {
     postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
 
-function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion | undefined): void {
-    if (executionPlatformVersion === undefined) {
-        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
-        return;
-    }
-    modeler = createBpmnModeler(executionPlatformVersion);
-
-    contentController = new ContentController(modeler);
-
-    stateController.updateState({ data: { executionPlatformVersion } } );
-    openXML(bpmn);
-    setFiles(files);
-
+function setupBpmnModelerListener() {
     modeler.on("elementTemplates.errors", (event: any) => {
         const { errors } = event;
         postMessage(
             MessageType.ERROR,
             undefined,
             `Failed to load element templates with following errors: ${createList(
-                errors,
-            )}`,
+                errors
+            )}`
         );
     });
 
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
+}
+
+function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion | undefined): void {
+    if (executionPlatformVersion === undefined) {
+        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
+        return;
+    }
+    modeler = createBpmnModeler(executionPlatformVersion);
+    setupBpmnModelerListener();
+
+    contentController = new ContentController(modeler);
+
+    stateController.updateState({ data: { executionPlatformVersion } } );
+    openXML(bpmn);
+    setFiles(files);
 
     postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
