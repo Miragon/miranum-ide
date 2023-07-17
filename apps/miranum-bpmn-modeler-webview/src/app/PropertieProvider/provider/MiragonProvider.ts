@@ -1,7 +1,7 @@
 import { is } from "bpmn-js/lib/util/ModelUtil";
 import formStartProp from "./parts/FormStartProp";
 import formUserProp from "./parts/FormUserProp";
-import { getFormKeys } from "../../utils";
+import { getFormKeys } from "../../formKeys";
 
 const LOW_PRIORITY = 500;
 

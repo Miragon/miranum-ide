@@ -1,14 +1,23 @@
-import { ContentController, ImportWarning, instanceOfModelerData, setFormKeys } from "./app";
-import { debounce, reverse, uniqBy } from "lodash";
-import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { reverse, uniqBy } from "lodash";
+import {
+    asyncDebounce,
+    FolderContent,
+    MessageType,
+    StateController,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+import {
+    ExecutionPlatformVersion,
+    ModelerData,
+} from "@miranum-ide/vscode/shared/miranum-modeler";
+import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
 
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider";
 import TokenSimulationModule from "bpmn-js-token-simulation";
-
+import miragonProviderModule from "./app/PropertieProvider/provider";
+import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
 import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
+import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 
 // css
 import "./styles.css";
@@ -18,8 +27,6 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import Modeler from "camunda-bpmn-js/lib/base/Modeler";
-import { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
 
 let modeler: Modeler;
 let contentController: ContentController;
@@ -32,7 +39,7 @@ const updateXML = asyncDebounce(openXML, 100);
 
 async function openXML(bpmn: string | undefined) {
     try {
-        let result: ImportWarning;
+        let result: ImportXMLResult;
         if (!bpmn) {
             result = await contentController.newDiagram();
         } else {
@@ -40,23 +47,19 @@ async function openXML(bpmn: string | undefined) {
         }
         stateController.updateState({ data: { bpmn } });
 
-        const warnings =
-            result.warnings.length > 0
-                ? `with following warnings: ${createList(result.warnings)}`
-                : "";
-        postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
-    } catch (error) {
-        if (error instanceof ImportWarning) {
-            const warnings =
-                error.warnings.length > 0
-                    ? `with following warnings: ${createList(error.warnings)}`
-                    : "";
-            postMessage(MessageType.ERROR, undefined, `${error.message} ${warnings}`);
-        } else {
-            const message =
-                error instanceof Error ? error.message : "Failed to open xml.";
-            postMessage(MessageType.ERROR, undefined, message);
+        if (result.warnings.length > 0) {
+            const warnings = `with following warnings: ${createErrorList(
+                result.warnings,
+            )}`;
+            postMessage(MessageType.INFO, undefined, warnings);
         }
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : `${error}`;
+        postMessage(
+            MessageType.ERROR,
+            undefined,
+            `Unable to open/update XML\n${message}`,
+        );
     }
 }
 
@@ -151,7 +154,7 @@ function setupBpmnModelerListener() {
         postMessage(
             MessageType.ERROR,
             undefined,
-            `Failed to load element templates with following errors: ${createList(
+            `Failed to load element templates with following errors: ${createErrorList(
                 errors,
             )}`,
         );
@@ -160,7 +163,11 @@ function setupBpmnModelerListener() {
     modeler.get("eventBus").on("commandStack.changed", sendChanges);
 }
 
-function init(bpmn: string | undefined, files: FolderContent[] | undefined, executionPlatformVersion: ExecutionPlatformVersion | undefined): void {
+function init(
+    bpmn: string | undefined,
+    files: FolderContent[] | undefined,
+    executionPlatformVersion: ExecutionPlatformVersion | undefined,
+): void {
     if (executionPlatformVersion === undefined) {
         postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
         return;
@@ -170,7 +177,7 @@ function init(bpmn: string | undefined, files: FolderContent[] | undefined, exec
 
     contentController = new ContentController(modeler);
 
-    stateController.updateState({ data: { executionPlatformVersion } } );
+    stateController.updateState({ data: { executionPlatformVersion } });
     openXML(bpmn);
     setFiles(files);
 
@@ -217,12 +224,15 @@ window.onload = async function () {
             );
             const data = await initialized(); // await the response form the backend
             if (instanceOfModelerData(data)) {
-                return init(data.bpmn, data.additionalFiles, data.executionPlatformVersion);
+                return init(
+                    data.bpmn,
+                    data.additionalFiles,
+                    data.executionPlatformVersion,
+                );
             }
         }
-    } catch (error) {
-        const message =
-            error instanceof Error ? error.message : "Failed to initialize webview.";
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : `${error}`;
         postMessage(MessageType.ERROR, undefined, message);
     }
 };
@@ -234,11 +244,11 @@ setupListeners();
  * Create a list of information that will be sent to the backend and get logged.
  * @param messages A list of further information.
  */
-function createList(messages: ErrorArray | WarningArray): string {
+function createErrorList(messages: string[]): string {
     let msg = "";
     if (messages && messages.length > 0) {
         for (const message of messages) {
-            msg += `\n- ${message.message}`;
+            msg += `\n- ${message}`;
         }
     }
     return msg;
@@ -283,46 +293,10 @@ function initialized() {
 
 let initialize: any = null;
 
-/**
- * Makes the [lodash.debounce](https://lodash.com/docs/4.17.15#debounce) function async-friendly
- * @param func The function to debounce
- * @param wait The number of milliseconds to delay
- */
-function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
-    func: F,
-    wait?: number,
-) {
-    const resolveSet = new Set<(p: any) => void>();
-    const rejectSet = new Set<(p: any) => void>();
-
-    const debounced = debounce((args: Parameters<F>) => {
-        func(...args)
-            .then((...res) => {
-                resolveSet.forEach((resolve) => resolve(...res));
-                resolveSet.clear();
-            })
-            .catch((...res) => {
-                rejectSet.forEach((reject) => reject(...res));
-                rejectSet.clear();
-            });
-    }, wait);
-
-    return (...args: Parameters<F>): ReturnType<F> =>
-        new Promise((resolve, reject) => {
-            resolveSet.add(resolve);
-            rejectSet.add(reject);
-            debounced(args);
-        }) as ReturnType<F>;
-}
-
 function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
     let bpmnModeler;
-    const commonModules = [
-        // Token Simulation
-        TokenSimulationModule,
-        // Element Templates
-        ElementTemplateChooserModule,
-    ];
+    const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.None:
         case ExecutionPlatformVersion.Camunda7: {
@@ -334,10 +308,7 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
-                additionalModules: [
-                    ...commonModules,
-                    miragonProviderModule,
-                ],
+                additionalModules: [...commonModules, miragonProviderModule],
             });
             break;
         }
@@ -350,13 +321,12 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
-                additionalModules: [
-                    ...commonModules,
-                ],
+                additionalModules: [...commonModules],
             });
             break;
         }
     }
+
     return bpmnModeler;
 }
 
