@@ -74,6 +74,8 @@ function setFiles(folders: FolderContent[] | undefined): void {
     for (const folder of folders) {
         switch (folder.type) {
             case "element-template": {
+                console.log(modeler.get("elementTemplatesLoader"));
+                console.log(folder.files);
                 modeler.get("elementTemplatesLoader").setTemplates(folder.files);
                 stateController.updateState({
                     data: {
@@ -152,8 +154,8 @@ function setupBpmnModelerListener() {
             MessageType.ERROR,
             undefined,
             `Failed to load element templates with following errors: ${createList(
-                errors
-            )}`
+                errors,
+            )}`,
         );
     });
 
@@ -320,6 +322,8 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
     const commonModules = [
         // Token Simulation
         TokenSimulationModule,
+        // Element Templates
+        ElementTemplateChooserModule,
     ];
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.None:
@@ -334,7 +338,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 },
                 additionalModules: [
                     ...commonModules,
-                    ElementTemplateChooserModule,
                     miragonProviderModule,
                 ],
             });
@@ -351,9 +354,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 },
                 additionalModules: [
                     ...commonModules,
-                    ElementTemplateChooserModule,
-                    // Token Simulation
-                    TokenSimulationModule,
                 ],
             });
             break;
