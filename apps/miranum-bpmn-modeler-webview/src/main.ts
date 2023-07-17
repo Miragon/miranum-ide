@@ -3,24 +3,12 @@ import { debounce, reverse, uniqBy } from "lodash";
 import { FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 
-import {
-    BpmnPropertiesPanelModule,
-    BpmnPropertiesProviderModule,
-    CamundaPlatformPropertiesProviderModule,
-    ElementTemplatesPropertiesProviderModule,
-    ZeebePropertiesProviderModule,
-} from "bpmn-js-properties-panel";
-import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 
-// Camunda 7 descriptor
-import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
-// Camunda 8 descriptor
-import ZeebeBpmnModdle from "zeebe-bpmn-moddle/resources/zeebe.json";
-
-import BpmnModeler from "camunda-bpmn-js/lib/base/Modeler";
+import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
+import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 
 // css
 import "./styles.css";
@@ -30,9 +18,13 @@ import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
 import "bpmn-js-properties-panel/dist/assets/element-templates.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
+import Modeler from "camunda-bpmn-js/lib/base/Modeler";
+import {
+    ErrorArray,
+    WarningArray,
+} from "bpmn-js/lib/Modeler";
 
-let modeler: BpmnModeler;
+let modeler: Modeler;
 let contentController: ContentController;
 
 const stateController = new StateController<ModelerData>();
@@ -323,12 +315,16 @@ function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
         }) as ReturnType<F>;
 }
 
-function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): BpmnModeler {
+function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
     let bpmnModeler;
+    const commonModules = [
+        // Token Simulation
+        TokenSimulationModule,
+    ];
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.None:
         case ExecutionPlatformVersion.Camunda7: {
-            bpmnModeler = new BpmnModeler({
+            bpmnModeler = new BpmnModeler7({
                 container: "#js-canvas",
                 keyboard: {
                     bindTo: document,
@@ -337,26 +333,15 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                     parent: "#js-properties-panel",
                 },
                 additionalModules: [
-                    // Properties Panel
-                    BpmnPropertiesPanelModule,
-                    BpmnPropertiesProviderModule,
-                    CamundaPlatformPropertiesProviderModule,
-                    CamundaPlatformBehaviors,
-                    miragonProviderModule,
-                    // Element Templates
-                    ElementTemplatesPropertiesProviderModule,
+                    ...commonModules,
                     ElementTemplateChooserModule,
-                    // Other Plugins
-                    TokenSimulationModule,
+                    miragonProviderModule,
                 ],
-                moddleExtensions: {
-                    camunda: camundaModdleDescriptors,
-                },
             });
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
-            bpmnModeler = new BpmnModeler({
+            bpmnModeler = new BpmnModeler8({
                 container: "#js-canvas",
                 keyboard: {
                     bindTo: document,
@@ -365,16 +350,11 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                     parent: "#js-properties-panel",
                 },
                 additionalModules: [
-                    // Properties Panel
-                    BpmnPropertiesPanelModule,
-                    BpmnPropertiesProviderModule,
-                    ZeebePropertiesProviderModule,
-                    // Other Plugins
+                    ...commonModules,
+                    ElementTemplateChooserModule,
+                    // Token Simulation
                     TokenSimulationModule,
                 ],
-                moddleExtensions: {
-                    camunda: ZeebeBpmnModdle,
-                },
             });
             break;
         }
