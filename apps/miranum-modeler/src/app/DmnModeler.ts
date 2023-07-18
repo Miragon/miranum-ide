@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import { Uri, window } from "vscode";
-import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
+import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { TextEditor, Watcher } from "./lib";
 import { debounce } from "lodash";
 import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 export class DmnModeler implements vscode.CustomTextEditorProvider {
     public static readonly VIEWTYPE = "dmn-modeler";
@@ -421,14 +422,14 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
         return Uri.parse(documentParts.join("/"));
     }
 
-    private async getWorkspace(projectUri: Uri): Promise<WorkspaceFolder[]> {
+    private async getWorkspace(projectUri: Uri): Promise<MiranumWorkspaceItem[]> {
         async function getMiranumJson() {
             // eslint-disable-next-line no-useless-catch
             try {
                 const file = await vscode.workspace.fs.readFile(
                     vscode.Uri.joinPath(projectUri, "miranum.json"),
                 );
-                const workspace: WorkspaceFolder[] = JSON.parse(
+                const workspace: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),
                 ).workspace;
                 return workspace;
@@ -437,7 +438,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
             }
         }
 
-        function getDefaultWorkspace(): WorkspaceFolder[] {
+        function getDefaultWorkspace(): MiranumWorkspaceItem[] {
             return [
                 {
                     type: "element-template",
