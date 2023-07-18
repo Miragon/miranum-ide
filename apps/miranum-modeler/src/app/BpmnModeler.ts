@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
 import { Uri, window } from "vscode";
 import { debounce } from "lodash";
-import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
+import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import {
+    ExecutionPlatformVersion,
+    ModelerData,
+} from "@miranum-ide/vscode/shared/miranum-modeler";
 import { TextEditor, Watcher } from "./lib";
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 export class BpmnModeler implements vscode.CustomTextEditorProvider {
     public static readonly VIEWTYPE = "bpmn-modeler";
@@ -143,7 +147,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             },
         );
 
-        const getModelerExecutionPlatformVersion = (xmlString: string): ExecutionPlatformVersion => {
+        const getModelerExecutionPlatformVersion = (
+            xmlString: string,
+        ): ExecutionPlatformVersion => {
             const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
 
             const match = xmlString.match(regex);
@@ -165,7 +171,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
                         data = {
-                            executionPlatformVersion: getModelerExecutionPlatformVersion(document.getText()),
+                            executionPlatformVersion: getModelerExecutionPlatformVersion(
+                                document.getText(),
+                            ),
                             bpmn: document.getText(),
                             additionalFiles: await Reader.get().getAllFiles(
                                 projectUri,
@@ -177,7 +185,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     case MessageType.RESTORE: {
                         data = {
                             bpmn: isBuffer ? document.getText() : undefined,
-                            executionPlatformVersion: isBuffer ? getModelerExecutionPlatformVersion(document.getText()) : ExecutionPlatformVersion.None,
+                            executionPlatformVersion: isBuffer
+                                ? getModelerExecutionPlatformVersion(document.getText())
+                                : ExecutionPlatformVersion.None,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
                                 : undefined,
@@ -187,7 +197,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     default: {
                         data = {
                             bpmn: document.getText(),
-                            executionPlatformVersion: getModelerExecutionPlatformVersion(document.getText()),
+                            executionPlatformVersion: getModelerExecutionPlatformVersion(
+                                document.getText(),
+                            ),
                         };
                         break;
                     }
@@ -443,14 +455,14 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         return Uri.parse(documentParts.join("/"));
     }
 
-    private async getWorkspace(projectUri: Uri): Promise<WorkspaceFolder[]> {
+    private async getWorkspace(projectUri: Uri): Promise<MiranumWorkspaceItem[]> {
         async function getMiranumJson() {
             // eslint-disable-next-line no-useless-catch
             try {
                 const file = await vscode.workspace.fs.readFile(
                     vscode.Uri.joinPath(projectUri, "miranum.json"),
                 );
-                const workspace: WorkspaceFolder[] = JSON.parse(
+                const workspace: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),
                 ).workspace;
                 return workspace;
@@ -459,7 +471,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             }
         }
 
-        function getDefaultWorkspace(): WorkspaceFolder[] {
+        function getDefaultWorkspace(): MiranumWorkspaceItem[] {
             return [
                 {
                     type: "element-template",
