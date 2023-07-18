@@ -3,21 +3,19 @@ import { asyncDebounce, FolderContent, MessageType, StateController } from "@mir
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
-import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import TokenSimulationModule from "bpmn-js-token-simulation";
-import miragonProviderModule from "./app/PropertieProvider/provider";
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
 import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
+import TokenSimulationModule from "bpmn-js-token-simulation";
+import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
+import miragonProviderModule from "./app/PropertieProvider/provider";
 // css
 import "./styles.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
-import "bpmn-js-properties-panel/dist/assets/element-templates.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
+import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 
 //
 // Global objects
