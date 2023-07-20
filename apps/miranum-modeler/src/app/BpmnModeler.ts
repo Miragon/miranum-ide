@@ -347,7 +347,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
                     style-src ${webview.cspSource} 'unsafe-inline';
                     img-src ${webview.cspSource} data:;
-                    font-src ${webview.cspSource};
+                    font-src ${webview.cspSource} data:;
                     script-src 'nonce-${nonce}';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>

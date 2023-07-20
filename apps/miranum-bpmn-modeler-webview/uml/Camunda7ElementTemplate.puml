@@ -1,0 +1,95 @@
+@startuml
+class Camunda7ElementTemplate {
+    - name : string
+    - id : string
+    - description? : string
+    - version? : number
+    - isDefault? : boolean
+    - appliesTo : string[]
+    - properties : Property[]
+    - metadata? : Metadata
+    - scopes? : Scope
+}
+note right of Camunda7ElementTemplate::appliesTo
+    Pattern "^(bpmn:)"
+end note
+Camunda7ElementTemplate::properties -- Property
+Camunda7ElementTemplate::metadata -- Metadata
+Camunda7ElementTemplate::scopes -- Scope
+
+class Property {
+    - value? : string | boolean
+    - description? : string
+    - label? : string
+    - type? : string | PropertyType
+    - editable? : boolean
+    - choices? : Choice[]
+    - binding : Binding
+    - constraints? : Constraint
+}
+Property::type -- PropertyType
+Property::choices -- Choice
+Property::binding -- Binding
+Property::constraints -- Constraint
+
+class Metadata {}
+
+class Scope {}
+
+enum PropertyType {
+    String = "String"
+    Text = "Text"
+    Hidden = "Hidden"
+    Dropdown = "Dropdown"
+    Boolean = "Boolean"
+}
+
+class Choice {
+    - name : string
+    - value : string
+}
+
+class Binding {
+    - type : BindingType
+    - name? : string
+    - event? : string
+    - scriptFormat? : string
+    - source? : string
+    - target? : string
+    - expression? : boolean
+    - variables? : Variable
+    - sourceExpression? : string
+}
+Binding::type -- BindingType
+Binding::variables -- Variable
+
+enum BindingType {
+    Property = "property"
+    CamundaProperty = "camunda:property"
+    CamundaInputParameter = "camunda:inputParameter"
+    CamundaOutputParameter = "camunda:outputParameter"
+    CamundaIn = "camunda:in"
+    CamundaOut = "camunda:out"
+    CamundaInBusinessKey = "camunda:in:businessKey"
+    CamundaExecutionListener = "camunda:executionListener"
+    CamundaField = "camunda:field"
+}
+
+enum Variable {
+    All = "all"
+    Local = "local"
+}
+
+class Constraint {
+    - notEmpty? : boolean
+    - minLength? : string
+    - maxLength? : string
+    - pattern? : Pattern
+}
+Constraint::pattern -- Pattern
+
+class Pattern {
+    - value? : string
+    - message? : string
+}
+@enduml
