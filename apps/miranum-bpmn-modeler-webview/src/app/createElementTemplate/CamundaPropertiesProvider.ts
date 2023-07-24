@@ -1,11 +1,11 @@
 // import {
-//     createInputParameter,
+//     createCamundaProperty,
 //     ensureExtension,
 //     shouldUpdate,
 // } from "./utils/CreateHelper";
 // import { getDefaultValue } from "./utils/Helper";
 //
-// export default class InputBindingProvider {
+// export default class CamundaPropertiesProvider {
 //     static create(element: any, options: any) {
 //         const { property, bpmnFactory } = options;
 //
@@ -13,14 +13,18 @@
 //
 //         const value = getDefaultValue(property);
 //
-//         const ioMapping = ensureExtension(element, "camunda:inputOutput", bpmnFactory);
+//         const camundaProperties = ensureExtension(
+//             element,
+//             "camunda:Properties",
+//             bpmnFactory,
+//         );
 //
 //         if (!shouldUpdate(value, property)) {
 //             return;
 //         }
 //
-//         const input = createInputParameter(binding, value, bpmnFactory);
-//         input.$parent = ioMapping;
-//         ioMapping.get("inputParameters").push(input);
+//         const zeebeProperty = createCamundaProperty(binding, value, bpmnFactory);
+//         zeebeProperty.$parent = camundaProperties;
+//         camundaProperties.get("properties").push(zeebeProperty);
 //     }
 // }

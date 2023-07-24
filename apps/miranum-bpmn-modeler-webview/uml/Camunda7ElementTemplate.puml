@@ -6,47 +6,99 @@ class Camunda7ElementTemplate {
     - version? : number
     - isDefault? : boolean
     - appliesTo : string[]
-    - properties : Property[]
+    - elementType? : ElementType
     - metadata? : Metadata
+    - entriesVisible? : boolean
+    - groups? : Group[]
+    - documentationRef? : string
+    - properties : Property[]
     - scopes? : Scope
 }
 note right of Camunda7ElementTemplate::appliesTo
-    Pattern "^(bpmn:)"
+    Pattern: "^[\\w\\d]+:[\\w\\d]+$"
 end note
-Camunda7ElementTemplate::properties -- Property
+note right of Camunda7ElementTemplate::documentationRef
+    Pattern: "^(https|http)://.*"
+end note
+Camunda7ElementTemplate::elementType -- ElementType
+Camunda7ElementTemplate::groups -- Group
 Camunda7ElementTemplate::metadata -- Metadata
+Camunda7ElementTemplate::properties -- Property
 Camunda7ElementTemplate::scopes -- Scope
 
-class Property {
-    - value? : string | boolean
-    - description? : string
-    - label? : string
-    - type? : string | PropertyType
-    - editable? : boolean
-    - choices? : Choice[]
-    - binding : Binding
-    - constraints? : Constraint
+class ElementType {
+    - value : string
 }
-Property::type -- PropertyType
-Property::choices -- Choice
-Property::binding -- Binding
-Property::constraints -- Constraint
+note right of ElementType::value
+    Pattern: "^[\\w\\d]+:[\\w\\d]+$"
+end note
 
 class Metadata {}
 
-class Scope {}
-
-enum PropertyType {
-    String = "String"
-    Text = "Text"
-    Hidden = "Hidden"
-    Dropdown = "Dropdown"
-    Boolean = "Boolean"
+class Group {
+    - id : string
+    - label : string
 }
+
+class Property {
+    - id? : string
+    - value? : string | boolean
+    - description? : string
+    - label? : string
+    - type? : string
+    - editable? : boolean
+    - choices? : Choice[]
+    - constraints? : Constraint
+    - group? : string
+    - condition? : Condition
+    - binding : Binding
+}
+Property::choices -- Choice
+Property::constraints -- Constraint
+Property::condition -- Condition
+Property::binding -- Binding
+
+class Scope {}
 
 class Choice {
     - name : string
     - value : string
+}
+
+class Constraint {
+    - notEmpty : boolean
+    - minLength? : number
+    - maxLength? : number
+    - pattern? : string | Pattern
+}
+Constraint::pattern -- Pattern
+
+class Pattern {
+    - value? : string
+    - message? : string
+}
+
+interface Condition {}
+
+class SingleCondition implements Condition {
+    - type : string = "simple"
+    - property : string
+    - expression : Expression
+}
+SingleCondition::expression -- Expression
+
+class MultipleCondition implements Condition {
+    - allMatch : SingleCondition[]
+}
+
+interface Expression {}
+
+class Equals implements Expression {
+    - equals : string | number | boolean
+}
+
+class OneOf implements Expression {
+    - oneOf : string[] | number[]
 }
 
 class Binding {
@@ -73,23 +125,11 @@ enum BindingType {
     CamundaInBusinessKey = "camunda:in:businessKey"
     CamundaExecutionListener = "camunda:executionListener"
     CamundaField = "camunda:field"
+    CamundaErrorEventDefinition = "camunda:errorEventDefinition"
 }
 
 enum Variable {
     All = "all"
     Local = "local"
-}
-
-class Constraint {
-    - notEmpty? : boolean
-    - minLength? : string
-    - maxLength? : string
-    - pattern? : Pattern
-}
-Constraint::pattern -- Pattern
-
-class Pattern {
-    - value? : string
-    - message? : string
 }
 @enduml

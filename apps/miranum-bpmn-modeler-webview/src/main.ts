@@ -378,7 +378,7 @@ function createErrorList(messages: string[]): string {
 function extendElementTemplates(bpmnModeler: BpmnModeler7) {
     const elementTemplates: any = bpmnModeler.get("elementTemplates");
 
-    elementTemplates.__proto__.createElement = () => {
+    elementTemplates.__proto__.createElement = (template: any) => {
         if (!template) {
             throw new Error("template is missing");
         }

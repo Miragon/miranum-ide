@@ -1,44 +1,38 @@
 import { getBusinessObject } from "bpmn-js/lib/util/ModelUtil";
-import { find } from "min-dash";
-import { isConditionMet } from "./utils/Condition";
-import PropertyBindingProvider from "./PropertyBindingProvider";
-import TaskDefinitionTypeBindingProvider from "./TaskDefinitionTypeBindingProvider";
-import InputBindingProvider from "./InputBindingProvider";
-import OutputBindingProvider from "./OutputBindingProvider";
-import TaskHeaderBindingProvider from "./TaskHeaderBindingProvider";
-import ZeebePropertiesProvider from "./ZeebePropertiesProvider";
-import { MessagePropertyBindingProvider } from "./MessagePropertyBindingProvider";
-import { MessageZeebeSubscriptionBindingProvider } from "./MessageZeebeSubscriptionBindingProvider";
-import {
-    CAMUNDA_INPUT_TYPE,
-    CAMUNDA_OUTPUT_TYPE,
-    CAMUNDA_PROPERTY_TYPE,
-    MESSAGE_PROPERTY_TYPE,
-    MESSAGE_ZEEBE_SUBSCRIPTION_PROPERTY_TYPE,
-    PROPERTY_TYPE,
-    ZEEBE_TASK_DEFINITION_TYPE_TYPE,
-    ZEEBE_TASK_HEADER_TYPE,
-} from "./utils/bindingTypes";
+// import { find } from "min-dash";
+// import { isConditionMet } from "./utils/Condition";
+// import PropertyBindingProvider from "./PropertyBindingProvider";
+// import InputBindingProvider from "./InputBindingProvider";
+// import OutputBindingProvider from "./OutputBindingProvider";
+// import CamundaPropertiesProvider from "./CamundaPropertiesProvider";
+// import {
+//     CAMUNDA_INPUT_PARAMETER_TYPE,
+//     CAMUNDA_OUTPUT_PARAMETER_TYPE,
+//     CAMUNDA_PROPERTY_TYPE,
+//     PROPERTY_TYPE,
+// } from "./utils/bindingTypes";
 
 export class TemplateElementFactory {
-    private readonly bpmnFactory: any;
+    private readonly commandStack: any;
+
+    // private readonly bpmnFactory: any;
 
     private readonly elementFactory: any;
 
-    private providers: any = {
-        [PROPERTY_TYPE]: PropertyBindingProvider,
-        [ZEEBE_TASK_DEFINITION_TYPE_TYPE]: TaskDefinitionTypeBindingProvider,
-        [CAMUNDA_PROPERTY_TYPE]: ZeebePropertiesProvider,
-        [CAMUNDA_INPUT_TYPE]: InputBindingProvider,
-        [CAMUNDA_OUTPUT_TYPE]: OutputBindingProvider,
-        [ZEEBE_TASK_HEADER_TYPE]: TaskHeaderBindingProvider,
-        [MESSAGE_PROPERTY_TYPE]: MessagePropertyBindingProvider,
-        [MESSAGE_ZEEBE_SUBSCRIPTION_PROPERTY_TYPE]:
-            MessageZeebeSubscriptionBindingProvider,
-    };
+    // private providers: any = {
+    //     [PROPERTY_TYPE]: PropertyBindingProvider,
+    //     [CAMUNDA_PROPERTY_TYPE]: CamundaPropertiesProvider,
+    //     [CAMUNDA_INPUT_PARAMETER_TYPE]: InputBindingProvider,
+    //     [CAMUNDA_OUTPUT_PARAMETER_TYPE]: OutputBindingProvider,
+    //     //[CAMUNDA_DELEGATE_EXPRESSION_TYPE]: TaskDefinitionTypeBindingProvider,
+    //     //[ZEEBE_TASK_HEADER_TYPE]: TaskHeaderBindingProvider,
+    //     //[MESSAGE_PROPERTY_TYPE]: MessagePropertyBindingProvider,
+    //     //[MESSAGE_ZEEBE_SUBSCRIPTION_PROPERTY_TYPE]: MessageCamundaSubscriptionBindingProvider,
+    // };
 
     constructor(modeler: any) {
-        this.bpmnFactory = modeler.get("bpmnFactory");
+        this.commandStack = modeler.get("commandStack");
+        // this.bpmnFactory = modeler.get("bpmnFactory");
         this.elementFactory = modeler.get("elementFactory");
     }
 
@@ -46,7 +40,10 @@ export class TemplateElementFactory {
      * Create an element based on an element template.
      */
     public create(template: any) {
-        const { properties } = template;
+        // const { properties } = template;
+
+        const commandStack = this.commandStack;
+        console.log("CommandStack");
 
         // (1) base shape
         const element = this.createShape(template);
@@ -54,13 +51,20 @@ export class TemplateElementFactory {
         // (2) apply template
         this.setModelerTemplate(element, template);
 
+        // (3)
+        commandStack.execute("propertiesPanel.camunda.changeTemplate", {
+            element,
+            oldTemplate: null,
+            newTemplate: template,
+        });
+
         // (3) apply icon
-        if (hasIcon(template)) {
-            this.setModelerTemplateIcon(element, template);
-        }
+        // if (hasIcon(template)) {
+        //     this.setModelerTemplateIcon(element, template);
+        // }
 
         // (4) apply properties
-        this.applyProperties(element, properties);
+        // this.applyProperties(element, properties);
 
         return element;
     }
@@ -106,104 +110,123 @@ export class TemplateElementFactory {
 
         const businessObject = getBusinessObject(element);
 
-        businessObject.set("zeebe:modelerTemplate", id);
-        businessObject.set("zeebe:modelerTemplateVersion", version);
+        businessObject.set("camunda:modelerTemplate", id);
+        businessObject.set("camunda:modelerTemplateVersion", version);
     }
 
-    private setModelerTemplateIcon(element: any, template: any) {
-        const { icon } = template;
+    // private setModelerTemplateIcon(element: any, template: any) {
+    //     const { icon } = template;
 
-        const { contents } = icon;
+    //     const { contents } = icon;
 
-        const businessObject = getBusinessObject(element);
+    //     const businessObject = getBusinessObject(element);
 
-        businessObject.set("zeebe:modelerTemplateIcon", contents);
-    }
+    //     businessObject.set("camunda:modelerTemplateIcon", contents);
+    // }
 
-    /**
-     * Apply properties to a given element.
-     */
-    private applyProperties(element: any, properties: any) {
-        const processedProperties: any[] = [];
+    // private setProperty(element: any, templateProperties: any) {
+    //     // get all properties with binding type = "property"
+    //     const properties = templateProperties.filter((property: any) => {
+    //         const binding = property.binding,
+    //             bindingType = binding.type;
 
-        properties.forEach((property: any) =>
-            this.applyProperty(element, property, properties, processedProperties),
-        );
-    }
+    //         return bindingType === "property";
+    //     });
 
-    /**
-     * Apply a property and its parent properties to an element based on conditions.
-     */
-    private applyProperty(
-        element: any,
-        property: any,
-        properties: any,
-        processedProperties: any,
-    ) {
-        // skip if already processed
-        if (processedProperties.includes(property)) {
-            return;
-        }
+    //     if (!properties.length) {
+    //         return;
+    //     }
 
-        // apply dependant property first if not already applied
-        const dependentProperties = findDependentProperties(property, properties);
+    //     for (const property of properties) {
+    //         const bindingName = property.binding.name;
+    //         const propertyValue = property.value;
+    //     }
+    // }
 
-        dependentProperties.forEach((prop: any) =>
-            this.applyProperty(element, prop, properties, processedProperties),
-        );
+    // /**
+    //  * Apply properties to a given element.
+    //  */
+    // private applyProperties(element: any, properties: any) {
+    //     const processedProperties: any[] = [];
 
-        // check condition and apply property if condition is met
-        if (isConditionMet(element, properties, property)) {
-            this.bindProperty(property, element);
-        }
+    //     properties.forEach((property: any) =>
+    //         this.applyProperty(element, property, properties, processedProperties),
+    //     );
+    // }
 
-        processedProperties.push(property);
-    }
+    // /**
+    //  * Apply a property and its parent properties to an element based on conditions.
+    //  */
+    // private applyProperty(
+    //     element: any,
+    //     property: any,
+    //     properties: any,
+    //     processedProperties: any,
+    // ) {
+    //     // skip if already processed
+    //     if (processedProperties.includes(property)) {
+    //         return;
+    //     }
 
-    /**
-     * Bind property to element.
-     */
-    private bindProperty(property: any, element: any) {
-        const { binding } = property;
+    //     // apply dependant property first if not already applied
+    //     const dependentProperties = findDependentProperties(property, properties);
 
-        const { type: bindingType } = binding;
+    //     dependentProperties.forEach((prop: any) =>
+    //         this.applyProperty(element, prop, properties, processedProperties),
+    //     );
 
-        const bindingProvider = this.providers[bindingType];
+    //     // check condition and apply property if condition is met
+    //     if (isConditionMet(element, properties, property)) {
+    //         this.bindProperty(property, element);
+    //     }
 
-        bindingProvider.create(element, {
-            property,
-            bpmnFactory: this.bpmnFactory,
-        });
-    }
+    //     processedProperties.push(property);
+    // }
+
+    // /**
+    //  * Bind property to element.
+    //  */
+    // private bindProperty(property: any, element: any) {
+    //     const { binding } = property;
+
+    //     const { type: bindingType } = binding;
+
+    //     const bindingProvider = this.providers[bindingType];
+
+    //     bindingProvider.create(element, {
+    //         property,
+    //         bpmnFactory: this.bpmnFactory,
+    //     });
+    // }
 }
 
 //
 // helper
 //
-function hasIcon(template: any) {
-    const { icon } = template;
+// function hasIcon(template: any) {
+//     const { icon } = template;
+//
+//     return !!(icon && icon.contents);
+// }
 
-    return !!(icon && icon.contents);
-}
-
-function findDependentProperties(property: any, properties: any) {
-    const { condition } = property;
-
-    if (!condition) {
-        return [];
-    }
-
-    const dependentProperty = findPropertyById(properties, condition.property);
-
-    if (dependentProperty) {
-        return [dependentProperty];
-    }
-
-    return [];
-}
-
-function findPropertyById(properties: any, id: any) {
-    return find(properties, function (property: any) {
-        return property.id === id;
-    });
-}
+// function findDependentProperties(property: any, properties: any) {
+//     const { condition } = property;
+//
+//     if (!condition) {
+//         return [];
+//     }
+//
+//     const dependentProperty = findPropertyById(properties, condition.property);
+//
+//     if (dependentProperty) {
+//         return [dependentProperty];
+//     }
+//
+//     return [];
+// }
+//
+// function findPropertyById(properties: any, id: any) {
+//     return find(properties, function (property: any) {
+//         return property.id === id;
+//     });
+// }
