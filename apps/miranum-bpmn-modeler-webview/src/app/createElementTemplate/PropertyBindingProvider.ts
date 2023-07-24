@@ -1,8 +1,8 @@
 import { getBusinessObject } from "bpmn-js/lib/util/ModelUtil";
-// import { getDefaultValue } from "../Helper";
+import { getDefaultValue } from "./utils/Helper";
 
 export default class PropertyBindingProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { property } = options;
 
         const { binding } = property;

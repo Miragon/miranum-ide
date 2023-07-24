@@ -1,12 +1,12 @@
-import { getPropertyValue } from "./util/propertyUtil";
+import { getPropertyValue } from "./propertyUtil";
 
 /**
  * Based on conditions, remove properties from the template.
  */
-export function applyConditions(element, elementTemplate) {
+export function applyConditions(element: any, elementTemplate: any) {
     const { properties } = elementTemplate;
 
-    const filteredProperties = properties.filter((property) => {
+    const filteredProperties = properties.filter((property: any) => {
         return isConditionMet(element, properties, property);
     });
 
@@ -16,7 +16,7 @@ export function applyConditions(element, elementTemplate) {
     };
 }
 
-export function isConditionMet(element, properties, property) {
+export function isConditionMet(element: any, properties: any, property: any) {
     const { condition } = property;
 
     // If no condition is defined, return true.
@@ -28,8 +28,8 @@ export function isConditionMet(element, properties, property) {
     if (condition.allMatch) {
         const conditions = condition.allMatch;
 
-        return conditions.every((condition) =>
-            isSimpleConditionMet(element, properties, condition),
+        return conditions.every((c: any) =>
+            isSimpleConditionMet(element, properties, c),
         );
     }
 
@@ -37,7 +37,7 @@ export function isConditionMet(element, properties, property) {
     return isSimpleConditionMet(element, properties, condition);
 }
 
-function isSimpleConditionMet(element, properties, condition) {
+function isSimpleConditionMet(element: any, properties: any, condition: any) {
     const { property, equals, oneOf } = condition;
 
     const propertyValue = getValue(element, properties, property);
@@ -53,8 +53,8 @@ function isSimpleConditionMet(element, properties, condition) {
     return false;
 }
 
-export function getValue(element, properties, propertyId) {
-    const property = properties.find((p) => p.id === propertyId);
+export function getValue(element: any, properties: any, propertyId: any) {
+    const property = properties.find((p: any) => p.id === propertyId);
 
     if (!property) {
         return;

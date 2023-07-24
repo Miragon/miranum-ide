@@ -1,10 +1,10 @@
 import { getBusinessObject, is } from "bpmn-js/lib/util/ModelUtil";
 
-import { ensureExtension, shouldUpdate } from "../CreateHelper";
-import { getDefaultValue, getTemplateId } from "../Helper";
+import { ensureExtension, shouldUpdate } from "./utils/CreateHelper";
+import { getDefaultValue, getTemplateId } from "./utils/Helper";
 
 export class MessageZeebeSubscriptionBindingProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { bpmnFactory, property } = options;
 
         const { binding } = property;

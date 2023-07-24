@@ -1,8 +1,8 @@
-import { ensureExtension } from "../CreateHelper";
-import { getDefaultValue } from "../Helper";
+import { ensureExtension } from "./utils/CreateHelper";
+import { getDefaultValue } from "./utils/Helper";
 
 export default class TaskDefinitionTypeBindingProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { property, bpmnFactory } = options;
 
         const value = getDefaultValue(property);

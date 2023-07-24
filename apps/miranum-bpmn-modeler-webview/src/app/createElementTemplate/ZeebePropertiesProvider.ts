@@ -1,8 +1,12 @@
-import { createZeebeProperty, ensureExtension, shouldUpdate } from "../CreateHelper";
-import { getDefaultValue } from "../Helper";
+import {
+    createZeebeProperty,
+    ensureExtension,
+    shouldUpdate,
+} from "./utils/CreateHelper";
+import { getDefaultValue } from "./utils/Helper";
 
 export default class ZeebePropertiesProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { property, bpmnFactory } = options;
 
         const { binding } = property;

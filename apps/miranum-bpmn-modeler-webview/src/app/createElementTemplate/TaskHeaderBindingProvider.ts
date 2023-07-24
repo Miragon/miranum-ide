@@ -1,8 +1,8 @@
-import { createTaskHeader, ensureExtension } from "../CreateHelper";
-import { getDefaultValue } from "../Helper";
+import { createTaskHeader, ensureExtension } from "./utils/CreateHelper";
+import { getDefaultValue } from "./utils/Helper";
 
 export default class TaskHeaderBindingProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { property, bpmnFactory } = options;
 
         const { binding } = property;

@@ -1,8 +1,12 @@
-import { createOutputParameter, ensureExtension, shouldUpdate } from "../CreateHelper";
-import { getDefaultValue } from "../Helper";
+import {
+    createOutputParameter,
+    ensureExtension,
+    shouldUpdate,
+} from "./utils/CreateHelper";
+import { getDefaultValue } from "./utils/Helper";
 
 export default class OutputBindingProvider {
-    static create(element, options) {
+    static create(element: any, options: any) {
         const { property, bpmnFactory } = options;
 
         const { binding } = property;

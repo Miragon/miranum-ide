@@ -1,13 +1,43 @@
-import { Modeler } from "camunda-bpmn-js/lib/camunda-platform";
-
+import { getBusinessObject } from "bpmn-js/lib/util/ModelUtil";
 import { find } from "min-dash";
+import { isConditionMet } from "./utils/Condition";
+import PropertyBindingProvider from "./PropertyBindingProvider";
+import TaskDefinitionTypeBindingProvider from "./TaskDefinitionTypeBindingProvider";
+import InputBindingProvider from "./InputBindingProvider";
+import OutputBindingProvider from "./OutputBindingProvider";
+import TaskHeaderBindingProvider from "./TaskHeaderBindingProvider";
+import ZeebePropertiesProvider from "./ZeebePropertiesProvider";
+import { MessagePropertyBindingProvider } from "./MessagePropertyBindingProvider";
+import { MessageZeebeSubscriptionBindingProvider } from "./MessageZeebeSubscriptionBindingProvider";
+import {
+    CAMUNDA_INPUT_TYPE,
+    CAMUNDA_OUTPUT_TYPE,
+    CAMUNDA_PROPERTY_TYPE,
+    MESSAGE_PROPERTY_TYPE,
+    MESSAGE_ZEEBE_SUBSCRIPTION_PROPERTY_TYPE,
+    PROPERTY_TYPE,
+    ZEEBE_TASK_DEFINITION_TYPE_TYPE,
+    ZEEBE_TASK_HEADER_TYPE,
+} from "./utils/bindingTypes";
 
 export class TemplateElementFactory {
-    private readonly bpmnFactory;
+    private readonly bpmnFactory: any;
 
-    private readonly elementFactory;
+    private readonly elementFactory: any;
 
-    constructor(modeler: Modeler) {
+    private providers: any = {
+        [PROPERTY_TYPE]: PropertyBindingProvider,
+        [ZEEBE_TASK_DEFINITION_TYPE_TYPE]: TaskDefinitionTypeBindingProvider,
+        [CAMUNDA_PROPERTY_TYPE]: ZeebePropertiesProvider,
+        [CAMUNDA_INPUT_TYPE]: InputBindingProvider,
+        [CAMUNDA_OUTPUT_TYPE]: OutputBindingProvider,
+        [ZEEBE_TASK_HEADER_TYPE]: TaskHeaderBindingProvider,
+        [MESSAGE_PROPERTY_TYPE]: MessagePropertyBindingProvider,
+        [MESSAGE_ZEEBE_SUBSCRIPTION_PROPERTY_TYPE]:
+            MessageZeebeSubscriptionBindingProvider,
+    };
+
+    constructor(modeler: any) {
         this.bpmnFactory = modeler.get("bpmnFactory");
         this.elementFactory = modeler.get("elementFactory");
     }
@@ -15,7 +45,7 @@ export class TemplateElementFactory {
     /**
      * Create an element based on an element template.
      */
-    public create(template) {
+    public create(template: any) {
         const { properties } = template;
 
         // (1) base shape
@@ -35,11 +65,11 @@ export class TemplateElementFactory {
         return element;
     }
 
-    private createShape(template) {
+    private createShape(template: any) {
         const { appliesTo, elementType = {} } = template;
         const elementFactory = this.elementFactory;
 
-        const attrs = {
+        const attrs: any = {
             type: elementType.value || appliesTo[0],
         };
 
@@ -51,7 +81,8 @@ export class TemplateElementFactory {
         return elementFactory.createShape(attrs);
     }
 
-    private ensureExtensionElements(element) {
+    /*
+    private ensureExtensionElements(element: any) {
         const bpmnFactory = this.bpmnFactory;
         const businessObject = getBusinessObject(element);
 
@@ -68,8 +99,9 @@ export class TemplateElementFactory {
 
         return extensionElements;
     }
+    */
 
-    private setModelerTemplate(element, template) {
+    private setModelerTemplate(element: any, template: any) {
         const { id, version } = template;
 
         const businessObject = getBusinessObject(element);
@@ -78,7 +110,7 @@ export class TemplateElementFactory {
         businessObject.set("zeebe:modelerTemplateVersion", version);
     }
 
-    private setModelerTemplateIcon(element, template) {
+    private setModelerTemplateIcon(element: any, template: any) {
         const { icon } = template;
 
         const { contents } = icon;
@@ -91,10 +123,10 @@ export class TemplateElementFactory {
     /**
      * Apply properties to a given element.
      */
-    private applyProperties(element, properties) {
-        const processedProperties = [];
+    private applyProperties(element: any, properties: any) {
+        const processedProperties: any[] = [];
 
-        properties.forEach((property) =>
+        properties.forEach((property: any) =>
             this.applyProperty(element, property, properties, processedProperties),
         );
     }
@@ -102,7 +134,12 @@ export class TemplateElementFactory {
     /**
      * Apply a property and its parent properties to an element based on conditions.
      */
-    private applyProperty(element, property, properties, processedProperties) {
+    private applyProperty(
+        element: any,
+        property: any,
+        properties: any,
+        processedProperties: any,
+    ) {
         // skip if already processed
         if (processedProperties.includes(property)) {
             return;
@@ -111,8 +148,8 @@ export class TemplateElementFactory {
         // apply dependant property first if not already applied
         const dependentProperties = findDependentProperties(property, properties);
 
-        dependentProperties.forEach((property) =>
-            this.applyProperty(element, property, properties, processedProperties),
+        dependentProperties.forEach((prop: any) =>
+            this.applyProperty(element, prop, properties, processedProperties),
         );
 
         // check condition and apply property if condition is met
@@ -126,7 +163,7 @@ export class TemplateElementFactory {
     /**
      * Bind property to element.
      */
-    private bindProperty(property, element) {
+    private bindProperty(property: any, element: any) {
         const { binding } = property;
 
         const { type: bindingType } = binding;
@@ -143,20 +180,20 @@ export class TemplateElementFactory {
 //
 // helper
 //
-function hasIcon(template) {
+function hasIcon(template: any) {
     const { icon } = template;
 
     return !!(icon && icon.contents);
 }
 
-function findDependentProperties(property, properties) {
+function findDependentProperties(property: any, properties: any) {
     const { condition } = property;
 
     if (!condition) {
         return [];
     }
 
-    const dependentProperty = findProperyById(properties, condition.property);
+    const dependentProperty = findPropertyById(properties, condition.property);
 
     if (dependentProperty) {
         return [dependentProperty];
@@ -165,8 +202,8 @@ function findDependentProperties(property, properties) {
     return [];
 }
 
-function findProperyById(properties, id) {
-    return find(properties, function (property) {
+function findPropertyById(properties: any, id: any) {
+    return find(properties, function (property: any) {
         return property.id === id;
     });
 }
