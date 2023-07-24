@@ -1,4 +1,3 @@
-import { Injector } from "didi";
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
@@ -345,6 +344,20 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
     return bpmnModeler;
 }
 
+function extendElementTemplates(bpmnModeler: BpmnModeler7) {
+    const elementTemplates: any = bpmnModeler.get("elementTemplates");
+
+    elementTemplates.__proto__.createElement = (template: any) => {
+        if (!template) {
+            throw new Error("template is missing");
+        }
+
+        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
+
+        return templateElementFactory.create(template);
+    };
+}
+
 /**
  * A promise that will resolve if initialized() is called.
  */
@@ -373,23 +386,3 @@ function createErrorList(messages: string[]): string {
 }
 
 // <---------------------------- Helper Functions ------------------------------
-
-function extendElementTemplates(bpmnModeler: BpmnModeler7) {
-    const elementTemplates: any = bpmnModeler.get("elementTemplates");
-
-    elementTemplates.__proto__.createElement = (template: any) => {
-        if (!template) {
-            throw new Error("template is missing");
-        }
-
-        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
-
-        return templateElementFactory.create(template);
-    };
-
-    new Injector([
-        {
-            elementTemplates: ["type", elementTemplates],
-        },
-    ]);
-}
