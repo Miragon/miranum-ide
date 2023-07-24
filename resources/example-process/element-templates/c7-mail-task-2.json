@@ -1,0 +1,53 @@
+{
+  "$schema" : "https://unpkg.com/@camunda/element-templates-json-schema@0.1.0/resources/schema.json",
+  "name": "Mail Task 2",
+  "id": "de.miragon.example.MailTask2",
+  "appliesTo": [
+    "bpmn:Task"
+  ],
+  "properties": [
+    {
+      "label": "Implementation Type",
+      "type": "Hidden",
+      "value": "${mailDelegate}",
+      "editable": false,
+      "binding": {
+        "type": "property",
+        "name": "camunda:delegateExpression"
+      }
+    },
+    {
+      "label": "Recipient",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "recipient"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Content",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "content"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Subject",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "subject"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    }
+  ]
+}

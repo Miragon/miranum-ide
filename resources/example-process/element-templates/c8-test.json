@@ -1,0 +1,56 @@
+{
+  "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema@0.8.0/resources/schema.json",
+  "name": "Test",
+  "id": "test",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "groups": [],
+  "properties": [
+    {
+      "value": "test",
+      "label": "Topic",
+      "type": "String",
+      "editable": false,
+      "binding": {
+        "type": "zeebe:taskDefinition:type"
+      }
+    },
+    {
+      "value": "=",
+      "label": "name",
+      "type": "String",
+      "binding": {
+        "type": "zeebe:input",
+        "name": "name"
+      }
+    },
+    {
+      "value": "=",
+      "label": "id",
+      "type": "String",
+      "binding": {
+        "type": "zeebe:input",
+        "name": "id"
+      }
+    },
+    {
+      "value": "nameResult",
+      "label": "name",
+      "type": "String",
+      "binding": {
+        "type": "zeebe:output",
+        "source": "=name"
+      }
+    },
+    {
+      "value": "idResult",
+      "label": "id",
+      "type": "String",
+      "binding": {
+        "type": "zeebe:output",
+        "source": "=id"
+      }
+    }
+  ]
+}
