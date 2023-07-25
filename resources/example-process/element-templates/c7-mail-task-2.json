@@ -1,7 +1,10 @@
 {
-  "name": "Mail Task",
-  "id": "de.miragon.example.MailTask",
-  "appliesTo": ["bpmn:ServiceTask"],
+  "$schema" : "https://unpkg.com/@camunda/element-templates-json-schema@0.1.0/resources/schema.json",
+  "name": "Mail Task 2",
+  "id": "de.miragon.example.MailTask2",
+  "appliesTo": [
+    "bpmn:Task"
+  ],
   "properties": [
     {
       "label": "Implementation Type",

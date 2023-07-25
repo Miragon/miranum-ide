@@ -1,12 +1,7 @@
 import * as vscode from "vscode";
 import { Logger } from "../Logger";
 import { FolderContent } from "@miranum-ide/vscode/miranum-vscode-webview";
-
-export interface WorkspaceFolder {
-    type: string;
-    path: string;
-    extension: string;
-}
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 /**
  * Scan the current working directory for important files.
@@ -28,7 +23,7 @@ export class Reader {
      */
     public async getAllFiles(
         rootDir: vscode.Uri,
-        workspaceFolders: WorkspaceFolder[],
+        workspaceFolders: MiranumWorkspaceItem[],
     ): Promise<FolderContent[]> {
         const promises: Map<string, Promise<JSON[] | string[]>> = new Map();
         for (const folder of workspaceFolders) {
@@ -38,6 +33,13 @@ export class Reader {
                     promises.set(
                         folder.type,
                         this.getForms(rootDir, folder.path, folder.extension),
+                    );
+                    break;
+                }
+                case "element-template": {
+                    promises.set(
+                        folder.type,
+                        this.getElementTemplates(rootDir, folder.path, folder.extension),
                     );
                     break;
                 }
@@ -137,7 +139,8 @@ export class Reader {
         directory: string,
         extension: string,
     ): Promise<JSON[]> {
-        return this.getFilesAsJson(rootDir, directory, extension);
+        const files = await this.getFilesAsJson(rootDir, directory, extension);
+        return files.flat(Infinity);
     }
 
     /**

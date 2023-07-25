@@ -1,76 +1,143 @@
-import {
-    ContentController,
-    ImportWarning,
-    instanceOfModelerData,
-    setFormKeys,
-} from "./app";
-import { debounce, reverse, uniqBy } from "lodash";
-import {
-    FolderContent,
-    MessageType,
-    StateController,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-
-// bpmn-js
-import BpmnModeler, { ErrorArray, WarningArray } from "bpmn-js/lib/Modeler";
-import {
-    BpmnPropertiesPanelModule,
-    BpmnPropertiesProviderModule,
-    CamundaPlatformPropertiesProviderModule,
-    ElementTemplatesPropertiesProviderModule,
-} from "bpmn-js-properties-panel";
-import CamundaPlatformBehaviors from "camunda-bpmn-js-behaviors/lib/camunda-platform";
-import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda.json";
+import { reverse, uniqBy } from "lodash";
+import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app";
+// bpmn.js
+import Modeler from "camunda-bpmn-js/lib/base/Modeler";
+import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
+import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
+import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
+import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
+import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
-import TokenSimulationModule from "bpmn-js-token-simulation";
-
 // css
 import "./styles.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js-properties-panel/dist/assets/properties-panel.css";
-import "bpmn-js-properties-panel/dist/assets/element-templates.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
+import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 
-const modeler = new BpmnModeler({
-    container: "#js-canvas",
-    keyboard: {
-        bindTo: document,
-    },
-    propertiesPanel: {
-        parent: "#js-properties-panel",
-    },
-    additionalModules: [
-        // Properties Panel
-        BpmnPropertiesPanelModule,
-        BpmnPropertiesProviderModule,
-        CamundaPlatformPropertiesProviderModule,
-        CamundaPlatformBehaviors,
-        miragonProviderModule,
-        // Element Templates
-        ElementTemplatesPropertiesProviderModule,
-        ElementTemplateChooserModule,
-        // Other Plugins
-        TokenSimulationModule,
-    ],
-    moddleExtensions: {
-        camunda: camundaModdleDescriptors,
-    },
-});
-
+//
+// Global objects
+//
+let modeler: Modeler;
+let contentController: ContentController;
 const stateController = new StateController<ModelerData>();
-const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
-
 const updateXML = asyncDebounce(openXML, 100);
 
+//
+// Logic
+//
+
+// Listen to messages from the backend/extension
+setupListeners();
+
+/**
+ * Main function that get executed after the webview is fully loaded.
+ * This way we can ensure that when the backend sends a message, it is caught.
+ * There are two reasons why a webview gets build:
+ * 1. A new .bpmn file was opened
+ * 2. User switched to another tab and now switched back
+ */
+window.onload = async function () {
+    try {
+        const state = stateController.getState();
+        if (state && state.data) {
+            // User switched back to the tab with this webview
+            postMessage(
+                MessageType.RESTORE,
+                undefined,
+                "State was restored successfully.",
+            );
+
+            let bpmn = state.data.bpmn;
+            let files = state.data.additionalFiles;
+
+            const newData = await getInitialData(); // await the response form the backend
+            if (instanceOfModelerData(newData)) {
+                // we only get new data when the user made changes while the webview was destroyed
+                if (newData.bpmn) {
+                    bpmn = newData.bpmn;
+                }
+                if (newData.additionalFiles) {
+                    if (!files) {
+                        files = newData.additionalFiles;
+                    } else {
+                        // replace old values with new ones
+                        files = reverse(
+                            uniqBy(
+                                reverse(files.concat(newData.additionalFiles)),
+                                "type",
+                            ),
+                        );
+                    }
+                }
+            }
+            return init(bpmn, files, state.data.executionPlatformVersion);
+        } else {
+            // A new .bpmn file was opened
+            postMessage(
+                MessageType.INITIALIZE,
+                undefined,
+                "Webview was loaded successfully.",
+            );
+
+            const data = await getInitialData(); // await the response form the backend
+            if (instanceOfModelerData(data)) {
+                return init(
+                    data.bpmn,
+                    data.additionalFiles,
+                    data.executionPlatformVersion,
+                );
+            }
+        }
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : `${error}`;
+        postMessage(
+            MessageType.ERROR,
+            undefined,
+            `Something went wrong when initializing the webview!\n${message}`,
+        );
+    }
+};
+
+/**
+ * Set the initial data after the webview was loaded.
+ * @param bpmn
+ * @param files
+ * @param executionPlatformVersion
+ */
+function init(
+    bpmn: string | undefined,
+    files: FolderContent[] | undefined,
+    executionPlatformVersion: ExecutionPlatformVersion | undefined,
+): void {
+    if (executionPlatformVersion === undefined) {
+        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
+        return;
+    }
+    modeler = createBpmnModeler(executionPlatformVersion);
+    setupBpmnModelerListener();
+
+    contentController = new ContentController(modeler);
+    stateController.updateState({ data: { executionPlatformVersion } });
+
+    openXML(bpmn);
+    setFiles(files);
+
+    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
+}
+
+/**
+ * Open or update the modeler with the new XML content.
+ * @param bpmn
+ */
 async function openXML(bpmn: string | undefined) {
     try {
-        let result: ImportWarning;
+        let result: ImportXMLResult;
         if (!bpmn) {
             result = await contentController.newDiagram();
         } else {
@@ -78,28 +145,24 @@ async function openXML(bpmn: string | undefined) {
         }
         stateController.updateState({ data: { bpmn } });
 
-        const warnings =
-            result.warnings.length > 0
-                ? `with following warnings: ${createList(result.warnings)}`
-                : "";
-        postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
-    } catch (error) {
-        if (error instanceof ImportWarning) {
-            const warnings =
-                error.warnings.length > 0
-                    ? `with following warnings: ${createList(error.warnings)}`
-                    : "";
-            postMessage(MessageType.ERROR, undefined, `${error.message} ${warnings}`);
-        } else {
-            const message =
-                error instanceof Error ? error.message : "Failed to open xml.";
-            postMessage(MessageType.ERROR, undefined, message);
+        if (result.warnings.length > 0) {
+            const warnings = `with following warnings: ${createErrorList(
+                result.warnings,
+            )}`;
+            postMessage(MessageType.INFO, undefined, warnings);
         }
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : `${error}`;
+        postMessage(
+            MessageType.ERROR,
+            undefined,
+            `Unable to open/update XML\n${message}`,
+        );
     }
 }
 
 /**
- * Set/Update the given files.
+ * Set or update the given files.
  * @param folders
  */
 function setFiles(folders: FolderContent[] | undefined): void {
@@ -137,6 +200,9 @@ function setFiles(folders: FolderContent[] | undefined): void {
     postMessage(MessageType.INFO, undefined, message.join("\n"));
 }
 
+/**
+ * Send the changed XML content to the backend to update the .bpmn file.
+ */
 async function sendChanges() {
     if (isUpdateFromExtension) {
         isUpdateFromExtension = false; // reset
@@ -148,17 +214,38 @@ async function sendChanges() {
     postMessage(MessageType.MSGFROMWEBVIEW, { bpmn }, undefined);
 }
 
+/**
+ * Setup modeler specific event listener.
+ */
+function setupBpmnModelerListener() {
+    modeler.on("elementTemplates.errors", (event: any) => {
+        const { errors } = event;
+        postMessage(
+            MessageType.ERROR,
+            undefined,
+            `Failed to load element templates with following errors: ${createErrorList(
+                errors,
+            )}`,
+        );
+    });
+
+    modeler.get("eventBus").on("commandStack.changed", sendChanges);
+}
+
+/**
+ * Listen to messages from the backend.
+ */
 function setupListeners(): void {
     window.addEventListener("message", (event) => {
         try {
             const message = event.data;
             switch (message.type) {
                 case `bpmn-modeler.${MessageType.INITIALIZE}`: {
-                    initialize(message.data);
+                    initialized(message.data);
                     break;
                 }
                 case `bpmn-modeler.${MessageType.RESTORE}`: {
-                    initialize(message.data);
+                    initialized(message.data);
                     break;
                 }
                 case `bpmn-modeler.${MessageType.UNDO}`:
@@ -173,102 +260,18 @@ function setupListeners(): void {
                     break;
                 }
             }
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : "Could not handle message";
-            postMessage(MessageType.ERROR, undefined, message);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            postMessage(
+                MessageType.ERROR,
+                undefined,
+                `Unable to process message!\n${message}`,
+            );
         }
     });
-
-    modeler.on("elementTemplates.errors", (event) => {
-        const { errors } = event;
-        postMessage(
-            MessageType.ERROR,
-            undefined,
-            `Failed to load element templates with following errors: ${createList(
-                errors,
-            )}`,
-        );
-    });
-
-    modeler.get("eventBus").on("commandStack.changed", sendChanges);
-
-    postMessage(MessageType.INFO, undefined, "Listeners are set.");
 }
-
-function init(bpmn: string | undefined, files: FolderContent[] | undefined): void {
-    openXML(bpmn);
-    setFiles(files);
-    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
-}
-
-window.onload = async function () {
-    try {
-        const state = stateController.getState();
-        if (state && state.data) {
-            postMessage(
-                MessageType.RESTORE,
-                undefined,
-                "State was restored successfully.",
-            );
-            let bpmn = state.data.bpmn;
-            let files = state.data.additionalFiles;
-            const newData = await initialized(); // await the response form the backend
-            if (instanceOfModelerData(newData)) {
-                // we only get new data when the user made changes while the webview was destroyed
-                if (newData.bpmn) {
-                    bpmn = newData.bpmn;
-                }
-                if (newData.additionalFiles) {
-                    if (!files) {
-                        files = newData.additionalFiles;
-                    } else {
-                        // replace old values with new ones
-                        files = reverse(
-                            uniqBy(
-                                reverse(files.concat(newData.additionalFiles)),
-                                "type",
-                            ),
-                        );
-                    }
-                }
-            }
-            return init(bpmn, files);
-        } else {
-            postMessage(
-                MessageType.INITIALIZE,
-                undefined,
-                "Webview was loaded successfully.",
-            );
-            const data = await initialized(); // await the response form the backend
-            if (instanceOfModelerData(data)) {
-                return init(data.bpmn, data.additionalFiles);
-            }
-        }
-    } catch (error) {
-        const message =
-            error instanceof Error ? error.message : "Failed to initialize webview.";
-        postMessage(MessageType.ERROR, undefined, message);
-    }
-};
-
-setupListeners();
 
 // ----------------------------- Helper Functions ----------------------------->
-/**
- * Create a list of information that will be sent to the backend and get logged.
- * @param messages A list of further information.
- */
-function createList(messages: ErrorArray | WarningArray): string {
-    let msg = "";
-    if (messages && messages.length > 0) {
-        for (const message of messages) {
-            msg += `\n- ${message.message}`;
-        }
-    }
-    return msg;
-}
-
 /**
  * Post a message to the extension.
  * Depending on the type of message it contains either data or a string which is only logged
@@ -296,48 +299,90 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
 }
 
 /**
- * A promise that will resolve if initialize() is called.
+ * Create the modeler depending on the XML.
+ * @param executionPlatformVersion
  */
-function initialized() {
+function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
+    let bpmnModeler;
+    const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+
+    switch (executionPlatformVersion) {
+        case ExecutionPlatformVersion.None:
+        case ExecutionPlatformVersion.Camunda7: {
+            bpmnModeler = new BpmnModeler7({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [
+                    ...commonModules,
+                    CreateAppendElementTemplatesModule,
+                    miragonProviderModule,
+                ],
+            });
+            extendElementTemplates(bpmnModeler);
+            break;
+        }
+        case ExecutionPlatformVersion.Camunda8: {
+            bpmnModeler = new BpmnModeler8({
+                container: "#js-canvas",
+                keyboard: {
+                    bindTo: document,
+                },
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
+                },
+                additionalModules: [...commonModules],
+            });
+            break;
+        }
+    }
+
+    return bpmnModeler;
+}
+
+function extendElementTemplates(bpmnModeler: BpmnModeler7) {
+    const elementTemplates: any = bpmnModeler.get("elementTemplates");
+
+    elementTemplates.__proto__.createElement = (template: any) => {
+        if (!template) {
+            throw new Error("template is missing");
+        }
+
+        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
+
+        return templateElementFactory.create(template);
+    };
+}
+
+/**
+ * A promise that will resolve if initialized() is called.
+ */
+function getInitialData() {
     return new Promise((resolve) => {
-        initialize = (response: ModelerData | undefined) => {
+        initialized = (response: ModelerData | undefined) => {
             resolve(response);
         };
     });
 }
 
-let initialize: any = null;
+let initialized: any = null;
 
 /**
- * Makes the [lodash.debounce](https://lodash.com/docs/4.17.15#debounce) function async-friendly
- * @param func The function to debounce
- * @param wait The number of milliseconds to delay
+ * Create a list of information that will be sent to the backend and get logged.
+ * @param messages A list of further information.
  */
-function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
-    func: F,
-    wait?: number,
-) {
-    const resolveSet = new Set<(p: any) => void>();
-    const rejectSet = new Set<(p: any) => void>();
-
-    const debounced = debounce((args: Parameters<F>) => {
-        func(...args)
-            .then((...res) => {
-                resolveSet.forEach((resolve) => resolve(...res));
-                resolveSet.clear();
-            })
-            .catch((...res) => {
-                rejectSet.forEach((reject) => reject(...res));
-                rejectSet.clear();
-            });
-    }, wait);
-
-    return (...args: Parameters<F>): ReturnType<F> =>
-        new Promise((resolve, reject) => {
-            resolveSet.add(resolve);
-            rejectSet.add(reject);
-            debounced(args);
-        }) as ReturnType<F>;
+function createErrorList(messages: string[]): string {
+    let msg = "";
+    if (messages && messages.length > 0) {
+        for (const message of messages) {
+            msg += `\n- ${message}`;
+        }
+    }
+    return msg;
 }
 
 // <---------------------------- Helper Functions ------------------------------

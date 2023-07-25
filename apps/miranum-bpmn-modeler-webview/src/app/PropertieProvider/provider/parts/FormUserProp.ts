@@ -4,7 +4,7 @@ import { useEffect, useState } from "@bpmn-io/properties-panel/preact/hooks";
 import { getBusinessObject, is } from "bpmn-js/lib/util/ModelUtil";
 import { without } from "min-dash";
 import { createElement } from "camunda-bpmn-js-behaviors/lib/util/ElementUtil";
-import { getFormKeys } from "../../../utils";
+import { getFormKeys } from "../../../formKeys";
 
 export default function (element: any) {
     return [

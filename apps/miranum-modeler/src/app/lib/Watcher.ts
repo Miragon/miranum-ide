@@ -1,6 +1,7 @@
 import { RelativePattern, Uri, Webview, WebviewPanel, window, workspace } from "vscode";
-import { Logger, Reader, WorkspaceFolder } from "@miranum-ide/vscode/miranum-vscode";
+import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { FolderContent, MessageType } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 // TODO: Refactor Watcher to make it reusable.
 
@@ -15,7 +16,7 @@ export class Watcher {
 
     private constructor(
         private readonly projectUri: Uri,
-        private readonly workspaceFolders: WorkspaceFolder[],
+        private readonly workspaceFolders: MiranumWorkspaceItem[],
     ) {
         const pattern = this.createGlobPattern();
         const watcher = workspace.createFileSystemWatcher(pattern);
@@ -46,7 +47,7 @@ export class Watcher {
      */
     public static getWatcher(
         projectUri: Uri,
-        workspaceFolders: WorkspaceFolder[],
+        workspaceFolders: MiranumWorkspaceItem[],
     ): Watcher {
         const root = projectUri.path;
         if (this.instances[root] === undefined) {
@@ -77,10 +78,6 @@ export class Watcher {
         return !!this.unresponsive[id];
     }
 
-    private addUnresponsive(id: string, webview: Webview): void {
-        this.unresponsive[id] = webview; // remember webview for reloading files as soon as the webview get visible again
-    }
-
     public removeUnresponsive(id: string): void {
         delete this.unresponsive[id]; // message was posted
 
@@ -90,16 +87,20 @@ export class Watcher {
     }
 
     public async getChangedData(): Promise<FolderContent[]> {
-        const changedWorkspaceFolders: WorkspaceFolder[] = [];
+        const changedMiranumWorkspaceItems: MiranumWorkspaceItem[] = [];
         for (const dir of this.changes) {
             for (const workspaceFolder of this.workspaceFolders) {
                 if (dir === workspaceFolder.path) {
-                    changedWorkspaceFolders.push(workspaceFolder);
+                    changedMiranumWorkspaceItems.push(workspaceFolder);
                 }
             }
         }
 
-        return Reader.get().getAllFiles(this.projectUri, changedWorkspaceFolders);
+        return Reader.get().getAllFiles(this.projectUri, changedMiranumWorkspaceItems);
+    }
+
+    private addUnresponsive(id: string, webview: Webview): void {
+        this.unresponsive[id] = webview; // remember webview for reloading files as soon as the webview get visible again
     }
 
     /**
@@ -113,17 +114,17 @@ export class Watcher {
             return;
         }
 
-        const changedWorkspaceFolders: WorkspaceFolder[] = [];
+        const changedMiranumWorkspaceItems: MiranumWorkspaceItem[] = [];
         for (const dir of this.changes) {
             for (const workspaceFolder of this.workspaceFolders) {
                 if (dir === workspaceFolder.path) {
-                    changedWorkspaceFolders.push(workspaceFolder);
+                    changedMiranumWorkspaceItems.push(workspaceFolder);
                 }
             }
         }
 
         try {
-            await this.postMessage(id, webviewPanel, changedWorkspaceFolders);
+            await this.postMessage(id, webviewPanel, changedMiranumWorkspaceItems);
             this.removeUnresponsive(id);
         } catch (error) {
             this.addUnresponsive(id, webviewPanel.webview);
@@ -138,16 +139,20 @@ export class Watcher {
     private async notify(uri: Uri) {
         try {
             const [dir] = this.getDirectoryAndExtension(uri);
-            const changedWorkspaceFolders: WorkspaceFolder[] = [];
+            const changedMiranumWorkspaceItems: MiranumWorkspaceItem[] = [];
             for (const workspaceFolder of this.workspaceFolders) {
                 if (dir === workspaceFolder.path) {
-                    changedWorkspaceFolders.push(workspaceFolder);
+                    changedMiranumWorkspaceItems.push(workspaceFolder);
                 }
             }
 
             for (const [id, webviewPanel] of this.webviews) {
                 try {
-                    await this.postMessage(id, webviewPanel, changedWorkspaceFolders);
+                    await this.postMessage(
+                        id,
+                        webviewPanel,
+                        changedMiranumWorkspaceItems,
+                    );
                     this.removeUnresponsive(id);
                 } catch (error) {
                     this.addUnresponsive(id, webviewPanel.webview);
@@ -172,7 +177,7 @@ export class Watcher {
     /**
      * Create a {@link https://code.visualstudio.com/api/references/vscode-api#RelativePattern|RelativePattern} for the
      * {@link https://code.visualstudio.com/api/references/vscode-api#FileSystemWatcher|FileSystemWatcher} depending on
-     * the specified {@link WorkspaceFolder}.
+     * the specified {@link MiranumWorkspaceItem}.
      * @private
      */
     private createGlobPattern(): RelativePattern {
@@ -251,7 +256,7 @@ export class Watcher {
     private async postMessage(
         id: string,
         webviewPanel: WebviewPanel,
-        folders: WorkspaceFolder[],
+        folders: MiranumWorkspaceItem[],
     ) {
         if (
             await webviewPanel.webview.postMessage({
