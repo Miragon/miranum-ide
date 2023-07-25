@@ -48,6 +48,7 @@ With the version >= 0.4.3 you can now create and edit DMN 1.3 diagrams.
 
 * Create and edit BPMN processes for Camunda Platform 7 and 8 and enhance them with technical attributes.
 * Create and edit decision tables.
+* Use the create/append-anything-pattern for a better modeling experience.
 * Use the text editor for changes directly in the XML file.
 * Use the integrated *Token Simulation* to simulate your process flow.
 * For more information, see our [documentation](https://www.miranum.io/docs/components/miranum-ide/miranum-modeler).

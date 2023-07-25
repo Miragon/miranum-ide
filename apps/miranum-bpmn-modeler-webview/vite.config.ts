@@ -30,11 +30,11 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
-                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/css/**",
+                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/css/**",
                     dest: "css/",
                 },
                 {
-                    src: "../../node_modules/bpmn-js/dist/assets/bpmn-font/font/**",
+                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/font/**",
                     dest: "font/",
                 },
             ],

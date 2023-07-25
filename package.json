@@ -101,6 +101,8 @@
     "@svgr/webpack": "^8.0.1",
     "axios": "^1.4.0",
     "bpmn-js": "^13.0.8",
+    "bpmn-js-create-append-anything": "^0.3.0",
+    "bpmn-js-element-templates": "^1.2.0",
     "bpmn-js-properties-panel": "^2.1.0",
     "bpmn-js-token-simulation": "^0.31.1",
     "camunda-bpmn-js": "^2.7.0",

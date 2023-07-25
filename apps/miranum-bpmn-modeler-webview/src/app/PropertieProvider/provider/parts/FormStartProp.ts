@@ -1,7 +1,7 @@
 import { isSelectEntryEdited, SelectEntry } from "@bpmn-io/properties-panel";
 import { useService } from "bpmn-js-properties-panel";
 import { useEffect, useState } from "@bpmn-io/properties-panel/preact/hooks";
-import { getFormKeys } from "../../../utils";
+import { getFormKeys } from "../../../formKeys";
 
 export default function (element: any) {
     return [
