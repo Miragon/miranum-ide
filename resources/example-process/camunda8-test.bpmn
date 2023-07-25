@@ -3,11 +3,6 @@
   <bpmn:process id="Process_1d0om0m" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1" name="C8" />
   </bpmn:process>
-  <bpmn:message id="Message_1rfb2b2" name="myMessage">
-    <bpmn:extensionElements>
-      <zeebe:subscription correlationKey="= &#34;myKey&#34;" />
-    </bpmn:extensionElements>
-  </bpmn:message>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1d0om0m">
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">

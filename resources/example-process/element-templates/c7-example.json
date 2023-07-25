@@ -1,0 +1,118 @@
+[
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task",
+    "id": "io.camunda.examples.EmailTask",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "category": {
+      "id": "communication",
+      "name": "Communication"
+    },
+    "properties": [
+      {
+        "type": "Hidden",
+        "value": "${mailDelegate}",
+        "editable": false,
+        "binding": {
+          "type": "property",
+          "name": "camunda:delegateExpression"
+        }
+      },
+      {
+        "label": "Hostname",
+        "description": "Specify the email server (SMTP) host name",
+        "type": "String",
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "HOST_NAME"
+        },
+        "constraints": {
+          "notEmpty": true
+        }
+      },
+      {
+        "label": "Port",
+        "description": "Specify the email server (SMTP) port (default=25)",
+        "type": "String",
+        "value": "= 25",
+        "optional": true,
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "PORT"
+        }
+      },
+      {
+        "label": "Username",
+        "description": "Specify the user name to authenticate with",
+        "type": "String",
+        "optional": true,
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "USER_NAME"
+        }
+      },
+      {
+        "label": "Password",
+        "description": "Specify the password to authenticate with",
+        "type": "String",
+        "optional": true,
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "PASSWORD"
+        }
+      },
+      {
+        "label": "Sender",
+        "description": "Enter the FROM field",
+        "type": "String",
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "sender"
+        },
+        "constraints": {
+          "notEmpty": true
+        }
+      },
+      {
+        "label": "Recipient",
+        "description": "Enter the TO field",
+        "type": "String",
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "recipient"
+        },
+        "constraints": {
+          "notEmpty": true
+        }
+      },
+      {
+        "label": "Subject",
+        "description": "Enter the mail subject",
+        "type": "String",
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "subject"
+        },
+        "constraints": {
+          "notEmpty": true
+        }
+      },
+      {
+        "label": "Body",
+        "description": "Enter the email message body",
+        "type": "Text",
+        "binding": {
+          "type": "camunda:inputParameter",
+          "name": "message"
+        },
+        "constraints": {
+          "notEmpty": true
+        }
+      }
+    ]
+  }
+]

@@ -1,12 +1,13 @@
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
+import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app";
 // bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
 import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
+import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
@@ -316,8 +317,13 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
-                additionalModules: [...commonModules, miragonProviderModule],
+                additionalModules: [
+                    ...commonModules,
+                    CreateAppendElementTemplatesModule,
+                    miragonProviderModule,
+                ],
             });
+            extendElementTemplates(bpmnModeler);
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
@@ -336,6 +342,20 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
     }
 
     return bpmnModeler;
+}
+
+function extendElementTemplates(bpmnModeler: BpmnModeler7) {
+    const elementTemplates: any = bpmnModeler.get("elementTemplates");
+
+    elementTemplates.__proto__.createElement = (template: any) => {
+        if (!template) {
+            throw new Error("template is missing");
+        }
+
+        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
+
+        return templateElementFactory.create(template);
+    };
 }
 
 /**

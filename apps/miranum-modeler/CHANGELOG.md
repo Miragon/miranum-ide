@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Support for Camunda 8 bpmn files with properties panel (#302)
+* Support append pattern for C8 and C7 (#322)
+
+### Fixed
+
+* Unable to load element templates when given in an array
 
 ## [0.4.3] - 2023-07-03
 
