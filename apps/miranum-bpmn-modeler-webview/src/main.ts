@@ -1,8 +1,7 @@
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app";
-// bpmn.js
+import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app"; // bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
 import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
@@ -10,13 +9,12 @@ import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider";
-// css
-import "./styles.css";
+import miragonProviderModule from "./app/PropertieProvider/provider"; // css
+import "./styles/styles.css"; // import "./styles/theme.css";
 import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
 import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css"; //
 
 //
 // Global objects
@@ -26,6 +24,7 @@ let contentController: ContentController;
 const stateController = new StateController<ModelerData>();
 
 let isUpdateFromExtension = false;
+const theme = true;
 const updateXML = asyncDebounce(openXML, 100);
 
 //
@@ -305,10 +304,12 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
 function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
     let bpmnModeler;
     const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+    const defaultColor = theme ? getTheme() : undefined;
 
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.None:
         case ExecutionPlatformVersion.Camunda7: {
+            console.log("DefaultColor", defaultColor);
             bpmnModeler = new BpmnModeler7({
                 container: "#js-canvas",
                 keyboard: {
@@ -317,6 +318,7 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
+                bpmnRenderer: defaultColor,
                 additionalModules: [
                     ...commonModules,
                     CreateAppendElementTemplatesModule,
@@ -341,6 +343,7 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
         }
     }
 
+    addMiranumLogo();
     return bpmnModeler;
 }
 
@@ -356,6 +359,36 @@ function extendElementTemplates(bpmnModeler: BpmnModeler7) {
 
         return templateElementFactory.create(template);
     };
+}
+
+function getTheme(): { defaultFillColor: string; defaultStrokeColor: string } {
+    const html = document.documentElement;
+    const css = getComputedStyle(html);
+    return {
+        defaultFillColor: css.getPropertyValue("--vscode-editor-background"),
+        defaultStrokeColor: css.getPropertyValue("--vscode-button-background"),
+    };
+}
+
+function addMiranumLogo(): void {
+    const logo: HTMLAnchorElement | null =
+        document.body.querySelector(".bjs-powered-by");
+
+    if (logo) {
+        logo.href = "https://www.miranum.io/";
+
+        let child = logo.lastElementChild;
+        while (child) {
+            logo.removeChild(child);
+            child = logo.lastElementChild;
+        }
+        const img = document.createElement("img");
+        img.src = "https://www.miranum.io/img/logo_blau.png";
+        img.alt = "Miranum Logo";
+        img.width = 120;
+
+        logo.appendChild(img);
+    }
 }
 
 /**

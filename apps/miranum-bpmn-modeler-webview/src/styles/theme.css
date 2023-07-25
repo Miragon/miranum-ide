@@ -1,0 +1,32 @@
+:root {
+    /* TokenSimulation */
+    --token-simulation-silver-darken-94: var(--vscode-editor-background);
+    --token-simulation-grey-darken-30: var(--vscode-editor-foreground);
+}
+
+/**
+ * Background
+ */
+:root .layer-djs-grid {
+    filter: invert(1);
+}
+
+/**
+ * Diagram JS
+ */
+:root .djs-parent {
+    --canvas-fill-color: var(--vscode-editor-background);
+    --shape-drop-allowed-fill-color: var(--vscode-editor-background);
+    /* Palette */
+    --palette-entry-color: var(--vscode-button-background);
+    --palette-entry-hover-color: var(--vscode-button-hoverBackground);
+    --palette-entry-selected-color: var(--vscode-editorSuggestWidget-highlightForeground);
+    --palette-separator-color: var(--vscode-button-separator);
+    --palette-toggle-hover-background-color: var(--vscode-editor-hoverHighlightBackground);
+    --palette-background-color: var(--vscode-editor-background);
+    --palette-border-color: var(--vscode-button-border);
+    /* Context Pad */
+    --context-pad-entry-background-color: var(--vscode-editor-background);
+    --context-pad-entry-hover-background-color: var(--vscode-list-hoverBackground);
+}
+

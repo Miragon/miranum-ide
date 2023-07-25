@@ -37,6 +37,10 @@ export default defineConfig({
                     src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/font/**",
                     dest: "font/",
                 },
+                {
+                    src: "./src/styles/theme.css",
+                    dest: "css/",
+                },
             ],
         }),
     ],

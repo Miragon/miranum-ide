@@ -332,6 +332,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         const styleUri = webview.asWebviewUri(
             vscode.Uri.joinPath(pathToWebview, "index.css"),
         );
+        const themeUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(pathToWebview, "css", "theme.css"),
+        );
         const fontBpmn = webview.asWebviewUri(
             vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"),
         );
@@ -346,13 +349,14 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
                     style-src ${webview.cspSource} 'unsafe-inline';
-                    img-src ${webview.cspSource} data:;
+                    img-src ${webview.cspSource} data: https:;
                     font-src ${webview.cspSource} data:;
                     script-src 'nonce-${nonce}';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
                 <link href="${styleUri}" rel="stylesheet" type="text/css" />
+                <link href="${themeUri}" rel="stylesheet" type="text/css" />
                 <link href="${fontBpmn}" rel="stylesheet" type="text/css" />
 
                 <title>Custom Texteditor Template</title>
