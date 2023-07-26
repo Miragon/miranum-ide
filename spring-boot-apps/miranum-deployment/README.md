@@ -6,6 +6,10 @@ Spring applications that use the Miranum Deployment Receiver library.
 
 ![Miranum Deployment Diagram](../../images/miranum-deployment.png)
 
+## Local Development
+ 
+Checkout [the local development docs](../../docs/development.md) for more information.
+
 ## Usage
 
 We provide spring boot starters for the Miranum Deployment Server and the Miranum Deployment Receiver.
