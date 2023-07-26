@@ -309,7 +309,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
     switch (executionPlatformVersion) {
         case ExecutionPlatformVersion.None:
         case ExecutionPlatformVersion.Camunda7: {
-            console.log("DefaultColor", defaultColor);
             bpmnModeler = new BpmnModeler7({
                 container: "#js-canvas",
                 keyboard: {
