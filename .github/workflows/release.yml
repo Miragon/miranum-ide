@@ -91,6 +91,7 @@ jobs:
         with:
           name: miranum-core
           path: dist/libs/miranum-core
+      # spring boot apps
       - uses: actions/upload-artifact@v3
         with:
           name: spring-boot-apps
@@ -282,7 +283,7 @@ jobs:
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
-          directory: miranum-deployment-proxy
+          directory: miranum-deployment
           gpg_private_key: ${{ secrets.PGP_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
           nexus_username: ${{ secrets.NEXUS_USERNAME }}
@@ -300,10 +301,10 @@ jobs:
       - name: Set Release version env variable
         run: |
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-      - name: Build and push miranum-deployment-proxy
+      - name: Build and push miranum-deployment-service
         uses: docker/build-push-action@v4
         with:
-          context: ./miranum-deployment-proxy
+          context: ./miranum-deployment
           push: true
-          tags: miragon/miranum-deployment-proxy:${{ env.RELEASE_VERSION }},miragon/miranum-deployment-proxy:latest
+          tags: miragon/miranum-deployment-service:${{ env.RELEASE_VERSION }},miragon/miranum-deployment-service:latest
           platforms: linux/amd64, linux/arm64/v8

@@ -1,0 +1,48 @@
+{
+  "name": "miranum-deployment",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nxrocks/nx-spring-boot:build",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "java -jar miranum-deployment-service/target/miranum-deployment-service.jar"
+        ],
+        "cwd": "spring-boot-apps/miranum-deployment"
+      }
+    },
+    "test": {
+      "executor": "@nxrocks/nx-spring-boot:test",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment"
+      }
+    },
+    "clean": {
+      "executor": "@nxrocks/nx-spring-boot:clean",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment"
+      }
+    },
+    "format": {
+      "executor": "@nxrocks/nx-spring-boot:format",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment"
+      }
+    },
+    "format-check": {
+      "executor": "@nxrocks/nx-spring-boot:format-check",
+      "options": {
+        "root": "spring-boot-apps/miranum-deployment"
+      }
+    }
+  },
+  "tags": []
+}
