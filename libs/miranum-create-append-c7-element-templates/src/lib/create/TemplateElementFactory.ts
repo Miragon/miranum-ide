@@ -1,23 +1,29 @@
 import { getBusinessObject } from "bpmn-js/lib/util/ModelUtil";
 
 export default class TemplateElementFactory {
-    constructor(commandStack, elementFactory) {
-        this._commandStack = commandStack;
-        this._elementFactory = elementFactory;
+    public static $inject: string[];
+
+    private readonly commandStack: any;
+
+    private readonly elementFactory: any;
+
+    constructor(commandStack: any, elementFactory: any) {
+        this.commandStack = commandStack;
+        this.elementFactory = elementFactory;
     }
 
     /**
      * Create an element based on an element template.
      */
-    create(template) {
+    public create(template: any) {
         // (1) base shape
-        const element = this._createShape(template);
+        const element = this.createShape(template);
 
         // (2) apply template
-        this._setModelerTemplate(element, template);
+        this.setModelerTemplate(element, template);
 
         // (3)
-        this._commandStack.execute("propertiesPanel.camunda.changeTemplate", {
+        this.commandStack.execute("propertiesPanel.camunda.changeTemplate", {
             element,
             oldTemplate: null,
             newTemplate: template,
@@ -26,11 +32,11 @@ export default class TemplateElementFactory {
         return element;
     }
 
-    _createShape(template) {
-        const elementFactory = this._elementFactory;
+    private createShape(template: any) {
+        const elementFactory = this.elementFactory;
         const { appliesTo, elementType = {} } = template;
 
-        const attrs = {
+        const attrs: any = {
             type: elementType.value || appliesTo[0],
         };
 
@@ -42,7 +48,7 @@ export default class TemplateElementFactory {
         return elementFactory.createShape(attrs);
     }
 
-    _setModelerTemplate(element, template) {
+    private setModelerTemplate(element: any, template: any) {
         const { id, version } = template;
 
         const businessObject = getBusinessObject(element);

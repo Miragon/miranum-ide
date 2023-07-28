@@ -13,7 +13,10 @@
         "*.js",
         "*.jsx"
       ],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "import/no-extraneous-dependencies": "off"
+      }
     },
     {
       "files": [
@@ -28,7 +31,6 @@
         "*.jsx"
       ],
       "rules": {
-        "import/no-extraneous-dependencies": "off"
       }
     }
   ]
