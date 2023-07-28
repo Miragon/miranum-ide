@@ -1,7 +1,8 @@
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app";
+import { ExtendedElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
+import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
@@ -319,11 +320,13 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 },
                 additionalModules: [
                     ...commonModules,
+                    ExtendedElementTemplates,
                     CreateAppendElementTemplatesModule,
                     miragonProviderModule,
                 ],
             });
-            extendElementTemplates(bpmnModeler);
+            console.log("ElementTemplates", bpmnModeler.get("elementTemplates"));
+            //extendElementTemplates(bpmnModeler);
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
@@ -344,19 +347,19 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
     return bpmnModeler;
 }
 
-function extendElementTemplates(bpmnModeler: BpmnModeler7) {
-    const elementTemplates: any = bpmnModeler.get("elementTemplates");
-
-    elementTemplates.__proto__.createElement = (template: any) => {
-        if (!template) {
-            throw new Error("template is missing");
-        }
-
-        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
-
-        return templateElementFactory.create(template);
-    };
-}
+// function extendElementTemplates(bpmnModeler: BpmnModeler7) {
+//     const elementTemplates: any = bpmnModeler.get("elementTemplates");
+//
+//     elementTemplates.__proto__.createElement = (template: any) => {
+//         if (!template) {
+//             throw new Error("template is missing");
+//         }
+//
+//         const templateElementFactory = new TemplateElementFactory(bpmnModeler);
+//
+//         return templateElementFactory.create(template);
+//     };
+// }
 
 /**
  * A promise that will resolve if initialized() is called.

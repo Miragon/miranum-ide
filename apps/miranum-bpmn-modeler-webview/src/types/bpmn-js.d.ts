@@ -22,3 +22,7 @@ declare module "bpmn-js-token-simulation" {
 declare module "bpmn-js-create-append-anything" {
     export const CreateAppendElementTemplatesModule;
 }
+
+declare module "@miranum-ide/miranum-create-append-c7-element-templates" {
+    export const ExtendedElementTemplates;
+}

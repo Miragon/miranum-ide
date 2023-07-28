@@ -1,1 +1,1 @@
-export * from "./lib/miranum-create-append-c7-element-templates";
+export { default as ExtendedElementTemplates } from "./lib";
