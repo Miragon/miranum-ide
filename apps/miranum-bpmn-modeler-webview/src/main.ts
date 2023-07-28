@@ -1,7 +1,7 @@
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ExtendedElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
+import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
 import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
@@ -320,7 +320,7 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 },
                 additionalModules: [
                     ...commonModules,
-                    ExtendedElementTemplates,
+                    ExtendElementTemplates,
                     CreateAppendElementTemplatesModule,
                     miragonProviderModule,
                 ],

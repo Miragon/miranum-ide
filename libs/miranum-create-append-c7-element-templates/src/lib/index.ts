@@ -1,9 +1,9 @@
 import templateElementFactory from "./create";
 
-import { ExtendedElementTemplates } from "./ExtendedElementTemplates";
+import { ExtendElementTemplates } from "./ExtendElementTemplates";
 
 export default {
     __depends__: [templateElementFactory],
     __init__: ["extendedElementTemplates"],
-    extendedElementTemplates: ["type", ExtendedElementTemplates],
+    extendedElementTemplates: ["type", ExtendElementTemplates],
 };

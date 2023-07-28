@@ -1,1 +1,1 @@
-export { default as ExtendedElementTemplates } from "./lib";
+export { default as ExtendElementTemplates } from "./lib";

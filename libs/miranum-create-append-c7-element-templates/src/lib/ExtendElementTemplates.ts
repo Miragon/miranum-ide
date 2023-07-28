@@ -1,4 +1,4 @@
-export class ExtendedElementTemplates {
+export class ExtendElementTemplates {
     public static $inject: string[];
 
     constructor(elementTemplates: any, templateElementFactory: any) {
@@ -16,4 +16,4 @@ export class ExtendedElementTemplates {
     }
 }
 
-ExtendedElementTemplates.$inject = ["elementTemplates", "templateElementFactory"];
+ExtendElementTemplates.$inject = ["elementTemplates", "templateElementFactory"];
