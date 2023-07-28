@@ -24,6 +24,9 @@
         "libs/digiwf-deployment-plugin-rest/src/index.ts"
       ],
       "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"],
+      "@miranum-ide/miranum-create-append-c7-element-templates": [
+        "libs/miranum-create-append-c7-element-templates/src/index.js"
+      ],
       "@miranum-ide/shared/shared-console": ["libs/shared/shared-console/src/index.ts"],
       "@miranum-ide/vscode/miranum-vscode": ["libs/vscode/miranum-vscode/src/index.ts"],
       "@miranum-ide/vscode/miranum-vscode-webview": [
