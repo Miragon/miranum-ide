@@ -11,7 +11,7 @@
         "outputPath": "dist/libs/miranum-create-append-c7-element-templates",
         "tsConfig": "libs/miranum-create-append-c7-element-templates/tsconfig.lib.json",
         "packageJson": "libs/miranum-create-append-c7-element-templates/package.json",
-        "main": "libs/miranum-create-append-c7-element-templates/src/index.js",
+        "main": "libs/miranum-create-append-c7-element-templates/src/index.ts",
         "assets": [
           "libs/miranum-create-append-c7-element-templates/*.md",
           "resources/",
@@ -27,14 +27,14 @@
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/miranum-create-append-c7-element-templates/**/*.js"]
+        "lintFilePatterns": ["libs/miranum-create-append-c7-element-templates/**/*.ts"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/miranum-create-append-c7-element-templates/jest.config.js",
+        "jestConfig": "libs/miranum-create-append-c7-element-templates/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
