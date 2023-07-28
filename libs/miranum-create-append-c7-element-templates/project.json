@@ -12,12 +12,16 @@
         "tsConfig": "libs/miranum-create-append-c7-element-templates/tsconfig.lib.json",
         "packageJson": "libs/miranum-create-append-c7-element-templates/package.json",
         "main": "libs/miranum-create-append-c7-element-templates/src/index.js",
-        "assets": ["libs/miranum-create-append-c7-element-templates/*.md"]
+        "assets": [
+          "libs/miranum-create-append-c7-element-templates/*.md",
+          "resources/",
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "/"
+          }
+        ]
       }
-    },
-    "publish": {
-      "command": "node tools/scripts/publish.mjs miranum-create-append-c7-element-templates {args.ver} {args.tag}",
-      "dependsOn": ["build"]
     },
     "lint": {
       "executor": "@nx/linter:eslint",

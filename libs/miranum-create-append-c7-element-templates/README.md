@@ -1,11 +1,40 @@
 # miranum-create-append-c7-element-templates
 
-This library was generated with [Nx](https://nx.dev).
+## Features
 
-## Building
+* Extend the element templates module
+* Use the create/append pattern for Camunda 7 Element Templates
+* You can try this out with the [Miranum Modeler](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.vs-code-bpmn-modeler) within `VS Code`
 
-Run `nx build miranum-create-append-c7-element-templates` to build the library.
+> Note: This plugin extends the bpmn-js plugins for [element templates](https://www.npmjs.com/package/bpmn-js-element-templates)
+> and [create/append anything](https://www.npmjs.com/package/bpmn-js-create-append-anything).
 
-## Running unit tests
+## Usage
 
-Run `nx test miranum-create-append-c7-element-templates` to execute the unit tests via [Jest](https://jestjs.io).
+```shell
+npm install @miragon/miranum-create-append-element-templates
+```
+
+```javascript
+// Import element templates
+import {
+    ElementTemplatesPropertiesProviderModule
+} from 'bpmn-js-element-templates';
+// Import create/append anything
+import {
+  CreateAppendAnythingModule,
+  CreateAppendElementTemplatesModule
+} from 'bpmn-js-create-append-anything';
+
+import { ExtendElementTemplates } from '@miragon/miranum-create-append-c7-element-templates'
+
+const modeler = new BpmnModeler({
+    additionalModules: [
+        ...,
+        ElementTemplatesPropertiesProviderModule,
+        ExtendElementTemplates,
+        CreateAppendAnythingModule,
+        CreateAppendElementTemplatesModule,
+    ]
+});
+```
