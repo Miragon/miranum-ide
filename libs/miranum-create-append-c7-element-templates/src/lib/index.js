@@ -1,4 +1,4 @@
-import templateElementFactory from "./TemplateElementFactory";
+import * as templateElementFactory from "./TemplateElementFactory";
 
 import { ExtendedElementTemplates } from "./ExtendedElementTemplates";
 

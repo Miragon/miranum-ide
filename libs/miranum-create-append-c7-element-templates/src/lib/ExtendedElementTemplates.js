@@ -14,17 +14,4 @@ export class ExtendedElementTemplates {
     }
 }
 
-// export function ExtendedElementTemplates(elementTemplates, templateElementFactory) {
-//     return {
-//         ...elementTemplates,
-//         createElement: (template) => {
-//             if (!template) {
-//                 throw new Error("template is missing");
-//             }
-//
-//             return templateElementFactory.create(template);
-//         },
-//     };
-// }
-
 ExtendedElementTemplates.$inject = ["elementTemplates", "templateElementFactory"];
