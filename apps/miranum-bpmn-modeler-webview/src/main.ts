@@ -176,7 +176,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
     for (const folder of folders) {
         switch (folder.type) {
             case "element-template": {
-                modeler.get("elementTemplatesLoader").setTemplates(folder.files);
+                modeler.get<any>("elementTemplatesLoader").setTemplates(folder.files);
                 stateController.updateState({
                     data: {
                         additionalFiles: [{ type: folder.type, files: folder.files }],
@@ -230,7 +230,7 @@ function setupBpmnModelerListener() {
         );
     });
 
-    modeler.get("eventBus").on("commandStack.changed", sendChanges);
+    modeler.get<any>("eventBus").on("commandStack.changed", sendChanges);
 }
 
 /**
@@ -325,8 +325,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                     miragonProviderModule,
                 ],
             });
-            console.log("ElementTemplates", bpmnModeler.get("elementTemplates"));
-            //extendElementTemplates(bpmnModeler);
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
@@ -346,20 +344,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
 
     return bpmnModeler;
 }
-
-// function extendElementTemplates(bpmnModeler: BpmnModeler7) {
-//     const elementTemplates: any = bpmnModeler.get("elementTemplates");
-//
-//     elementTemplates.__proto__.createElement = (template: any) => {
-//         if (!template) {
-//             throw new Error("template is missing");
-//         }
-//
-//         const templateElementFactory = new TemplateElementFactory(bpmnModeler);
-//
-//         return templateElementFactory.create(template);
-//     };
-// }
 
 /**
  * A promise that will resolve if initialized() is called.

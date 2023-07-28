@@ -1,6 +1,6 @@
 import { getBusinessObject } from "bpmn-js/lib/util/ModelUtil";
 
-class TemplateElementFactory {
+export default class TemplateElementFactory {
     constructor(commandStack, elementFactory) {
         this._commandStack = commandStack;
         this._elementFactory = elementFactory;
@@ -53,8 +53,3 @@ class TemplateElementFactory {
 }
 
 TemplateElementFactory.$inject = ["commandStack", "elementFactory"];
-
-export default {
-    __init__: ["templateElementFactory"],
-    templateElementFactory: ["type", TemplateElementFactory],
-};
