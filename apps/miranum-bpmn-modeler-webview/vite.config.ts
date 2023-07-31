@@ -23,6 +23,13 @@ export default defineConfig({
                     "../../libs/vscode/shared/miranum-modeler/src",
                 ),
             },
+            {
+                find: "@miranum-ide/miranum-create-append-c7-element-templates",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/miranum-create-append-c7-element-templates/src",
+                ),
+            },
         ],
     },
 
