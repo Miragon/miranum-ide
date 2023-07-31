@@ -1,0 +1,19 @@
+{
+  "name": "@miranum-ide/miranum-create-append-c7-element-templates",
+  "description": "Extend the element templates module to use create/append pattern for Camunda 7 Element Templates.",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://www.miranum.io/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miragon/miranum-ide/blob/200c715ca6f091e06117cfbd04aa01630f633c33/libs/miranum-create-append-c7-element-templates/README.md"
+  },
+  "bugs": {
+    "url": "https://github.com/Miragon/miranum-ide/issues"
+  },
+  "keywords": [
+    "bpmn-js",
+    "bpmn-io",
+    "bpmn-js-element-templates",
+    "bpmn-js-create-append-anything"
+  ]
+}
