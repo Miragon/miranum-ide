@@ -20,6 +20,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     private constructor(private readonly context: vscode.ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
         TextEditor.register(context);
+
         // ----- Register commands ---->
         const toggleTextEditor = vscode.commands.registerCommand(
             "bpmn-modeler.toggleTextEditor",
@@ -52,10 +53,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     }
 
     /**
-     * Called when the custom editor / source file is opened
-     * @param document Represents the source file
-     * @param webviewPanel Panel that contains the webview
-     * @param token Token to cancel asynchronous or long-running operations
+     * Called when the custom editor / source file is opened.
+     * @param document Represents the source file.
+     * @param webviewPanel Panel that contains the webview.
+     * @param token Token to cancel asynchronous or long-running operations.
      */
     public async resolveCustomTextEditor(
         document: vscode.TextDocument,
@@ -73,22 +74,34 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             BpmnModeler.counter,
         );
 
+        // Helper
         let isUpdateFromWebview = false;
         let isBuffer = false;
 
-        const projectUri = this.getProjectUri(document.uri);
-        const workspaceFolder = await this.getWorkspace(projectUri);
+        // Important paths and content of miranum.json
+        const pathToProjectRoot = this.getPathToProjectRoot(document.uri);
+        const { pathToMiranumJson, miranumWorkspaceItems } = await this.getMiranumJson(
+            pathToProjectRoot,
+            Uri.parse(document.uri.toString().split("/").slice(0, -1).join("/")),
+        );
 
-        webviewPanel.webview.options = { enableScripts: true };
+        // Initialize TextEditor and Watcher
         TextEditor.document = document;
-
-        const watcher = Watcher.getWatcher(projectUri, workspaceFolder);
+        const watcher = Watcher.getWatcher(
+            pathToMiranumJson ? pathToMiranumJson : pathToProjectRoot,
+            miranumWorkspaceItems,
+        );
         watcher.subscribe(document.uri.path, webviewPanel);
+
+        // Initialize Webview
+        webviewPanel.webview.options = { enableScripts: true };
         webviewPanel.webview.html = this.getHtmlForWebview(
             webviewPanel.webview,
             this.context.extensionUri,
         );
 
+        // --- Create EventListener for the webview --->
+        // (1) EventListener on receiving messages
         webviewPanel.webview.onDidReceiveMessage(
             async (event: VscMessage<ModelerData>) => {
                 try {
@@ -147,37 +160,22 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             },
         );
 
-        const getModelerExecutionPlatformVersion = (
-            xmlString: string,
-        ): ExecutionPlatformVersion => {
-            const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
-
-            const match = xmlString.match(regex);
-
-            if (match) {
-                const version = match[1];
-                if (version === "7") {
-                    return ExecutionPlatformVersion.Camunda7;
-                } else if (version === "8") {
-                    return ExecutionPlatformVersion.Camunda8;
-                }
-            }
-            return ExecutionPlatformVersion.None;
-        };
-
         const postMessage = async (msgType: MessageType) => {
             if (webviewPanel.visible) {
                 let data: ModelerData | undefined;
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
                         data = {
-                            executionPlatformVersion: getModelerExecutionPlatformVersion(
-                                document.getText(),
-                            ),
+                            executionPlatformVersion:
+                                this.getModelerExecutionPlatformVersion(
+                                    document.getText(),
+                                ),
                             bpmn: document.getText(),
                             additionalFiles: await Reader.get().getAllFiles(
-                                projectUri,
-                                workspaceFolder,
+                                pathToMiranumJson
+                                    ? pathToMiranumJson
+                                    : pathToProjectRoot,
+                                miranumWorkspaceItems,
                             ),
                         };
                         break;
@@ -186,7 +184,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                         data = {
                             bpmn: isBuffer ? document.getText() : undefined,
                             executionPlatformVersion: isBuffer
-                                ? getModelerExecutionPlatformVersion(document.getText())
+                                ? this.getModelerExecutionPlatformVersion(
+                                    document.getText(),
+                                )
                                 : ExecutionPlatformVersion.None,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
@@ -197,9 +197,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     default: {
                         data = {
                             bpmn: document.getText(),
-                            executionPlatformVersion: getModelerExecutionPlatformVersion(
-                                document.getText(),
-                            ),
+                            executionPlatformVersion:
+                                this.getModelerExecutionPlatformVersion(
+                                    document.getText(),
+                                ),
                         };
                         break;
                     }
@@ -254,6 +255,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             }
         };
 
+        // (2) EventListener on saving
         const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(() => {
             Logger.info(
                 "[Miranum.Modeler]",
@@ -262,6 +264,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             );
         });
 
+        // (3) EventListener on changes
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
             (event) => {
                 if (
@@ -294,6 +297,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             },
         );
 
+        // (4) EventListener on switching tabs
         webviewPanel.onDidChangeViewState((wp) => {
             switch (true) {
                 case wp.webviewPanel.active: {
@@ -306,6 +310,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             }
         });
 
+        // (5) EventListener on closing tab
         webviewPanel.onDidDispose(() => {
             BpmnModeler.counter--;
             vscode.commands.executeCommand(
@@ -318,8 +323,38 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             changeDocumentSubscription.dispose();
             saveDocumentSubscription.dispose();
         });
+        // <--- Create EventListener for the webview ---
     }
 
+    /**
+     * Depending on the opened BPMN file, either the modeler for Camunda 7 or Camunda 8 is created.
+     * @param xmlString The content of the opened BPMN file.
+     * @private
+     */
+    private getModelerExecutionPlatformVersion(
+        xmlString: string,
+    ): ExecutionPlatformVersion {
+        const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
+
+        const match = xmlString.match(regex);
+
+        if (match) {
+            const version = match[1];
+            if (version === "7") {
+                return ExecutionPlatformVersion.Camunda7;
+            } else if (version === "8") {
+                return ExecutionPlatformVersion.Camunda8;
+            }
+        }
+        return ExecutionPlatformVersion.None;
+    }
+
+    /**
+     * Get the HTML-Structure we want for our webview.
+     * @param webview The reference to the webview.
+     * @param extensionUri The path to the directory where the extension is installed.
+     * @private
+     */
     private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const pathToWebview = vscode.Uri.joinPath(
             extensionUri,
@@ -381,6 +416,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         `;
     }
 
+    /**
+     * Create a nonce for our Content-Security-Policy
+     * @private
+     */
     private getNonce(): string {
         let text = "";
         const possible =
@@ -391,6 +430,12 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         return text;
     }
 
+    /**
+     * Makes the [lodash.debounce](https://lodash.com/docs/4.17.15#debounce) function async-friendly
+     * @param func The function to be called after a given time.
+     * @param wait The time that should be awaited before calling the given function again.
+     * @private
+     */
     private asyncDebounce<F extends (...args: any[]) => Promise<boolean>>(
         func: F,
         wait?: number,
@@ -418,6 +463,12 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
             }) as ReturnType<F>;
     }
 
+    /**
+     * Write the changes made to the BPMN Diagram to the file/document.
+     * @param document The file that contains the XML.
+     * @param text The XML that gets written to the file.
+     * @private
+     */
     private async writeChangesToDocument(
         document: vscode.TextDocument,
         text: string,
@@ -434,12 +485,13 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
     }
 
     /**
-     * Gets the URI of the currently opened project.
-     * If a workspace exists, the URI of the workspace is returned, otherwise the URI of the open document without the filename.
-     * @param document The URI of the open document
+     * Get the URI of the path to the root of the project.
+     * If a workspace exists, the URI of the workspace is returned, otherwise the URI of the open document without the
+     * filename.
+     * @param document The URI of the open document.
      * @private
      */
-    private getProjectUri(document: Uri): Uri {
+    private getPathToProjectRoot(document: Uri): Uri {
         const workspaces = vscode.workspace.workspaceFolders;
         let documentParts = document.path.split("/");
         documentParts = documentParts.slice(0, documentParts.length - 1);
@@ -455,12 +507,64 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         return Uri.parse(documentParts.join("/"));
     }
 
-    private async getWorkspace(projectUri: Uri): Promise<MiranumWorkspaceItem[]> {
-        async function getMiranumJson() {
+    /**
+     * Get the path to the miranum.json and it's content.
+     * First, the directory of the opened BPMN file is searched. If nothing is found there, a recursive search is
+     * performed in the parent directories until the root of the project is reached.
+     * @param pathToProjectRoot The path to the root of the project.
+     * @param path Path to the open .bpmn-file.
+     * @private
+     */
+    private async getMiranumJson(
+        pathToProjectRoot: Uri,
+        path: Uri,
+    ): Promise<{
+            pathToMiranumJson?: Uri;
+            miranumWorkspaceItems: MiranumWorkspaceItem[];
+        }> {
+        try {
+            const pathToMiranumJson = await searchMiranumJson(path);
+            return {
+                pathToMiranumJson,
+                miranumWorkspaceItems: await readMiranumJson(pathToMiranumJson),
+            };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            Logger.error(
+                "[Miranum.Modeler]",
+                "Could not read miranum.json:",
+                `\n${message}`,
+            );
+            return {
+                pathToMiranumJson: undefined,
+                miranumWorkspaceItems: getDefaultWorkspace(),
+            };
+        }
+
+        async function searchMiranumJson(searchPath: Uri): Promise<Uri> {
+            const dir = await vscode.workspace.fs.readDirectory(searchPath);
+
+            if (
+                !pathToProjectRoot ||
+                !searchPath.toString().includes(pathToProjectRoot.toString())
+            ) {
+                throw Error("Could not find miranum.json within the project!");
+            }
+
+            if (dir.find((item) => item[0] === "miranum.json")) {
+                return searchPath;
+            } else {
+                return searchMiranumJson(
+                    Uri.parse(searchPath.toString().split("/").slice(0, -1).join("/")),
+                );
+            }
+        }
+
+        async function readMiranumJson(pathToMiranumJson: Uri) {
             // eslint-disable-next-line no-useless-catch
             try {
                 const file = await vscode.workspace.fs.readFile(
-                    vscode.Uri.joinPath(projectUri, "miranum.json"),
+                    vscode.Uri.joinPath(pathToMiranumJson, "miranum.json"),
                 );
                 const workspace: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),
@@ -479,18 +583,6 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                     extension: ".json",
                 },
             ];
-        }
-
-        try {
-            return await getMiranumJson();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : `${error}`;
-            Logger.error(
-                "[Miranum.Modeler]",
-                "Could not read miranum.json:",
-                `\n${message}`,
-            );
-            return getDefaultWorkspace();
         }
     }
 }
