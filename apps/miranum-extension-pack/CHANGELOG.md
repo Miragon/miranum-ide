@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **\[Miranum Modeler\]** Unable to load element templates when given in an array
 * **\[Miranum Modeler\]** Recursive reading of miranum.json
+* **\[Miranum Console\]** Remove icons from directories within tree view
 
 ## [0.4.3] - 2023-07-03
 
