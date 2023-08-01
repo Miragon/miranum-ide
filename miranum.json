@@ -2,11 +2,31 @@
   "projectVersion": "1.0.0",
   "name": "example-process",
   "workspace": [
-    { "type": "bpmn", "path": "", "extension": ".bpmn" },
-    { "type": "dmn", "path": "", "extension": ".dmn" },
-    { "type": "form", "path": "forms", "extension": ".form" },
-    { "type": "element-template", "path": "element-templates", "extension": ".json" },
-    { "type": "config", "path": "configs", "extension": ".config.json" }
+    {
+      "type": "bpmn",
+      "path": "",
+      "extension": ".bpmn"
+    },
+    {
+      "type": "dmn",
+      "path": "",
+      "extension": ".dmn"
+    },
+    {
+      "type": "form",
+      "path": "forms",
+      "extension": ".form"
+    },
+    {
+      "type": "element-template",
+      "path": "element-templates",
+      "extension": ".json"
+    },
+    {
+      "type": "config",
+      "path": "configs",
+      "extension": ".config.json"
+    }
   ],
   "deployment": [
     {
@@ -14,11 +34,19 @@
       "targetEnvironments": [
         {
           "name": "local",
-          "url": "http://localhost:8080"
+          "url": "http://localhost:9002"
         },
         {
           "name": "dev",
-          "url": "http://localhost:8090"
+          "url": "http://localhost:9001"
+        },
+        {
+          "name": "test",
+          "url": "http://localhost:9001"
+        },
+        {
+          "name": "prod",
+          "url": "http://localhost:9001"
         }
       ]
     }

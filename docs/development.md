@@ -37,22 +37,14 @@ flowchart LR
 
 ## Setup local dev environment
 
-### Miranum-Deployment-Proxy
+### Miranum-Deployment
 
-You should start the miranum-deployment-proxy before running deployment commands.
-If you want to deploy your artifacts to a "real" digiwf-engine.
-Edit in
-the [`application.yaml`](../spring-boot-apps/miranum-deployment-proxy/miranum-deployment-proxy-example/src/main/resources/application.yaml)
-the deployment handlers to use the `RestHandler`.
-
-```bash
-## build
-# npm run build
-npx nx build miranum-deplyoment-proxy
-
-## execute
-npx nx serve miranum-deployment-proxy
-```
+1. Build the miranum-deployment project with `npx nx build miranum-deployment`.
+2. Start the deployment-service application
+    - You have to set the Env variables from the [local.env](../spring-boot-apps/miranum-deployment/local.env) file
+3. Start the example application
+   - You have to set the Env variables from the [local.env](../spring-boot-apps/miranum-deployment/local.env) file
+4. Run `npx nx deploy miranum-cli` to test the deployment
 
 ### Miranum-CLI
 

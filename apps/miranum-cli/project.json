@@ -6,7 +6,9 @@
   "targets": {
     "build": {
       "executor": "@nx/webpack:webpack",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "target": "node",
@@ -51,9 +53,14 @@
     },
     "deploy": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build", "build"],
+      "dependsOn": [
+        "^build",
+        "build"
+      ],
       "options": {
         "commands": [
+          "node dist/apps/miranum-cli/main.js  deploy -d resources/my-process-automation-project/ -t local",
+          "node dist/apps/miranum-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t local --type bpmn",
           "node dist/apps/miranum-cli/main.js  deploy -d resources/my-process-automation-project/ -t dev",
           "node dist/apps/miranum-cli/main.js  deploy-file -f resources/my-process-automation-project/my-process.bpmn -t dev --type bpmn"
         ]
@@ -61,7 +68,10 @@
     },
     "create": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build", "build"],
+      "dependsOn": [
+        "^build",
+        "build"
+      ],
       "options": {
         "commands": [
           "node dist/apps/miranum-cli/main.js generate --name basic-project --path resources/my-generations",
@@ -86,14 +96,20 @@
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["apps/miranum-cli/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/miranum-cli/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/apps/miranum-cli"],
+      "outputs": [
+        "coverage/apps/miranum-cli"
+      ],
       "options": {
         "jestConfig": "apps/miranum-cli/jest.config.ts",
         "passWithNoTests": true

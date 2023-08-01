@@ -1,7 +1,9 @@
 import { reverse, uniqBy } from "lodash";
 import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ContentController, instanceOfModelerData, setFormKeys, TemplateElementFactory } from "./app"; // bpmn.js
+import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
+import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
+// bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
 import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
@@ -9,12 +11,13 @@ import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider"; // css
-import "./styles/styles.css"; // import "./styles/theme.css";
+import miragonProviderModule from "./app/PropertieProvider/provider";
+// css
+import "./styles.css";
 import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
 import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css"; //
+import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 
 //
 // Global objects
@@ -174,7 +177,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
     for (const folder of folders) {
         switch (folder.type) {
             case "element-template": {
-                modeler.get("elementTemplatesLoader").setTemplates(folder.files);
+                modeler.get<any>("elementTemplatesLoader").setTemplates(folder.files);
                 stateController.updateState({
                     data: {
                         additionalFiles: [{ type: folder.type, files: folder.files }],
@@ -228,7 +231,7 @@ function setupBpmnModelerListener() {
         );
     });
 
-    modeler.get("eventBus").on("commandStack.changed", sendChanges);
+    modeler.get<any>("eventBus").on("commandStack.changed", sendChanges);
 }
 
 /**
@@ -320,11 +323,11 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 bpmnRenderer: defaultColor,
                 additionalModules: [
                     ...commonModules,
+                    ExtendElementTemplates,
                     CreateAppendElementTemplatesModule,
                     miragonProviderModule,
                 ],
             });
-            extendElementTemplates(bpmnModeler);
             break;
         }
         case ExecutionPlatformVersion.Camunda8: {
@@ -342,24 +345,12 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
         }
     }
 
-    addMiranumLogo();
     return bpmnModeler;
 }
 
-function extendElementTemplates(bpmnModeler: BpmnModeler7) {
-    const elementTemplates: any = bpmnModeler.get("elementTemplates");
-
-    elementTemplates.__proto__.createElement = (template: any) => {
-        if (!template) {
-            throw new Error("template is missing");
-        }
-
-        const templateElementFactory = new TemplateElementFactory(bpmnModeler);
-
-        return templateElementFactory.create(template);
-    };
-}
-
+/**
+ * Retrieve the CSS variables from the DOM.
+ */
 function getTheme(): { defaultFillColor: string; defaultStrokeColor: string } {
     const html = document.documentElement;
     const css = getComputedStyle(html);
@@ -367,27 +358,6 @@ function getTheme(): { defaultFillColor: string; defaultStrokeColor: string } {
         defaultFillColor: css.getPropertyValue("--vscode-editor-background"),
         defaultStrokeColor: css.getPropertyValue("--vscode-button-background"),
     };
-}
-
-function addMiranumLogo(): void {
-    const logo: HTMLAnchorElement | null =
-        document.body.querySelector(".bjs-powered-by");
-
-    if (logo) {
-        logo.href = "https://www.miranum.io/";
-
-        let child = logo.lastElementChild;
-        while (child) {
-            logo.removeChild(child);
-            child = logo.lastElementChild;
-        }
-        const img = document.createElement("img");
-        img.src = "https://www.miranum.io/img/logo_blau.png";
-        img.alt = "Miranum Logo";
-        img.width = 120;
-
-        logo.appendChild(img);
-    }
 }
 
 /**
