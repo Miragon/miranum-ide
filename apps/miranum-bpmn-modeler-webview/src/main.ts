@@ -13,7 +13,7 @@ import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import miragonProviderModule from "./app/PropertieProvider/provider";
 // css
-import "./styles.css";
+import "./styles/styles.css";
 import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
 import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
@@ -33,6 +33,8 @@ const updateXML = asyncDebounce(openXML, 100);
 //
 // Logic
 //
+// Set the overall style (light or dark)
+setThemeStyle();
 
 // Listen to messages from the backend/extension
 setupListeners();
@@ -358,6 +360,20 @@ function getTheme(): { defaultFillColor: string; defaultStrokeColor: string } {
         defaultFillColor: css.getPropertyValue("--vscode-editor-background"),
         defaultStrokeColor: css.getPropertyValue("--vscode-button-background"),
     };
+}
+
+/**
+ * Depending on the theme style of VS Code, the background of the modeler must be set.
+ */
+function setThemeStyle(): void {
+    switch (document.body.className) {
+        case "vscode-dark": {
+            const style = document.createElement("style");
+            style.innerHTML = ":root .layer-djs-grid { filter: invert(1); }";
+            document.head.appendChild(style);
+            break;
+        }
+    }
 }
 
 /**
