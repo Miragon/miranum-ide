@@ -120,7 +120,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "regenerator-runtime": "0.13.11",
-    "squirrelly": "^8.0.8",
+    "squirrelly": "^9.0.0",
     "tslib": "^2.6.1",
     "uuid": "^9.0.0",
     "vue": "^2.7.10",
