@@ -76,11 +76,11 @@ jobs:
         with:
           name: miranum-core
           path: dist/libs/miranum-core
-      # miranum-create-append-element-templates
+      # miranum-create-append-c7-element-templates
       - uses: actions/upload-artifact@v3
         with:
-          name: miranum-create-append-element-templates
-          path: dist/libs/miranum-create-append-element-templates
+          name: miranum-create-append-c7-element-templates
+          path: dist/libs/miranum-create-append-c7-element-templates
       # miranum-extension-pack
       - uses: actions/upload-artifact@v3
         with:
@@ -177,9 +177,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
-  # miranum-core
-  publish-miranum-create-append-element-templates:
-    if: github.event.inputs.miranum-create-append-element-templates == 'true'
+  # miranum-create-append-c7-element-templates
+  publish-miranum-create-append-c7-element-templates:
+    if: github.event.inputs.miranum-create-append-c7-element-templates == 'true'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -192,7 +192,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v3
         with:
-          name: miranum-create-append-element-templates
+          name: miranum-create-append-c7-element-templates
       - name: Publish
         run: npm publish --access public
         env:

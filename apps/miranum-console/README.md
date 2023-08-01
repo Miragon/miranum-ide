@@ -41,6 +41,8 @@ Please find our official docs [here](https://miranum.com/docs/components/miranum
 **Miranum Console** is one component of our collection of *VS Code Plugins*.
 It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
 
+<img src="https://github.com/Miragon/miranum-ide/blob/2c577b4cafc64e1db74d74795e24268bd3442391/apps/miranum-console/docs/console.gif?raw=true" width="850" /><br>
+
 ## Features
 
 * Scaffolding your digitization project.
