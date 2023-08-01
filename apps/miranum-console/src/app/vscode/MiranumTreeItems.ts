@@ -61,8 +61,8 @@ export class FolderItem extends TreeItem {
         this.label = label;
         this.command = command;
 
-        this.resourceUri = itemPath;
         if (fileType === FileType.File) {
+            this.resourceUri = itemPath;
             this.iconPath = ThemeIcon.File;
         }
 
