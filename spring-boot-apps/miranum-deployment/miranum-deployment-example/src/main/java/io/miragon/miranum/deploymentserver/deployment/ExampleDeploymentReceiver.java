@@ -12,7 +12,7 @@ import java.util.List;
 public class ExampleDeploymentReceiver implements MiranumDeploymentReceiver {
 
     @Override
-    public void deploy(final Deployment deployment, List<String> tags) {
+    public void deploy(final Deployment deployment, final List<String> tags) {
         log.info("Deploy file {} of type {} to namespace {} with tags {}",
             deployment.getFilename(), deployment.getType(), deployment.getNamespace(), tags);
     }
