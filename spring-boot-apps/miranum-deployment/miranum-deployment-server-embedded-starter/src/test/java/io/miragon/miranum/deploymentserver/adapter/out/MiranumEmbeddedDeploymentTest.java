@@ -32,7 +32,7 @@ class MiranumEmbeddedDeploymentTest {
             .message("Deployment was successfully")
             .build();
 
-        final io.miragon.miranum.deploymentreceiver.domain.Deployment mappedDeployment = io.miragon.miranum.deploymentreceiver.domain.Deployment.builder()
+        final io.miragon.miranum.deploymentreceiver.application.dto.DeploymentDto mappedDeployment = io.miragon.miranum.deploymentreceiver.application.dto.DeploymentDto.builder()
             .file(deployment.getFile())
             .type(deployment.getType())
             .namespace(deployment.getNamespace())
