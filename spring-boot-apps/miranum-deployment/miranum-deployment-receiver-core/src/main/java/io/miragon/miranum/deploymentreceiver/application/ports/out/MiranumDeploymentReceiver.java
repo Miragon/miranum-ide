@@ -12,9 +12,7 @@ public interface MiranumDeploymentReceiver {
     /**
      * Deploy a file.
      *
-     * @param file      the file to deploy
-     * @param type      the type of the file
-     * @param namespace a unique namespace for the process
+     * @param deployment the deployment
      * @param tags      a list of tags to version the deployment
      */
     void deploy(final Deployment deployment, final List<String> tags);
