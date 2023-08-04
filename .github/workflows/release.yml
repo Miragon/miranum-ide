@@ -47,6 +47,11 @@ on:
         type: boolean
         required: true
         default: false
+      spring-boot-apps-snapshot:
+        description: 'Snapshot release for spring boot services?'
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   build:
@@ -311,6 +316,10 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+      - name: Remove Snapshot
+        if: github.event.inputs.spring-boot-apps-snapshot == 'false'
+        run: |
+          cd miranum-deployment && mvn versions:set --batch-mode -DremoveSnapshot -DprocessAllModules
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
