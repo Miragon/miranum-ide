@@ -111,7 +111,7 @@
     "camunda-bpmn-moddle": "^7.0.1",
     "camunda-dmn-moddle": "^1.2.0",
     "colors": "^1.4.0",
-    "commander": "^10.0.1",
+    "commander": "^11.0.0",
     "core-js": "^3.32.0",
     "dmn-js": "^14.1.5",
     "dmn-js-properties-panel": "^2.0.0",
