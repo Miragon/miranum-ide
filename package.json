@@ -45,7 +45,7 @@
     "@vitejs/plugin-react": "^4.0.3",
     "@vitest/coverage-c8": "0.33.0",
     "@vitest/ui": "0.34.1",
-    "@vscode/test-electron": "^2.3.3",
+    "@vscode/test-electron": "^2.3.4",
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
     "@vue/eslint-config-prettier": "7.1.0",
