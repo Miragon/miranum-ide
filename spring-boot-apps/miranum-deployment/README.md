@@ -1,23 +1,26 @@
 # Miranum Deployment
 
-The Miranum Deployment consists of two parts. The Miranum Deployment Server and the Miranum Deployment Receiver.
+Checkout our docs at [miranum.io](https://www.miranum.io/docs/components/miranum-ide/miranum-deployment) for more information.
+
+[Miranum Deployment](https://github.com/Miragon/miranum-ide/tree/main/spring-boot-apps/miranum-deployment) consists of two parts. The Miranum Deployment Server and the Miranum Deployment Receiver.
 The Miranum Deployment Server is a Spring Boot application that provides a REST API to deploy process artifacts to
 Spring applications that use the Miranum Deployment Receiver library.
 
 ![Miranum Deployment Diagram](../../images/miranum-deployment.png)
 
-## Local Development
- 
-Checkout [the local development docs](../../docs/development.md) for more information.
+## Java 11 and Spring Boot 2 support
+
+Miranum Deployment supports Spring Boot 2 (and Java 11) until version 0.2.x.
+With version 0.3.0 the support for Spring Boot 2 (and Java 11) will be dropped.
 
 ## Usage
 
-We provide spring boot starters for the Miranum Deployment Server and the Miranum Deployment Receiver.
-Additionally, we provide with the Miranum Deployment Service a ready to go spring boot application.
+We provide Spring Boot starters for the Miranum Deployment Server and the Miranum Deployment Receiver.
+Additionally, we provide the Miranum Deployment Service with a ready to go spring boot application.
 
 ### Miranum Deployment Service
 
-The [Miranum Deployment Service](miranum-deployment-service) is a ready to go spring boot application that provides the
+The Miranum Deployment Service is a ready to go Spring Boot application that provides the
 Miranum Deployment Server with a REST implementation.
 Therefore, it uses the REST starters to transfer the process artifacts to the Miranum Deployment Receiver.
 
@@ -78,12 +81,12 @@ them.
 
 ### Miranum Deployment Server
 
-The Miranum Deployment Server is a single api for the *Miranum-IDE* to deploy process artifacts to.
+The Miranum Deployment Server is a single API for the *Miranum-IDE* to deploy process artifacts to.
 It transfers the process artifacts to applications which implement the Miranum Deployment Receiver library.
 
 #### Miranum Deployment Server REST
 
-> A full example is available in the [miranum-deployment-service](miranum-deployment-service) module.
+> A full example is available in the [miranum-deployment-service](https://github.com/Miragon/miranum-ide/tree/main/spring-boot-apps/miranum-deployment/miranum-deployment-service) module.
 
 1. Add the Miranum Deployment Server REST starter to your spring application.
 
@@ -122,7 +125,7 @@ io:
 In case you have a single spring application you can use the Miranum Deployment Server Embedded starter.
 It provides the Miranum Deployment Server as well as a build in Miranum Deployment Receiver implementation.
 
-> A full example is available in the [miranum-deployment-example](miranum-deployment-example) module.
+> A full example is available in the [miranum-deployment-example](https://github.com/Miragon/miranum-ide/tree/main/spring-boot-apps/miranum-deployment/miranum-deployment-example) module.
 
 ##### Usage
 
@@ -149,7 +152,7 @@ import java.util.List;
 public class ExampleDeploymentReceiver implements MiranumDeploymentReceiver {
 
     @Override
-    public void deploy(String file, String type, String namespace, List<String> tags) {
+    public void deploy(final Deployment deployment, final List<String> tags) {
         // TODO: Implement your deployment logic here
     }
 
@@ -158,14 +161,14 @@ public class ExampleDeploymentReceiver implements MiranumDeploymentReceiver {
 
 ### Miranum Deployment Receiver
 
-Add the Miranum Deployment Receiver REST starter to each spring application that should deploy process artifacts.
+Add the Miranum Deployment Receiver REST starter to each Spring application that should deploy process artifacts.
 In the Miranum Deployment Server you can configure the target applications via the application.yml file.
 
-> A full example is available in the [miranum-deployment-example](miranum-deployment-example) module.
+> A full example is available in the [miranum-deployment-example](https://github.com/Miragon/miranum-ide/tree/main/spring-boot-apps/miranum-deployment/miranum-deployment-example) module.
 
 #### Usage
 
-1. Add the Miranum Deployment Receiver REST starter to your spring application.
+1. Add the Miranum Deployment Receiver REST starter to your Spring application.
 
 ```xml
 
@@ -188,7 +191,7 @@ import java.util.List;
 public class ExampleDeploymentReceiver implements MiranumDeploymentReceiver {
 
     @Override
-    public void deploy(String file, String type, String namespace, List<String> tags) {
+    public void deploy(final Deployment deployment, final List<String> tags) {
         // TODO: Implement your deployment logic here
     }
 
