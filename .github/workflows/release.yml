@@ -155,7 +155,24 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-
+      # docker
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
+          password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
+      - name: package-version
+        id: get-version
+        uses: BeaconBrigade/package-json-version@v0.3.1
+        with: 
+          path: ./apps/miranum-cli
+      - name: Build and push miranum-cli
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/miranum-cli/src
+          push: true
+          tags: miragon/process-ide-cli:${{ steps.get-version.outputs.version }}
+          platforms: linux/amd64, linux/arm64/v8
   # miranum-core
   publish-miranum-core:
     if: github.event.inputs.miranum-core == 'true'
