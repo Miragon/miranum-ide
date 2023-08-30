@@ -63,6 +63,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
       - name: Install dependencies
         run: npm install
       - name: Lint
@@ -311,11 +316,11 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: spring-boot-apps
-      - name: Install Java and Maven
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'adopt'
+          java-version: '17'
+          distribution: 'temurin'
       - name: Remove Snapshot
         if: github.event.inputs.spring-boot-apps-snapshot == 'false'
         run: |
