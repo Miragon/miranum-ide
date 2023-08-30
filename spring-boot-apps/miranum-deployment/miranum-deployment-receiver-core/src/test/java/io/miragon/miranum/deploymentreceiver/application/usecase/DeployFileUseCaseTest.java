@@ -5,12 +5,12 @@ import io.miragon.miranum.deploymentreceiver.application.dto.DeploymentDto;
 import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import javax.validation.ConstraintViolationException;
 import java.util.List;
 
 class DeployFileUseCaseTest {

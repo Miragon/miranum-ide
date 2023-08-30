@@ -12,17 +12,17 @@
     <url>https://github.com/Miragon/miranum-ide</url>
 
     <properties>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
-        <java.version>11</java.version>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot.version>2.7.12</spring.boot.version>
+        <spring.boot.version>3.1.3</spring.boot.version>
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <lombok.version>1.18.28</lombok.version>
         <maven.surfire.plugin.version>3.1.2</maven.surfire.plugin.version>
         <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
         <jacoco.version>0.8.10</jacoco.version>
-        <feign.version>12.3</feign.version>
+        <feign.version>12.5</feign.version>
     </properties>
 
     <modules>
