@@ -325,6 +325,8 @@ jobs:
         if: github.event.inputs.spring-boot-apps-snapshot == 'false'
         run: |
           cd miranum-deployment && mvn versions:set --batch-mode -DremoveSnapshot -DprocessAllModules
+      - name: Maven build
+        run: cd miranum-deployment && mvn --batch-mode install
       - name: Release maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
