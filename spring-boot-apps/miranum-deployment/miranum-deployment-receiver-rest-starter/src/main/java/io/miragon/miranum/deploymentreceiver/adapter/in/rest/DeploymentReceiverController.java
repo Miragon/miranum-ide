@@ -1,5 +1,6 @@
 package io.miragon.miranum.deploymentreceiver.adapter.in.rest;
 
+import io.miragon.miranum.deploymentreceiver.application.dto.DeploymentDto;
 import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
@@ -21,8 +22,8 @@ public class DeploymentReceiverController {
     private final DeployFile deployFile;
 
     @PostMapping
-    public DeploymentStatus deploy(@Valid @RequestBody final Deployment deployment) {
-        return this.deployFile.deploy(deployment);
+    public DeploymentStatus deploy(@Valid @RequestBody final DeploymentDto deploymentDto) {
+        return this.deployFile.deploy(deploymentDto);
     }
 
 }

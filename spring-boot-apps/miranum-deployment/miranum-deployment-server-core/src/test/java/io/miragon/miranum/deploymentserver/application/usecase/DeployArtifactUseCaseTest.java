@@ -10,6 +10,7 @@ import io.miragon.miranum.deploymentserver.domain.Deployment;
 import io.miragon.miranum.deploymentserver.domain.DeploymentStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.validation.ConstraintViolationException;
@@ -25,7 +26,7 @@ class DeployArtifactUseCaseTest {
     @Test
     void testDeploy_SuccessfulDeployment() {
         final ArtifactDto artifactDto = ArtifactDto.builder()
-            .file(new FileDto("test", "fileContent", "text/plain", 123L))
+            .file(new FileDto("test", "fileContent", "txt", 123L))
             .type("txt")
             .project("dummy-project")
             .build();
@@ -35,12 +36,15 @@ class DeployArtifactUseCaseTest {
             .build();
         deploymentDto.setArtifact(artifactDto);
 
-        final DeploymentStatus deploymentStatus = new DeploymentStatus(true, "Deployment successful");
-        when(deployFilePort.deploy(Mockito.any(Deployment.class), Mockito.anyString())).thenReturn(deploymentStatus);
-
+        ArgumentCaptor<Deployment> deploymentCaptor = ArgumentCaptor.forClass(Deployment.class);
+        ArgumentCaptor<String> targetCaptor = ArgumentCaptor.forClass(String.class);
+        when(deployFilePort.deploy(deploymentCaptor.capture(), targetCaptor.capture()))
+            .thenReturn(new DeploymentStatus(true, "Deployment successful"));
 
         final DeploymentSuccessDto result = this.deployArtifactUseCase.deploy(deploymentDto);
 
+        Assertions.assertEquals(deploymentDto.getArtifact().getArtifactName(), deploymentCaptor.getValue().getFilename());
+        Assertions.assertEquals(deploymentDto.getTarget(), targetCaptor.getValue());
 
         Assertions.assertTrue(result.isSuccess());
         Assertions.assertEquals(deploymentDto, result.getDeployment());

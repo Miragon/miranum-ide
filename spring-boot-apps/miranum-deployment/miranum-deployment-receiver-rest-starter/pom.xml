@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.miragon.miranum</groupId>
         <artifactId>miranum-deployment-parent</artifactId>
-        <version>0.2.1</version>
+        <version>0.2.1-SNAPSHOT</version>
     </parent>
 
     <properties>

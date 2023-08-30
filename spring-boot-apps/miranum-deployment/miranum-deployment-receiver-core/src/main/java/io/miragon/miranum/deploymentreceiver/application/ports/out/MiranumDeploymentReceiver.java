@@ -1,5 +1,7 @@
 package io.miragon.miranum.deploymentreceiver.application.ports.out;
 
+import io.miragon.miranum.deploymentreceiver.domain.Deployment;
+
 import java.util.List;
 
 /**
@@ -10,11 +12,9 @@ public interface MiranumDeploymentReceiver {
     /**
      * Deploy a file.
      *
-     * @param file      the file to deploy
-     * @param type      the type of the file
-     * @param namespace a unique namespace for the process
+     * @param deployment the deployment
      * @param tags      a list of tags to version the deployment
      */
-    void deploy(final String file, final String type, final String namespace, final List<String> tags);
+    void deploy(final Deployment deployment, final List<String> tags);
 
 }

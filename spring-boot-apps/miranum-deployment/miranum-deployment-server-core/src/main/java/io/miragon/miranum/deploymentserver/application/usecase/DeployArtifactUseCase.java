@@ -29,14 +29,16 @@ public class DeployArtifactUseCase implements DeployArtifact {
 
         final String file = deploymentDto.getArtifact().getFile().getContent();
         final String type = deploymentDto.getArtifact().getType();
+        // unix style filename with extension e.g. "test.txt"
+        final String fileName = deploymentDto.getArtifact().getArtifactName();
         final String namespace = deploymentDto.getArtifact().getProject().replace(" ", "");
         // TODO tags not supported yet
-
 
         final DeploymentStatus status = this.deployArtifactPort.deploy(
             Deployment.builder()
                 .file(file)
                 .type(type)
+                .filename(fileName)
                 .namespace(namespace)
                 .tags(List.of())
                 .build(),
