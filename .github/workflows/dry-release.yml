@@ -13,6 +13,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
       - name: Install dependencies
         run: npm install
       - name: Lint

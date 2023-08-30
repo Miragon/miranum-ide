@@ -6,9 +6,9 @@ import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
 import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploymentReceiver;
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
+import jakarta.validation.*;
 import lombok.RequiredArgsConstructor;
 
-import javax.validation.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;

@@ -8,12 +8,11 @@ import io.miragon.miranum.deploymentserver.application.ports.in.DeployArtifact;
 import io.miragon.miranum.deploymentserver.application.ports.out.DeployFilePort;
 import io.miragon.miranum.deploymentserver.domain.Deployment;
 import io.miragon.miranum.deploymentserver.domain.DeploymentStatus;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-
-import javax.validation.ConstraintViolationException;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

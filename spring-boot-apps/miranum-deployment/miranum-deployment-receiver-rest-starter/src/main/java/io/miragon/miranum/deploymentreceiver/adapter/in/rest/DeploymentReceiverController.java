@@ -2,16 +2,16 @@ package io.miragon.miranum.deploymentreceiver.adapter.in.rest;
 
 import io.miragon.miranum.deploymentreceiver.application.dto.DeploymentDto;
 import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
-import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
+
 
 @RestController
 @RequestMapping("/rest/deployment")

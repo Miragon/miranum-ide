@@ -1,8 +1,8 @@
 package io.miragon.miranum.deploymentreceiver.application.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
-import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @Data
