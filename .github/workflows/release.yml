@@ -169,7 +169,7 @@ jobs:
         id: get-version
         uses: BeaconBrigade/package-json-version@v0.3.1
         with: 
-          path: /apps/miranum-cli/
+          path: apps/miranum-cli/
       - name: Build and push miranum-cli
         uses: docker/build-push-action@v4
         with:
