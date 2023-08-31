@@ -151,11 +151,15 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: miranum-cli
-      # - name: Publish
-      #   run: npm publish --access public
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
       # docker
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
