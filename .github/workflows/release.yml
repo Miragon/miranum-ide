@@ -169,11 +169,11 @@ jobs:
         id: get-version
         uses: BeaconBrigade/package-json-version@v0.3.1
         with: 
-          path: apps/miranum-cli/
+          path: .
       - name: Build and push miranum-cli
         uses: docker/build-push-action@v4
         with:
-          context: ./
+          context: .
           push: true
           tags: miragon/process-ide-cli:${{ steps.get-version.outputs.version }},miragon/process-ide-cli:latest
           platforms: linux/amd64, linux/arm64/v8
