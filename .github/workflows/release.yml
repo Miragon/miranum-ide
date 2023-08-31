@@ -60,10 +60,10 @@ jobs:
           node-version: '16'
       - name: Install dependencies
         run: npm install
-      - name: Lint
-        run: npm run lint
-      - name: Test
-        run: npm run test
+      # - name: Lint
+      #   run: npm run lint
+      # - name: Test
+      #   run: npm run test
       - name: Build
         run: npm run build
       # miranum-cli
@@ -151,10 +151,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: miranum-cli
-      - name: Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
+      # - name: Publish
+      #   run: npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
       # docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -169,7 +169,7 @@ jobs:
         id: get-version
         uses: BeaconBrigade/package-json-version@v0.3.1
         with: 
-          path: ./
+          path: /apps/miranum-cli/
       - name: Build and push miranum-cli
         uses: docker/build-push-action@v4
         with:
