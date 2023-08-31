@@ -166,7 +166,7 @@ jobs:
       - name: Build and push miranum-cli
         uses: docker/build-push-action@v4
         with:
-          context: ./apps/miranum-cli/src
+          context: ./
           push: true
           tags: miragon/process-ide-cli:${{ github.event.inputs.release-tag }}
           platforms: linux/amd64, linux/arm64/v8
