@@ -93,7 +93,7 @@
   "dependencies": {
     "@bpmn-io/element-template-chooser": "^1.0.0",
     "@bpmn-io/properties-panel": "^2.1.0",
-    "@koumoul/vjsf": "^2.21.4",
+    "@koumoul/vjsf": "^2.22.0",
     "@muenchen/digiwf-form-builder": "^0.21.10",
     "@muenchen/digiwf-form-builder-settings": "^0.21.10",
     "@muenchen/digiwf-form-renderer": "^0.21.10",
