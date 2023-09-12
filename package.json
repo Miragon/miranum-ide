@@ -84,7 +84,7 @@
     "unplugin-vue-components": "^0.25.1",
     "vite": "4.4.7",
     "vite-plugin-eslint": "^1.8.1",
-    "vite-plugin-static-copy": "^0.15.0",
+    "vite-plugin-static-copy": "^0.17.0",
     "vite-plugin-vue2": "^2.0.2",
     "vite-tsconfig-paths": "4.2.0",
     "vitest": "0.34.3",
