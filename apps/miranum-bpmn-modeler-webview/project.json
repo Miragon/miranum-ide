@@ -55,6 +55,13 @@
       "options": {
         "lintFilePatterns": ["apps/miranum-bpmn-modeler-webview/**/*.ts"]
       }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-bpmn-modeler-webview:build"
+      }
     }
   }
 }

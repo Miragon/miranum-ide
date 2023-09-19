@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Buffer } from "buffer";
 import { Logger } from "../Logger";
 import { FolderContent } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
@@ -224,7 +225,7 @@ export class Reader {
     }
 
     private async readFile(uri: vscode.Uri): Promise<string> {
-        const file = await this.fs.readFile(uri);
+        const file = await Promise.resolve(this.fs.readFile(uri));
         return Promise.resolve(Buffer.from(file).toString("utf-8")); // convert Uint8Array to string
     }
 
@@ -260,7 +261,7 @@ export class Reader {
                     // only files
                     const extension = result[0].substring(result[0].indexOf(".") + 1);
                     if (extension && extension === ext) {
-                        // only files with given file extension
+                        // only files with a given file extension
                         const fileUri = vscode.Uri.joinPath(uri, result[0]);
                         try {
                             files.set(

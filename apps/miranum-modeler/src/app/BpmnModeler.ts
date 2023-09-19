@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { Uri, window } from "vscode";
+import { Buffer } from "buffer";
 import { debounce } from "lodash";
 import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
@@ -127,6 +128,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                         case `${BpmnModeler.VIEWTYPE}.${MessageType.MSGFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
                             if (event.data?.bpmn) {
+                                postMessage(MessageType.ALIGN);
                                 await this.write(document, event.data.bpmn);
                             }
                             break;
@@ -410,6 +412,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                 <div class="properties-panel-parent" id="js-properties-panel"></div>
               </div>
 
+              <script type="text/javascript" nonce="${nonce}">
+                  const globalViewType = "${BpmnModeler.VIEWTYPE}";
+              </script>
               <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>
             </body>
             </html>
@@ -481,7 +486,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
 
         edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
 
-        return vscode.workspace.applyEdit(edit);
+        return Promise.resolve(vscode.workspace.applyEdit(edit));
     }
 
     /**
@@ -542,7 +547,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         }
 
         async function searchMiranumJson(searchPath: Uri): Promise<Uri> {
-            const dir = await vscode.workspace.fs.readDirectory(searchPath);
+            const dir = await Promise.resolve(
+                vscode.workspace.fs.readDirectory(searchPath),
+            );
 
             if (
                 !pathToProjectRoot ||
@@ -563,8 +570,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         async function readMiranumJson(pathToMiranumJson: Uri) {
             // eslint-disable-next-line no-useless-catch
             try {
-                const file = await vscode.workspace.fs.readFile(
-                    vscode.Uri.joinPath(pathToMiranumJson, "miranum.json"),
+                const file = await Promise.resolve(
+                    vscode.workspace.fs.readFile(
+                        vscode.Uri.joinPath(pathToMiranumJson, "miranum.json"),
+                    ),
                 );
                 const workspace: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),

@@ -1,3 +1,3 @@
 export * from "./lib/types";
-export * from "./lib/StateController";
+export * from "./lib/vscode";
 export * from "./lib/asyncDebounce";

@@ -1,7 +1,4 @@
-import {
-    MessageType,
-    StateController,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+import { MessageType, VsCodeImpl } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { ContentController, ImportWarning, instanceOfModelerData } from "./app";
 import { debounce } from "lodash";
@@ -80,7 +77,7 @@ const modeler = new DmnModeler({
     },
 });
 
-const stateController = new StateController<ModelerData>();
+const stateController = new VsCodeImpl<ModelerData>();
 const contentController = new ContentController(modeler);
 
 let isUpdateFromExtension = false;
