@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* **\[Miranum Modeler\]** Update dependencies to bpmn-io ()
+* **\[Miranum Modeler\]** Update dependencies to bpmn-io (#394)
 
 ### Fixed
 
-* **\[Miranum Modeler\]** Alignment of elements leads to an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) ()
+* **\[Miranum Modeler\]** Alignment of elements leads to an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
  
 ## [0.5.3] - 2023-08-01
 
