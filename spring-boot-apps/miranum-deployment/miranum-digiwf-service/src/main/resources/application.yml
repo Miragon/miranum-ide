@@ -1,0 +1,36 @@
+server:
+  port: 9003
+spring:
+  cloud:
+    stream:
+      bindings:
+        deployment-out-0:
+          destination: "dwf-cocreation-local-01"
+      kafka:
+        binder:
+          brokers: "${KAFKA_BOOTSTRAP_SERVER:localhost}:${KAFKA_BOOTSTRAP_SERVER_PORT:29092}"
+          producerProperties:
+            value:
+              serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            key:
+              serializer: org.springframework.kafka.support.serializer.JsonSerializer
+          consumerProperties:
+            auto:
+              offset:
+                reset: latest
+            value:
+              deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            key:
+              deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+          configuration:
+            security:
+              protocol: "${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}"
+    function:
+      definition: deployment;
+  kafka:
+    consumer:
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"

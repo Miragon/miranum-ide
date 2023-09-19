@@ -43,15 +43,15 @@
         },
         {
           "name": "dev",
+          "url": "http://localhost:9003"
+        },
+        {
+          "name": "miranum-platform",
           "url": "http://localhost:9001"
         },
         {
-          "name": "test",
-          "url": "http://localhost:8092"
-        },
-        {
-          "name": "prod",
-          "url": "http://localhost:9001"
+          "name": "digiwf",
+          "url": "http://localhost:9003"
         }
       ]
     }
