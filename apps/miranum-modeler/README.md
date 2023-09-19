@@ -34,13 +34,11 @@
 
 [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
 process application in one place.
-Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
-
-**Miranum Modeler** is one component of our collection of *VS Code Plugins*.
+**Miranum Modeler** is one component of **Miranum IDE**.
 It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7 and 8.
-Editing Camunda Platform 8 specific diagram is still under development and therefore a bit more restricted.
-With the version >= 0.4.3 you can now create and edit DMN 1.3 diagrams.
+In addition, you can create and edit DMN 1.3 decision tables.
+In order to help you with your first steps with **Miranum Modeler**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
 <img src="https://github.com/Miragon/miranum-ide/blob/9ba551a8bdd51f122536c94fc2764b293da9753f/apps/miranum-modeler/docs/modeler.gif?raw=true" alt="modeler.gif" width="1000" /><br>
 
@@ -51,15 +49,14 @@ With the version >= 0.4.3 you can now create and edit DMN 1.3 diagrams.
 * Use the create/append-anything-pattern for a better modeling experience.
 * Use the text editor for changes directly in the XML file.
 * Use the integrated *Token Simulation* to simulate your process flow.
-* For more information, see our [documentation](https://www.miranum.io/docs/components/miranum-ide/miranum-modeler).
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**.
 
-For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
-Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
+To learn more about the frameworks we use and how you can get involved, click [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
+Furthermore, please have a look at our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
 ### License
 

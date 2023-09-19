@@ -9,6 +9,7 @@ export interface VscState<T> {
 }
 
 export enum MessageType {
+    ALIGN = "align",
     INITIALIZE = "initialize",
     RESTORE = "restore",
     MSGFROMEXTENSION = "msgFromExtension",

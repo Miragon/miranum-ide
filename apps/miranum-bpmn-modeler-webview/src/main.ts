@@ -1,8 +1,15 @@
 import { reverse, uniqBy } from "lodash";
-import { asyncDebounce, FolderContent, MessageType, StateController } from "@miranum-ide/vscode/miranum-vscode-webview";
+import {
+    asyncDebounce,
+    FolderContent,
+    MessageType,
+    VsCode,
+    VsCodeImpl,
+    VsCodeMock,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
 import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
-import { ContentController, instanceOfModelerData, setFormKeys } from "./app";
+import { ContentController, createResolver, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
 import Modeler from "camunda-bpmn-js/lib/base/Modeler";
 import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
@@ -22,9 +29,23 @@ import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 //
 // Global objects
 //
+declare const process: { env: { NODE_ENV: string } };
+declare const globalViewType: string;
+
 let modeler: Modeler;
 let contentController: ContentController;
-const stateController = new StateController<ModelerData>();
+
+let vscode: VsCode<ModelerData>;
+if (process.env.NODE_ENV === "development") {
+    const response: ModelerData = {
+        executionPlatformVersion: ExecutionPlatformVersion.Camunda8,
+        bpmn: undefined,
+        additionalFiles: [],
+    };
+    vscode = new VsCodeMock(globalViewType, response);
+} else {
+    vscode = new VsCodeImpl<ModelerData>();
+}
 
 let isUpdateFromExtension = false;
 const updateXML = asyncDebounce(openXML, 100);
@@ -33,11 +54,13 @@ const updateXML = asyncDebounce(openXML, 100);
 // Logic
 //
 
+const resolver = createResolver();
+
 // Listen to messages from the backend/extension
 setupListeners();
 
 /**
- * Main function that get executed after the webview is fully loaded.
+ * The Main function that gets executed after the webview is fully loaded.
  * This way we can ensure that when the backend sends a message, it is caught.
  * There are two reasons why a webview gets build:
  * 1. A new .bpmn file was opened
@@ -45,7 +68,7 @@ setupListeners();
  */
 window.onload = async function () {
     try {
-        const state = stateController.getState();
+        const state = vscode.getState();
         if (state && state.data) {
             // User switched back to the tab with this webview
             postMessage(
@@ -57,7 +80,7 @@ window.onload = async function () {
             let bpmn = state.data.bpmn;
             let files = state.data.additionalFiles;
 
-            const newData = await getInitialData(); // await the response form the backend
+            const newData = await resolver.wait(); // await the response form the backend
             if (instanceOfModelerData(newData)) {
                 // we only get new data when the user made changes while the webview was destroyed
                 if (newData.bpmn) {
@@ -86,7 +109,7 @@ window.onload = async function () {
                 "Webview was loaded successfully.",
             );
 
-            const data = await getInitialData(); // await the response form the backend
+            const data = await resolver.wait(); // await the response form the backend
             if (instanceOfModelerData(data)) {
                 return init(
                     data.bpmn,
@@ -124,7 +147,7 @@ function init(
     setupBpmnModelerListener();
 
     contentController = new ContentController(modeler);
-    stateController.updateState({ data: { executionPlatformVersion } });
+    vscode.updateState({ data: { executionPlatformVersion } });
 
     openXML(bpmn);
     setFiles(files);
@@ -144,7 +167,7 @@ async function openXML(bpmn: string | undefined) {
         } else {
             result = await contentController.loadDiagram(bpmn);
         }
-        stateController.updateState({ data: { bpmn } });
+        vscode.updateState({ data: { bpmn } });
 
         if (result.warnings.length > 0) {
             const warnings = `with following warnings: ${createErrorList(
@@ -177,7 +200,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
         switch (folder.type) {
             case "element-template": {
                 modeler.get<any>("elementTemplatesLoader").setTemplates(folder.files);
-                stateController.updateState({
+                vscode.updateState({
                     data: {
                         additionalFiles: [{ type: folder.type, files: folder.files }],
                     },
@@ -187,7 +210,7 @@ function setFiles(folders: FolderContent[] | undefined): void {
             }
             case "form": {
                 setFormKeys(folder.files as string[]);
-                stateController.updateState({
+                vscode.updateState({
                     data: {
                         additionalFiles: [{ type: folder.type, files: folder.files }],
                     },
@@ -211,7 +234,7 @@ async function sendChanges() {
     }
 
     const bpmn = await contentController.exportDiagram();
-    stateController.updateState({ data: { bpmn } });
+    vscode.updateState({ data: { bpmn } });
     postMessage(MessageType.MSGFROMWEBVIEW, { bpmn }, undefined);
 }
 
@@ -241,19 +264,26 @@ function setupListeners(): void {
         try {
             const message = event.data;
             switch (message.type) {
-                case `bpmn-modeler.${MessageType.INITIALIZE}`: {
-                    initialized(message.data);
+                case `${globalViewType}.${MessageType.INITIALIZE}`: {
+                    resolver.done(message.data);
                     break;
                 }
-                case `bpmn-modeler.${MessageType.RESTORE}`: {
-                    initialized(message.data);
+                case `${globalViewType}.${MessageType.RESTORE}`: {
+                    resolver.done(message.data);
                     break;
                 }
-                case `bpmn-modeler.${MessageType.UNDO}`:
-                case `bpmn-modeler.${MessageType.REDO}`:
-                case `bpmn-modeler.${MessageType.MSGFROMEXTENSION}`: {
+                case `${globalViewType}.${MessageType.UNDO}`:
+                case `${globalViewType}.${MessageType.REDO}`:
+                case `${globalViewType}.${MessageType.MSGFROMEXTENSION}`: {
                     isUpdateFromExtension = true;
                     updateXML(message.data.bpmn);
+                    break;
+                }
+                case `${globalViewType}.${MessageType.ALIGN}`: {
+                    const alignToOrigin = modeler.get<any>("alignToOrigin");
+                    if (alignToOrigin) {
+                        alignToOrigin.align();
+                    }
                     break;
                 }
                 case `FileSystemWatcher.${MessageType.RELOADFILES}`: {
@@ -283,15 +313,15 @@ function setupListeners(): void {
 function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
     switch (type) {
         case MessageType.MSGFROMWEBVIEW: {
-            stateController.postMessage({
-                type: `bpmn-modeler.${type}`,
+            vscode.postMessage({
+                type: `${globalViewType}.${type}`,
                 data,
             });
             break;
         }
         default: {
-            stateController.postMessage({
-                type: `bpmn-modeler.${type}`,
+            vscode.postMessage({
+                type: `${globalViewType}.${type}`,
                 message,
             });
             break;
@@ -312,11 +342,12 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
         case ExecutionPlatformVersion.Camunda7: {
             bpmnModeler = new BpmnModeler7({
                 container: "#js-canvas",
-                keyboard: {
-                    bindTo: document,
-                },
                 propertiesPanel: {
                     parent: "#js-properties-panel",
+                },
+                // disableAdjustOrigin: true,
+                alignToOrigin: {
+                    alignOnSave: false,
                 },
                 additionalModules: [
                     ...commonModules,
@@ -330,8 +361,9 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
         case ExecutionPlatformVersion.Camunda8: {
             bpmnModeler = new BpmnModeler8({
                 container: "#js-canvas",
-                keyboard: {
-                    bindTo: document,
+                // disableAdjustOrigin: true,
+                alignToOrigin: {
+                    alignOnSave: false,
                 },
                 propertiesPanel: {
                     parent: "#js-properties-panel",
@@ -344,19 +376,6 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
 
     return bpmnModeler;
 }
-
-/**
- * A promise that will resolve if initialized() is called.
- */
-function getInitialData() {
-    return new Promise((resolve) => {
-        initialized = (response: ModelerData | undefined) => {
-            resolve(response);
-        };
-    });
-}
-
-let initialized: any = null;
 
 /**
  * Create a list of information that will be sent to the backend and get logged.

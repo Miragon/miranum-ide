@@ -9,9 +9,9 @@ class ContentController {
     + getFiles(data: FolderContent[])
 }
 
-class StateController {
+class VsCodeImpl {
     - vscode: WebviewApi<VscState>
-    + constructor(): StateController
+    + constructor(): Vscode
     + getState(): VscState | undefined
     + setState(state: VscState): void
     + updateState(state: Partial<VscState>): void
@@ -21,6 +21,6 @@ class StateController {
 circle main.ts
 
 main.ts ..|> ContentController : use
-main.ts ..|> StateController : use
+main.ts ..|> VsCodeImpl : use
 
 @enduml
