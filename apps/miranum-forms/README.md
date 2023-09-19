@@ -35,12 +35,12 @@
 
 Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
 process application in one place.
-Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 
-**Miranum Forms** is one component of our collection of *VS Code Plugins*.
+**Miranum Forms** is one component of **Miranum IDE**.
 It allows you to create and edit forms based on [JSON Schema](https://json-schema.org/),
 a specification for annotating and validating JSON documents. 
+In order to help you with your first steps with **Miranum Forms**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
 ## Features
 
@@ -51,11 +51,11 @@ a specification for annotating and validating JSON documents.
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**.
 
-For more information of the frameworks we use and how to contribute to our project see [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
-Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
+To learn more about the frameworks we use and how you can get involved, click [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
+Furthermore, please have a look at our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
 ### License
 

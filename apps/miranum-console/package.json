@@ -1,7 +1,7 @@
 {
   "name": "miranum-console",
   "displayName": "Miranum: Console",
-  "description": "A beautiful UI to deploy your process artefacts.",
+  "description": "A UI to create, generate and deploy your process artifacts.",
   "license": "SEE LICENSE IN LICENSE",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
