@@ -3,58 +3,34 @@
  * It includes the function for the toggle-command and handles the open and closing behaviour.
  * @module TextEditor
  */
-
-import * as vscode from "vscode";
+import {
+    ExtensionContext,
+    Tab,
+    TabInputText,
+    TextDocument,
+    TextDocumentShowOptions,
+    TextEditor,
+    ViewColumn,
+    window
+} from "vscode";
 
 /**
  * Class which handles the standard vscode text editor.
  */
-export abstract class TextEditor {
-    /** The document associated with this text editor. */
-    private static _document: vscode.TextDocument;
-
+export abstract class StandardTextEditor {
     /** Boolean if set to `true` means that a text editor is already open. */
     private static isOpen = false;
 
-    /** The current configuration. */
-    private static config: string;
+    private static readonly config: string = "Group";
 
-    /**
-     * Register ConfigChange-Event and CloseTab-Event.
-     */
-    public static register(context: vscode.ExtensionContext): void {
-        this.config = vscode.workspace
-            .getConfiguration("bpmn-modeler")
-            .get<string>("toggleTextEditor", "Group");
-        // Event when user change the config
-        const changeConfig = vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration("bpmn-modeler.toggleTextEditor")) {
-                this.config = vscode.workspace
-                    .getConfiguration("bpmn-modeler")
-                    .get<string>("toggleTextEditor", "Group");
-            }
-        });
-
-        // Event when user change the tab
-        const changeTab = vscode.window.tabGroups.onDidChangeTabs((tabs) => {
-            tabs.closed.forEach((tab) => {
-                if (
-                    tab.input instanceof vscode.TabInputText &&
-                    tab.input.uri.path === this._document.fileName
-                ) {
-                    this.isOpen = false;
-                }
-            });
-        });
-
-        context.subscriptions.push(changeConfig, changeTab);
-    }
+    /** The document associated with this text editor. */
+    private static _document: TextDocument;
 
     /**
      * Function which is called by the custom text editor to set the data model of the current active editor.
      * @param document The data model of the current active custom text editor.
      */
-    public static set document(document: vscode.TextDocument) {
+    public static set document(document: TextDocument) {
         if (!this._document) {
             // initial call
             this._document = document;
@@ -64,7 +40,7 @@ export abstract class TextEditor {
                 if (tab) {
                     this.closeTextEditor(tab).then((success) => {
                         if (success) {
-                            // open new text editor with new document
+                            // open a new text editor with a new document
                             this.openTextEditor(document);
                         }
                     });
@@ -72,6 +48,25 @@ export abstract class TextEditor {
             }
             this._document = document;
         }
+    }
+
+    /**
+     * Register ConfigChange-Event and CloseTab-Event.
+     */
+    public static register(context: ExtensionContext): void {
+        // Event when user changes the tab
+        const changeTab = window.tabGroups.onDidChangeTabs((tabs) => {
+            tabs.closed.forEach((tab) => {
+                if (
+                    tab.input instanceof TabInputText &&
+                    tab.input.uri.path === this._document.fileName
+                ) {
+                    this.isOpen = false;
+                }
+            });
+        });
+
+        context.subscriptions.push(changeTab);
     }
 
     /**
@@ -89,7 +84,7 @@ export abstract class TextEditor {
     }
 
     /**
-     * Close text editor when the corresponding builder is closed.
+     * Close the text editor when the corresponding builder is closed.
      */
     public static close(): void {
         if (this.isOpen) {
@@ -106,11 +101,11 @@ export abstract class TextEditor {
      */
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    private static getTab(): vscode.Tab | undefined {
-        for (const tabGroup of vscode.window.tabGroups.all) {
+    private static getTab(): Tab | undefined {
+        for (const tabGroup of window.tabGroups.all) {
             for (const tab of tabGroup.tabs) {
                 if (
-                    tab.input instanceof vscode.TabInputText &&
+                    tab.input instanceof TabInputText &&
                     tab.input.uri.path === this._document.fileName
                 ) {
                     return tab;
@@ -124,48 +119,45 @@ export abstract class TextEditor {
      * @param tab The tab in which the text editor is displayed
      * @private
      */
-    private static closeTextEditor(tab: vscode.Tab): Thenable<boolean> {
-        return vscode.window.tabGroups.close(tab).then((success) => {
-            if (success) {
-                this.isOpen = false;
-            }
-            return success;
-        });
+    private static async closeTextEditor(tab: Tab): Promise<boolean> {
+        const success = await window.tabGroups.close(tab);
+        if (success) {
+            this.isOpen = false;
+        }
+        return success;
     }
 
     /**
      * Open a new text editor with the current document.
      * @private
      */
-    private static openTextEditor(
-        document: vscode.TextDocument,
-    ): Thenable<vscode.TextEditor> {
-        return vscode.window
-            .showTextDocument(document, this.getShowOptions())
-            .then((textEditor) => {
-                this.isOpen = true;
-                return textEditor;
-            });
+    private static async openTextEditor(document: TextDocument): Promise<TextEditor> {
+        const textEditor = await window.showTextDocument(
+            document,
+            this.getShowOptions(),
+        );
+        this.isOpen = true;
+        return textEditor;
     }
 
     /**
      * Dependent on the user settings returns the right options where the standard text editor should be displayed.
      * @private
      */
-    private static getShowOptions(): vscode.TextDocumentShowOptions {
+    private static getShowOptions(): TextDocumentShowOptions {
         switch (this.config) {
             case "Group": {
                 return {
                     preserveFocus: true,
                     preview: true,
-                    viewColumn: vscode.ViewColumn.Beside,
+                    viewColumn: ViewColumn.Beside,
                 };
             }
             case "Tab": {
                 return {
                     preserveFocus: false,
                     preview: false,
-                    viewColumn: vscode.ViewColumn.Active,
+                    viewColumn: ViewColumn.Active,
                 };
             }
             default: {

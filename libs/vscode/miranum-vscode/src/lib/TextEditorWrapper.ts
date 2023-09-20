@@ -1,5 +1,12 @@
-import * as vscode from "vscode";
-import { TextDocument, TextEditor } from "vscode";
+import {
+    Tab,
+    TabInputText,
+    TextDocument,
+    TextDocumentShowOptions,
+    TextEditor,
+    ViewColumn,
+    window,
+} from "vscode";
 import { Observer, UIComponent } from "./types";
 
 export enum TextEditorShowOption {
@@ -8,19 +15,11 @@ export enum TextEditorShowOption {
 }
 
 export abstract class TextEditorWrapper implements Observer, UIComponent<TextDocument> {
-    private _textEditor?: TextEditor;
-
-    private _isOpen = false;
-
-    public get isOpen(): boolean {
-        return this._isOpen;
-    }
-
     protected constructor() {
-        vscode.window.tabGroups.onDidChangeTabs((tabs) => {
+        window.tabGroups.onDidChangeTabs((tabs) => {
             tabs.closed.forEach((tab) => {
                 if (
-                    tab.input instanceof vscode.TabInputText &&
+                    tab.input instanceof TabInputText &&
                     tab.input.uri.path === this.textEditor.document.fileName
                 ) {
                     this._isOpen = false;
@@ -28,6 +27,14 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
             });
         });
     }
+
+    private _isOpen = false;
+
+    public get isOpen(): boolean {
+        return this._isOpen;
+    }
+
+    private _textEditor?: TextEditor;
 
     private get textEditor(): TextEditor {
         if (this._textEditor) {
@@ -52,7 +59,7 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
     public async open(document: TextDocument): Promise<boolean> {
         try {
             if (!this._isOpen) {
-                this._textEditor = await vscode.window
+                this._textEditor = await window
                     .showTextDocument(document, this.getShowOptions())
                     .then(
                         (textEditor) => {
@@ -65,7 +72,7 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
                     );
             }
 
-            return await Promise.resolve(true);
+            return true;
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
         }
@@ -78,16 +85,14 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
 
         try {
             const tab = this.getTab(fileName);
-            return await Promise.resolve(
-                vscode.window.tabGroups.close(tab).then(
-                    (result) => {
-                        this._isOpen = false;
-                        return result;
-                    },
-                    (reason) => {
-                        throw new Error(reason);
-                    },
-                ),
+            return await window.tabGroups.close(tab).then(
+                (result) => {
+                    this._isOpen = false;
+                    return result;
+                },
+                (reason) => {
+                    throw new Error(reason);
+                },
             );
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
@@ -105,19 +110,19 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
                 }
             }
 
-            return await Promise.resolve(true);
+            return true;
         } catch (error) {
             return Promise.reject("[TextEditor]" + error);
         }
     }
 
-    private getShowOptions(showOption = "Group"): vscode.TextDocumentShowOptions {
+    private getShowOptions(showOption = "Group"): TextDocumentShowOptions {
         switch (showOption) {
             case "Tab": {
                 return {
                     preserveFocus: false,
                     preview: false,
-                    viewColumn: vscode.ViewColumn.Active,
+                    viewColumn: ViewColumn.Active,
                 };
             }
             default: {
@@ -125,17 +130,17 @@ export abstract class TextEditorWrapper implements Observer, UIComponent<TextDoc
                 return {
                     preserveFocus: false,
                     preview: true,
-                    viewColumn: vscode.ViewColumn.Beside,
+                    viewColumn: ViewColumn.Beside,
                 };
             }
         }
     }
 
-    private getTab(fileName: string): vscode.Tab {
-        for (const tabGroup of vscode.window.tabGroups.all) {
+    private getTab(fileName: string): Tab {
+        for (const tabGroup of window.tabGroups.all) {
             for (const tab of tabGroup.tabs) {
                 if (
-                    tab.input instanceof vscode.TabInputText &&
+                    tab.input instanceof TabInputText &&
                     tab.input.uri.path === fileName
                 ) {
                     return tab;

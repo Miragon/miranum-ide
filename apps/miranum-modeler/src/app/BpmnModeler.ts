@@ -24,7 +24,7 @@ import {
     ModelerData,
 } from "@miranum-ide/vscode/shared/miranum-modeler";
 
-import { getAlignToOrigin, TextEditor, Watcher } from "./lib";
+import { getAlignToOrigin, StandardTextEditor, Watcher } from "./lib";
 
 export class BpmnModeler implements CustomTextEditorProvider {
     public static readonly VIEWTYPE = "bpmn-modeler";
@@ -35,13 +35,13 @@ export class BpmnModeler implements CustomTextEditorProvider {
 
     private constructor(private readonly context: ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
-        TextEditor.register(context);
+        StandardTextEditor.register(context);
 
         // ----- Register commands ---->
         const toggleTextEditor = commands.registerCommand(
             "bpmn-modeler.toggleTextEditor",
             () => {
-                TextEditor.toggle();
+                StandardTextEditor.toggle();
             },
         );
         const toggleLogger = commands.registerCommand(
@@ -99,7 +99,7 @@ export class BpmnModeler implements CustomTextEditorProvider {
         );
 
         // Initialize TextEditor and Watcher
-        TextEditor.document = document;
+        StandardTextEditor.document = document;
         const watcher = Watcher.getWatcher(
             pathToMiranumJson ? pathToMiranumJson : pathToProjectRoot,
             miranumWorkspaceItems,
@@ -315,7 +315,7 @@ export class BpmnModeler implements CustomTextEditorProvider {
         webviewPanel.onDidChangeViewState((wp) => {
             switch (true) {
                 case wp.webviewPanel.active: {
-                    TextEditor.document = document;
+                    StandardTextEditor.document = document;
                     // break omitted
                 }
                 case wp.webviewPanel.visible: {
