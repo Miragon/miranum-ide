@@ -145,6 +145,16 @@
           "when": "activeWebviewPanelId == 'dmn-modeler'"
         }
       ]
+    },
+    "configuration": {
+      "title": "Miranum: Modeler",
+      "properties": {
+        "miranum-ide.modeler.alignToOrigin": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Align the diagram to the origin when opening a new diagram. Click [here](https://github.com/bpmn-io/align-to-origin) to see the behaviour when enabled."
+        }
+      }
     }
   }
 }

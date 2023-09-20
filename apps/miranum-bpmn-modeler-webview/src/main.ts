@@ -345,9 +345,10 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
-                // disableAdjustOrigin: true,
                 alignToOrigin: {
                     alignOnSave: false,
+                    offset: 150,
+                    tolerance: 50,
                 },
                 additionalModules: [
                     ...commonModules,
@@ -361,9 +362,10 @@ function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): 
         case ExecutionPlatformVersion.Camunda8: {
             bpmnModeler = new BpmnModeler8({
                 container: "#js-canvas",
-                // disableAdjustOrigin: true,
                 alignToOrigin: {
                     alignOnSave: false,
+                    offset: 150,
+                    tolerance: 50,
                 },
                 propertiesPanel: {
                     parent: "#js-properties-panel",
