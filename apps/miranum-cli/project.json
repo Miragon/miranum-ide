@@ -43,14 +43,6 @@
         }
       }
     },
-    "generateDocs": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "typedoc --options ./apps/miranum-cli/typedoc.json --out dist/apps/miranum-cli/docs/cliCommands"
-        ]
-      }
-    },
     "deploy": {
       "executor": "nx:run-commands",
       "dependsOn": [
