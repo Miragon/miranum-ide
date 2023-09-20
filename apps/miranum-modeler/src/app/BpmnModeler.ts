@@ -13,8 +13,8 @@ import {
     workspace,
     WorkspaceEdit,
 } from "vscode";
-import { Buffer } from "buffer";
 import { debounce } from "lodash";
+import { Buffer } from "node:buffer";
 
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
@@ -201,8 +201,8 @@ export class BpmnModeler implements CustomTextEditorProvider {
                             bpmn: isBuffer ? document.getText() : undefined,
                             executionPlatformVersion: isBuffer
                                 ? this.getModelerExecutionPlatformVersion(
-                                    document.getText(),
-                                )
+                                      document.getText(),
+                                  )
                                 : ExecutionPlatformVersion.None,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
@@ -529,9 +529,9 @@ export class BpmnModeler implements CustomTextEditorProvider {
         pathToProjectRoot: Uri,
         path: Uri,
     ): Promise<{
-            pathToMiranumJson?: Uri;
-            miranumWorkspaceItems: MiranumWorkspaceItem[];
-        }> {
+        pathToMiranumJson?: Uri;
+        miranumWorkspaceItems: MiranumWorkspaceItem[];
+    }> {
         try {
             const pathToMiranumJson = await searchMiranumJson(path);
             return {
@@ -552,7 +552,7 @@ export class BpmnModeler implements CustomTextEditorProvider {
         }
 
         async function searchMiranumJson(searchPath: Uri): Promise<Uri> {
-            const dir = await Promise.resolve(workspace.fs.readDirectory(searchPath));
+            const dir = await workspace.fs.readDirectory(searchPath);
 
             if (
                 !pathToProjectRoot ||
@@ -573,10 +573,8 @@ export class BpmnModeler implements CustomTextEditorProvider {
         async function readMiranumJson(pathToMiranumJson: Uri) {
             // eslint-disable-next-line no-useless-catch
             try {
-                const file = await Promise.resolve(
-                    workspace.fs.readFile(
-                        Uri.joinPath(pathToMiranumJson, "miranum.json"),
-                    ),
+                const file = await workspace.fs.readFile(
+                    Uri.joinPath(pathToMiranumJson, "miranum.json"),
                 );
                 const miranumWorkspaceItems: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),
