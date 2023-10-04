@@ -147,9 +147,9 @@
       ]
     },
     "configuration": {
-      "title": "Miranum: Modeler",
+      "title": "MiranumModeler",
       "properties": {
-        "miranum-ide.modeler.alignToOrigin": {
+        "miranumIDE.modeler.alignToOrigin": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Align the diagram to the origin when opening a new diagram. Click [here](https://github.com/bpmn-io/align-to-origin) to see the behaviour when enabled."
