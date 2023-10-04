@@ -3,9 +3,10 @@
   "version": "0.5.4",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npx nx run-many --target build --all --prod && node tools/scripts/set-version.js",
+    "build": "npx nx run-many --target build --all --prod && node tools/scripts/set-version.js && npm run doc",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
     "lint": "npx nx run-many --target lint --all  --parallel",
+    "doc": "npx nx run-many --target generateDocs --parallel",
     "generate-api": "openapi-generator-cli generate -i http://localhost:9001/v3/api-docs -g typescript-axios -o libs/miranum-core/src/lib/deployment/rest/openapi --additional-properties=supportsES6=true,withInterfaces=true",
     "postinstall": "node node_modules/@nx-plus/vue/patch-nx-dep-graph.js"
   },
@@ -27,7 +28,7 @@
     "@nx/vite": "16.8.1",
     "@nx/web": "16.8.1",
     "@nx/webpack": "16.8.1",
-    "@nx/workspace": "16.8.1",
+    "@nx/workspace": "16.9.0",
     "@nxrocks/nx-spring-boot": "^8.0.3",
     "@openapitools/openapi-generator-cli": "^2.7.0",
     "@testing-library/react": "14.0.0",
@@ -84,7 +85,7 @@
     "vite-plugin-static-copy": "^0.17.0",
     "vite-plugin-vue2": "^2.0.2",
     "vite-tsconfig-paths": "4.2.1",
-    "vitest": "0.34.4",
+    "vitest": "0.34.5",
     "vue-template-compiler": "2.7.14"
   },
   "dependencies": {
