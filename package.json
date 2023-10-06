@@ -112,7 +112,7 @@
     "camunda-dmn-moddle": "^1.2.0",
     "colors": "^1.4.0",
     "commander": "^11.0.0",
-    "core-js": "^3.32.2",
+    "core-js": "^3.33.0",
     "dmn-js": "^14.2.0",
     "dmn-js-properties-panel": "^3.0.0",
     "lodash": "^4.17.21",
