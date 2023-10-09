@@ -1,39 +1,19 @@
 {
   "extends": [
-    "../../.eslintrc.json"
+    "../../.eslintrc.json",
+    "plugin:vue/essential",
+    "prettier",
+    "@vue/typescript/recommended",
+    "@vue/eslint-config-prettier"
   ],
+  "rules": {},
   "ignorePatterns": [
     "!**/*"
   ],
   "env": {
     "node": true
   },
-  "parserOptions": {
-    "parser": "@typescript-eslint/parser"
-  },
   "overrides": [
-    {
-      "files": [
-        "**/*.ts",
-        "**/*.vue"
-      ],
-      "extends": [
-        "prettier"
-      ],
-      "rules": {
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-empty-interface": "warn"
-      }
-    },
-    {
-      "files": [
-        "**/*.vue"
-      ],
-      "extends": [
-        "plugin:vue/essential",
-        "@vue/eslint-config-prettier"
-      ]
-    },
     {
       "files": [
         "**/*.spec.{j,t}s?(x)"

@@ -1,6 +1,6 @@
 import Vue from "vue";
 import Vuetify from "vuetify/lib";
-import {ThemeOptions} from "vuetify/types/services/theme";
+import { ThemeOptions } from "vuetify/types/services/theme";
 
 Vue.use(Vuetify);
 
@@ -24,7 +24,7 @@ const opts: ThemeOptions = {
             success: "#4CAF50",
             warning: "#FFC107",
         },
-    }
+    },
 };
 
-export default new Vuetify({theme: opts});
+export default new Vuetify({ theme: opts });

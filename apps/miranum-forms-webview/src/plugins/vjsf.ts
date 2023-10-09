@@ -6,4 +6,4 @@ import "@koumoul/vjsf/lib/VJsf.css";
 import "@koumoul/vjsf/lib/deps/third-party.js";
 
 // eslint-disable-next-line vue/multi-word-component-names
-Vue.component("Jsf", VJsf)
+Vue.component("Jsf", VJsf);
