@@ -1,13 +1,13 @@
 import { workspace } from "vscode";
 
 let alignToOrigin: boolean | undefined = workspace
-    .getConfiguration("miranum-ide.modeler")
+    .getConfiguration("miranumIDE.modeler")
     .get("alignToOrigin");
 
 workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration("miranum-ide.modeler.alignToOrigin")) {
+    if (event.affectsConfiguration("miranumIDE.modeler.alignToOrigin")) {
         alignToOrigin = workspace
-            .getConfiguration("miranum-ide.modeler")
+            .getConfiguration("miranumIDE.modeler")
             .get("alignToOrigin");
     }
 });
