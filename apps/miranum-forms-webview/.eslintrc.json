@@ -2,17 +2,22 @@
   "extends": [
     "../../.eslintrc.json",
     "plugin:vue/essential",
+    "prettier",
     "@vue/typescript/recommended",
-    "prettier"
+    "@vue/eslint-config-prettier"
   ],
   "rules": {},
-  "ignorePatterns": ["!**/*"],
+  "ignorePatterns": [
+    "!**/*"
+  ],
   "env": {
     "node": true
   },
   "overrides": [
     {
-      "files": ["**/*.spec.{j,t}s?(x)"],
+      "files": [
+        "**/*.spec.{j,t}s?(x)"
+      ],
       "env": {
         "jest": true
       }

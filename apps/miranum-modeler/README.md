@@ -40,13 +40,13 @@ It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 
 In addition, you can create and edit DMN 1.3 decision tables.
 In order to help you with your first steps with **Miranum Modeler**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
-<img src="https://github.com/Miragon/miranum-ide/blob/9ba551a8bdd51f122536c94fc2764b293da9753f/apps/miranum-modeler/docs/modeler.gif?raw=true" alt="modeler.gif" width="1000" /><br>
+<img src="./docs/modeler.webp" alt="modeler.webp" width="1000" /><br>
 
 ## Features
 
 * Create and edit BPMN processes for Camunda Platform 7 and 8 and enhance them with technical attributes.
 * Create and edit decision tables.
-* Use the create/append-anything-pattern for a better modeling experience.
+* Use the Create/Append-Menu for a better modeling experience.
 * Use the text editor for changes directly in the XML file.
 * Use the integrated *Token Simulation* to simulate your process flow.
 

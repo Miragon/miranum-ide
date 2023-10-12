@@ -66,24 +66,6 @@
         "priority": "default"
       }
     ],
-    "configuration": {
-      "title": "Miranum",
-      "properties": {
-        "jsonSchemaBuilder.toggleTextEditor": {
-          "type": "string",
-          "default": "Tab",
-          "description": "Choose where to open the standard text editor.",
-          "enum": [
-            "Group",
-            "Tab"
-          ],
-          "enumDescription": [
-            "Use Group to open the editor to the side of the currently active one.",
-            "Use Tab to open the editor in a new tab."
-          ]
-        }
-      }
-    },
     "commands": [
       {
         "command": "jsonschema-renderer.togglePreview",

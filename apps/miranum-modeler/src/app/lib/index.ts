@@ -1,2 +1,3 @@
 export * from "./Watcher";
-export * from "./TextEditor";
+export * from "./StandardTextEditor";
+export * from "./vscode-settings";

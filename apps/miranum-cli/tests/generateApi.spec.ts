@@ -1,5 +1,5 @@
 import { generateFile, generateProject } from "../src/app/generate/api";
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { shouldNotWork, sleep } from "./testHelpers";
 import { Command } from "commander";
 
@@ -19,11 +19,19 @@ const projectName = "test-project";
 const dirPath = `${myGenerations}/${projectName}`;
 
 describe("generate bpmn project", () => {
-    it(`should work`,  async () => {
+    it(`should work`, async () => {
         checkExistence(dirPath, false);
 
         const program = generateProject();
-        program.parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
+        program.parse([
+            "node",
+            appPath,
+            "generate",
+            "--name",
+            projectName,
+            "--path",
+            myGenerations,
+        ]);
 
         await sleep(1500);
         expect(program.args).toEqual(["generate"]);
@@ -34,14 +42,27 @@ describe("generate bpmn project", () => {
     });
 
     it("should not work, due to unknown option", () => {
-        shouldNotWork(generateProject(), "generate",
-            ["node", appPath, "generate", "--name", projectName, "--path", myGenerations, "--randomArgument"],
+        shouldNotWork(
+            generateProject(),
+            "generate",
+            [
+                "node",
+                appPath,
+                "generate",
+                "--name",
+                projectName,
+                "--path",
+                myGenerations,
+                "--randomArgument",
+            ],
             "error: unknown option '--randomArgument'",
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
-        shouldNotWork(generateProject(), "generate",
+        shouldNotWork(
+            generateProject(),
+            "generate",
             ["node", appPath, "generate", "--path", myGenerations],
             "error: required option '-n, --name <name>' not specified",
         );
@@ -50,11 +71,41 @@ describe("generate bpmn project", () => {
 
 describe("generate file", () => {
     const filesToGenerate: FileHelper[] = [
-        { name: "my-process", type: "bpmn", extension: ".bpmn", dir: "", content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>` },
-        { name: "my-decision-table", type: "dmn", extension: ".dmn", dir: "", content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">` },
-        { name: "my-form", type: "form", extension: ".form", dir: "forms", content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",` },
-        { name: "my-config", type: "config", extension: ".config.json", dir: "configs", content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [` },
-        { name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates", content: `"name": "my-element-template",` },
+        {
+            name: "my-process",
+            type: "bpmn",
+            extension: ".bpmn",
+            dir: "",
+            content: `name="my-process" isExecutable="true">\n    <bpmn:documentation></bpmn:documentation>`,
+        },
+        {
+            name: "my-decision-table",
+            type: "dmn",
+            extension: ".dmn",
+            dir: "",
+            content: `name="Decision 1">\n    <decisionTable id="DecisionTable_1shndzu">\n      <input id="Input_1">`,
+        },
+        {
+            name: "my-form",
+            type: "form",
+            extension: ".form",
+            dir: "forms",
+            content: `"key": "my-form",\n  "schema": {\n    "type": "object",\n    "x-display": "stepper",`,
+        },
+        {
+            name: "my-config",
+            type: "config",
+            extension: ".config.json",
+            dir: "configs",
+            content: `"key": "my-config",\n  "statusDokument": "",\n  "statusConfig": [],\n  "configs": [`,
+        },
+        {
+            name: "my-element-template",
+            type: "element-template",
+            extension: ".json",
+            dir: "element-templates",
+            content: `"name": "my-element-template",`,
+        },
     ];
 
     for (const file of filesToGenerate) {
@@ -64,20 +115,54 @@ describe("generate file", () => {
             const expectedFilePath = `${myGenerations}/${file.name}${file.extension}`;
             checkExistence(expectedFilePath, false);
 
-            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", myGenerations]);
+            program.parse([
+                "node",
+                appPath,
+                "generate-file",
+                "--type",
+                file.type,
+                "--name",
+                file.name,
+                "--path",
+                myGenerations,
+            ]);
 
             await sleep(1500);
-            fileChecks(program, file, ["generate-file"], myGenerations, expectedFilePath);
+            fileChecks(
+                program,
+                file,
+                ["generate-file"],
+                myGenerations,
+                expectedFilePath,
+            );
             fs.rm(expectedFilePath, () => {});
         });
 
         it(`generate ${file.type} on top-level`, async () => {
-            generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
+            generateProject().parse([
+                "node",
+                appPath,
+                "generate",
+                "--name",
+                projectName,
+                "--path",
+                myGenerations,
+            ]);
             const expectedFilePath = `${dirPath}/${file.dir}/${file.name}${file.extension}`;
 
             await sleep(1500);
             checkExistence(expectedFilePath, false);
-            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", dirPath]);
+            program.parse([
+                "node",
+                appPath,
+                "generate-file",
+                "--type",
+                file.type,
+                "--name",
+                file.name,
+                "--path",
+                dirPath,
+            ]);
 
             await sleep(1500);
             fileChecks(program, file, ["generate-file"], dirPath, expectedFilePath);
@@ -85,29 +170,76 @@ describe("generate file", () => {
         });
 
         it(`generate ${file.type} in subfolder`, async () => {
-            generateProject().parse(["node", appPath, "generate", "--name", projectName, "--path", myGenerations]);
+            generateProject().parse([
+                "node",
+                appPath,
+                "generate",
+                "--name",
+                projectName,
+                "--path",
+                myGenerations,
+            ]);
             const expectedFilePath = `${dirPath}/forms/${file.name}${file.extension}`;
 
             await sleep(1500);
             checkExistence(expectedFilePath, false);
-            program.parse(["node", appPath, "generate-file", "--type", file.type, "--name", file.name, "--path", `${dirPath}/forms`]);
+            program.parse([
+                "node",
+                appPath,
+                "generate-file",
+                "--type",
+                file.type,
+                "--name",
+                file.name,
+                "--path",
+                `${dirPath}/forms`,
+            ]);
 
             await sleep(1500);
-            fileChecks(program, file, ["generate-file"], `${dirPath}/forms`, expectedFilePath);
+            fileChecks(
+                program,
+                file,
+                ["generate-file"],
+                `${dirPath}/forms`,
+                expectedFilePath,
+            );
             cleanUpDir();
         });
     }
 
     it("should not work, due to unknown option", () => {
-        shouldNotWork(generateFile(), "generate-file",
-            ["node", appPath, "generate-file", "--type", "bpmn", "--name", "name", "--path", myGenerations, "--randomArgument"],
+        shouldNotWork(
+            generateFile(),
+            "generate-file",
+            [
+                "node",
+                appPath,
+                "generate-file",
+                "--type",
+                "bpmn",
+                "--name",
+                "name",
+                "--path",
+                myGenerations,
+                "--randomArgument",
+            ],
             "error: unknown option '--randomArgument'",
         );
     });
 
     it(`should not work, due to missing argument`, async () => {
-        shouldNotWork(generateFile(), "generate-file",
-            ["node", appPath, "generate-file", "--type", "bpmn", "--path", myGenerations],
+        shouldNotWork(
+            generateFile(),
+            "generate-file",
+            [
+                "node",
+                appPath,
+                "generate-file",
+                "--type",
+                "bpmn",
+                "--path",
+                myGenerations,
+            ],
             "error: required option '-n, --name <name>' not specified",
         );
     });
@@ -121,7 +253,7 @@ function checkArgsAndPath(program: Command, args: string[], path: string) {
 
 function checkExistence(path: string, expectation: boolean) {
     try {
-        fs.open(path, () => {});
+        fs.open(path, "r", () => {});
         expect(expectation).toBe(true);
     } catch (e) {
         expect(expectation).toBe(false);
@@ -134,7 +266,13 @@ function checkContent(path: string, content: string) {
     });
 }
 
-function fileChecks(program: Command, file: FileHelper, args: string[], inputPath: string, expectedPath: string) {
+function fileChecks(
+    program: Command,
+    file: FileHelper,
+    args: string[],
+    inputPath: string,
+    expectedPath: string,
+) {
     checkArgsAndPath(program, args, inputPath);
     expect(program.opts().type).toBe(file.type);
     expect(program.opts().name).toBe(file.name);

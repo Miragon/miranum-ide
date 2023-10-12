@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Buffer } from "buffer";
+import { Buffer } from "node:buffer";
 import { Logger } from "../Logger";
 import { FolderContent } from "@miranum-ide/vscode/miranum-vscode-webview";
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";

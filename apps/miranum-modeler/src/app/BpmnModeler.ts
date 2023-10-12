@@ -1,35 +1,50 @@
-import * as vscode from "vscode";
-import { Uri, window } from "vscode";
-import { Buffer } from "buffer";
+import {
+    CancellationToken,
+    commands,
+    CustomTextEditorProvider,
+    Disposable,
+    ExtensionContext,
+    Range,
+    TextDocument,
+    Uri,
+    Webview,
+    WebviewPanel,
+    window,
+    workspace,
+    WorkspaceEdit,
+} from "vscode";
 import { debounce } from "lodash";
+import { Buffer } from "node:buffer";
+
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 import {
     ExecutionPlatformVersion,
     ModelerData,
 } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { TextEditor, Watcher } from "./lib";
-import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
-export class BpmnModeler implements vscode.CustomTextEditorProvider {
+import { getAlignToOrigin, StandardTextEditor, Watcher } from "./lib";
+
+export class BpmnModeler implements CustomTextEditorProvider {
     public static readonly VIEWTYPE = "bpmn-modeler";
 
     private static counter = 0;
 
     private write = this.asyncDebounce(this.writeChangesToDocument, 100);
 
-    private constructor(private readonly context: vscode.ExtensionContext) {
+    private constructor(private readonly context: ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
-        TextEditor.register(context);
+        StandardTextEditor.register(context);
 
         // ----- Register commands ---->
-        const toggleTextEditor = vscode.commands.registerCommand(
+        const toggleTextEditor = commands.registerCommand(
             "bpmn-modeler.toggleTextEditor",
             () => {
-                TextEditor.toggle();
+                StandardTextEditor.toggle();
             },
         );
-        const toggleLogger = vscode.commands.registerCommand(
+        const toggleLogger = commands.registerCommand(
             "bpmn-modeler.toggleLogger",
             () => {
                 if (!Logger.isOpen) {
@@ -44,13 +59,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         context.subscriptions.push(toggleTextEditor, toggleLogger);
     }
 
-    public static register(context: vscode.ExtensionContext): vscode.Disposable {
+    public static register(context: ExtensionContext): Disposable {
         Logger.get().clear();
         const provider = new BpmnModeler(context);
-        return vscode.window.registerCustomEditorProvider(
-            BpmnModeler.VIEWTYPE,
-            provider,
-        );
+        return window.registerCustomEditorProvider(BpmnModeler.VIEWTYPE, provider);
     }
 
     /**
@@ -60,16 +72,16 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
      * @param token Token to cancel asynchronous or long-running operations.
      */
     public async resolveCustomTextEditor(
-        document: vscode.TextDocument,
-        webviewPanel: vscode.WebviewPanel,
-        token: vscode.CancellationToken,
+        document: TextDocument,
+        webviewPanel: WebviewPanel,
+        token: CancellationToken,
     ): Promise<void> {
         // Disable preview mode
-        await vscode.commands.executeCommand("workbench.action.keepEditor");
+        await commands.executeCommand("workbench.action.keepEditor");
 
         // Set context for when clause in vscode commands
         BpmnModeler.counter++;
-        vscode.commands.executeCommand(
+        commands.executeCommand(
             "setContext",
             `${BpmnModeler.VIEWTYPE}.openCustomEditor`,
             BpmnModeler.counter,
@@ -87,7 +99,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         );
 
         // Initialize TextEditor and Watcher
-        TextEditor.document = document;
+        StandardTextEditor.document = document;
         const watcher = Watcher.getWatcher(
             pathToMiranumJson ? pathToMiranumJson : pathToProjectRoot,
             miranumWorkspaceItems,
@@ -127,8 +139,10 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                         }
                         case `${BpmnModeler.VIEWTYPE}.${MessageType.MSGFROMWEBVIEW}`: {
                             isUpdateFromWebview = true;
-                            if (event.data?.bpmn) {
+                            if (getAlignToOrigin()) {
                                 postMessage(MessageType.ALIGN);
+                            }
+                            if (event.data?.bpmn) {
                                 await this.write(document, event.data.bpmn);
                             }
                             break;
@@ -187,8 +201,8 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
                             bpmn: isBuffer ? document.getText() : undefined,
                             executionPlatformVersion: isBuffer
                                 ? this.getModelerExecutionPlatformVersion(
-                                    document.getText(),
-                                )
+                                      document.getText(),
+                                  )
                                 : ExecutionPlatformVersion.None,
                             additionalFiles: watcher.isUnresponsive(document.uri.path)
                                 ? await watcher.getChangedData()
@@ -258,7 +272,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         };
 
         // (2) EventListener on saving
-        const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(() => {
+        const saveDocumentSubscription = workspace.onDidSaveTextDocument(() => {
             Logger.info(
                 "[Miranum.Modeler]",
                 `(Webview: ${webviewPanel.title})`,
@@ -267,43 +281,41 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         });
 
         // (3) EventListener on changes
-        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
-            (event) => {
-                if (
-                    event.document.uri.toString() === document.uri.toString() &&
-                    event.contentChanges.length !== 0 &&
-                    !isUpdateFromWebview
-                ) {
-                    if (!webviewPanel.visible) {
-                        // if the webview is not visible we can not send a message
-                        isBuffer = true;
-                        return;
-                    }
+        const changeDocumentSubscription = workspace.onDidChangeTextDocument((event) => {
+            if (
+                event.document.uri.toString() === document.uri.toString() &&
+                event.contentChanges.length !== 0 &&
+                !isUpdateFromWebview
+            ) {
+                if (!webviewPanel.visible) {
+                    // if the webview is not visible, we cannot send a message
+                    isBuffer = true;
+                    return;
+                }
 
-                    switch (event.reason) {
-                        case 1: {
-                            postMessage(MessageType.UNDO);
-                            break;
-                        }
-                        case 2: {
-                            postMessage(MessageType.REDO);
-                            break;
-                        }
-                        case undefined: {
-                            postMessage(MessageType.MSGFROMEXTENSION);
-                            break;
-                        }
+                switch (event.reason) {
+                    case 1: {
+                        postMessage(MessageType.UNDO);
+                        break;
+                    }
+                    case 2: {
+                        postMessage(MessageType.REDO);
+                        break;
+                    }
+                    case undefined: {
+                        postMessage(MessageType.MSGFROMEXTENSION);
+                        break;
                     }
                 }
-                isUpdateFromWebview = false;
-            },
-        );
+            }
+            isUpdateFromWebview = false;
+        });
 
         // (4) EventListener on switching tabs
         webviewPanel.onDidChangeViewState((wp) => {
             switch (true) {
                 case wp.webviewPanel.active: {
-                    TextEditor.document = document;
+                    StandardTextEditor.document = document;
                     // break omitted
                 }
                 case wp.webviewPanel.visible: {
@@ -315,7 +327,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         // (5) EventListener on closing tab
         webviewPanel.onDidDispose(() => {
             BpmnModeler.counter--;
-            vscode.commands.executeCommand(
+            commands.executeCommand(
                 "setContext",
                 `${BpmnModeler.VIEWTYPE}.openCustomEditor`,
                 BpmnModeler.counter,
@@ -357,20 +369,13 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
      * @param extensionUri The path to the directory where the extension is installed.
      * @private
      */
-    private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
-        const pathToWebview = vscode.Uri.joinPath(
-            extensionUri,
-            "miranum-bpmn-modeler-webview",
-        );
+    private getHtmlForWebview(webview: Webview, extensionUri: Uri) {
+        const pathToWebview = Uri.joinPath(extensionUri, "miranum-bpmn-modeler-webview");
 
-        const scriptUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(pathToWebview, "index.js"),
-        );
-        const styleUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(pathToWebview, "index.css"),
-        );
+        const scriptUri = webview.asWebviewUri(Uri.joinPath(pathToWebview, "index.js"));
+        const styleUri = webview.asWebviewUri(Uri.joinPath(pathToWebview, "index.css"));
         const fontBpmn = webview.asWebviewUri(
-            vscode.Uri.joinPath(pathToWebview, "css", "bpmn.css"),
+            Uri.joinPath(pathToWebview, "css", "bpmn.css"),
         );
 
         const nonce = this.getNonce();
@@ -475,18 +480,18 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
      * @private
      */
     private async writeChangesToDocument(
-        document: vscode.TextDocument,
+        document: TextDocument,
         text: string,
     ): Promise<boolean> {
         if (document.getText() === text) {
             return Promise.reject("No changes to apply!");
         }
 
-        const edit = new vscode.WorkspaceEdit();
+        const edit = new WorkspaceEdit();
 
-        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
+        edit.replace(document.uri, new Range(0, 0, document.lineCount, 0), text);
 
-        return Promise.resolve(vscode.workspace.applyEdit(edit));
+        return Promise.resolve(workspace.applyEdit(edit));
     }
 
     /**
@@ -497,7 +502,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
      * @private
      */
     private getPathToProjectRoot(document: Uri): Uri {
-        const workspaces = vscode.workspace.workspaceFolders;
+        const workspaces = workspace.workspaceFolders;
         let documentParts = document.path.split("/");
         documentParts = documentParts.slice(0, documentParts.length - 1);
         if (workspaces) {
@@ -524,9 +529,9 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         pathToProjectRoot: Uri,
         path: Uri,
     ): Promise<{
-            pathToMiranumJson?: Uri;
-            miranumWorkspaceItems: MiranumWorkspaceItem[];
-        }> {
+        pathToMiranumJson?: Uri;
+        miranumWorkspaceItems: MiranumWorkspaceItem[];
+    }> {
         try {
             const pathToMiranumJson = await searchMiranumJson(path);
             return {
@@ -547,9 +552,7 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         }
 
         async function searchMiranumJson(searchPath: Uri): Promise<Uri> {
-            const dir = await Promise.resolve(
-                vscode.workspace.fs.readDirectory(searchPath),
-            );
+            const dir = await workspace.fs.readDirectory(searchPath);
 
             if (
                 !pathToProjectRoot ||
@@ -570,15 +573,13 @@ export class BpmnModeler implements vscode.CustomTextEditorProvider {
         async function readMiranumJson(pathToMiranumJson: Uri) {
             // eslint-disable-next-line no-useless-catch
             try {
-                const file = await Promise.resolve(
-                    vscode.workspace.fs.readFile(
-                        vscode.Uri.joinPath(pathToMiranumJson, "miranum.json"),
-                    ),
+                const file = await workspace.fs.readFile(
+                    Uri.joinPath(pathToMiranumJson, "miranum.json"),
                 );
-                const workspace: MiranumWorkspaceItem[] = JSON.parse(
+                const miranumWorkspaceItems: MiranumWorkspaceItem[] = JSON.parse(
                     Buffer.from(file).toString("utf-8"),
                 ).workspace;
-                return workspace;
+                return miranumWorkspaceItems;
             } catch (error) {
                 throw error;
             }

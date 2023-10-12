@@ -12,7 +12,7 @@ import {
     ExtensionContext,
     TextDocument,
     WebviewPanel,
-    workspace,
+    workspace
 } from "vscode";
 import { Logger, ViewState } from "@miranum-ide/vscode/miranum-vscode";
 import { FormBuilderData } from "@miranum-ide/vscode/shared/miranum-forms";
@@ -26,7 +26,7 @@ import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webv
  * data model and synchronize changes with the [webview](https://code.visualstudio.com/api/extension-guides/webview).
  * The webview is build with [Vue.js](https://vuejs.org/) and uses the
  * [DigiWF Form Builder](https://github.com/Miragon/digiwf-core/tree/dev/digiwf-apps/packages/components/digiwf-form-builder).
- * The provider also register a [command](https://code.visualstudio.com/api/extension-guides/command) for toggling the
+ * The provider also registers a [command](https://code.visualstudio.com/api/extension-guides/command) for toggling the
  * standard vscode text editor and a preview for rendering [Json Schema](https://json-schema.org/).
  */
 export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
@@ -62,7 +62,7 @@ export class JsonSchemaBuilderProvider implements CustomTextEditorProvider {
         this.textEditor = TextEditorComponent.getInstance();
         this.preview = new PreviewComponent(this.context.extensionUri);
 
-        // initialize controller and subscribe the components to it
+        // initialize the controller and subscribe the components to it
         this.controller = new DocumentController<FormBuilderData>();
         this.controller.subscribe(this.preview, this.textEditor);
 

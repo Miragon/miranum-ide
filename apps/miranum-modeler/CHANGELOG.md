@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* **\[Miranum Modeler\]** Configuration to enable the alignment of the diagram at the origin (#395)
+
 ## [0.5.4] - 2023-20-19
 
 ### Changed

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { Uri, window } from "vscode";
 import { Logger, Reader } from "@miranum-ide/vscode/miranum-vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { TextEditor, Watcher } from "./lib";
+import { StandardTextEditor, Watcher } from "./lib";
 import { debounce } from "lodash";
 import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
@@ -16,12 +16,12 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
 
     private constructor(private readonly context: vscode.ExtensionContext) {
         // Register the command for toggling the standard vscode text editor.
-        TextEditor.register(context);
+        StandardTextEditor.register(context);
         // ----- Register commands ---->
         const toggleTextEditor = vscode.commands.registerCommand(
             "dmn-modeler.toggleTextEditor",
             () => {
-                TextEditor.toggle();
+                StandardTextEditor.toggle();
             },
         );
         const toggleLogger = vscode.commands.registerCommand(
@@ -74,7 +74,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
         const workspaceFolder = await this.getWorkspace(projectUri);
 
         webviewPanel.webview.options = { enableScripts: true };
-        TextEditor.document = document;
+        StandardTextEditor.document = document;
 
         const watcher = Watcher.getWatcher(projectUri, workspaceFolder);
         watcher.subscribe(document.uri.path, webviewPanel);
@@ -264,7 +264,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
         webviewPanel.onDidChangeViewState((wp) => {
             switch (true) {
                 case wp.webviewPanel.active: {
-                    TextEditor.document = document;
+                    StandardTextEditor.document = document;
                     // break omitted
                 }
                 case wp.webviewPanel.visible: {
