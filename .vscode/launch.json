@@ -60,6 +60,26 @@
         "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
         "webpack://?:*/*": "${workspaceFolder}/apps/miranum-modeler/*"
       }
+    },
+    {
+      "name": "Run miranum-config-editor",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-config-editor"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/apps/miranum-config-editor/**/*.js"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/dist/apps/miranum-config-editor/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-config-editor/*"
+      }
     }
   ]
 }
