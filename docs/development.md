@@ -1,7 +1,7 @@
 # Development
 
 * [Setup local dev environment](#setup-local-dev-environment)
-    * [Miranum Deployment Proxy](#miranum-deployment-proxy)
+    * [Miranum Deployment Proxy](#miranum-deployment)
     * [Miranum CLI](#miranum-cli)
     * [Miranum VS Code Extension](#miranum-vs-code-extensions)
 * [Testing](#testing)
@@ -134,7 +134,7 @@ gitGraph
 ## CI/CD
 
 **Feature Branch**
-After every commit the *test* workflow is executed that runs the lint command and all available tests.
+After every commit, the *test* workflow is executed that runs the lint command and all available tests.
 
 **Pull Request**
 For every open Pull Request (PR) the *pr-labeler* workflow is executed that adds labels to the PR for every app, lib,
