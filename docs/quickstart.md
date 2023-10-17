@@ -1,11 +1,11 @@
 # Quickstart
 
-This monorepo uses Nx as build system for the application.
+This monorepo uses Nx as the build system for the application.
 
 -   [Setup](#setup)
 -   [Getting Started](#getting-started)
 -   [Create a new app or lib](#create-a-new-app-or-lib)
-    -   [Adding capabilities to the workspace](#adding-capabilities-to-the-workspace)
+    -   _[Adding capabilities to the workspace](#adding-capabilities-to-the-workspace)_
     -   _[Generate a new application](#generate-a-new-application)_
     -   _[Generate a new library](#generate-a-new-library)_
     -   _[Generate a new VS Code Plugin](#generate-a-new-vs-code-plugin)_
