@@ -13,7 +13,7 @@
   "devDependencies": {
     "@emotion/react": "11.11.1",
     "@emotion/styled": "11.11.0",
-    "@mdi/font": "^7.2.96",
+    "@mdi/font": "^5.9.55",
     "@mdi/js": "^7.2.96",
     "@nx/cypress": "16.8.1",
     "@nx/esbuild": "16.8.1",
@@ -42,6 +42,7 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.0.4",
+    "@vitejs/plugin-vue2": "^2.2.0",
     "@vitest/coverage-c8": "0.33.0",
     "@vitest/ui": "0.34.4",
     "@vscode/test-electron": "^2.3.4",
@@ -91,6 +92,9 @@
   "dependencies": {
     "@bpmn-io/element-template-chooser": "^1.0.0",
     "@bpmn-io/properties-panel": "^3.9.0",
+    "@jsonforms/core": "^3.0.0",
+    "@jsonforms/vue2": "^3.0.0",
+    "@jsonforms/vue2-vuetify": "^3.0.0",
     "@koumoul/vjsf": "^2.22.0",
     "@muenchen/digiwf-form-builder": "^1.0.1",
     "@muenchen/digiwf-form-builder-settings": "^1.0.1",

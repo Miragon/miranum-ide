@@ -1,6 +1,10 @@
 {
   "extends": [
-    "../../.eslintrc.json"
+    "../../.eslintrc.json",
+    "plugin:vue/essential",
+    "prettier",
+    "@vue/typescript/recommended",
+    "@vue/eslint-config-prettier"
   ],
   "ignorePatterns": [
     "!**/*"
@@ -20,7 +24,10 @@
         "*.ts",
         "*.tsx"
       ],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-empty-interface": "warn"
+      }
     },
     {
       "files": [
