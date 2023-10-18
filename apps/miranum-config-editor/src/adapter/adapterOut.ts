@@ -81,11 +81,7 @@ export class DocumentAdapter implements DocumentOutPort {
         return document.save();
     }
 
-    loadActiveDocument(fileName: string): TextDocument {
-        return this.validate(fileName);
-    }
-
-    loadActiveDocumentId(): string {
+    loadActiveDocument(): string {
         if (!this.activeDocument) {
             throw new Error("No active document!");
         }

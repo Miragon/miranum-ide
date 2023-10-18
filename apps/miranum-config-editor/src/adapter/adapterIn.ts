@@ -49,7 +49,7 @@ export class WebviewAdapter {
         // Sync webview with a document
         webview.onDidReceiveMessage(async (message: WebviewMessage<string>) => {
             if (updateFrom === UpdateFrom.DOCUMENT) {
-                setUpdateFrom(UpdateFrom.NULL);
+                setUpdateFrom(UpdateFrom.NULL); // reset
                 return;
             }
             setUpdateFrom(UpdateFrom.WEBVIEW);
@@ -128,7 +128,7 @@ export class DocumentAdapter {
                 return;
             }
             if (updateFrom === UpdateFrom.WEBVIEW) {
-                setUpdateFrom(UpdateFrom.NULL);
+                setUpdateFrom(UpdateFrom.NULL); // reset
                 return;
             }
 

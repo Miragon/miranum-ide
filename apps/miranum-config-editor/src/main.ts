@@ -54,19 +54,20 @@ class CustomTextEditor implements CustomTextEditorProvider {
     }
 
     private initialSetup(webviewPanel: WebviewPanel, document: TextDocument) {
-        const documentAdapter = container.resolve<OutDocumentAdapter>("DocumentOutPort");
-        const webviewAdapter = container.resolve<OutWebviewAdapter>("WebviewOutPort");
+        const webviewOutAdapter = container.resolve<OutWebviewAdapter>("WebviewOutPort");
+        const documentOutAdapter =
+            container.resolve<OutDocumentAdapter>("DocumentOutPort");
 
-        documentAdapter.updateActiveDocument(document);
-        webviewAdapter.updateActiveWebview(document.fileName, webviewPanel.webview);
+        webviewOutAdapter.updateActiveWebview(document.fileName, webviewPanel.webview);
+        documentOutAdapter.updateActiveDocument(document);
 
         webviewPanel.onDidChangeViewState((event) => {
             if (event.webviewPanel.active) {
-                documentAdapter.updateActiveDocument(document);
-                webviewAdapter.updateActiveWebview(
+                webviewOutAdapter.updateActiveWebview(
                     document.fileName,
                     webviewPanel.webview,
                 );
+                documentOutAdapter.updateActiveDocument(document);
             }
         });
     }

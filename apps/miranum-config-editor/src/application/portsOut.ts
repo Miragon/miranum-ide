@@ -11,5 +11,5 @@ export interface DocumentOutPort {
 
     save(fileName: string): Promise<boolean>;
 
-    loadActiveDocumentId(): string;
+    loadActiveDocument(): string;
 }
