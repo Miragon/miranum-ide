@@ -3,7 +3,67 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-config-editor/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "!miranum-config-editor-webview"
+  ],
   "targets": {
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx observe miranum-config-editor",
+            "prefix": "miranum-modeler",
+            "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-config-editor-webview",
+            "prefix": "miranum-modeler-bpmn-webview",
+            "color": "green"
+          }
+        ]
+      }
+    },
+    "observe": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "development",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/miranum-config-editor",
+        "format": [
+          "cjs"
+        ],
+        "watch": true,
+        "bundle": false,
+        "main": "apps/miranum-config-editor/src/main.ts",
+        "tsConfig": "apps/miranum-config-editor/tsconfig.app.json",
+        "assets": [
+          "apps/miranum-config-editor/src/assets"
+        ],
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        }
+      }
+    },
     "build": {
       "executor": "@nx/esbuild:esbuild",
       "outputs": [
@@ -16,7 +76,7 @@
         "format": [
           "cjs"
         ],
-        "bundle": false,
+        "bundle": true,
         "main": "apps/miranum-config-editor/src/main.ts",
         "tsConfig": "apps/miranum-config-editor/tsconfig.app.json",
         "assets": [
@@ -39,21 +99,6 @@
               ".js": ".js"
             }
           }
-        }
-      }
-    },
-    "serve": {
-      "executor": "@nx/js:node",
-      "defaultConfiguration": "development",
-      "options": {
-        "buildTarget": "miranum-config-editor:build"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "miranum-config-editor:build:development"
-        },
-        "production": {
-          "buildTarget": "miranum-config-editor:build:production"
         }
       }
     },
