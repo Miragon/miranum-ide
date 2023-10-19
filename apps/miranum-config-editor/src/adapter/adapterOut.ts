@@ -4,11 +4,14 @@
  * List of Adapters:
  * - {@link WebviewAdapter}
  * - {@link DocumentAdapter}
+ * - {@link ReaderAdapter}
+ * - {@link VsCodeConfigAdapter}
  */
-import { Range, TextDocument, Webview, workspace, WorkspaceEdit } from "vscode";
+import { Range, TextDocument, Uri, Webview, workspace, WorkspaceEdit } from "vscode";
+import { Buffer } from "node:buffer";
 
-import { WebviewMessage } from "../common";
-import { DocumentOutPort, WebviewOutPort } from "../application/portsOut";
+import { DocumentOutPort, ReaderOutPort, VsCodeConfigOutPort, WebviewOutPort } from "../application/portsOut";
+import { ConfigEditorData, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 /**
  * @class WebviewAdapter
@@ -18,7 +21,7 @@ export class WebviewAdapter implements WebviewOutPort {
 
     async postMessage(
         webviewId: string,
-        message: WebviewMessage<string>,
+        message: VscMessage<ConfigEditorData>,
     ): Promise<boolean> {
         const webview = this.validate(webviewId);
         return webview.postMessage(message);
@@ -102,5 +105,26 @@ export class DocumentAdapter implements DocumentOutPort {
         }
 
         return this.activeDocument;
+    }
+}
+
+/**
+ * @class ReaderAdapter
+ */
+export class ReaderAdapter implements ReaderOutPort {
+    private readonly fs = workspace.fs;
+
+    async readFile(fileName: string): Promise<string> {
+        const uint8Array = await this.fs.readFile(Uri.file(fileName));
+        return Buffer.from(uint8Array).toString();
+    }
+}
+
+/**
+ * @class VsCodeConfigAdapter
+ */
+export class VsCodeConfigAdapter implements VsCodeConfigOutPort {
+    getConfiguration<T>(section: string): T | undefined {
+        return workspace.getConfiguration().get<T>(section);
     }
 }

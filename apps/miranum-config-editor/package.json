@@ -38,11 +38,22 @@
         "displayName": "Miranum Config Editor",
         "selector": [
           {
-            "filenamePattern": "*.config.json"
+            "filenamePattern": "*.*.config.json"
           }
         ],
         "priority": "default"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "MiranumConfigEditor",
+      "properties": {
+        "miranumIDE.configEditor.basePath": {
+          "scope": "application",
+          "type": "string",
+          "description": "Enter the path to your schema and ui-schema files.",
+          "pattern": "^(.+)\/([^\/]+)$"
+        }
+      }
+    }
   }
 }

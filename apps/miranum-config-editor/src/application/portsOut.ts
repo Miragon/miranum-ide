@@ -1,7 +1,13 @@
-import { WebviewMessage } from "../common";
+import {
+    ConfigEditorData,
+    VscMessage,
+} from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 export interface WebviewOutPort {
-    postMessage(webviewId: string, message: WebviewMessage<string>): Promise<boolean>;
+    postMessage(
+        webviewId: string,
+        message: VscMessage<ConfigEditorData>,
+    ): Promise<boolean>;
 
     loadActiveWebviewId(): string;
 }
@@ -12,4 +18,12 @@ export interface DocumentOutPort {
     save(fileName: string): Promise<boolean>;
 
     loadActiveDocument(): string;
+}
+
+export interface ReaderOutPort {
+    readFile(fileName: string): Promise<string>;
+}
+
+export interface VsCodeConfigOutPort {
+    getConfiguration<T>(section: string): T | undefined;
 }

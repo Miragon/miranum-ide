@@ -37,14 +37,3 @@ export class EXTENSION_CONTEXT {
         return EXTENSION_CONTEXT.context;
     }
 }
-
-export type WebviewMessage<T> = {
-    type: MessageType;
-    data: T;
-};
-
-export enum MessageType {
-    UPDATE = "UPDATE",
-    INFO = "INFO",
-    ERROR = "ERROR",
-}

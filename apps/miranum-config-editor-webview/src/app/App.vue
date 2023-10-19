@@ -3,15 +3,14 @@ import { onBeforeMount, ref } from "vue";
 import { JsonForms } from "@jsonforms/vue2";
 import { vuetifyRenderers } from "@jsonforms/vue2-vuetify";
 import { JsonSchema, UISchemaElement } from "@jsonforms/core";
+
 import {
     ConfigEditorData,
     MessageType,
-    MissingStateError,
     VscMessage,
-    VsCode,
-    VsCodeImpl,
-    VsCodeMock,
-} from "./composables/vscode";
+} from "@miranum-ide/vscode/shared/miranum-config-editor";
+
+import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./composables/vscode";
 import { createResolver } from "./composables/utils";
 
 //

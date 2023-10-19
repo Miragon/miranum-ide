@@ -6,50 +6,26 @@
  * - {@link SyncWebviewInPort}
  * - {@link SyncDocumentInPort}
  */
-import { MessageType, WebviewMessage } from "../common";
 
 //
 // InitWebviewUseCase
 // ==================>
 export interface InitWebviewInPort {
-    initWebview(initWebviewCommand: InitWebviewCommand): Promise<boolean>;
+    initWebview(initWebviewCommand: WebviewCommand): Promise<boolean>;
 }
 
-export class InitWebviewCommand {
+export class WebviewCommand {
     constructor(
         private readonly _webviewId: string,
-        content: string,
-    ) {
-        if (!(this.validate(/*content*/))) {
-            throw new Error("Invalid content");
-        }
-
-        this.mapContentToMessage(content);
-    }
-
-    // FIXME: change any to a proper type
-    private _message: WebviewMessage<string> | undefined;
-
-    public get message(): WebviewMessage<string> {
-        if (!this._message) {
-            throw new Error("Message is undefined");
-        }
-        return this._message;
-    }
+        private readonly _content: string,
+    ) {}
 
     public get webviewId(): string {
         return this._webviewId;
     }
 
-    public validate(/*content: string*/): boolean {
-        return true;
-    }
-
-    private mapContentToMessage(data: string): void {
-        this._message = {
-            type: MessageType.UPDATE,
-            data,
-        };
+    public get content(): string {
+        return this._content;
     }
 }
 
@@ -57,45 +33,7 @@ export class InitWebviewCommand {
 // SyncWebviewUseCase
 // ==================>
 export interface SyncWebviewInPort {
-    sync(syncWebviewCommand: SyncWebviewCommand): Promise<boolean>;
-}
-
-export class SyncWebviewCommand {
-    constructor(
-        private readonly _webviewId: string,
-        content: string,
-    ) {
-        if (!(this.validate(/*content*/))) {
-            throw new Error("Invalid content");
-        }
-
-        this.mapContentToMessage(content);
-    }
-
-    // FIXME: change any to a proper type
-    private _message: WebviewMessage<string> | undefined;
-
-    public get message(): WebviewMessage<string> {
-        if (!this._message) {
-            throw new Error("Message is undefined");
-        }
-        return this._message;
-    }
-
-    public get webviewId(): string {
-        return this._webviewId;
-    }
-
-    private validate(/*data: string*/): boolean {
-        return true;
-    }
-
-    private mapContentToMessage(data: string): void {
-        this._message = {
-            type: MessageType.UPDATE,
-            data,
-        };
-    }
+    sync(syncWebviewCommand: WebviewCommand): Promise<boolean>;
 }
 
 //
@@ -106,18 +44,18 @@ export interface SyncDocumentInPort {
 }
 
 export class SyncDocumentCommand {
+    private readonly _content: string;
+
     constructor(
         private readonly _fileName: string,
-        message: WebviewMessage<string>,
+        content: string,
     ) {
-        if (!(this.validate(/*message*/))) {
+        if (!this.validate(content)) {
             throw new Error("Invalid message");
         }
 
-        this.mapMessageToContent(message);
+        this._content = content;
     }
-
-    private _content: string | undefined;
 
     public get content(): string {
         if (!this._content) {
@@ -130,11 +68,8 @@ export class SyncDocumentCommand {
         return this._fileName;
     }
 
-    private validate(/*message: WebviewMessage<any>*/): boolean {
+    private validate(content: string): boolean {
+        // TODO: Validate against JSON schema
         return true;
-    }
-
-    private mapMessageToContent(message: WebviewMessage<string>): void {
-        this._content = message.data;
     }
 }

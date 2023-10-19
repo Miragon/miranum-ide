@@ -7,38 +7,17 @@ import { WebviewApi } from "vscode-webview";
 import jsonSchema from "../../assets/schema.json";
 import jsonUiSchema from "../../assets/uischema.json";
 import jsonData from "../../assets/data.json";
+import {
+    ConfigEditorData,
+    MessageType,
+    VscMessage,
+} from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 export interface VscState {
     schema: JsonSchema;
     uischema: UISchemaElement;
     data: JSON;
 }
-
-// ======>
-// TODO: These objects have to be shared between backend and frontend.
-export interface VscMessage<T> {
-    type: string;
-    payload?: T;
-    logger?: string; // if something should be logged in VSCode
-}
-
-export interface ConfigEditorData {
-    schema?: string;
-    uischema?: string;
-    data?: string;
-}
-
-export enum MessageType {
-    initialize = "initialize", // initialize the webview
-    restore = "restore", // restore the webview
-    syncWebview = "syncWebview", // user made changes in the document
-    syncDocument = "syncDocument", // user made changes in the webview
-    watcher = "watcher", // user made changes in schema or uischema
-    info = "info",
-    error = "error",
-}
-
-// <=======
 
 export interface VsCode {
     getState(): VscState;

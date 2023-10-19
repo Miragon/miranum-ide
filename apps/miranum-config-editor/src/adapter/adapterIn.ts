@@ -8,15 +8,15 @@
 import { TextDocument, Uri, Webview, workspace } from "vscode";
 import { inject, injectable } from "tsyringe";
 
-import { EXTENSION_CONTEXT, MessageType, setUpdateFrom, updateFrom, UpdateFrom, WebviewMessage } from "../common";
+import { EXTENSION_CONTEXT, setUpdateFrom, updateFrom, UpdateFrom } from "../common";
 import {
-    InitWebviewCommand,
     InitWebviewInPort,
     SyncDocumentCommand,
     SyncDocumentInPort,
-    SyncWebviewCommand,
-    SyncWebviewInPort
+    SyncWebviewInPort,
+    WebviewCommand
 } from "../application/portsIn";
+import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 /**
  * @class WebviewAdapter
@@ -38,7 +38,7 @@ export class WebviewAdapter {
     private initWebview(webview: Webview, document: TextDocument) {
         webview.options = { enableScripts: true };
         webview.html = getHtml(webview, EXTENSION_CONTEXT.getContext().extensionUri);
-        const initWebviewCommand = new InitWebviewCommand(
+        const initWebviewCommand = new WebviewCommand(
             document.fileName,
             document.getText(),
         );
@@ -47,26 +47,28 @@ export class WebviewAdapter {
 
     private onDidReceiveMessage(webview: Webview, document: TextDocument) {
         // Sync webview with a document
-        webview.onDidReceiveMessage(async (message: WebviewMessage<string>) => {
+        webview.onDidReceiveMessage(async (message: VscMessage<ConfigEditorData>) => {
             if (updateFrom === UpdateFrom.DOCUMENT) {
                 setUpdateFrom(UpdateFrom.NULL); // reset
                 return;
             }
             setUpdateFrom(UpdateFrom.WEBVIEW);
 
-            if (message.type === MessageType.UPDATE) {
-                const syncDocumentCommand = new SyncDocumentCommand(
-                    document.fileName,
-                    message,
-                );
-                this.syncDocumentInPort.sync(syncDocumentCommand);
+            if (message.type === MessageType.syncWebview) {
+                if (message.payload?.data) {
+                    const syncDocumentCommand = new SyncDocumentCommand(
+                        document.fileName,
+                        message.payload.data,
+                    );
+                    this.syncDocumentInPort.sync(syncDocumentCommand);
+                }
             }
         });
     }
 }
 
 function getHtml(webview: Webview, extensionUri: Uri): string {
-    const baseUri = Uri.joinPath(extensionUri, "dist", "client");
+    const baseUri = Uri.joinPath(extensionUri, "miranum-config-editor-webview");
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
     const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
@@ -80,13 +82,15 @@ function getHtml(webview: Webview, extensionUri: Uri): string {
                 <meta charset="utf-8" />
 
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-                    style-src ${webview.cspSource} 'unsafe-inline';
+                    style-src ${webview.cspSource} https:;
                     img-src ${webview.cspSource} data:;
                     font-src ${webview.cspSource} data:;
                     script-src 'nonce-${nonce}';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+                <link href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
                 <link href="${styleUri}" rel="stylesheet" type="text/css" />
 
                 <title>Miranum Config Editor</title>
@@ -133,7 +137,7 @@ export class DocumentAdapter {
             }
 
             if (this.document.fileName === event.document.fileName) {
-                const syncWebviewCommand = new SyncWebviewCommand(
+                const syncWebviewCommand = new WebviewCommand(
                     this.document.fileName,
                     event.document.getText(),
                 );

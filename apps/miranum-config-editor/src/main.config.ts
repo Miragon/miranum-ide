@@ -5,7 +5,12 @@ import {
     SyncDocumentUseCase,
     SyncWebviewUseCase,
 } from "./application/usecases";
-import { DocumentAdapter, WebviewAdapter } from "./adapter/adapterOut";
+import {
+    DocumentAdapter,
+    ReaderAdapter,
+    VsCodeConfigAdapter,
+    WebviewAdapter,
+} from "./adapter/adapterOut";
 
 export async function config(): Promise<boolean> {
     try {
@@ -44,6 +49,16 @@ async function registerOutAdapter() {
     container.register(
         "DocumentOutPort",
         { useClass: DocumentAdapter },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "ReaderOutPort",
+        { useClass: ReaderAdapter },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "VsCodeConfigOutPort",
+        { useClass: VsCodeConfigAdapter },
         { lifecycle: Lifecycle.Singleton },
     );
 }
