@@ -3,6 +3,8 @@ import { defineConfig } from "vite";
 
 import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
 import vue from "@vitejs/plugin-vue2";
+import { VuetifyResolver } from "unplugin-vue-components/resolvers";
+import Component from "unplugin-vue-components/vite";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-config-editor-webview",
@@ -17,7 +19,13 @@ export default defineConfig({
         host: "localhost",
     },
 
-    plugins: [nxViteTsPaths(), vue()],
+    plugins: [
+        nxViteTsPaths(),
+        vue(),
+        Component({
+            resolvers: [VuetifyResolver()],
+        }),
+    ],
 
     build: {
         target: "es2021",

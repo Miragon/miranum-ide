@@ -2,6 +2,7 @@
   "name": "miranum-config-editor",
   "displayName": "Miranum Config Editor",
   "description": "This extension provides an editor for process configurations.",
+  "preview": true,
   "version": "0.1.0",
   "license": "Apache-2.0",
   "publisher": "miragon-gmbh",
