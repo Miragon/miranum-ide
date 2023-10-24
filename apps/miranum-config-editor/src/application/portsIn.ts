@@ -7,6 +7,7 @@
  * - {@link SyncDocumentInPort}
  * - {@link ReadVsCodeConfigInPort}
  * - {@link ReadJsonFormInPort}
+ * - {@link RestoreWebviewInPort}
  */
 
 /**
