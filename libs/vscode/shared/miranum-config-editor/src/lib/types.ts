@@ -4,6 +4,13 @@ export interface VscMessage<T> {
     logger?: string; // if something should be logged in VSCode
 }
 
+/**
+ * @interface ConfigEditorData
+ * @description This interface is used to transfer data between the webview and the document.
+ * @property {string} schema - JSON schema
+ * @property {string} uischema - JSON uischema
+ * @property {string} data - JSON data
+ */
 export interface ConfigEditorData {
     schema?: string;
     uischema?: string;

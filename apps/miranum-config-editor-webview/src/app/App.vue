@@ -29,8 +29,10 @@ const formData = ref<JSON>(JSON.parse("{}"));
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
     vscode = new VsCodeMock();
+    console.log("Running in development mode.");
 } else {
     vscode = new VsCodeImpl();
+    console.log("Running in production mode.");
 }
 
 const resolver = createResolver<ConfigEditorData>();
@@ -39,11 +41,19 @@ const resolver = createResolver<ConfigEditorData>();
 // Declare functions
 //
 function onChange(event: any) {
+    if (JSON.stringify(event.data) === "{}") {
+        return;
+    }
+
     try {
         vscode.updateState({ data: event.data });
-    } catch (error) {}
-
-    console.log("onChange()", event.data);
+        vscode.postMessage({
+            type: MessageType.syncDocument,
+            payload: { data: JSON.stringify(event.data) },
+        });
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 function receiveMessage(message: MessageEvent<VscMessage<ConfigEditorData>>) {
@@ -96,13 +106,11 @@ onBeforeMount(async () => {
         // We will only get data if the user made changes while the webview was in the background.
         const payload = await resolver.wait();
 
-        if (payload) {
-            schema.value = payload.schema ? JSON.parse(payload.schema) : state.schema;
-            uischema.value = payload.uischema
-                ? JSON.parse(payload.uischema)
-                : state.uischema;
-            formData.value = payload.data ? JSON.parse(payload.data) : state.data;
-        }
+        schema.value = payload?.schema ? JSON.parse(payload.schema) : state.schema;
+        uischema.value = payload?.uischema
+            ? JSON.parse(payload.uischema)
+            : state.uischema;
+        formData.value = payload?.data ? JSON.parse(payload.data) : state.data;
     } catch (error) {
         if (error instanceof MissingStateError) {
             vscode.postMessage({

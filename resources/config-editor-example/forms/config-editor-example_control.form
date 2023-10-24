@@ -1,0 +1,20 @@
+{
+  "key": "config-editor-example_control",
+  "schema": {
+    "type": "object",
+    "x-display": "stepper",
+    "allOf": [
+        {
+            "title": "Abschnitt",
+            "description": "",
+            "type": "object",
+            "x-options": {
+                "sectionsTitlesClasses": [
+                    "d-none"
+                ]
+            },
+            "allOf": []
+        }
+    ]
+    }
+}

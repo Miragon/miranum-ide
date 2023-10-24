@@ -10,11 +10,18 @@ import { inject, injectable } from "tsyringe";
 
 import { EXTENSION_CONTEXT, setUpdateFrom, updateFrom, UpdateFrom } from "../common";
 import {
+    InitWebviewCommand,
     InitWebviewInPort,
+    ReadJsonFormInPort,
+    ReadJsonFormQuery,
+    ReadVsCodeConfigInPort,
+    ReadVsCodeConfigQuery,
+    RestoreWebviewCommand,
+    RestoreWebviewInPort,
     SyncDocumentCommand,
     SyncDocumentInPort,
-    SyncWebviewInPort,
-    WebviewCommand
+    SyncWebviewCommand,
+    SyncWebviewInPort
 } from "../application/portsIn";
 import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
@@ -23,11 +30,19 @@ import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/s
  */
 @injectable()
 export class WebviewAdapter {
+    private files: Map<string, Promise<string>> | undefined;
+
     constructor(
         webview: Webview,
         document: TextDocument,
+        @inject("ReadVsCodeConfigInPort")
+        private readonly readVsCodeConfigInPort: ReadVsCodeConfigInPort,
+        @inject("ReadJsonFormInPort")
+        private readonly readJsonFormInPort: ReadJsonFormInPort,
         @inject("InitWebviewInPort")
         private readonly initWebviewInPort: InitWebviewInPort,
+        @inject("RestoreWebviewInPort")
+        private readonly restoreWebviewInPort: RestoreWebviewInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
     ) {
@@ -38,11 +53,13 @@ export class WebviewAdapter {
     private initWebview(webview: Webview, document: TextDocument) {
         webview.options = { enableScripts: true };
         webview.html = getHtml(webview, EXTENSION_CONTEXT.getContext().extensionUri);
-        const initWebviewCommand = new WebviewCommand(
-            document.fileName,
-            document.getText(),
+
+        const basePath = this.readVsCodeConfigInPort.readVsCodeConfig(
+            new ReadVsCodeConfigQuery("miranumIDE.configEditor.basePath"),
         );
-        this.initWebviewInPort.initWebview(initWebviewCommand);
+        this.files = this.readJsonFormInPort.readJsonForm(
+            new ReadJsonFormQuery(document.fileName, basePath),
+        );
     }
 
     private onDidReceiveMessage(webview: Webview, document: TextDocument) {
@@ -54,13 +71,46 @@ export class WebviewAdapter {
             }
             setUpdateFrom(UpdateFrom.WEBVIEW);
 
-            if (message.type === MessageType.syncWebview) {
-                if (message.payload?.data) {
-                    const syncDocumentCommand = new SyncDocumentCommand(
+            switch (message.type) {
+                case MessageType.initialize: {
+                    if (!this.files) {
+                        throw new Error("Files are not initialized");
+                    }
+
+                    const initWebviewCommand = new InitWebviewCommand(
                         document.fileName,
-                        message.payload.data,
+                        (await this.files.get("schema")) ?? "",
+                        (await this.files.get("uischema")) ?? "",
+                        document.getText(),
                     );
-                    this.syncDocumentInPort.sync(syncDocumentCommand);
+
+                    this.initWebviewInPort.initWebview(initWebviewCommand);
+                    break;
+                }
+                case MessageType.restore: {
+                    // TODO:
+                    //  Implement logic if user edited the document or the JSON schema and uischema
+                    //  while the webview was in background.
+                    const restoreWebviewCommand = new RestoreWebviewCommand(
+                        document.fileName,
+                        "",
+                    );
+                    this.restoreWebviewInPort.restore(restoreWebviewCommand);
+                    break;
+                }
+                case MessageType.syncDocument: {
+                    if (message.payload?.data) {
+                        const syncDocumentCommand = new SyncDocumentCommand(
+                            document.fileName,
+                            JSON.stringify(
+                                JSON.parse(message.payload.data),
+                                undefined,
+                                2,
+                            ),
+                        );
+                        this.syncDocumentInPort.sync(syncDocumentCommand);
+                    }
+                    break;
                 }
             }
         });
@@ -82,10 +132,10 @@ function getHtml(webview: Webview, extensionUri: Uri): string {
                 <meta charset="utf-8" />
 
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-                    style-src ${webview.cspSource} https:;
+                    style-src ${webview.cspSource} https: 'unsafe-inline';
                     img-src ${webview.cspSource} data:;
-                    font-src ${webview.cspSource} data:;
-                    script-src 'nonce-${nonce}';"/>
+                    font-src ${webview.cspSource} https:;
+                    script-src 'nonce-${nonce}' 'unsafe-eval';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
@@ -137,7 +187,7 @@ export class DocumentAdapter {
             }
 
             if (this.document.fileName === event.document.fileName) {
-                const syncWebviewCommand = new WebviewCommand(
+                const syncWebviewCommand = new SyncWebviewCommand(
                     this.document.fileName,
                     event.document.getText(),
                 );

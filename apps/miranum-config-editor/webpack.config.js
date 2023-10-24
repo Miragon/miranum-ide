@@ -1,5 +1,6 @@
 // Helper for combining webpack config objects
 const { merge } = require("webpack-merge");
+const { composePlugins, withNx } = require("@nx/webpack");
 
 module.exports = (config, context) => {
     return merge(config, {

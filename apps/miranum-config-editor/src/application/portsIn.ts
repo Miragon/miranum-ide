@@ -5,16 +5,52 @@
  * - {@link InitWebviewInPort}
  * - {@link SyncWebviewInPort}
  * - {@link SyncDocumentInPort}
+ * - {@link ReadVsCodeConfigInPort}
+ * - {@link ReadJsonFormInPort}
  */
 
-//
-// InitWebviewUseCase
-// ==================>
+/**
+ * @interface InitWebviewInPort
+ * @description This interface is implemented by {@link InitWebviewUseCase}.
+ */
 export interface InitWebviewInPort {
-    initWebview(initWebviewCommand: WebviewCommand): Promise<boolean>;
+    initWebview(initWebviewCommand: InitWebviewCommand): Promise<boolean>;
 }
 
-export class WebviewCommand {
+export class InitWebviewCommand {
+    constructor(
+        private readonly _webviewId: string,
+        private readonly _jsonSchema: string,
+        private readonly _jsonUiSchema: string,
+        private readonly _content: string,
+    ) {}
+
+    public get webviewId(): string {
+        return this._webviewId;
+    }
+
+    public get jsonSchema(): string {
+        return this._jsonSchema;
+    }
+
+    public get jsonUiSchema(): string {
+        return this._jsonUiSchema;
+    }
+
+    public get content(): string {
+        return this._content;
+    }
+}
+
+/**
+ * @interface SyncWebviewInPort
+ * @description This interface is implemented by {@link SyncWebviewUseCase}.
+ */
+export interface SyncWebviewInPort {
+    sync(syncWebviewCommand: SyncWebviewCommand): Promise<boolean>;
+}
+
+export class SyncWebviewCommand {
     constructor(
         private readonly _webviewId: string,
         private readonly _content: string,
@@ -29,16 +65,10 @@ export class WebviewCommand {
     }
 }
 
-//
-// SyncWebviewUseCase
-// ==================>
-export interface SyncWebviewInPort {
-    sync(syncWebviewCommand: WebviewCommand): Promise<boolean>;
-}
-
-//
-// SyncDocumentUseCase
-// ===================>
+/**
+ * @interface SyncDocumentInPort
+ * @description This interface is implemented by {@link SyncDocumentUseCase}.
+ */
 export interface SyncDocumentInPort {
     sync(syncDocumentQuery: SyncDocumentCommand): Promise<boolean>;
 }
@@ -71,5 +101,67 @@ export class SyncDocumentCommand {
     private validate(content: string): boolean {
         // TODO: Validate against JSON schema
         return true;
+    }
+}
+
+/**
+ * @interface ReadVsCodeConfigInPort
+ * @description This interface is implemented by {@link ReadVsCodeConfigUseCase}.
+ */
+export interface ReadVsCodeConfigInPort {
+    readVsCodeConfig(readVsCodeConfigQuery: ReadVsCodeConfigQuery): string;
+}
+
+export class ReadVsCodeConfigQuery {
+    constructor(private readonly _key: string) {}
+
+    public get key(): string {
+        return this._key;
+    }
+}
+
+/**
+ * @interface ReadJsonFormInPort
+ * @description This interface is implemented by {@link ReadJsonFormUseCase}.
+ */
+export interface ReadJsonFormInPort {
+    readJsonForm(readJsonFormQuery: ReadJsonFormQuery): Map<string, Promise<string>>;
+}
+
+export class ReadJsonFormQuery {
+    constructor(
+        private readonly _fileName: string,
+        private readonly _basePath: string,
+    ) {}
+
+    public get fileName(): string {
+        return this._fileName;
+    }
+
+    public get basePath(): string {
+        return this._basePath;
+    }
+}
+
+/**
+ * @interface RestoreWebviewInPort
+ * @description This interface is implemented by {@link RestoreWebviewUseCase}.
+ */
+export interface RestoreWebviewInPort {
+    restore(restoreWebviewCommand: RestoreWebviewCommand): Promise<boolean>;
+}
+
+export class RestoreWebviewCommand {
+    constructor(
+        private readonly _webviewId: string,
+        private readonly _content: string,
+    ) {}
+
+    public get webviewId(): string {
+        return this._webviewId;
+    }
+
+    public get content(): string {
+        return this._content;
     }
 }

@@ -46,7 +46,10 @@ class CustomTextEditor implements CustomTextEditorProvider {
         new InWebviewAdapter(
             webviewPanel.webview,
             document,
+            container.resolve("ReadVsCodeConfigInPort"),
+            container.resolve("ReadJsonFormInPort"),
             container.resolve("InitWebviewInPort"),
+            container.resolve("RestoreWebviewInPort"),
             container.resolve("SyncDocumentInPort"),
         );
 

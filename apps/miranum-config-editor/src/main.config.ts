@@ -2,6 +2,9 @@ import { container, Lifecycle } from "tsyringe";
 
 import {
     InitWebviewUseCase,
+    ReadJsonFormUseCase,
+    ReadVsCodeConfigUseCase,
+    RestoreWebviewUseCase,
     SyncDocumentUseCase,
     SyncWebviewUseCase,
 } from "./application/usecases";
@@ -24,8 +27,23 @@ export async function config(): Promise<boolean> {
 
 async function registerUseCases() {
     container.register(
+        "ReadVsCodeConfigInPort",
+        { useClass: ReadVsCodeConfigUseCase },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "ReadJsonFormInPort",
+        { useClass: ReadJsonFormUseCase },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
         "InitWebviewInPort",
         { useClass: InitWebviewUseCase },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "RestoreWebviewInPort",
+        { useClass: RestoreWebviewUseCase },
         { lifecycle: Lifecycle.Singleton },
     );
     container.register(
