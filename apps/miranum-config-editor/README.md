@@ -32,14 +32,36 @@
 
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-[Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
-process application in one place.
+> Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins*
+> that allows you to edit, manage and access all artifacts for your 
+> process application in one place.  
+> **Miranum Config Editor** is one component of *Miranum IDE*.
+ 
+### Introducing the *Miranum Config Editor* Plugin for VS Code!
 
-**Miranum Config Editor** is one component of **Miranum IDE**.
-<!-- TODO: add text -->
+Are you tired of manually editing complex configuration files?
+Say goodbye to the hassle and welcome the simplicity of JSON Forms.
+Our plugin is designed to make editing config files a breeze, providing a user-friendly interface right within your favorite code editor.
+With the **Miranum Config Editor** Plugin, you can easily create, modify, and validate JSON-based configuration files.
+Here's what you can expect from our plugin:
 
-## Features
-<!-- TODO: add features -->
+1. Intuitive UI: Our plugin seamlessly integrates with VS Code, providing a clean and intuitive user interface.
+   Say goodbye to the days of struggling with complex JSON structures.
+2. Form-based Editing: Edit your config files using familiar form-based controls. 
+   No more worrying about syntax errors or missing commas.
+   Our plugin ensures that your JSON remains valid at all times.
+3. Real-time Validation: Instantly catch errors and typos as you type.
+   Our plugin provides real-time validation, highlighting any issues in your config file and offering helpful suggestions.
+4. Schema Support: Leverage the power of JSON schemas to define the structure and constraints of your config files.
+   Our plugin supports schema validation, ensuring that your config files adhere to the specified rules.
+5. Customization Options: Tailor the editing experience to your needs.
+   Customize the form layout, define default values, and specify validation rules to match your specific requirements.
+6. Seamless Integration: Our plugin seamlessly integrates with your existing VS Code workflow.
+   Enjoy all the benefits of a dedicated config editor without leaving your favorite code editor.
+
+Say goodbye to the days of manual config file editing.
+Install the **Miranum Config Editor** Plugin for VS Code today and experience the simplicity and power of form-based config editing.
+Boost your productivity and eliminate errors with ease.
 
 ## Contributing
 
