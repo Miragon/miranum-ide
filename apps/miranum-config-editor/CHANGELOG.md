@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Initial version of the *Miranum Config Editor*.
+* Initial version of the *Miranum Config Editor* (#412)
 
 
 [unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.5...HEAD
