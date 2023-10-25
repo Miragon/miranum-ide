@@ -93,7 +93,7 @@ export class WebviewAdapter {
                     //  while the webview was in background.
                     const restoreWebviewCommand = new RestoreWebviewCommand(
                         document.fileName,
-                        "",
+                        document.getText(),
                     );
                     this.restoreWebviewInPort.restore(restoreWebviewCommand);
                     break;

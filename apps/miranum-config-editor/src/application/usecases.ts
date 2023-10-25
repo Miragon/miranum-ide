@@ -181,6 +181,9 @@ export class RestoreWebviewUseCase implements RestoreWebviewInPort {
         try {
             const message: VscMessage<ConfigEditorData> = {
                 type: MessageType.restore,
+                payload: {
+                    data: restoreWebviewCommand.content,
+                },
             };
             if (
                 await this.webviewOutPort.postMessage(
