@@ -50,6 +50,10 @@ jobs:
         run: |
           cd apps/miranum-extension-pack
           vsce package --out miranum-extension-pack.vsix
+      - name: Build vsix miranum-config-editor
+        run: |
+          cd apps/miranum-config-editor
+          vsce package --no-dependencies --out miranum-config-editor.vsix
       - name: Build vsix miranum-console
         run: |
           cd apps/miranum-console
