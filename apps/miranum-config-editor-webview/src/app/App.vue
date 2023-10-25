@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, ref } from "vue";
+import { getCurrentInstance, onBeforeMount, ref } from "vue";
 import { JsonForms } from "@jsonforms/vue2";
 import { vuetifyRenderers } from "@jsonforms/vue2-vuetify";
 import { JsonSchema, UISchemaElement } from "@jsonforms/core";
@@ -95,6 +95,13 @@ function receiveMessage(message: MessageEvent<VscMessage<ConfigEditorData>>) {
 onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
+    if (document.body.className === "vscode-dark") {
+        const vuetify = getCurrentInstance()?.proxy["$vuetify"];
+        if (vuetify) {
+            vuetify.theme.dark = true;
+        }
+    }
+
     try {
         const state = vscode.getState();
         vscode.postMessage({
@@ -106,6 +113,7 @@ onBeforeMount(async () => {
         // We will only get data if the user made changes while the webview was in the background.
         const payload = await resolver.wait();
 
+        console.log("restore", payload);
         schema.value = payload?.schema ? JSON.parse(payload.schema) : state.schema;
         uischema.value = payload?.uischema
             ? JSON.parse(payload.uischema)
