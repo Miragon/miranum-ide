@@ -63,6 +63,37 @@ Say goodbye to the days of manual config file editing.
 Install the **Miranum Config Editor** Plugin for VS Code today and experience the simplicity and power of form-based config editing.
 Boost your productivity and eliminate errors with ease.
 
+## Quickstart
+
+### Prerequisites
+
+This plugin leverages the power of [JSON Forms](https://jsonforms.io/).
+To use it, you need your `JSON Schema` and `UI-Schema` file, that define your form.
+If you don't have them yet, you can create them using the [Miranum JSON Forms Plugin](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-json-forms).
+> Note: **Miranum JSON Forms** is a preview release.
+> With that plugin you are able to edit `.form.json` files.
+> This file will contain the `JSON Schema` **AND** `UI-Schema`.
+> You have to manually copy the content out of this file into your `JSON Schema` and `UI-Schema` files.
+
+Once you have your `JSON Schema` and `UI-Schema` files, you need to set the path to those files in the settings.  
+To do this, open the setting️s (Code > Preferences > Preferences) and search for `miranum-ide`.
+There should be an entry called `Miranum IDE > Config Editor: Base Path` with an empty text field.
+You need to enter the path to your `JSON Schema` and `UI-Schema` files in this text field.
+
+### Usage
+
+To use the editor, you have to open or create a `.config.json` file.
+The plugin will then search for the `JSON Schema` and `UI-Schema` files in the directory you specified in the settings.
+To find the right files, you have to stick to the following naming convention:
+
+| Your Config File         | Your JSON Schema      | Your UI Schema          |
+|--------------------------|-----------------------|-------------------------|
+| my-config.s3.config.json | schema.s3.config.json | uischema.s3.config.json |
+
+The plugin will read these files and display your form in the editor.
+
+🚀 **Now you are ready to start editing!** 🚀
+
 ## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
