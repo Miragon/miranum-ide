@@ -34,6 +34,7 @@
   },
   "icon": "miranum_logo.png",
   "extensionPack": [
+    "miragon-gmbh.miranum-config-editor",
     "miragon-gmbh.miranum-console",
     "miragon-gmbh.miranum-json-forms",
     "miragon-gmbh.miranum-vs-code-forms",
@@ -45,8 +46,8 @@
     "BPMN",
     "DMN",
     "Camunda",
-    "JSON",
     "JSON Schema",
+    "JSON Forms",
     "Forms",
     "Formbuilder"
   ],
