@@ -113,7 +113,6 @@ onBeforeMount(async () => {
         // We will only get data if the user made changes while the webview was in the background.
         const payload = await resolver.wait();
 
-        console.log("restore", payload);
         schema.value = payload?.schema ? JSON.parse(payload.schema) : state.schema;
         uischema.value = payload?.uischema
             ? JSON.parse(payload.uischema)

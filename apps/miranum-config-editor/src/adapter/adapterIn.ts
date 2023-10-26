@@ -81,21 +81,21 @@ export class WebviewAdapter {
                         document.fileName,
                         (await this.files.get("schema")) ?? "",
                         (await this.files.get("uischema")) ?? "",
-                        document.getText(),
+                        document.getText() !== "" ? document.getText() : "{}",
                     );
 
-                    this.initWebviewInPort.initWebview(initWebviewCommand);
+                    await this.initWebviewInPort.initWebview(initWebviewCommand);
                     break;
                 }
                 case MessageType.restore: {
                     // TODO:
-                    //  Implement logic if user edited the document or the JSON schema and uischema
+                    //  Implement logic if user edited the JSON schema and uischema
                     //  while the webview was in background.
                     const restoreWebviewCommand = new RestoreWebviewCommand(
                         document.fileName,
                         document.getText(),
                     );
-                    this.restoreWebviewInPort.restore(restoreWebviewCommand);
+                    await this.restoreWebviewInPort.restore(restoreWebviewCommand);
                     break;
                 }
                 case MessageType.syncDocument: {
@@ -108,7 +108,7 @@ export class WebviewAdapter {
                                 2,
                             ),
                         );
-                        this.syncDocumentInPort.sync(syncDocumentCommand);
+                        await this.syncDocumentInPort.sync(syncDocumentCommand);
                     }
                     break;
                 }
@@ -185,6 +185,7 @@ export class DocumentAdapter {
                 setUpdateFrom(UpdateFrom.NULL); // reset
                 return;
             }
+            setUpdateFrom(UpdateFrom.DOCUMENT);
 
             if (this.document.fileName === event.document.fileName) {
                 const syncWebviewCommand = new SyncWebviewCommand(
@@ -192,7 +193,7 @@ export class DocumentAdapter {
                     event.document.getText(),
                 );
 
-                this.syncWebviewInPort.sync(syncWebviewCommand);
+                await this.syncWebviewInPort.sync(syncWebviewCommand);
             }
         });
     }

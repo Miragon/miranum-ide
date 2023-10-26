@@ -113,7 +113,7 @@ export class SyncDocumentUseCase implements SyncDocumentInPort {
                 syncDocumentCommand.content,
             )
         ) {
-            return this.documentOutPort.save(syncDocumentCommand.fileName);
+            return true;
         }
         // Handle error
         return false;
