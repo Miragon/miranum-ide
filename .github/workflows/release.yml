@@ -60,7 +60,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
       - name: Setup Java
@@ -154,7 +154,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -175,7 +175,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -196,7 +196,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -217,7 +217,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -240,7 +240,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -265,7 +265,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
@@ -290,7 +290,7 @@ jobs:
       - create-release
     steps:
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: 'https://registry.npmjs.org'
