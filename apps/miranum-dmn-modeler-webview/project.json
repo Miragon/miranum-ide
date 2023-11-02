@@ -7,7 +7,9 @@
   "targets": {
     "observe": {
       "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
@@ -26,7 +28,9 @@
     },
     "build": {
       "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/miranum-modeler/miranum-dmn-modeler-webview",
@@ -40,7 +44,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/miranum-dmn-modeler-webview/jest.config.ts",
         "passWithNoTests": true
@@ -48,9 +54,13 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["apps/miranum-dmn-modeler-webview/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/miranum-dmn-modeler-webview/**/*.ts"
+        ]
       }
     }
   }
