@@ -3,20 +3,22 @@
   "affected": {
     "defaultBase": "main"
   },
-  "implicitDependencies": {
-    "package.json": {
-      "dependencies": "*",
-      "devDependencies": "*"
-    },
-    ".eslintrc.json": "*"
-  },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
-      "cache": true
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": true,
+      "inputs": [
+        "production",
+        "^production"
+      ]
     },
     "test": {
-      "inputs": ["default", "^default"],
+      "inputs": [
+        "default",
+        "^default"
+      ],
       "cache": true
     },
     "lint": {
@@ -31,7 +33,9 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": ["@nxrocks/nx-spring-boot"],
+  "plugins": [
+    "@nxrocks/nx-spring-boot"
+  ],
   "generators": {
     "@nx/web:application": {
       "style": "css",
@@ -60,5 +64,15 @@
         "linter": "eslint"
       }
     }
+  },
+  "namedInputs": {
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "sharedGlobals": [],
+    "production": [
+      "default"
+    ]
   }
 }

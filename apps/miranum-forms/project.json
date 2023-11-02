@@ -3,7 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-forms/src",
   "projectType": "application",
-  "implicitDependencies": ["miranum-forms-webview"],
+  "implicitDependencies": [
+    "miranum-forms-webview"
+  ],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
@@ -25,7 +27,9 @@
     },
     "observe": {
       "executor": "@nx/webpack:webpack",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
@@ -61,7 +65,9 @@
     },
     "build": {
       "executor": "@nx/webpack:webpack",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "target": "node",
@@ -134,14 +140,20 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["apps/miranum-forms/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/miranum-forms/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/apps/miranum-forms"],
+      "outputs": [
+        "{workspaceRoot}/coverage/apps/miranum-forms"
+      ],
       "options": {
         "jestConfig": "apps/miranum-forms/jest.config.ts",
         "passWithNoTests": true
