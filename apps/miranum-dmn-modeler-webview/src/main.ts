@@ -21,7 +21,7 @@ import "dmn-js/dist/assets/dmn-js-decision-table-controls.css";
 import "dmn-js/dist/assets/dmn-js-drd.css";
 import "dmn-js/dist/assets/dmn-js-literal-expression.css";
 import "dmn-js/dist/assets/dmn-js-shared.css";
-import "dmn-js-properties-panel/dist/assets/properties-panel.css";
+import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
 
 const modeler = new DmnModeler({
     drd: {
