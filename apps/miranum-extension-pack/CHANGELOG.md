@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Update dependencies and migrate to Nx Version 17 (#418)
+ 
 ## [0.5.5]
 
 ### Added
