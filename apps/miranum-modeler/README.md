@@ -40,7 +40,9 @@ It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 
 In addition, you can create and edit DMN 1.3 decision tables.
 In order to help you with your first steps with **Miranum Modeler**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
-<img src="./docs/modeler.webp" alt="modeler.webp" width="1000" /><br>
+> ❗️To start the modeler create or open a `.bpmn` or `.dmn` file.❗
+
+<img src="https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-modeler/assets/modeler.webp?raw=true" alt="modeler.webp" width="1000" /><br>
 
 ## Features
 
