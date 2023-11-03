@@ -42,6 +42,8 @@ It allows you to create and edit forms based on [JSON Schema](https://json-schem
 a specification for annotating and validating JSON documents. 
 In order to help you with your first steps with **Miranum Forms**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
+> ❗️To start the form builder create or open a `.form` file.❗
+
 ## Features
 
 * Create and edit forms that you can reference in your User Tasks of your BPMN diagram.
