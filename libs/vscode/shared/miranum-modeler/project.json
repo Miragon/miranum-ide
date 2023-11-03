@@ -5,10 +5,14 @@
   "projectType": "library",
   "targets": {
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/vscode/shared/miranum-modeler/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/vscode/shared/miranum-modeler/**/*.ts"
+        ]
       }
     }
   },

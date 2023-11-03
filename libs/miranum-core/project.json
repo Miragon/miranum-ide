@@ -5,15 +5,21 @@
   "projectType": "library",
   "targets": {
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/miranum-core/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/miranum-core/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/miranum-core"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/miranum-core"
+      ],
       "options": {
         "jestConfig": "libs/miranum-core/jest.config.ts",
         "passWithNoTests": true
@@ -21,7 +27,9 @@
     },
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/libs/miranum-core",
         "tsConfig": "libs/miranum-core/tsconfig.lib.json",

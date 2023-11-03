@@ -87,7 +87,7 @@
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": [
         "{options.outputFile}"
       ],
@@ -100,7 +100,7 @@
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": [
-        "coverage/apps/miranum-cli"
+        "{workspaceRoot}/coverage/apps/miranum-cli"
       ],
       "options": {
         "jestConfig": "apps/miranum-cli/jest.config.ts",

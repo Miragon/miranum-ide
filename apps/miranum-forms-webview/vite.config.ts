@@ -2,7 +2,7 @@
 import { defineConfig } from "vite";
 
 import { createVuePlugin } from "vite-plugin-vue2";
-import path from "path";
+import * as path from "node:path";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import Components from "unplugin-vue-components/vite";
 import { VuetifyResolver } from "unplugin-vue-components/resolvers";
