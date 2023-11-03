@@ -41,7 +41,7 @@ process application in one place.
 It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
 In order to help you with your first steps with **Miranum Console**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
-<img src="docs/console.webp" alt="console.webp" width="850" /><br>
+<img src="https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-console/assets/console.webp?raw=true" alt="console.webp" width="850" /><br>
 
 ## Features
 
