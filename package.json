@@ -98,7 +98,7 @@
     "@mui/material": "^5.14.10",
     "@svgr/webpack": "^8.1.0",
     "axios": "^1.5.0",
-    "bpmn-js": "^15.0.0",
+    "bpmn-js": "^15.1.2",
     "bpmn-js-create-append-anything": "^0.4.0",
     "bpmn-js-element-templates": "^1.6.1",
     "bpmn-js-properties-panel": "^5.5.1",
