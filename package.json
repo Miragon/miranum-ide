@@ -19,7 +19,7 @@
     "@nx/esbuild": "17.0.2",
     "@nx/eslint": "17.0.2",
     "@nx/eslint-plugin": "17.0.2",
-    "@nx/jest": "17.0.2",
+    "@nx/jest": "17.0.3",
     "@nx/js": "17.0.3",
     "@nx/node": "17.0.3",
     "@nx/react": "17.0.2",
