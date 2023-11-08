@@ -1,62 +1,63 @@
 {
-    "name": "miranum-config-editor",
-    "displayName": "Miranum Config Editor",
-    "description": "This extension provides an editor for process configurations.",
-    "preview": true,
-    "version": "0.1.0",
-    "license": "Apache-2.0",
-    "publisher": "miragon-gmbh",
-    "homepage": "https://www.miranum.io/",
-    "icon": "assets/miranum_logo.png",
-    "galleryBanner": {
-        "color": "#F0F8FF",
-        "theme": "light"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Miragon/miranum-ide.git"
-    },
-    "bugs": {
-        "url": "https://github.com/Miragon/miranum-ide/issues"
-    },
-    "engines": {
-        "vscode": "^1.76.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "keywords": [
-        "Mirnaum",
-        "Configuration"
-    ],
-    "main": "main.js",
-    "activationEvents": [],
-    "contributes": {
-        "customEditors": [
-            {
-                "viewType": "miranum.configEditor",
-                "displayName": "Miranum Config Editor",
-                "selector": [
-                    {
-                        "filenamePattern": "*.*.config.json"
-                    },
-                    {
-                        "filenamePattern": "*.*config.json"
-                    }
-                ],
-                "priority": "default"
-            }
+  "name": "miranum-config-editor",
+  "displayName": "Miranum Config Editor",
+  "description": "This extension provides an editor for process configurations.",
+  "preview": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "publisher": "miragon-gmbh",
+  "homepage": "https://www.miranum.io/",
+  "icon": "assets/miranum_logo.png",
+  "galleryBanner": {
+    "color": "#F0F8FF",
+    "theme": "light"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miragon/miranum-ide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Miragon/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "Mirnaum",
+    "Configuration",
+    "JSON Form"
+  ],
+  "main": "main.js",
+  "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "miranum.configEditor",
+        "displayName": "Miranum Config Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.*.config.json"
+          },
+          {
+            "filenamePattern": "*.*config.json"
+          }
         ],
-        "configuration": {
-            "title": "MiranumConfigEditor",
-            "properties": {
-                "miranumIDE.configEditor.basePath": {
-                    "scope": "application",
-                    "type": "string",
-                    "description": "Enter the path to your schema and ui-schema files.",
-                    "pattern": "^(.+)\/([^\/]+)$"
-                }
-            }
+        "priority": "default"
+      }
+    ],
+    "configuration": {
+      "title": "MiranumConfigEditor",
+      "properties": {
+        "miranumIDE.configEditor.basePath": {
+          "scope": "application",
+          "type": "string",
+          "description": "Enter the path to your schema and ui-schema files.",
+          "pattern": "^(.+)\/([^\/]+)$"
         }
+      }
     }
+  }
 }
