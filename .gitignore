@@ -40,3 +40,5 @@ Thumbs.db
 
 !resources/my-generations/.gitkeep
 resources/my-generations
+
+.nx/cache

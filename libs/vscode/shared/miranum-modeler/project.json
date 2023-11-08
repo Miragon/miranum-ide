@@ -1,11 +1,11 @@
 {
-  "name": "miranum-modeler-shared",
+  "name": "vscode-shared-miranum-modeler",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/vscode/shared/miranum-modeler/src",
   "projectType": "library",
   "targets": {
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": [
         "{options.outputFile}"
       ],

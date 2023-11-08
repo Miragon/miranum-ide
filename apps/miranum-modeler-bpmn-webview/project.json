@@ -1,8 +1,8 @@
 {
-  "name": "miranum-modeler-bpmn-webview",
+  "name": "miranum-bpmn-modeler-webview",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/miranum-modeler-bpmn-webview/src",
+  "sourceRoot": "apps/miranum-bpmn-modeler-webview/src",
   "tags": [],
   "targets": {
     "observe": {
@@ -13,8 +13,8 @@
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
-        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-bpmn-webview",
-        "configFile": "apps/miranum-modeler-bpmn-webview/vite.config.ts",
+        "outputPath": "dist/apps/miranum-modeler/miranum-bpmn-modeler-webview",
+        "configFile": "apps/miranum-bpmn-modeler-webview/vite.config.ts",
         "emptyOutDir": false
       },
       "configurations": {
@@ -33,8 +33,8 @@
       ],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-bpmn-webview",
-        "configFile": "apps/miranum-modeler-bpmn-webview/vite.config.ts"
+        "outputPath": "dist/apps/miranum-modeler/miranum-bpmn-modeler-webview",
+        "configFile": "apps/miranum-bpmn-modeler-webview/vite.config.ts"
       },
       "configurations": {
         "development": {
@@ -51,18 +51,18 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "apps/miranum-modeler-bpmn-webview/jest.config.ts",
+        "jestConfig": "apps/miranum-bpmn-modeler-webview/jest.config.ts",
         "passWithNoTests": true
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": [
         "{options.outputFile}"
       ],
       "options": {
         "lintFilePatterns": [
-          "apps/miranum-modeler-bpmn-webview/**/*.ts"
+          "apps/miranum-bpmn-modeler-webview/**/*.ts"
         ]
       }
     },
@@ -70,7 +70,7 @@
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "miranum-modeler-bpmn-webview:build"
+        "buildTarget": "miranum-bpmn-modeler-webview:build"
       }
     }
   }

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **\[Miranum Config Editor\]** Add new plugin for editing config files (#412)
 
+### Changed
+
+* Update dependencies and migrate to Nx Version 17 (#418)
+ 
 ## [0.5.5]
 
 ### Added

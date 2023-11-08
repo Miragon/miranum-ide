@@ -1,11 +1,11 @@
 {
-  "name": "miranum-vscode-webview-lib",
+  "name": "vscode-miranum-vscode-webview",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/vscode/miranum-vscode-webview/src",
   "projectType": "library",
   "targets": {
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": [
         "{options.outputFile}"
       ],

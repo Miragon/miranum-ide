@@ -1,11 +1,11 @@
 {
-  "name": "miranum-console-shared",
+  "name": "vscode-shared-miranum-console",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/vscode/shared/miranum-console/src",
   "projectType": "library",
   "targets": {
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": [
         "{options.outputFile}"
       ],

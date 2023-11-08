@@ -1,27 +1,14 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "npmScope": "miranum-ide",
   "affected": {
     "defaultBase": "main"
-  },
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": [
-          "build",
-          "lint",
-          "test",
-          "e2e"
-        ]
-      }
-    }
   },
   "targetDefaults": {
     "build": {
       "dependsOn": [
         "^build"
       ],
+      "cache": true,
       "inputs": [
         "production",
         "^production"
@@ -31,7 +18,14 @@
       "inputs": [
         "default",
         "^default"
-      ]
+      ],
+      "cache": true
+    },
+    "lint": {
+      "cache": true
+    },
+    "e2e": {
+      "cache": true
     }
   },
   "workspaceLayout": {
