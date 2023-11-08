@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.6]
+## [0.5.6] - 2023-11-08
 
 ### Added
 
@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* **\[Miranum Modeler\]** Rename to Miranum: Camunda Modeler
+* **\[Miranum Modeler\]** Rename to Miranum: Camunda Modeler (#419)
 * Update dependencies and migrate to Nx Version 17 (#418)
  
 ## [0.5.5]
