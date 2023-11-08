@@ -33,20 +33,20 @@
 
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
-process application in one place.
+> Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins*
+> that allows you to edit, manage and access all artifacts for your
+> process application in one place.  
+> **Miranum Console** is one component of *Miranum IDE*.
 
+**Miranum Console** provides a UI that helps you to scaffold a new digitization project and deploy your process artefacts.
+To help you get started with **Miranum IDE**, we have created some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
-**Miranum Console** is one component of **Miranum IDE**.
-It provides a UI that helps you to scaffold a new digitization project and deploying your process artefacts.
-In order to help you with your first steps with **Miranum Console**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
-
-<img src="docs/console.webp" alt="console.webp" width="850" /><br>
+<img src="https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-console/assets/console.webp?raw=true" alt="console.webp" width="850" /><br>
 
 ## Features
 
 * Scaffolding your digitization project.
-* Manage your project-files inside a custom tree view.
+* Manage your project files inside a custom tree view.
 * Deploy your process artefacts.
 
 ## Contributing

@@ -78,17 +78,17 @@ If you don't have them yet, you can create them using the [Miranum JSON Forms Pl
 Once you have your `JSON Schema` and `UI-Schema` files, you need to set the path to those files in the settings.  
 To do this, open the setting️s (Code > Preferences > Preferences) and search for `miranum-ide`.
 There should be an entry called `Miranum IDE > Config Editor: Base Path` with an empty text field.
-You need to enter the path to your `JSON Schema` and `UI-Schema` files in this text field.
+You need to enter the full path to your `JSON Schema` and `UI-Schema` files in this text field.
 
 ### Usage
 
-To use the editor, you have to open or create a `.config.json` file.
+❗️To use the editor, you have to open or create a `.config.json` file.❗
 The plugin will then search for the `JSON Schema` and `UI-Schema` files in the directory you specified in the settings.
 To find the right files, you have to stick to the following naming convention:
 
-| Your Config File         | Your JSON Schema      | Your UI Schema          |
-|--------------------------|-----------------------|-------------------------|
-| my-config.s3.config.json | schema.s3.config.json | uischema.s3.config.json |
+| Your Config File         | Your JSON Schema | Your UI Schema   |
+|--------------------------|------------------|------------------|
+| my-config.s3.config.json | s3.schema.json   | s3.uischema.json |
 
 The plugin will read these files and display your form in the editor.
 

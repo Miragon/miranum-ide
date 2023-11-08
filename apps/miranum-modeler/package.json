@@ -1,7 +1,7 @@
 {
   "name": "vs-code-bpmn-modeler",
-  "displayName": "Miranum: Modeler",
-  "description": "Create and edit BPMN 2.0 Diagrams for Camunda 7 and Camunda 8 inside VS Code.",
+  "displayName": "Miranum: Camunda Modeler",
+  "description": "Create and edit BPMN 2.0 and DMN Diagrams for Camunda 7 and Camunda 8 with VS Code.",
   "license": "SEE LICENSE IN LICENSE",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
@@ -40,9 +40,10 @@
   "keywords": [
     "BPMN",
     "DMN",
+    "bpmn.io",
     "Modeler",
     "Camunda",
-    "Diagram",
+    "Automation",
     "business process",
     "decision table"
   ],

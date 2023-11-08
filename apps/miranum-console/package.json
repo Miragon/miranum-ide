@@ -5,6 +5,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "version": "0.1.0",
   "publisher": "miragon-gmbh",
+  "preview": true,
   "homepage": "https://www.miranum.io/",
   "galleryBanner": {
     "color": "#F0F8FF",

@@ -32,15 +32,18 @@
 
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-[Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
-process application in one place.
+> Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins*
+> that allows you to edit, manage and access all artifacts for your
+> process application in one place.  
+> **Miranum Modeler** is one component of *Miranum IDE*.
 
-**Miranum Modeler** is one component of **Miranum IDE**.
-It allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7 and 8.
+**Miranum Modeler** allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7 and 8.
 In addition, you can create and edit DMN 1.3 decision tables.
-In order to help you with your first steps with **Miranum Modeler**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
+To help you get started with **Miranum IDE**, we have created some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
-<img src="./docs/modeler.webp" alt="modeler.webp" width="1000" /><br>
+> ❗️To start the modeler create or open a `.bpmn` or `.dmn` file.❗
+
+<img src="https://github.com/Miragon/miranum-ide/blob/main/apps/miranum-modeler/assets/modeler.webp?raw=true" alt="modeler.webp" width="1000" /><br>
 
 ## Features
 
