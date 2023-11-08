@@ -152,13 +152,18 @@ export class ReadJsonFormUseCase implements ReadJsonFormInPort {
     ) {}
 
     readJsonForm(readJsonFormQuery: ReadJsonFormQuery): Map<string, Promise<string>> {
+        // The filename consists of the following parts.
+        // name   | type  | extension
+        // my-form.process.config.json
         const fileName = readJsonFormQuery.fileName;
         const basePath = readJsonFormQuery.basePath;
 
-        const extension = fileName.substring(fileName.indexOf("."), fileName.length);
+        const type = fileName.split(".").slice(-3, 2)[0];
 
-        const schema = this.readerOutPort.readFile(`${basePath}/schema${extension}`);
-        const uischema = this.readerOutPort.readFile(`${basePath}/uischema${extension}`);
+        const schema = this.readerOutPort.readFile(`${basePath}/${type}.schema.json`);
+        const uischema = this.readerOutPort.readFile(
+            `${basePath}/${type}.uischema.json`,
+        );
 
         return new Map([
             ["schema", schema],
