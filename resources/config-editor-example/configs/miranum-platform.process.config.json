@@ -1,0 +1,20 @@
+{
+  "statusConfig": [
+    {
+      "key": "offen",
+      "label": "Offen",
+      "position": 1
+    },
+    {
+      "key": "inBearbeitung",
+      "label": "In Bearbeitung",
+      "position": 2
+    },
+    {
+      "key": "abgeschlossen",
+      "label": "Abgeschlossen",
+      "position": 3
+    }
+  ],
+  "configs": []
+}

@@ -1,0 +1,154 @@
+{
+  "name": "miranum-config-editor",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/miranum-config-editor/src",
+  "projectType": "application",
+  "implicitDependencies": [
+    "miranum-config-editor-webview"
+  ],
+  "targets": {
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx observe miranum-config-editor",
+            "prefix": "miranum-config-editor",
+            "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-config-editor-webview",
+            "prefix": "miranum-config-editor-webview",
+            "color": "green"
+          }
+        ]
+      }
+    },
+    "observe": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/miranum-config-editor",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-config-editor/src/main.ts",
+        "tsConfig": "apps/miranum-config-editor/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-config-editor/webpack.config.js",
+        "babelUpwardRootMode": true,
+        "assets": [
+          {
+            "glob": "images/komet.svg",
+            "input": "./",
+            "output": "/assets"
+          }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/miranum-config-editor",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-config-editor/src/main.ts",
+        "tsConfig": "apps/miranum-config-editor/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-config-editor/webpack.config.js",
+        "babelUpwardRootMode": true,
+        "assets": [
+          {
+            "input": "./images/",
+            "glob": "komet.svg",
+            "output": "/assets"
+          },
+          {
+            "input": "./images/",
+            "glob": "miranum_logo.png",
+            "output": "/assets"
+          },
+          {
+            "input": "./",
+            "glob": "LICENSE",
+            "output": "/"
+          },
+          {
+            "input": "./apps/miranum-config-editor/",
+            "glob": ".vscodeignore",
+            "output": "/"
+          },
+          {
+            "glob": "README.md",
+            "input": "./apps/miranum-config-editor/",
+            "output": "/"
+          },
+          {
+            "glob": "CHANGELOG.md",
+            "input": "./apps/miranum-config-editor/",
+            "output": "/"
+          }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "sourceMap": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/miranum-config-editor/src/environments/environment.ts",
+              "with": "apps/miranum-config-editor/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/miranum-config-editor/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/miranum-config-editor/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,11 +1,11 @@
 # Quickstart
 
-This monorepo uses Nx as build system for the application.
+This monorepo uses Nx as the build system for the application.
 
 -   [Setup](#setup)
 -   [Getting Started](#getting-started)
 -   [Create a new app or lib](#create-a-new-app-or-lib)
-    -   [Adding capabilities to the workspace](#adding-capabilities-to-the-workspace)
+    -   _[Adding capabilities to the workspace](#adding-capabilities-to-the-workspace)_
     -   _[Generate a new application](#generate-a-new-application)_
     -   _[Generate a new library](#generate-a-new-library)_
     -   _[Generate a new VS Code Plugin](#generate-a-new-vs-code-plugin)_
@@ -96,9 +96,9 @@ Libraries are shareable across libraries and applications. They can be imported 
 npx nx g @nx/node:lib my-awesome-lib --publishable --importPath @miranum-ide/my-awesome-lib
 ```
 
-### Generate a new VS Code Plugin
+## Generate a new VS Code Plugin
 
-1. Run `npx nx g @nx/node:app my-app` to generate a node application.
+1. Run `npx nx g @nx/node:app my-app --directory apps` to generate a node application.
 
 2. Add a `package.json` file under `src` to your new app with the commands required for vscode.
 
@@ -161,23 +161,37 @@ npx nx g @nx/node:lib my-awesome-lib --publishable --importPath @miranum-ide/my-
         "request": "launch",
         "args": [
             "--disable-extensions",
-            "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/my-app"
+            "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/<my-app>"
         ],
-        "outFiles": ["${workspaceFolder}/dist/apps/my-app/**/*.js"],
+        "outFiles": ["${workspaceFolder}/dist/apps/<my-app>/**/*.js"],
         "resolveSourceMapLocations": [
-            "${workspaceFolder}/dist/apps/my-app/**",
+            "${workspaceFolder}/dist/apps/<my-app>/**",
             "!**/node_modules/**"
         ],
         "sourceMapPathOverrides": {
             "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
-            "webpack://?:*/*": "${workspaceFolder}/apps/my-app/*"
+            "webpack://?:*/*": "${workspaceFolder}/apps/<my-app>/*"
         }
     }
     ```
 
-    > _*Note:*_ Replace `my-app` with the actual name from Step 1.
+    > _*Note:*_ Replace `<my-app>` with the actual name from Step 1.
 
 5. Add standard extension code to the `main.ts`
+
+### Add a new Webview
+If your VS Code Plugin needs a webview, you can use the build in *build executors* to create it.
+Dependent on the framework you want to use, there may be different executors available.
+In the long run, we want to have only **Vue 3** as a dependency.
+However, right now because of the **Miranum Forms Plugin** we have to use **Vue 2**.
+
+1. This will generate a new folder under `apps/`
+ 
+    ```shell
+    npx nx g @nx/web:rollup my-webview --directory apps --bundler vite
+    ```
+   
+2. Alter the `main.ts` file and add the `App.vue` in your new application.
 
 ## Development commands
 

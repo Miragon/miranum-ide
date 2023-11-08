@@ -1,10 +1,11 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
+
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import path from "path";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-dmn-modeler-webview",
+    cacheDir: "../../node_modules/.vite/miranum-modeler-bpmn-webview",
 
     resolve: {
         alias: [
@@ -22,6 +23,13 @@ export default defineConfig({
                     "../../libs/vscode/shared/miranum-modeler/src",
                 ),
             },
+            {
+                find: "@miranum-ide/miranum-create-append-c7-element-templates",
+                replacement: path.resolve(
+                    __dirname,
+                    "../../libs/miranum-create-append-c7-element-templates/src",
+                ),
+            },
         ],
     },
 
@@ -29,11 +37,11 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
-                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/css/**",
+                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/css/**",
                     dest: "css/",
                 },
                 {
-                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/font/**",
+                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/font/**",
                     dest: "font/",
                 },
             ],

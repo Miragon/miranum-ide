@@ -370,7 +370,7 @@ export class BpmnModeler implements CustomTextEditorProvider {
      * @private
      */
     private getHtmlForWebview(webview: Webview, extensionUri: Uri) {
-        const pathToWebview = Uri.joinPath(extensionUri, "miranum-bpmn-modeler-webview");
+        const pathToWebview = Uri.joinPath(extensionUri, "miranum-modeler-bpmn-webview");
 
         const scriptUri = webview.asWebviewUri(Uri.joinPath(pathToWebview, "index.js"));
         const styleUri = webview.asWebviewUri(Uri.joinPath(pathToWebview, "index.css"));

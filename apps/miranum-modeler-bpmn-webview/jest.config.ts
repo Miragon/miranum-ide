@@ -1,5 +1,5 @@
 module.exports = {
-    displayName: "miranum-bpmn-modeler-webview",
+    displayName: "miranum-modeler-bpmn-webview",
     preset: "../../jest.preset.js",
     transform: {
         "^.+.vue$": "@vue/vue2-jest",
@@ -8,16 +8,16 @@ module.exports = {
         "^.+.tsx?$": [
             "ts-jest",
             {
-                tsconfig: "apps/miranum-bpmn-modeler-webview/tsconfig.spec.json",
+                tsconfig: "apps/miranum-modeler-bpmn-webview/tsconfig.spec.json",
             },
         ],
     },
     moduleFileExtensions: ["ts", "tsx", "vue", "js", "json"],
-    coverageDirectory: "../../coverage/apps/miranum-bpmn-modeler-webview",
+    coverageDirectory: "../../coverage/apps/miranum-modeler-bpmn-webview",
     snapshotSerializers: ["jest-serializer-vue"],
     globals: {
         "vue-jest": {
-            tsConfig: "apps/miranum-bpmn-modeler-webview/tsconfig.spec.json",
+            tsConfig: "apps/miranum-modeler-bpmn-webview/tsconfig.spec.json",
         },
     },
 };

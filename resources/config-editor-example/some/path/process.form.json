@@ -1,0 +1,49 @@
+{
+    "schema": {
+        "type": "object",
+        "properties": {
+            "statusConfig": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "enum": [
+                                "offen",
+                                "inBearbeitung",
+                                "abgeschlossen"
+                            ]
+                        },
+                        "label": {
+                            "type": "string"
+                        },
+                        "position": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "config": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        }
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": [
+            {
+                "type": "Control",
+                "scope": "#/properties/statusConfig"
+            },
+            {
+                "type": "Control",
+                "scope": "#/properties/config"
+            }
+        ]
+    }
+}

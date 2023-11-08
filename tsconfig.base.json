@@ -49,6 +49,9 @@
       ],
       "@miranum-ide/vscode/shared/miranum-modeler": [
         "libs/vscode/shared/miranum-modeler/src/index.ts"
+      ],
+      "@miranum-ide/vscode/shared/miranum-config-editor": [
+        "libs/vscode/shared/miranum-config-editor/src/index.ts"
       ]
     }
   },

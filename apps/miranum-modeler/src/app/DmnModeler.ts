@@ -290,7 +290,7 @@ export class DmnModeler implements vscode.CustomTextEditorProvider {
     private getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const pathToWebview = vscode.Uri.joinPath(
             extensionUri,
-            "miranum-dmn-modeler-webview",
+            "miranum-modeler-dmn-webview",
         );
 
         const scriptUri = webview.asWebviewUri(

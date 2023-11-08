@@ -1,0 +1,13 @@
+{
+    "type": "VerticalLayout",
+    "elements": [
+        {
+            "type": "Control",
+            "scope": "#/properties/statusConfig"
+        },
+        {
+            "type": "Control",
+            "scope": "#/properties/config"
+        }
+    ]
+}
