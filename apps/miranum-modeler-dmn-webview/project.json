@@ -1,8 +1,8 @@
 {
-  "name": "miranum-dmn-modeler-webview",
+  "name": "miranum-modeler-dmn-webview",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/miranum-dmn-modeler-webview/src",
+  "sourceRoot": "apps/miranum-modeler-dmn-webview/src",
   "tags": [],
   "targets": {
     "observe": {
@@ -13,8 +13,8 @@
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
-        "outputPath": "dist/apps/miranum-modeler/miranum-dmn-modeler-webview",
-        "configFile": "apps/miranum-dmn-modeler-webview/vite.config.ts",
+        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts",
         "emptyOutDir": false
       },
       "configurations": {
@@ -33,8 +33,8 @@
       ],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/miranum-modeler/miranum-dmn-modeler-webview",
-        "configFile": "apps/miranum-dmn-modeler-webview/vite.config.ts"
+        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts"
       },
       "configurations": {
         "production": {
@@ -48,7 +48,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "apps/miranum-dmn-modeler-webview/jest.config.ts",
+        "jestConfig": "apps/miranum-modeler-dmn-webview/jest.config.ts",
         "passWithNoTests": true
       }
     },
@@ -59,7 +59,7 @@
       ],
       "options": {
         "lintFilePatterns": [
-          "apps/miranum-dmn-modeler-webview/**/*.ts"
+          "apps/miranum-modeler-dmn-webview/**/*.ts"
         ]
       }
     }
