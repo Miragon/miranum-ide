@@ -33,14 +33,14 @@
 
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
-process application in one place.
+> Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins*
+> that allows you to edit, manage and access all artifacts for your
+> process application in one place.  
+> **Miranum Forms** is one component of *Miranum IDE*.
 
-
-**Miranum Forms** is one component of **Miranum IDE**.
-It allows you to create and edit forms based on [JSON Schema](https://json-schema.org/),
-a specification for annotating and validating JSON documents. 
-In order to help you with your first steps with **Miranum Forms**, we have created tutorials that you can be found [here](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
+**Miranum Forms** allows you to create and edit forms based on [JSON Schema](https://json-schema.org/),
+a specification for annotating and validating JSON documents.
+To help you get started with **Miranum IDE**, we have created some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
 > ❗️To start the form builder create or open a `.form` file.❗
 

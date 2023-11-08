@@ -82,7 +82,7 @@ You need to enter the full path to your `JSON Schema` and `UI-Schema` files in t
 
 ### Usage
 
-To use the editor, you have to open or create a `.config.json` file.
+❗️To use the editor, you have to open or create a `.config.json` file.❗
 The plugin will then search for the `JSON Schema` and `UI-Schema` files in the directory you specified in the settings.
 To find the right files, you have to stick to the following naming convention:
 
