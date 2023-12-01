@@ -15,7 +15,7 @@ updates:
       include: scope
   # Fetch and update latest `maven` packages
   - package-ecosystem: maven
-    directory: "/spring-boot-apps/miranum-deployment-proxy"
+    directory: "/spring-boot-apps/miranum-deployment"
     schedule:
       interval: weekly
       time: "05:00"
