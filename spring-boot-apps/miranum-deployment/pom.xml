@@ -16,13 +16,9 @@
         <maven.compiler.source>17</maven.compiler.source>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot.version>3.1.3</spring.boot.version>
-        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <lombok.version>1.18.28</lombok.version>
-        <maven.surfire.plugin.version>3.1.2</maven.surfire.plugin.version>
-        <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
         <jacoco.version>0.8.10</jacoco.version>
-        <feign.version>12.5</feign.version>
+        <spring.boot.version>3.1.5</spring.boot.version>
     </properties>
 
     <modules>
@@ -63,7 +59,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
+                <version>3.11.0</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -92,7 +88,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surfire.plugin.version}</version>
+                <version>3.1.2</version>
+                <configuration>
+                    <argLine>${argLine} -Xms256m -Xmx2048m</argLine>
+                    <runOrder>random</runOrder>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -121,7 +121,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>${maven.source.plugin.version}</version>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
