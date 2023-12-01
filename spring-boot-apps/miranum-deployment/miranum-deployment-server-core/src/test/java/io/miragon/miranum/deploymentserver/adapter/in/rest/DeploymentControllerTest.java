@@ -5,10 +5,11 @@ import io.miragon.miranum.deploymentserver.application.dto.DeploymentDto;
 import io.miragon.miranum.deploymentserver.application.dto.DeploymentSuccessDto;
 import io.miragon.miranum.deploymentserver.application.dto.FileDto;
 import io.miragon.miranum.deploymentserver.application.ports.in.DeployArtifact;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DeploymentControllerTest {
 
@@ -43,8 +44,8 @@ class DeploymentControllerTest {
 
         final DeploymentSuccessDto status = this.deploymentController.deployArtifact(deploymentDto);
 
-        Assertions.assertTrue(status.isSuccess());
-        Assertions.assertEquals("test", status.getMessage());
+        assertThat(status.isSuccess()).isTrue();
+        assertThat(status.getMessage()).isEqualTo("test");
     }
 
 }

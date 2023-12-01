@@ -6,12 +6,14 @@ import io.miragon.miranum.deploymentreceiver.application.ports.out.MiranumDeploy
 import io.miragon.miranum.deploymentreceiver.domain.Deployment;
 import io.miragon.miranum.deploymentreceiver.domain.DeploymentStatus;
 import jakarta.validation.ConstraintViolationException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeployFileUseCaseTest {
 
@@ -38,15 +40,15 @@ class DeployFileUseCaseTest {
             tagsCaptor.capture()
         );
 
-        Assertions.assertTrue(result.isSuccess());
-        Assertions.assertEquals("Deployment was successful", result.getMessage());
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("Deployment was successful");
 
-        Assertions.assertEquals(deploymentCaptor.getValue().getFile(), deploymentDto.getFile());
-        Assertions.assertEquals(deploymentCaptor.getValue().getType(), deploymentDto.getType());
-        Assertions.assertEquals(deploymentCaptor.getValue().getFilename(), deploymentDto.getFilename());
-        Assertions.assertEquals(deploymentCaptor.getValue().getNamespace(), deploymentDto.getNamespace());
+        assertThat(deploymentCaptor.getValue().getFile()).isEqualTo(deploymentDto.getFile());
+        assertThat(deploymentCaptor.getValue().getType()).isEqualTo(deploymentDto.getType());
+        assertThat(deploymentCaptor.getValue().getFilename()).isEqualTo(deploymentDto.getFilename());
+        assertThat(deploymentCaptor.getValue().getNamespace()).isEqualTo(deploymentDto.getNamespace());
         // make sure the list contains the default tag (LATEST)
-        List.of("tag1", "tag2", "LATEST").forEach(tag -> Assertions.assertTrue(tagsCaptor.getValue().contains(tag)));
+        List.of("tag1", "tag2", "LATEST").forEach(tag -> assertThat(tagsCaptor.getValue()).contains(tag));
     }
 
     @Test
@@ -65,14 +67,15 @@ class DeployFileUseCaseTest {
 
         final DeploymentStatus result = deployFileUseCase.deploy(deploymentDto);
 
-        Assertions.assertFalse(result.isSuccess());
-        Assertions.assertTrue(result.getMessage().contains("Deployment failed with error: "));
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getMessage()).contains("Deployment failed with error: ");
     }
 
     @Test
     void validationTest() {
         final DeploymentDto invalidDeployment = DeploymentDto.builder().build();
-        Assertions.assertThrows(ConstraintViolationException.class, () -> this.deployFileUseCase.deploy(invalidDeployment));
+        assertThatThrownBy(() -> this.deployFileUseCase.deploy(invalidDeployment))
+            .isInstanceOf(ConstraintViolationException.class);
     }
 
 }
