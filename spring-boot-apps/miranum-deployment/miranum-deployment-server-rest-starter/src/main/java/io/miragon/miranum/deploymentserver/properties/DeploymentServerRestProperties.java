@@ -10,6 +10,6 @@ import java.util.Map;
 @Getter
 @ConfigurationProperties(prefix = "io.miranum.deploymentserver.rest")
 public class DeploymentServerRestProperties {
-    private boolean enabled;
+    private boolean enabled = true;
     private Map<String, Map<String, String>> targets;
 }

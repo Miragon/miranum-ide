@@ -4,10 +4,11 @@ import io.miragon.miranum.deploymentreceiver.application.ports.in.DeployFile;
 import io.miragon.miranum.deploymentserver.application.ports.out.DeployFilePort;
 import io.miragon.miranum.deploymentserver.domain.Deployment;
 import io.miragon.miranum.deploymentserver.domain.DeploymentStatus;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class MiranumEmbeddedDeploymentTest {
 
@@ -48,8 +49,8 @@ class MiranumEmbeddedDeploymentTest {
 
         final DeploymentStatus result = this.miranumEmbeddedDeployment.deploy(deployment, "test");
 
-        Assertions.assertTrue(result.isSuccess());
-        Assertions.assertEquals("Deployment was successfully", result.getMessage());
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("Deployment was successfully");
     }
 
 }

@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.miragon.miranum</groupId>
         <artifactId>miranum-deployment-parent</artifactId>
-        <version>0.3.0-SNAPSHOT</version>
+        <version>0.3.1-SNAPSHOT</version>
     </parent>
 
     <dependencies>
@@ -32,7 +32,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -46,7 +45,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring.boot.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -54,11 +52,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surfire.plugin.version}</version>
             </plugin>
         </plugins>
         <finalName>${project.artifactId}</finalName>
