@@ -5,27 +5,20 @@
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": true,
-      "inputs": [
-        "production",
-        "^production"
-      ]
+      "inputs": ["production", "^production"]
     },
     "test": {
-      "inputs": [
-        "default",
-        "^default"
-      ],
+      "inputs": ["default", "^default"],
       "cache": true
     },
     "lint": {
       "cache": true
     },
     "e2e": {
-      "cache": true
+      "cache": true,
+      "inputs": ["default", "^production"]
     }
   },
   "workspaceLayout": {
@@ -33,9 +26,7 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": [
-    "@nxrocks/nx-spring-boot"
-  ],
+  "plugins": ["@nxrocks/nx-spring-boot"],
   "generators": {
     "@nx/web:application": {
       "style": "css",
@@ -66,13 +57,12 @@
     }
   },
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": [],
     "production": [
-      "default"
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json"
     ]
   }
 }

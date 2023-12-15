@@ -188,7 +188,7 @@ However, right now because of the **Miranum Forms Plugin** we have to use **Vue 
 1. This will generate a new folder under `apps/`
  
     ```shell
-    npx nx g @nx/web:rollup my-webview --directory apps --bundler vite
+    npx nx g @nx/web:app my-webview --directory apps --bundler vite
     ```
    
 2. Alter the `main.ts` file and add the `App.vue` in your new application.

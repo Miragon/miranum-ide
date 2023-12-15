@@ -1,0 +1,72 @@
+{
+  "name": "miranum-console-v2-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-console-v2-webview/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/miranum-console-v2-webview"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-console-v2-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-console-v2-webview:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "miranum-console-v2-webview:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-console-v2-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-console-v2-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-console-v2-webview:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/miranum-console-v2-webview"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-console-v2-webview/**/*.ts"]
+      }
+    }
+  }
+}

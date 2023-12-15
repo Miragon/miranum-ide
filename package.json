@@ -101,6 +101,8 @@
     "@mui/icons-material": "^5.14.9",
     "@mui/material": "^5.14.10",
     "@svgr/webpack": "^8.1.0",
+    "@vscode/codicons": "^0.0.35",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
     "axios": "^1.5.0",
     "bpmn-js": "^15.1.3",
     "bpmn-js-create-append-anything": "^0.4.0",

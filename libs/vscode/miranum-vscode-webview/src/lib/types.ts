@@ -25,3 +25,18 @@ export interface FolderContent {
     type: string;
     files: JSON[] | string[];
 }
+
+export class LoggerMessage {
+    public readonly type: MessageType;
+
+    public readonly log: string;
+
+    constructor(type: MessageType, log: string) {
+        if (!log) {
+            throw new Error("Log message cannot be empty.");
+        }
+
+        this.type = type;
+        this.log = log;
+    }
+}

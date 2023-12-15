@@ -1,0 +1,30 @@
+{
+  "name": "miranum-console-v2-webview-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/miranum-console-v2-webview-e2e/src",
+  "projectType": "application",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/miranum-console-v2-webview-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "miranum-console-v2-webview:serve"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "miranum-console-v2-webview:serve:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/miranum-console-v2-webview-e2e/**/*.{js,ts}"]
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": ["miranum-console-v2-webview"]
+}
