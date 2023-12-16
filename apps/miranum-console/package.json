@@ -2,11 +2,12 @@
   "name": "miranum-console",
   "displayName": "Miranum: Console",
   "description": "A UI to create, generate and deploy your process artifacts.",
-  "license": "SEE LICENSE IN LICENSE",
-  "version": "0.1.0",
-  "publisher": "miragon-gmbh",
   "preview": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "publisher": "miragon-gmbh",
   "homepage": "https://www.miranum.io/",
+  "icon": "assets/miranum_logo.png",
   "galleryBanner": {
     "color": "#F0F8FF",
     "theme": "light"
@@ -33,7 +34,6 @@
   "engines": {
     "vscode": "^1.73.0"
   },
-  "icon": "assets/miranum_logo.png",
   "categories": [
     "Other"
   ],

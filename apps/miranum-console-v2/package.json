@@ -1,0 +1,78 @@
+{
+  "name": "miranum-console",
+  "displayName": "Miranum Console",
+  "description": "A UI to create, generate and deploy your process artifacts.",
+  "preview": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "publisher": "miragon-gmbh",
+  "homepage": "https://www.miranum.io/",
+  "icon": "assets/miranum_logo.png",
+  "galleryBanner": {
+    "color": "#F0F8FF",
+    "theme": "light"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+      "href": "https://twitter.com/miragon_io",
+      "description": "Our Twitter profile."
+    },
+    {
+      "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+      "href": "https://www.linkedin.com/company/miragon-io",
+      "description": "Our LinkedIn profile."
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miragon/miranum-ide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Miragon/miranum-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "Mirnaum",
+    "Camunda",
+    "Console",
+    "Deployment",
+    "BPMN",
+    "DMN",
+    "Forms"
+  ],
+  "main": "main.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "miranum-console",
+          "title": "Miranum Console",
+          "icon": "assets/komet.svg"
+        }
+      ]
+    },
+    "views": {
+      "miranum-console": [
+        {
+          "id": "workspaces",
+          "name": "Workspaces"
+        },
+        {
+          "id": "artifacts",
+          "name": "Artifacts"
+        },
+        {
+          "id": "commands",
+          "name": "Commands"
+        }
+      ]
+    }
+  }
+}

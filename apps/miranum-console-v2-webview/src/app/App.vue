@@ -94,7 +94,7 @@ onBeforeMount(async () => {
     }
 });
 
-function receiveMessage(message: MessageEvent<VscMessage<string>>) {
+function receiveMessage(message: MessageEvent<VscMessage<Project | string>>) {
     const vscMessage = message.data;
 
     const type = vscMessage.type;

@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+skinparam component {
+  backgroundColor<<InAdapter>> LightGreen
+  backgroundColor<<Service>> LightBlue
+  backgroundColor<<OutAdapter>> LightYellow
+}
+
+component WorkspaceAdapter as WorkspaceInAdapter <<InAdapter>>
+component TreeViewAdapter as TreeViewInAdapter <<InAdapter>>
+component WebviewAdapter as WebviewInAdapter <<InAdapter>>
+component CommandAdapter as CommandInAdapter <<InAdapter>>
+
+@enduml
