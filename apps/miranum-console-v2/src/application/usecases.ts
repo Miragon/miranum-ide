@@ -1,6 +1,7 @@
 import {inject, injectable} from "tsyringe";
-import {FilterWorkspaceInPort, GetLatestWorkspaceInPort, PostMessageInPort} from "./ports/in";
-import {WebviewOutPort, WorkspaceOutPort} from "./ports/out";
+
+import {FilterWorkspaceInPort, InitiateWebviewInPort, SendPathForNewProjectInPort} from "./ports/in";
+import {FilePickerOutPort, WebviewOutPort, WorkspaceOutPort} from "./ports/out";
 import {MiranumWorkspace} from "./model";
 
 @injectable()
@@ -10,33 +11,51 @@ export class FilterWorkspacesUseCase implements FilterWorkspaceInPort {
     ) {}
 
     async filterWorkspaces(): Promise<boolean> {
-        return this.workspaceOutPort.filterWorkspaces();
+        const workspaces = this.workspaceOutPort.getWorkspaces()
+
+        if (workspaces.size === 0) {
+            return false
+        }
+
+        const miranumWorkspaces: MiranumWorkspace[] = []
+        const files = await this.workspaceOutPort.findFiles("miranum.json");
+
+        for (const [wsName, wsPath] of workspaces) {
+            for (const file of files) {
+                if (file.startsWith(wsPath)) {
+                    miranumWorkspaces.push(new MiranumWorkspace(wsName, wsPath));
+                    break;
+                }
+            }
+        }
+
+        this.workspaceOutPort.setMiranumWorkspaces(miranumWorkspaces);
+        return true
     }
 }
 
 @injectable()
-export class GetLatestWorkspaceUseCase implements GetLatestWorkspaceInPort {
+export class InitiateWebviewUseCase implements InitiateWebviewInPort {
     constructor(
         @inject("WorkspaceOutPort") private readonly workspaceOutPort: WorkspaceOutPort,
-    ) {}
-
-    getLatestWorkspace(): MiranumWorkspace[] {
-        return this.workspaceOutPort.getLatestWorkspaces();
+        @inject("WebviewOutPort") private readonly webviewOutPort: WebviewOutPort,) {
     }
+
+    async initiateWebview(): Promise<boolean> {
+        return this.webviewOutPort.sendInitialData(this.workspaceOutPort.getLatestMiranumWorkspaces());
+    }
+
 }
 
 @injectable()
-export class PostMessage implements PostMessageInPort {
+export class SendPathForNewProject implements SendPathForNewProjectInPort {
     constructor(
+        @inject("FilePickerOutPort") private readonly filePickerOutPort: FilePickerOutPort,
         @inject("WebviewOutPort") private readonly webviewOutPort: WebviewOutPort,
-    ) {}
+    ) {
+    }
 
-    async postMessage(type: string, data?: MiranumWorkspace[] | string): Promise<boolean> {
-        try {
-            return await this.webviewOutPort.postMessage(type, data);
-        } catch (error) {
-            console.error(error);
-            return false;
-        }
+    async sendPathForNewProject(): Promise<boolean> {
+        return this.webviewOutPort.sendPathForNewProject(await this.filePickerOutPort.getPath());
     }
 }

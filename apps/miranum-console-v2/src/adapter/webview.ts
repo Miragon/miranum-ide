@@ -1,17 +1,27 @@
 import {Uri, ViewColumn, Webview, WebviewPanel, window} from "vscode";
 import {singleton} from "tsyringe";
+
 import {EXTENSION_CONTEXT} from "../common";
+import {ConsoleMessageType, MiranumConsoleDto} from "./api";
+import {LoggerMessage, MessageType, VscMessage} from "@miranum-ide/vscode/miranum-vscode-webview";
+import {WebviewAdapter} from "./in";
 
 const webviewPath = "miranum-console-v2-webview"
 
 @singleton()
-export class WelcomeWebview {
+export class WelcomeView {
 
     private readonly viewType = "miranum-console"
 
     private panel?: WebviewPanel;
 
-    private _webview?: Webview;
+    private webview?: Webview;
+
+    constructor(
+        private readonly webviewAdapter: WebviewAdapter,
+    ) {
+        this.onDidReceiveMessage()
+    }
 
     create() {
         this.panel = window.createWebviewPanel(
@@ -23,19 +33,56 @@ export class WelcomeWebview {
             }
         );
 
-        this._webview = this.panel.webview;
-        this._webview.html = getHtml(this._webview, EXTENSION_CONTEXT.getContext().extensionUri);
+        this.webview = this.panel.webview;
+        this.webview.html = getHtml(this.webview, EXTENSION_CONTEXT.getContext().extensionUri);
     }
 
     close() {
         this.panel?.dispose();
     }
 
-    get webview(): Webview {
-        if (!this._webview) {
+    async postMessage(message: VscMessage<unknown>) {
+        if (!this.webview) {
             throw new Error("Webview is not initialized");
         }
-        return this._webview;
+
+        return await this.webview.postMessage(message) ?? false;
+    }
+
+    private onDidReceiveMessage() {
+        if (!this.webview) {
+            throw new Error("Webview is not initialized");
+        }
+
+        this.webview.onDidReceiveMessage(async (message: MiranumConsoleDto | LoggerMessage) => {
+            if (message instanceof LoggerMessage) {
+                switch (message.type) {
+                    case MessageType.INFO: {
+                        console.log(message.log);
+                        break;
+                    }
+                    case MessageType.ERROR: {
+                        console.error(message.log);
+                        break;
+                    }
+                }
+            }
+
+            if (message instanceof MiranumConsoleDto) {
+                switch (message.type) {
+                    case MessageType.INITIALIZE: {
+                        await this.webviewAdapter.initiateWebview();
+                        break;
+                    }
+                    case ConsoleMessageType.CREATE_PROJECT: {
+                        break;
+                    }
+                    case ConsoleMessageType.OPEN_PROJECT: {
+                        break;
+                    }
+                }
+            }
+        });
     }
 }
 

@@ -1,13 +1,15 @@
-import {MiranumWorkspace} from "../model";
-
 export interface FilterWorkspaceInPort {
     filterWorkspaces(): void
 }
 
-export interface GetLatestWorkspaceInPort {
-    getLatestWorkspace(): MiranumWorkspace[]
+export interface InitiateWebviewInPort {
+    initiateWebview(): Promise<boolean>
 }
 
-export interface PostMessageInPort {
-    postMessage(type: string, data?: MiranumWorkspace[] | string): void
+export interface SendPathForNewProjectInPort {
+    sendPathForNewProject(): Promise<boolean>
+}
+
+export interface OpenWorkspaceInPort {
+    openWorkspace(): Promise<boolean>
 }

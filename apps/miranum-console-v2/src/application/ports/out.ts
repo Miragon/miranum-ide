@@ -1,17 +1,22 @@
 import {MiranumWorkspace} from "../model";
-import {WelcomeWebview} from "../../adapter/model";
 
 export interface WorkspaceOutPort {
-    filterWorkspaces(): Promise<boolean>
-    getWorkspaces(): MiranumWorkspace[]
-    getLatestWorkspaces(): MiranumWorkspace[]
-    openWorkspace(workspace: MiranumWorkspace): Promise<boolean>
-    closeWorkspace(workspace: MiranumWorkspace): boolean
+    getWorkspaces(): Map<string, string>
+    getMiranumWorkspaces(): MiranumWorkspace[]
+    setMiranumWorkspaces(miranumWorkspaces: MiranumWorkspace[]): boolean
+    getLatestMiranumWorkspaces(): MiranumWorkspace[]
+    openMiranumWorkspace(workspace: MiranumWorkspace): Promise<boolean>
+    closeMiranumWorkspace(workspace: MiranumWorkspace): boolean
+    findFiles(filename: string): Promise<string[]>
 }
 
 export interface WebviewOutPort {
-    setWebview(webview: WelcomeWebview): boolean
     openWebview(): boolean
     closeWebview(): boolean
-    postMessage(type: string, data?: MiranumWorkspace[] | string): Promise<boolean>
+    sendInitialData(data: MiranumWorkspace[]): Promise<boolean>
+    sendPathForNewProject(path: string): Promise<boolean>
+}
+
+export interface FilePickerOutPort {
+    getPath(): Promise<string>
 }
