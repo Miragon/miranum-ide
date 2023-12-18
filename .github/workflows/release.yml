@@ -350,23 +350,3 @@ jobs:
           gpg_passphrase: ${{ secrets.PGP_PRIVATE_KEY_SECRET }}
           nexus_username: ${{ secrets.NEXUS_USERNAME }}
           nexus_password: ${{ secrets.NEXUS_PASSWORD }}
-      # docker
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_MIRAGON_USERNAME }}
-          password: ${{ secrets.DOCKER_MIRAGON_PASSWORD  }}
-      - name: Set Release version env variable
-        run: |
-          echo "RELEASE_VERSION=$(cd miranum-deployment && mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-      - name: Build and push miranum-deployment-service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./miranum-deployment
-          push: true
-          tags: miragon/miranum-deployment-service:${{ env.RELEASE_VERSION }},miragon/miranum-deployment-service:latest
-          platforms: linux/amd64, linux/arm64/v8

@@ -1,0 +1,23 @@
+io:
+    miranum:
+        deploymentserver:
+            rest:
+                enabled: true
+                targets:
+                    dev:
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                    test:
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                    prod:
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+server:
+  port: '${MIRANUM_DEPLOYMENT_EXAMPLE_SERVICE_PORT:8080}'

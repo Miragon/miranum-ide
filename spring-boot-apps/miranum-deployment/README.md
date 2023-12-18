@@ -24,9 +24,6 @@ The Miranum Deployment Service is a ready to go Spring Boot application that pro
 Miranum Deployment Server with a REST implementation.
 Therefore, it uses the REST starters to transfer the process artifacts to the Miranum Deployment Receiver.
 
-We also provide a docker image for the Miranum Deployment Service. You can find it
-on [Docker Hub](https://hub.docker.com/r/miragon/miranum-deployment-service).
-
 #### Configurations
 
 The general configuration of the Miranum Deployment Service is done via the application.yml file.
@@ -40,10 +37,10 @@ io:
                 enabled: true
                 targets:
                     dev:
-                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_PORT}/rest/deployment'
-                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_PORT}/rest/deployment'
-                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_PORT}/rest/deployment'
-                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_PORT}/rest/deployment'
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
 ```
 
 **Preconfigured values**
@@ -51,33 +48,11 @@ io:
 Values for the stages dev, test and prod are already preconfigured. You can use them as they are or you can overwrite
 them.
 
-| Property                                   | Value            |
-|--------------------------------------------|------------------|
-| MIRANUM_DEPLOYMENT_SERVICE_PORT            | 8080             |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_URL     | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_PORT    | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_URL      | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_PORT     | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_URL     | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_PORT    | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_URL   | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_PORT  | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_URL    | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_PORT   | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_URL     | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_PORT    | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_URL    | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_PORT   | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_URL  | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_PORT | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_URL    | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_PORT   | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_URL     | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_PORT    | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_URL    | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_PORT   | 9001             |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_URL  | http://localhost |
-| MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_PORT | 9001             |
+| Property                                | Value            |
+|-----------------------------------------|------------------|
+| MIRANUM_DEPLOYMENT_EXAMPLE_SERVICE_PORT | 8080             |
+| MIRANUM_DEPLOYMENT_EXAMPLE_HOST         | http://localhost |
+| MIRANUM_DEPLOYMENT_EXAMPLE_PORT         | 9002             |
 
 ### Miranum Deployment Server
 
