@@ -1,0 +1,48 @@
+{
+    "key": "BarForm",
+    "schema": {
+        "type": "object",
+        "x-display": "stepper",
+        "allOf": [
+            {
+                "title": "Abschnitt",
+                "description": "",
+                "type": "object",
+                "x-options": {
+                    "sectionsTitlesClasses": [
+                        "d-none"
+                    ]
+                },
+                "allOf": [
+                    {
+                        "containerType": "group",
+                        "title": "Group",
+                        "description": "",
+                        "x-options": {
+                            "childrenClass": "pl-0"
+                        },
+                        "properties": {
+                            "cb3d01d2-eadf-431f-be17-e23df1fb0046": {
+                                "x-options": {
+                                    "fieldColProps": {
+                                        "cols": 12,
+                                        "sm": 12
+                                    }
+                                },
+                                "x-props": {
+                                    "outlined": true,
+                                    "dense": true
+                                },
+                                "fieldType": "text",
+                                "title": "Textfield",
+                                "type": "string"
+                            }
+                        },
+                        "key": "d4016050-8b20-45c6-9fee-ed4154434bd6"
+                    }
+                ],
+                "key": "0424ee3b-f18d-4ea4-a0a7-19094a3e0ce3"
+            }
+        ]
+    }
+}
