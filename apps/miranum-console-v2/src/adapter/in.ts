@@ -1,29 +1,32 @@
-import {inject, injectable} from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
-import {FilterWorkspaceInPort, InitiateWebviewInPort} from "../application/ports/in";
+import { CreateWebviewInPort, GetMiranumWorkspaceInPort } from "../application/ports/in";
+import { MiranumWorkspace } from "../application/model";
 
 @injectable()
 export class WorkspaceAdapter {
-
     constructor(
-        @inject("FilterWorkspaceInPort") private readonly filterWorkspaceInPort: FilterWorkspaceInPort,
-    ) {
-        this.initWorkspaces();
-    }
+        @inject("GetMiranumWorkspaceInPort")
+        private readonly getMiranumWorkspaceInPort: GetMiranumWorkspaceInPort,
+    ) {}
 
-    initWorkspaces() {
-        this.filterWorkspaceInPort.filterWorkspaces();
+    async getMiranumWorkspaces(): Promise<MiranumWorkspace[]> {
+        return this.getMiranumWorkspaceInPort.getMiranumWorkspaces();
     }
 }
 
 @injectable()
 export class WebviewAdapter {
-
     constructor(
-        @inject("InitiateWebviewInPort") private readonly initMessageInPort: InitiateWebviewInPort,
+        @inject("CreateWebviewInPort")
+        private readonly createWebviewInPort: CreateWebviewInPort,
     ) {}
 
-    async initiateWebview() {
-        await this.initMessageInPort.initiateWebview();
+    async createWebview() {
+        await this.createWebviewInPort.create();
+    }
+
+    async sendInitialData() {
+        await this.createWebviewInPort.sendInitialData();
     }
 }

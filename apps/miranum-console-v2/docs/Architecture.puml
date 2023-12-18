@@ -7,9 +7,62 @@ skinparam component {
   backgroundColor<<OutAdapter>> LightYellow
 }
 
+component WelcomeWebview
+
 component WorkspaceAdapter as WorkspaceInAdapter <<InAdapter>>
 component TreeViewAdapter as TreeViewInAdapter <<InAdapter>>
 component WebviewAdapter as WebviewInAdapter <<InAdapter>>
 component CommandAdapter as CommandInAdapter <<InAdapter>>
+
+WebviewInAdapter -[hidden]r-> WorkspaceInAdapter
+WorkspaceInAdapter -[hidden]r-> TreeViewInAdapter
+TreeViewInAdapter -[hidden]r-> CommandInAdapter
+
+component Application {
+    portin CreateWebviewInPort
+    portin GetMiranumWorkspaceInPort
+    portin SendPathForNewProjectInPort
+    portin OpenWorkspaceInPort
+
+    portout WorkspaceOutPort
+    portout WebviewOutPort
+    portout FilePickerOutPort
+
+    component CreateWebviewUseCase <<Service>>
+    component GetMiranumWorkspaceUseCase <<Service>>
+    component SendPathForNewProjectUseCase <<Service>>
+    component OpenWorkspaceUseCase <<Service>>
+}
+
+component WebviewAdapter as WebviewOutAdapter <<OutAdapter>>
+component WorkspaceAdapter as WorkspaceOutAdapter <<OutAdapter>>
+component FilePickerAdapter as FilePickerOutAdapter <<OutAdapter>>
+
+FilePickerOutAdapter -[hidden]l-> WebviewOutAdapter
+
+WorkspaceInAdapter -d-> GetMiranumWorkspaceInPort
+WebviewInAdapter -d-> CreateWebviewInPort
+WebviewInAdapter -d-> SendPathForNewProjectInPort
+WebviewInAdapter -d-> OpenWorkspaceInPort
+
+GetMiranumWorkspaceUseCase .u.> GetMiranumWorkspaceInPort
+CreateWebviewUseCase .u.> CreateWebviewInPort
+SendPathForNewProjectUseCase .u.> SendPathForNewProjectInPort
+OpenWorkspaceUseCase .u.> OpenWorkspaceInPort
+
+CreateWebviewUseCase -d-> WebviewOutPort
+CreateWebviewUseCase -d-> WorkspaceOutPort
+GetMiranumWorkspaceUseCase -d-> WorkspaceOutPort
+SendPathForNewProjectUseCase -d-> WebviewOutPort
+SendPathForNewProjectUseCase -d-> FilePickerOutPort
+OpenWorkspaceUseCase -d-> WorkspaceOutPort
+
+WorkspaceOutAdapter .u.-> WorkspaceOutPort
+WebviewOutAdapter .u.-> WebviewOutPort
+FilePickerOutAdapter .u.-> FilePickerOutPort
+
+WelcomeWebview -[hidden]l-> Application
+WelcomeWebview -r-> WebviewInAdapter
+WelcomeWebview <-- WebviewOutAdapter
 
 @enduml

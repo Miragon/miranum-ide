@@ -69,8 +69,8 @@
           "name": "Artifacts"
         },
         {
-          "id": "commands",
-          "name": "Commands"
+          "id": "deplyment",
+          "name": "Deployment"
         }
       ]
     }

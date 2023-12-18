@@ -6,24 +6,21 @@
  * - {@link WebviewAdapter}
  * - {@link FilePickerAdapter}
  */
-import {window, workspace} from "vscode";
-import {MessageType, VscMessage} from "@miranum-ide/vscode/miranum-vscode-webview";
+import { window, workspace } from "vscode";
+import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-import {WelcomeView} from "./webview";
-import {EXTENSION_CONTEXT} from "../common";
-import {MiranumWorkspace} from "../application/model";
-import {FilePickerOutPort, WebviewOutPort, WorkspaceOutPort} from "../application/ports/out";
-import {ConsoleMessageType} from "./api";
-import {maxLatestWorkspaces} from "./config";
+import { WelcomeView } from "./webview";
+import { EXTENSION_CONTEXT } from "../common";
+import { MiranumWorkspace } from "../application/model";
+import { FilePickerOutPort, WebviewOutPort, WorkspaceOutPort } from "../application/ports/out";
+import { ConsoleMessageType } from "./api";
+import { maxLatestWorkspaces } from "./config";
 
 /**
  * @class WorkspaceAdapter
  */
 export class WorkspaceAdapter implements WorkspaceOutPort {
-
     private storageKey = "miranum-workspace";
-
-    private miranumWorkspaces: MiranumWorkspace[] = [];
 
     getWorkspaces(): Map<string, string> {
         const workspaceFolders = workspace.workspaceFolders;
@@ -35,23 +32,16 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
         const wsPaths: Map<string, string> = new Map();
 
         for (const ws of workspaceFolders) {
-            wsPaths.set(ws.name, ws.uri.path)
+            wsPaths.set(ws.name, ws.uri.path);
         }
 
-        return wsPaths
-    }
-
-    getMiranumWorkspaces(): MiranumWorkspace[] {
-        return this.miranumWorkspaces;
-    }
-
-    setMiranumWorkspaces(miranumWorkspaces: MiranumWorkspace[]): boolean {
-        this.miranumWorkspaces = miranumWorkspaces;
-        return true;
+        return wsPaths;
     }
 
     getLatestMiranumWorkspaces(): MiranumWorkspace[] {
-        const latestWorkspaces = EXTENSION_CONTEXT.getContext().globalState.get<MiranumWorkspace[]>(this.storageKey);
+        const latestWorkspaces = EXTENSION_CONTEXT.getContext().globalState.get<
+            MiranumWorkspace[]
+        >(this.storageKey);
 
         if (!latestWorkspaces) {
             return [];
@@ -61,8 +51,6 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
     }
 
     async openMiranumWorkspace(miranumWorkspace: MiranumWorkspace): Promise<boolean> {
-        this.miranumWorkspaces.push(miranumWorkspace);
-
         // Add workspace to global storage
         const storage = EXTENSION_CONTEXT.getContext().globalState;
         const latestWorkspaces = storage.get<MiranumWorkspace[]>(this.storageKey);
@@ -78,7 +66,10 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
             if (latestWorkspaces.length >= maxLatestWorkspaces) {
                 latestWorkspaces.pop();
             }
-            await storage.update(this.storageKey, [miranumWorkspace, ...latestWorkspaces]);
+            await storage.update(this.storageKey, [
+                miranumWorkspace,
+                ...latestWorkspaces,
+            ]);
             return true;
         }
 
@@ -86,15 +77,6 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
         await storage.update(this.storageKey, [miranumWorkspace, ...latestWorkspaces]);
 
         return true;
-    }
-
-    closeMiranumWorkspace(miranumWorkspace: MiranumWorkspace): boolean {
-        const index = this.miranumWorkspaces.indexOf(miranumWorkspace);
-        if (index > -1) {
-            this.miranumWorkspaces.splice(index, 1);
-            return true;
-        }
-        return false;
     }
 
     async findFiles(filename: string): Promise<string[]> {
@@ -113,37 +95,32 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
  * @class WebviewAdapter
  */
 export class WebviewAdapter implements WebviewOutPort {
+    constructor(private readonly webview: WelcomeView) {}
 
-    constructor(
-        private readonly webview: WelcomeView) {
+    open(): boolean {
+        return this.webview.create();
     }
 
-    openWebview(): boolean {
-        this.webview.create()
-        return true;
-    }
-
-    closeWebview(): boolean {
-        this.webview.close();
-        return true;
+    close(): boolean {
+        return this.webview.dispose();
     }
 
     async sendInitialData(data: MiranumWorkspace[]): Promise<boolean> {
         const message: VscMessage<MiranumWorkspace[]> = {
             type: MessageType.INITIALIZE,
-            data
-        }
+            data,
+        };
 
-        return await this.webview.postMessage(message) ?? false;
+        return (await this.webview.postMessage(message)) ?? false;
     }
 
     async sendPathForNewProject(path: string): Promise<boolean> {
         const message: VscMessage<string> = {
             type: ConsoleMessageType.CREATE_PROJECT,
-            data: path
-        }
+            data: path,
+        };
 
-        return await this.webview.postMessage(message) ?? false;
+        return (await this.webview.postMessage(message)) ?? false;
     }
 }
 
@@ -158,7 +135,7 @@ export class FilePickerAdapter implements FilePickerOutPort {
             canSelectMany: false,
         });
 
-        if (!fileUris || fileUris.length > 1) {
+        if (!fileUris) {
             throw new Error("Invalid file path");
         }
 

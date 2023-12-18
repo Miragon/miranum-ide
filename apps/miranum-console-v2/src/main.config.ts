@@ -1,6 +1,7 @@
 import { container, Lifecycle } from "tsyringe";
-import {FilterWorkspacesUseCase} from "./application/usecases";
-import {WorkspaceAdapter} from "./adapter/out";
+
+import { GetMiranumWorkspacesUseCase } from "./application/usecases";
+import { WebviewAdapter, WorkspaceAdapter } from "./adapter/out";
 
 export async function config(): Promise<boolean> {
     try {
@@ -14,8 +15,13 @@ export async function config(): Promise<boolean> {
 
 async function registerUseCases() {
     container.register(
-        "FilterWorkspaceInPort",
-        { useClass: FilterWorkspacesUseCase },
+        "GetMiranumWorkspaceInPort",
+        { useClass: GetMiranumWorkspacesUseCase },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "CreateWebviewInPort",
+        { useClass: GetMiranumWorkspacesUseCase },
         { lifecycle: Lifecycle.Singleton },
     );
 }
@@ -24,6 +30,11 @@ async function registerOutAdapter() {
     container.register(
         "WorkspaceOutPort",
         { useClass: WorkspaceAdapter },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "WebviewOutPort",
+        { useClass: WebviewAdapter },
         { lifecycle: Lifecycle.Singleton },
     );
 }

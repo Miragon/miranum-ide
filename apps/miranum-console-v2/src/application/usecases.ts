@@ -1,23 +1,27 @@
-import {inject, injectable} from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
-import {FilterWorkspaceInPort, InitiateWebviewInPort, SendPathForNewProjectInPort} from "./ports/in";
-import {FilePickerOutPort, WebviewOutPort, WorkspaceOutPort} from "./ports/out";
-import {MiranumWorkspace} from "./model";
+import {
+    CreateWebviewInPort,
+    GetMiranumWorkspaceInPort,
+    SendPathForNewProjectInPort,
+} from "./ports/in";
+import { FilePickerOutPort, WebviewOutPort, WorkspaceOutPort } from "./ports/out";
+import { MiranumWorkspace } from "./model";
 
 @injectable()
-export class FilterWorkspacesUseCase implements FilterWorkspaceInPort {
+export class GetMiranumWorkspacesUseCase implements GetMiranumWorkspaceInPort {
     constructor(
         @inject("WorkspaceOutPort") private readonly workspaceOutPort: WorkspaceOutPort,
     ) {}
 
-    async filterWorkspaces(): Promise<boolean> {
-        const workspaces = this.workspaceOutPort.getWorkspaces()
+    async getMiranumWorkspaces(): Promise<MiranumWorkspace[]> {
+        const workspaces = this.workspaceOutPort.getWorkspaces();
 
         if (workspaces.size === 0) {
-            return false
+            return [];
         }
 
-        const miranumWorkspaces: MiranumWorkspace[] = []
+        const miranumWorkspaces: MiranumWorkspace[] = [];
         const files = await this.workspaceOutPort.findFiles("miranum.json");
 
         for (const [wsName, wsPath] of workspaces) {
@@ -29,33 +33,39 @@ export class FilterWorkspacesUseCase implements FilterWorkspaceInPort {
             }
         }
 
-        this.workspaceOutPort.setMiranumWorkspaces(miranumWorkspaces);
-        return true
+        return miranumWorkspaces;
     }
 }
 
 @injectable()
-export class InitiateWebviewUseCase implements InitiateWebviewInPort {
+export class CreateWebviewUseCase implements CreateWebviewInPort {
     constructor(
         @inject("WorkspaceOutPort") private readonly workspaceOutPort: WorkspaceOutPort,
-        @inject("WebviewOutPort") private readonly webviewOutPort: WebviewOutPort,) {
+        @inject("WebviewOutPort") private readonly webviewOutPort: WebviewOutPort,
+    ) {}
+
+    async create(): Promise<boolean> {
+        return this.webviewOutPort.open();
     }
 
-    async initiateWebview(): Promise<boolean> {
-        return this.webviewOutPort.sendInitialData(this.workspaceOutPort.getLatestMiranumWorkspaces());
+    async sendInitialData(): Promise<boolean> {
+        return this.webviewOutPort.sendInitialData(
+            this.workspaceOutPort.getLatestMiranumWorkspaces(),
+        );
     }
-
 }
 
 @injectable()
 export class SendPathForNewProject implements SendPathForNewProjectInPort {
     constructor(
-        @inject("FilePickerOutPort") private readonly filePickerOutPort: FilePickerOutPort,
+        @inject("FilePickerOutPort")
+        private readonly filePickerOutPort: FilePickerOutPort,
         @inject("WebviewOutPort") private readonly webviewOutPort: WebviewOutPort,
-    ) {
-    }
+    ) {}
 
     async sendPathForNewProject(): Promise<boolean> {
-        return this.webviewOutPort.sendPathForNewProject(await this.filePickerOutPort.getPath());
+        return this.webviewOutPort.sendPathForNewProject(
+            await this.filePickerOutPort.getPath(),
+        );
     }
 }

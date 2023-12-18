@@ -1,15 +1,29 @@
 import "reflect-metadata";
-import { container } from "tsyringe";
 import { ExtensionContext } from "vscode";
+import { container } from "tsyringe";
 
-import {EXTENSION_CONTEXT} from "./common";
-import {config} from "./main.config";
-import {WorkspaceAdapter} from "./adapter/in";
+import { EXTENSION_CONTEXT } from "./common";
+import { config } from "./main.config";
+import { WebviewAdapter, WorkspaceAdapter } from "./adapter/in";
 
 export async function activate(context: ExtensionContext) {
     await config();
 
     EXTENSION_CONTEXT.setContext(context);
 
-    container.resolve(WorkspaceAdapter).initWorkspaces();
+    // Get open miranumWorkspaces
+    const miranumWorkspaces = await container
+        .resolve(WorkspaceAdapter)
+        .getMiranumWorkspaces();
+
+    if (miranumWorkspaces.length > 0) {
+        // Create Views:
+        //     - Workspaces
+        //     - Artifact
+        //     - Deployment
+    } else {
+        await container.resolve(WebviewAdapter).createWebview();
+    }
+
+    // Create EventAdapter
 }

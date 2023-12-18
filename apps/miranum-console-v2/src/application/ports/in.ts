@@ -1,15 +1,19 @@
-export interface FilterWorkspaceInPort {
-    filterWorkspaces(): void
+import { MiranumWorkspace } from "../model";
+
+export interface GetMiranumWorkspaceInPort {
+    getMiranumWorkspaces(): Promise<MiranumWorkspace[]>;
 }
 
-export interface InitiateWebviewInPort {
-    initiateWebview(): Promise<boolean>
+export interface CreateWebviewInPort {
+    create(): Promise<boolean>;
+
+    sendInitialData(): Promise<boolean>;
 }
 
 export interface SendPathForNewProjectInPort {
-    sendPathForNewProject(): Promise<boolean>
+    sendPathForNewProject(): Promise<boolean>;
 }
 
 export interface OpenWorkspaceInPort {
-    openWorkspace(): Promise<boolean>
+    openWorkspace(): Promise<boolean>;
 }
