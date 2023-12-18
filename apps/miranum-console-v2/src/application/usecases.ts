@@ -3,10 +3,12 @@ import { inject, injectable } from "tsyringe";
 import {
     CreateWebviewInPort,
     GetMiranumWorkspaceInPort,
+    OpenWorkspaceInPort,
     SendPathForNewProjectInPort,
 } from "./ports/in";
 import { FilePickerOutPort, WebviewOutPort, WorkspaceOutPort } from "./ports/out";
 import { MiranumWorkspace } from "./model";
+import { maxLatestWorkspaces } from "../adapter/config";
 
 @injectable()
 export class GetMiranumWorkspacesUseCase implements GetMiranumWorkspaceInPort {
@@ -67,5 +69,44 @@ export class SendPathForNewProject implements SendPathForNewProjectInPort {
         return this.webviewOutPort.sendPathForNewProject(
             await this.filePickerOutPort.getPath(),
         );
+    }
+}
+
+@injectable()
+export class OpenWorkspaceUseCase implements OpenWorkspaceInPort {
+    constructor(
+        @inject("FilePickerOutPort")
+        private readonly filePickerOutPort: FilePickerOutPort,
+        @inject("WorkspaceOutPort") private readonly workspaceOutPort: WorkspaceOutPort,
+    ) {}
+
+    async openWorkspace(): Promise<boolean> {
+        // Get selected MiranumWorkspace
+        const fullPath = (await this.filePickerOutPort.getPath()).split("/");
+        // FIXME: Is it possible to have an empty path?
+        const name = fullPath.pop() ?? "";
+        const path = fullPath.join("/");
+        const miranumWorkspace = new MiranumWorkspace(name, path);
+
+        // Add to the latest workspaces
+        const latestMiranumWorkspaces =
+            this.workspaceOutPort.getLatestMiranumWorkspaces();
+        const index = latestMiranumWorkspaces.indexOf(miranumWorkspace);
+
+        if (index === -1) {
+            if (latestMiranumWorkspaces.length >= maxLatestWorkspaces) {
+                latestMiranumWorkspaces.pop();
+            }
+        } else {
+            latestMiranumWorkspaces.splice(index, 1);
+        }
+
+        await this.workspaceOutPort.addToLatestMiranumWorkspaces([
+            miranumWorkspace,
+            ...latestMiranumWorkspaces,
+        ]);
+
+        // Open workspace
+        return this.workspaceOutPort.openMiranumWorkspace(miranumWorkspace);
     }
 }

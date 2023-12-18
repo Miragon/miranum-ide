@@ -1,6 +1,11 @@
 import { inject, injectable } from "tsyringe";
 
-import { CreateWebviewInPort, GetMiranumWorkspaceInPort } from "../application/ports/in";
+import {
+    CreateWebviewInPort,
+    GetMiranumWorkspaceInPort,
+    OpenWorkspaceInPort,
+    SendPathForNewProjectInPort,
+} from "../application/ports/in";
 import { MiranumWorkspace } from "../application/model";
 
 @injectable()
@@ -20,6 +25,10 @@ export class WebviewAdapter {
     constructor(
         @inject("CreateWebviewInPort")
         private readonly createWebviewInPort: CreateWebviewInPort,
+        @inject("SendPathForNewProjectInPort")
+        private readonly sendPathForNewProjectInPort: SendPathForNewProjectInPort,
+        @inject("OpenWorkspaceInPort")
+        private readonly openWorkspaceInPort: OpenWorkspaceInPort,
     ) {}
 
     async createWebview() {
@@ -28,5 +37,13 @@ export class WebviewAdapter {
 
     async sendInitialData() {
         await this.createWebviewInPort.sendInitialData();
+    }
+
+    async sendPathForNewProject() {
+        await this.sendPathForNewProjectInPort.sendPathForNewProject();
+    }
+
+    async openWorkspace() {
+        await this.openWorkspaceInPort.openWorkspace();
     }
 }

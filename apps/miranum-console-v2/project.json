@@ -35,7 +35,7 @@
         "watch": true,
         "target": "node",
         "compiler": "tsc",
-        "outputPath": "dist/apps/miranum-console-v2-v2",
+        "outputPath": "dist/apps/miranum-console-v2",
         "deleteOutputPath": false,
         "main": "apps/miranum-console-v2/src/main.ts",
         "tsConfig": "apps/miranum-console-v2/tsconfig.app.json",
@@ -47,11 +47,6 @@
             "glob": "komet.svg",
             "input": "./images",
             "output": "/assets"
-          },
-          {
-            "glob": "*.png",
-            "input": "./apps/miranum-console-v2/icons",
-            "output": "/assets/icons"
           }
         ]
       },

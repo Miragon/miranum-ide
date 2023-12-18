@@ -5,6 +5,10 @@ export interface WorkspaceOutPort {
 
     getLatestMiranumWorkspaces(): MiranumWorkspace[];
 
+    addToLatestMiranumWorkspaces(
+        miranumWorkspaces: MiranumWorkspace[],
+    ): Promise<boolean>;
+
     openMiranumWorkspace(workspace: MiranumWorkspace): Promise<boolean>;
 
     findFiles(filename: string): Promise<string[]>;

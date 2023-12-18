@@ -6,7 +6,7 @@
  * - {@link WebviewAdapter}
  * - {@link FilePickerAdapter}
  */
-import { window, workspace } from "vscode";
+import { commands, window, workspace } from "vscode";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import { WelcomeView } from "./webview";
@@ -14,7 +14,6 @@ import { EXTENSION_CONTEXT } from "../common";
 import { MiranumWorkspace } from "../application/model";
 import { FilePickerOutPort, WebviewOutPort, WorkspaceOutPort } from "../application/ports/out";
 import { ConsoleMessageType } from "./api";
-import { maxLatestWorkspaces } from "./config";
 
 /**
  * @class WorkspaceAdapter
@@ -50,31 +49,21 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
         return latestWorkspaces;
     }
 
+    async addToLatestMiranumWorkspaces(
+        miranumWorkspaces: MiranumWorkspace[],
+    ): Promise<boolean> {
+        await EXTENSION_CONTEXT.getContext().globalState.update(
+            this.storageKey,
+            miranumWorkspaces,
+        );
+        return true;
+    }
+
     async openMiranumWorkspace(miranumWorkspace: MiranumWorkspace): Promise<boolean> {
-        // Add workspace to global storage
-        const storage = EXTENSION_CONTEXT.getContext().globalState;
-        const latestWorkspaces = storage.get<MiranumWorkspace[]>(this.storageKey);
-
-        if (!latestWorkspaces) {
-            await storage.update("miranum-workspace", miranumWorkspace);
-            return true;
-        }
-
-        const index = latestWorkspaces.indexOf(miranumWorkspace);
-
-        if (index === -1) {
-            if (latestWorkspaces.length >= maxLatestWorkspaces) {
-                latestWorkspaces.pop();
-            }
-            await storage.update(this.storageKey, [
-                miranumWorkspace,
-                ...latestWorkspaces,
-            ]);
-            return true;
-        }
-
-        latestWorkspaces.splice(index, 1);
-        await storage.update(this.storageKey, [miranumWorkspace, ...latestWorkspaces]);
+        await commands.executeCommand(
+            "vscode.openFolder",
+            `${miranumWorkspace.path}/${miranumWorkspace.name}`,
+        );
 
         return true;
     }

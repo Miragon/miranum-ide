@@ -79,9 +79,11 @@ export class WelcomeView {
                             break;
                         }
                         case ConsoleMessageType.CREATE_PROJECT: {
+                            await this.webviewAdapter.sendPathForNewProject();
                             break;
                         }
                         case ConsoleMessageType.OPEN_PROJECT: {
+                            await this.webviewAdapter.openWorkspace();
                             break;
                         }
                     }
