@@ -5,19 +5,19 @@ io:
                 enabled: true
                 targets:
                     dev:
-                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_DEV_PORT}/rest/deployment'
-                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_DEV_PORT}/rest/deployment'
-                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_DEV_PORT}/rest/deployment'
-                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_DEV_PORT}/rest/deployment'
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
                     test:
-                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_TEST_PORT}/rest/deployment'
-                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_TEST_PORT}/rest/deployment'
-                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_TEST_PORT}/rest/deployment'
-                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_TEST_PORT}/rest/deployment'
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
                     prod:
-                        bpmn: '${MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_BPMN_PROD_PORT}/rest/deployment'
-                        dmn: '${MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_DMN_PROD_PORT}/rest/deployment'
-                        form: '${MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_FORM_PROD_PORT}/rest/deployment'
-                        config: '${MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_URL}:${MIRANUM_DEPLOYMENT_SERVER_CONFIG_PROD_PORT}/rest/deployment'
+                        bpmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        dmn: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        form: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
+                        config: '${MIRANUM_DEPLOYMENT_EXAMPLE_HOST}:${MIRANUM_DEPLOYMENT_EXAMPLE_PORT}/rest/deployment'
 server:
-  port: '${MIRANUM_DEPLOYMENT_SERVICE_PORT:8080}'
+  port: '${MIRANUM_DEPLOYMENT_EXAMPLE_SERVICE_PORT:8080}'
