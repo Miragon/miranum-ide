@@ -7,6 +7,7 @@
  * - {@link FilePickerAdapter}
  */
 import { commands, window, workspace } from "vscode";
+import {injectable} from "tsyringe";
 import { MessageType, VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import { WelcomeView } from "./webview";
@@ -83,8 +84,11 @@ export class WorkspaceAdapter implements WorkspaceOutPort {
 /**
  * @class WebviewAdapter
  */
+@injectable()
 export class WebviewAdapter implements WebviewOutPort {
-    constructor(private readonly webview: WelcomeView) {}
+    constructor(
+        private readonly webview: WelcomeView
+    ) {}
 
     open(): boolean {
         return this.webview.create();

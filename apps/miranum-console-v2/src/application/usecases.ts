@@ -8,7 +8,7 @@ import {
 } from "./ports/in";
 import { FilePickerOutPort, WebviewOutPort, WorkspaceOutPort } from "./ports/out";
 import { MiranumWorkspace } from "./model";
-import { maxLatestWorkspaces } from "../adapter/config";
+import { maxLatestWorkspaces } from "./config";
 
 @injectable()
 export class GetMiranumWorkspacesUseCase implements GetMiranumWorkspaceInPort {
@@ -58,7 +58,7 @@ export class CreateWebviewUseCase implements CreateWebviewInPort {
 }
 
 @injectable()
-export class SendPathForNewProject implements SendPathForNewProjectInPort {
+export class SendPathForNewProjectUseCase implements SendPathForNewProjectInPort {
     constructor(
         @inject("FilePickerOutPort")
         private readonly filePickerOutPort: FilePickerOutPort,

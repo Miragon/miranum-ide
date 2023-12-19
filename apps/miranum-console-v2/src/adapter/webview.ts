@@ -1,5 +1,5 @@
 import { Uri, ViewColumn, Webview, WebviewPanel, window } from "vscode";
-import { singleton } from "tsyringe";
+import {container, singleton} from "tsyringe";
 import {
     LoggerMessage,
     MessageType,
@@ -19,8 +19,6 @@ export class WelcomeView {
     private panel?: WebviewPanel;
 
     private webview?: Webview;
-
-    constructor(private readonly webviewAdapter: WebviewAdapter) {}
 
     create() {
         this.panel = window.createWebviewPanel(
@@ -57,6 +55,8 @@ export class WelcomeView {
             throw new Error("Webview is not initialized");
         }
 
+        const webviewAdapter = container.resolve(WebviewAdapter);
+
         this.webview.onDidReceiveMessage(
             async (message: MiranumConsoleDto | LoggerMessage) => {
                 if (message instanceof LoggerMessage) {
@@ -75,15 +75,15 @@ export class WelcomeView {
                 if (message instanceof MiranumConsoleDto) {
                     switch (message.type) {
                         case MessageType.INITIALIZE: {
-                            await this.webviewAdapter.sendInitialData();
+                            await webviewAdapter.sendInitialData();
                             break;
                         }
                         case ConsoleMessageType.CREATE_PROJECT: {
-                            await this.webviewAdapter.sendPathForNewProject();
+                            await webviewAdapter.sendPathForNewProject();
                             break;
                         }
                         case ConsoleMessageType.OPEN_PROJECT: {
-                            await this.webviewAdapter.openWorkspace();
+                            await webviewAdapter.openWorkspace();
                             break;
                         }
                     }

@@ -3,6 +3,7 @@ import { container, Lifecycle } from "tsyringe";
 import {
     CreateWebviewUseCase,
     GetMiranumWorkspacesUseCase,
+    SendPathForNewProjectUseCase,
     OpenWorkspaceUseCase,
 } from "./application/usecases";
 import { FilePickerAdapter, WebviewAdapter, WorkspaceAdapter } from "./adapter/out";
@@ -26,6 +27,11 @@ async function registerUseCases() {
     container.register(
         "CreateWebviewInPort",
         { useClass: CreateWebviewUseCase },
+        { lifecycle: Lifecycle.Singleton },
+    );
+    container.register(
+        "SendPathForNewProjectInPort",
+        { useClass: SendPathForNewProjectUseCase },
         { lifecycle: Lifecycle.Singleton },
     );
     container.register(
