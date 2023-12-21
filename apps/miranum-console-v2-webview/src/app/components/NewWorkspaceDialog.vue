@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
-import { Artifact, Engine, NewProject, Project } from "../types";
+import { Artifact, Engine, Workspace } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { NewWorkspace } from "../types";
 
 interface Props {
     path: string;
@@ -9,25 +10,25 @@ interface Props {
 const props = defineProps<Props>();
 const emits = defineEmits(["closeDialog", "createProject", "openFilePicker"]);
 
-const projectName = ref<string>();
-const projectPath = computed(() => props.path);
+const workspaceName = ref<string>();
+const workspacePath = computed(() => props.path);
 const artifacts = ref(new Set<Artifact>());
 const engine = ref<Engine>(Engine.C7); // if this gets changed, the default checked radio button has to be changed as well
 
 const createProject = () => {
-    console.log("createProject", projectName.value, projectPath.value);
-    if (!projectName.value || !projectPath.value) {
+    console.log("createProject", workspaceName.value, workspacePath.value);
+    if (!workspaceName.value || !workspacePath.value) {
         // TODO: style the input fields accordingly
         return;
     }
 
-    const project = new NewProject(
-        new Project(projectName.value, projectPath.value),
+    const workspace = new NewWorkspace(
+        new Workspace(workspaceName.value, workspacePath.value),
         artifacts.value,
         engine.value,
     );
 
-    emits("createProject", { project });
+    emits("createProject", { project: workspace });
 };
 const addOrDeleteCheckbox = (value: Artifact) => {
     if (artifacts.value.has(value)) {
@@ -49,30 +50,20 @@ const addOrDeleteCheckbox = (value: Artifact) => {
                     <vscode-text-field
                         label="Project Name"
                         placeholder="Project Name"
-                        @input="(event) => (projectName = event.target.value)"
+                        @input="(event) => (workspaceName = event.target.value)"
                     ></vscode-text-field>
                     <div class="input-path">
                         <vscode-text-field
                             :value="props.path"
                             label="Project Path"
                             placeholder="Project Path"
-                            @input="(event) => (projectPath = event.target.value)"
+                            @input="(event) => (workspacePath = event.target.value)"
                         ></vscode-text-field>
                         <vscode-button
                             appearance="icon"
                             @click="$emit('openFilePicker')"
                         >
-                            <svg
-                                fill="currentColor"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    d="M1.5 14h11l.48-.37 2.63-7-.48-.63H14V3.5l-.5-.5H7.71l-.86-.85L6.5 2h-5l-.5.5v11l.5.5zM2 3h4.29l.86.85.35.15H13v2H8.5l-.35.15-.86.85H3.5l-.47.34-1 3.08L2 3zm10.13 10H2.19l1.67-5H7.5l.35-.15.86-.85h5.79l-2.37 6z"
-                                />
-                            </svg>
+                            <span class="codicon codicon-folder-opened"></span>
                         </vscode-button>
                     </div>
                 </div>

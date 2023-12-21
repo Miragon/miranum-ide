@@ -8,17 +8,26 @@ import {
     vsCodeRadioGroup,
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
-import NewProjectDialog from "./components/NewProjectDialog.vue";
-import LatestProjects from "./components/LatestProjects.vue";
+import {
+    CreateNewWorkspaceCommand,
+    GetLatestWorkspaceCommand,
+    GetPathForNewWorkspaceCommand,
+    LatestWorkspaceQuery,
+    LogErrorCommand,
+    LogInfoCommand,
+    MiranumConsoleQuery,
+    NewWorkspacePathQuery,
+    OpenWorkspaceCommand,
+    OpenWorkspaceDialogCommand,
+    Workspace,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+
+import NewWorkspaceDialog from "./components/NewWorkspaceDialog.vue";
+import LatestWorkspaces from "./components/LatestWorkspaces.vue";
 
 import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./vscode";
 import { createResolver } from "./utils";
-import { ConsoleMessageType, MiranumConsoleDto, NewProject, Project } from "./types";
-import {
-    LoggerMessage,
-    MessageType,
-    VscMessage,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+import { NewWorkspace } from "./types";
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
@@ -28,7 +37,7 @@ provideVSCodeDesignSystem().register(
     vsCodeTextField(),
 );
 declare const process: { env: { NODE_ENV: string } };
-const latestProjectResolver = createResolver<Project[]>();
+const latestProjectResolver = createResolver<Workspace[]>();
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
@@ -40,28 +49,29 @@ if (process.env.NODE_ENV === "development") {
 }
 
 const isDialogVisible = ref(false);
-const latestProjects = ref<Project[]>([]);
-const projectPath = ref("");
+const latestWorkspaces = ref<Workspace[]>([]);
+const workspacePath = ref("");
 
-const createProject = (project: NewProject) => {
-    vscode.postMessage(
-        new MiranumConsoleDto(ConsoleMessageType.CREATE_PROJECT, undefined, project),
+const createProject = (newWorkspace: NewWorkspace) => {
+    const msg = new CreateNewWorkspaceCommand(
+        newWorkspace.workspace,
+        Array.from(newWorkspace.artifacts),
+        newWorkspace.engine,
     );
+    vscode.postMessage(msg);
 };
 const openFilePicker = (event: string) => {
     switch (event) {
-        case "openProject":
-            vscode.postMessage(
-                new MiranumConsoleDto(ConsoleMessageType.OPEN_FILE_PICKER),
-            );
+        case "openWorkspaceDialog":
+            vscode.postMessage(new OpenWorkspaceDialogCommand());
             break;
         case "getPath":
-            vscode.postMessage(new MiranumConsoleDto(ConsoleMessageType.GET_PATH));
+            vscode.postMessage(new GetPathForNewWorkspaceCommand());
             break;
     }
 };
-const openProject = (project: Project) => {
-    vscode.postMessage(new MiranumConsoleDto(ConsoleMessageType.OPEN_PROJECT, project));
+const openProject = (project: Workspace) => {
+    vscode.postMessage(new OpenWorkspaceCommand(project));
 };
 
 onBeforeMount(async () => {
@@ -69,47 +79,42 @@ onBeforeMount(async () => {
 
     try {
         const state = vscode.getState();
-        latestProjects.value = state.latestProjects;
+        latestWorkspaces.value = state.latestProjects;
     } catch (error) {
         if (error instanceof MissingStateError) {
-            vscode.postMessage(new MiranumConsoleDto(MessageType.INITIALIZE));
+            vscode.postMessage(new GetLatestWorkspaceCommand());
 
             const projects = await latestProjectResolver.wait();
 
             if (projects) {
-                latestProjects.value = projects;
+                latestWorkspaces.value = projects;
 
                 vscode.setState({
                     latestProjects: projects,
                 });
             }
 
-            vscode.postMessage(
-                new LoggerMessage(MessageType.INFO, "Webview is initialized."),
-            );
+            vscode.postMessage(new LogInfoCommand("Webview is initialized."));
         } else {
             const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(new LoggerMessage(MessageType.ERROR, message));
+            vscode.postMessage(new LogErrorCommand(message));
         }
     }
 });
 
-function receiveMessage(message: MessageEvent<VscMessage<Project | string>>) {
-    const vscMessage = message.data;
+function receiveMessage(message: MessageEvent<MiranumConsoleQuery>) {
+    const query = message.data;
 
-    const type = vscMessage.type;
+    switch (true) {
+        case query instanceof LatestWorkspaceQuery: {
+            const latestProjects: Workspace[] = (query as LatestWorkspaceQuery)
+                .latestWorkspaces;
 
-    switch (type) {
-        case MessageType.INITIALIZE: {
-            // TODO: Handle error when parsing fails
-            const latestProjects: Project[] = vscMessage.data
-                ? JSON.parse(vscMessage.data)
-                : undefined;
             latestProjectResolver.done(latestProjects);
             break;
         }
-        case ConsoleMessageType.GET_PATH: {
-            projectPath.value = vscMessage.data ?? "";
+        case query instanceof NewWorkspacePathQuery: {
+            workspacePath.value = (query as NewWorkspacePathQuery).path;
             break;
         }
     }
@@ -119,7 +124,7 @@ function receiveMessage(message: MessageEvent<VscMessage<Project | string>>) {
 <template>
     <div id="app">
         <div class="header">
-            <img alt="Miranum logo" class="logo" src="../assets/logo.png" />
+            <img alt="Miranum logo" class="logo" src="@/assets/logo.png" />
             <h1>Miranum IDE</h1>
         </div>
 
@@ -134,15 +139,15 @@ function receiveMessage(message: MessageEvent<VscMessage<Project | string>>) {
             </vscode-button>
         </div>
 
-        <NewProjectDialog
+        <NewWorkspaceDialog
             v-show="isDialogVisible"
-            :path="projectPath"
+            :path="workspacePath"
             @closeDialog="isDialogVisible = false"
             @createProject="createProject"
             @openFilePicker="openFilePicker('getPath')"
         />
 
-        <LatestProjects :projects="latestProjects" @open-project="openProject" />
+        <LatestWorkspaces :workspaces="latestWorkspaces" @open-project="openProject" />
     </div>
 </template>
 

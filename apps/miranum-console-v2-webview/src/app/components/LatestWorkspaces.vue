@@ -1,18 +1,19 @@
 <script lang="ts" setup>
 import { computed } from "vue";
-import ProjectIcon from "./ProjectIcon.vue";
-import { Project } from "../types";
+import { Workspace } from "@miranum-ide/vscode/miranum-vscode-webview";
+
+import WorkspaceIcon from "./WorkspaceIcon.vue";
 
 interface Props {
-    projects: Project[];
+    workspaces: Workspace[];
 }
 
 const props = defineProps<Props>();
 const emits = defineEmits(["openProject"]);
 
-const projects = computed(() => props.projects);
+const workspaces = computed(() => props.workspaces);
 
-const openProject = (project: Project) => {
+const openProject = (project: Workspace) => {
     emits("openProject", project);
 };
 </script>
@@ -22,14 +23,14 @@ const openProject = (project: Project) => {
         <h3><span>Recent Projects</span></h3>
         <ul>
             <li
-                v-for="project in projects"
-                :key="`${project.path}/${project.name}`"
-                @click="openProject(project)"
+                v-for="workspace in workspaces"
+                :key="`${workspace.path}/${workspace.name}`"
+                @click="openProject(workspace)"
             >
                 <div class="item">
-                    <ProjectIcon :projectName="project.name" />
-                    <p class="name">{{ project.name }}</p>
-                    <p class="path">{{ project.path }}</p>
+                    <WorkspaceIcon :projectName="workspace.name" />
+                    <p class="name">{{ workspace.name }}</p>
+                    <p class="path">{{ workspace.path }}</p>
                 </div>
             </li>
         </ul>

@@ -3,13 +3,18 @@
  */
 import { WebviewApi } from "vscode-webview";
 import {
-    LoggerMessage,
-    MessageType as MiranumMessageType,
+    GetLatestWorkspaceCommand,
+    LatestWorkspaceQuery,
+    LogErrorCommand,
+    LogInfoCommand,
+    LogMessageCommand,
+    MiranumConsoleCommand,
+    MiranumConsoleQuery,
+    Workspace,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { MiranumConsoleDto, Project } from "./types";
 
 export interface VscState {
-    latestProjects: Project[];
+    latestProjects: Workspace[];
 }
 
 export interface VsCode {
@@ -19,7 +24,9 @@ export interface VsCode {
 
     updateState(state: Partial<VscState>): void;
 
-    postMessage(message: MiranumConsoleDto | LoggerMessage): void;
+    postMessage(
+        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
+    ): void;
 }
 
 export class MissingStateError extends Error {
@@ -57,7 +64,9 @@ export class VsCodeImpl implements VsCode {
         });
     }
 
-    public postMessage(message: MiranumConsoleDto | LoggerMessage) {
+    public postMessage(
+        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
+    ) {
         this.vscode.postMessage(message);
     }
 }
@@ -77,45 +86,41 @@ export class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(message: MiranumConsoleDto | LoggerMessage): Promise<void> {
-        const miranumConsoleDto = message as MiranumConsoleDto;
-        const loggerMessage = message as LoggerMessage;
-
-        switch (message.type) {
-            case MiranumMessageType.INITIALIZE: {
+    async postMessage(
+        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
+    ): Promise<void> {
+        switch (true) {
+            case message instanceof GetLatestWorkspaceCommand: {
                 console.log("[Log] Webview is fully loaded.");
-                const latestProjects = [
-                    new Project("my-project", "some/path"),
-                    new Project("migrate-working-times", "some/path"),
-                    new Project("migrate-persons", "some/path"),
-                    new Project("restaurant-process", "some/path"),
-                    new Project("order-example", "some/path"),
-                    new Project("ticket-ordering", "some/path"),
-                    new Project("morning-routine", "some/path"),
-                    new Project("pizza-ordering", "some/path"),
-                    new Project("maintenance", "some/path"),
-                    new Project("tire-exchange", "some/path"),
-                ];
+                const latestProjects = new LatestWorkspaceQuery([
+                    new Workspace("my-project", "some/path"),
+                    new Workspace("migrate-working-times", "some/path"),
+                    new Workspace("migrate-persons", "some/path"),
+                    new Workspace("restaurant-process", "some/path"),
+                    new Workspace("order-example", "some/path"),
+                    new Workspace("ticket-ordering", "some/path"),
+                    new Workspace("morning-routine", "some/path"),
+                    new Workspace("pizza-ordering", "some/path"),
+                    new Workspace("maintenance", "some/path"),
+                    new Workspace("tire-exchange", "some/path"),
+                ]);
                 window.dispatchEvent(
                     new MessageEvent("message", {
-                        data: {
-                            type: MiranumMessageType.INITIALIZE,
-                            data: JSON.stringify(latestProjects),
-                        },
+                        data: latestProjects,
                     }),
                 );
                 break;
             }
-            case MiranumMessageType.ERROR: {
-                console.error("[Log]", loggerMessage.log);
+            case message instanceof LogErrorCommand: {
+                console.error("[Log]", (message as LogErrorCommand).message);
                 break;
             }
-            case MiranumMessageType.INFO: {
-                console.log("[Log]", loggerMessage.log);
+            case message instanceof LogInfoCommand: {
+                console.log("[Log]", (message as LogInfoCommand).message);
                 break;
             }
             default: {
-                console.log("[Send Message]", miranumConsoleDto.payload);
+                console.log("[Send Message]", message);
             }
         }
     }
@@ -127,7 +132,7 @@ export class VsCodeMock implements VsCode {
 
     updateState(state: Partial<VscState>): void {
         const currentState = this.getState();
-        let latestProjects: Project[];
+        let latestProjects: Workspace[];
         if (state?.latestProjects) {
             latestProjects = state.latestProjects;
         } else {
