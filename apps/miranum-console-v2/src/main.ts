@@ -4,7 +4,7 @@ import { container } from "tsyringe";
 
 import { EXTENSION_CONTEXT } from "./common";
 import { config } from "./main.config";
-import { WebviewAdapter, WorkspaceAdapter } from "./adapter/in";
+import { WebviewAdapter, WorkspaceAdapter } from "./adapter/in/vscode";
 
 export async function activate(context: ExtensionContext) {
     await config();

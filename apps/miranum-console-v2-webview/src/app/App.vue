@@ -10,8 +10,11 @@ import {
 } from "@vscode/webview-ui-toolkit";
 import {
     CreateNewWorkspaceCommand,
+    GetImagePathCommand,
     GetLatestWorkspaceCommand,
     GetPathForNewWorkspaceCommand,
+    ImagePath,
+    ImagePathQuery,
     LatestWorkspaceQuery,
     LogErrorCommand,
     LogInfoCommand,
@@ -24,6 +27,7 @@ import {
 
 import NewWorkspaceDialog from "./components/NewWorkspaceDialog.vue";
 import LatestWorkspaces from "./components/LatestWorkspaces.vue";
+import miranumLogo from "../assets/logo.png";
 
 import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./vscode";
 import { createResolver } from "./utils";
@@ -37,7 +41,8 @@ provideVSCodeDesignSystem().register(
     vsCodeTextField(),
 );
 declare const process: { env: { NODE_ENV: string } };
-const latestProjectResolver = createResolver<Workspace[]>();
+const latestWorkspacesResolver = createResolver<Workspace[]>();
+const imagePathResolver = createResolver<ImagePath[]>();
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
@@ -51,6 +56,7 @@ if (process.env.NODE_ENV === "development") {
 const isDialogVisible = ref(false);
 const latestWorkspaces = ref<Workspace[]>([]);
 const workspacePath = ref("");
+const miranumLogoUrl = ref<any>(miranumLogo);
 
 const createProject = (newWorkspace: NewWorkspace) => {
     const msg = new CreateNewWorkspaceCommand(
@@ -83,16 +89,28 @@ onBeforeMount(async () => {
     } catch (error) {
         if (error instanceof MissingStateError) {
             vscode.postMessage(new GetLatestWorkspaceCommand());
+            vscode.postMessage(new GetImagePathCommand());
 
-            const projects = await latestProjectResolver.wait();
+            const [images, workspaces] = [
+                await imagePathResolver.wait(),
+                await latestWorkspacesResolver.wait(),
+            ];
 
-            if (projects) {
-                latestWorkspaces.value = projects;
-
-                vscode.setState({
-                    latestProjects: projects,
-                });
+            if (images) {
+                for (const image of images) {
+                    if (image.id === "miranumLogo") {
+                        miranumLogoUrl.value = image.path;
+                    }
+                }
             }
+            if (workspaces) {
+                latestWorkspaces.value = workspaces;
+            }
+
+            vscode.setState({
+                images: images ?? [],
+                latestProjects: workspaces ?? [],
+            });
 
             vscode.postMessage(new LogInfoCommand("Webview is initialized."));
         } else {
@@ -106,14 +124,18 @@ function receiveMessage(message: MessageEvent<MiranumConsoleQuery>) {
     const query = message.data;
 
     switch (true) {
-        case query instanceof LatestWorkspaceQuery: {
+        case query.type === "LatestWorkspaceQuery": {
             const latestProjects: Workspace[] = (query as LatestWorkspaceQuery)
                 .latestWorkspaces;
-
-            latestProjectResolver.done(latestProjects);
+            latestWorkspacesResolver.done(latestProjects);
             break;
         }
-        case query instanceof NewWorkspacePathQuery: {
+        case query.type === "ImagePathQuery": {
+            const images: ImagePath[] = (query as ImagePathQuery).images;
+            imagePathResolver.done(images);
+            break;
+        }
+        case query.type === "NewWorkspacePathQuery": {
             workspacePath.value = (query as NewWorkspacePathQuery).path;
             break;
         }
@@ -124,17 +146,18 @@ function receiveMessage(message: MessageEvent<MiranumConsoleQuery>) {
 <template>
     <div id="app">
         <div class="header">
-            <img alt="Miranum logo" class="logo" src="@/assets/logo.png" />
+            <img :src="miranumLogoUrl" alt="Miranum logo" class="logo" />
             <h1>Miranum IDE</h1>
         </div>
 
         <div class="actions">
-            <!--<button class="btn-new" @click="isDialogVisible = true">New</button>
-            <button class="btn-open" @click="openFilePicker">Open</button>-->
             <vscode-button appearance="primary" @click="isDialogVisible = true">
                 New
             </vscode-button>
-            <vscode-button appearance="secondary" @click="openFilePicker('openProject')">
+            <vscode-button
+                appearance="secondary"
+                @click="openFilePicker('openWorkspaceDialog')"
+            >
                 Open...
             </vscode-button>
         </div>

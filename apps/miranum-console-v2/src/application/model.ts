@@ -1,26 +1,21 @@
-export class MiranumWorkspace {
-    public readonly name: string
+import { Artifact, Engine } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-    public readonly path: string
+export class MiranumWorkspace {
+    public readonly name: string;
+
+    public readonly path: string;
 
     constructor(name: string, path: string) {
         this.name = name;
         this.path = path;
     }
+
+    compare(other: MiranumWorkspace): boolean {
+        return this.name === other.name && this.path === other.path;
+    }
 }
 
-export enum Artifact {
-    DMN = "dmn",
-    ELEMENT_TEMPLATE = "elementTemplate",
-    FORM = "form",
-}
-
-export enum Engine {
-    C7 = "c7",
-    C8 = "c8",
-}
-
-export class NewProject {
+export class NewMiranumWorkspace {
     public readonly project: MiranumWorkspace;
 
     public readonly artifacts: Set<Artifact>;

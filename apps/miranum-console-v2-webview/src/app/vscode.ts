@@ -3,19 +3,24 @@
  */
 import { WebviewApi } from "vscode-webview";
 import {
+    Command,
+    GetImagePathCommand,
     GetLatestWorkspaceCommand,
+    ImagePath,
+    ImagePathQuery,
     LatestWorkspaceQuery,
     LogErrorCommand,
     LogInfoCommand,
-    LogMessageCommand,
-    MiranumConsoleCommand,
-    MiranumConsoleQuery,
+    Query,
     Workspace,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 export interface VscState {
+    images: ImagePath[];
     latestProjects: Workspace[];
 }
+
+type MessageType = Command | Query;
 
 export interface VsCode {
     getState(): VscState;
@@ -24,9 +29,7 @@ export interface VsCode {
 
     updateState(state: Partial<VscState>): void;
 
-    postMessage(
-        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
-    ): void;
+    postMessage(message: MessageType): void;
 }
 
 export class MissingStateError extends Error {
@@ -64,9 +67,8 @@ export class VsCodeImpl implements VsCode {
         });
     }
 
-    public postMessage(
-        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
-    ) {
+    public postMessage(message: MessageType) {
+        console.log("[Send Message]", message.type);
         this.vscode.postMessage(message);
     }
 }
@@ -86,9 +88,7 @@ export class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(
-        message: MiranumConsoleCommand | MiranumConsoleQuery | LogMessageCommand,
-    ): Promise<void> {
+    async postMessage(message: MessageType): Promise<void> {
         switch (true) {
             case message instanceof GetLatestWorkspaceCommand: {
                 console.log("[Log] Webview is fully loaded.");
@@ -107,6 +107,14 @@ export class VsCodeMock implements VsCode {
                 window.dispatchEvent(
                     new MessageEvent("message", {
                         data: latestProjects,
+                    }),
+                );
+                break;
+            }
+            case message instanceof GetImagePathCommand: {
+                window.dispatchEvent(
+                    new MessageEvent("message", {
+                        data: new ImagePathQuery([]),
                     }),
                 );
                 break;
@@ -138,8 +146,15 @@ export class VsCodeMock implements VsCode {
         } else {
             latestProjects = currentState.latestProjects;
         }
+        let images: ImagePath[];
+        if (state?.images) {
+            images = state.images;
+        } else {
+            images = currentState.images;
+        }
 
         this.state = {
+            images,
             latestProjects,
         };
 

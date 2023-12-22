@@ -58,19 +58,33 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "miranum-console.empty-workspaces",
+        "contents": "It seems you have not yet created a workspace. Please create a workspace to get started."
+      }
+    ],
     "views": {
       "miranum-console": [
         {
-          "id": "workspaces",
-          "name": "Workspaces"
+          "id": "miranum-console.empty-workspaces",
+          "name": "No Workspaces Open",
+          "when": "workspaceFolderCount == 0"
         },
         {
-          "id": "artifacts",
-          "name": "Artifacts"
+          "id": "miranum-console.workspaces",
+          "name": "Workspaces",
+          "when": "workspaceFolderCount != 0"
         },
         {
-          "id": "deplyment",
-          "name": "Deployment"
+          "id": "miranum-console.artifacts",
+          "name": "Artifacts",
+          "when": "workspaceFolderCount != 0"
+        },
+        {
+          "id": "miranum-console.deplyment",
+          "name": "Deployment",
+          "when": "workspaceFolderCount != 0"
         }
       ]
     }

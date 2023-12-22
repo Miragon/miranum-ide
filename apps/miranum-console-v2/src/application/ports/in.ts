@@ -1,4 +1,4 @@
-import { MiranumWorkspace } from "../model";
+import { MiranumWorkspace, NewMiranumWorkspace } from "../model";
 
 export interface GetMiranumWorkspaceInPort {
     getMiranumWorkspaces(): Promise<MiranumWorkspace[]>;
@@ -7,13 +7,19 @@ export interface GetMiranumWorkspaceInPort {
 export interface CreateWebviewInPort {
     create(): Promise<boolean>;
 
-    sendInitialData(): Promise<boolean>;
+    sendLatestMiranumWorkspaces(): Promise<boolean>;
+
+    sendImagePaths(): Promise<boolean>;
 }
 
-export interface SendPathForNewProjectInPort {
-    sendPathForNewProject(): Promise<boolean>;
+export interface SendPathForNewWorkspaceInPort {
+    sendPathForNewMiranumWorkspace(): Promise<boolean>;
 }
 
-export interface OpenWorkspaceInPort {
-    openWorkspace(): Promise<boolean>;
+export interface OpenMiranumWorkspaceInPort {
+    openMiranumWorkspace(miranumWorkspace?: MiranumWorkspace): Promise<boolean>;
+}
+
+export interface CreateMiranumWorkspaceInPort {
+    createMiranumWorkspace(newMiranumWorkspace: NewMiranumWorkspace): Promise<boolean>;
 }
