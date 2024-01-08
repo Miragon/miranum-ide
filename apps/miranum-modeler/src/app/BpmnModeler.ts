@@ -186,14 +186,13 @@ export class BpmnModeler implements CustomTextEditorProvider {
                 let data: ModelerData | undefined;
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
-                        const additionalFiles = await artifacts;
                         data = {
                             executionPlatformVersion:
                                 this.getModelerExecutionPlatformVersion(
                                     document.getText(),
                                 ),
                             bpmn: document.getText(),
-                            additionalFiles,
+                            additionalFiles: await artifacts,
                         };
                         break;
                     }
