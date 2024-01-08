@@ -107,6 +107,11 @@ export class BpmnModeler implements CustomTextEditorProvider {
         watcher.subscribe(document.uri.path, webviewPanel);
 
         // Initialize Webview
+        const artifacts = Reader.get().getAllFiles(
+            pathToMiranumJson ? pathToMiranumJson : pathToProjectRoot,
+            miranumWorkspaceItems,
+        );
+
         webviewPanel.webview.options = { enableScripts: true };
         webviewPanel.webview.html = this.getHtmlForWebview(
             webviewPanel.webview,
@@ -181,18 +186,14 @@ export class BpmnModeler implements CustomTextEditorProvider {
                 let data: ModelerData | undefined;
                 switch (msgType) {
                     case MessageType.INITIALIZE: {
+                        const additionalFiles = await artifacts;
                         data = {
                             executionPlatformVersion:
                                 this.getModelerExecutionPlatformVersion(
                                     document.getText(),
                                 ),
                             bpmn: document.getText(),
-                            additionalFiles: await Reader.get().getAllFiles(
-                                pathToMiranumJson
-                                    ? pathToMiranumJson
-                                    : pathToProjectRoot,
-                                miranumWorkspaceItems,
-                            ),
+                            additionalFiles,
                         };
                         break;
                     }
