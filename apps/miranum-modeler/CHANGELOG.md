@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2024-01-10
+
+### Fixed
+
+* Reading forms and element templates from subfolders (#483)
+
 ## [0.5.6] - 2023-11-08
 
 ### Changed
