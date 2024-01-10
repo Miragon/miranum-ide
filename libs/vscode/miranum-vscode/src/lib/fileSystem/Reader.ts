@@ -124,14 +124,18 @@ export class Reader {
         rootDir: Uri,
         directory: string,
         extension: string,
-    ): Promise<string[]> {
+    ): Promise<JSON[]> {
         const files = await this.getWorkspaceFiles(
             `${rootDir.path}/${directory}`,
             extension,
         );
 
-        return this.getFileContent(files, (content) => {
+        const contents = await this.getFileContent(files, (content) => {
             return content;
+        });
+
+        return contents.map((content) => {
+            return this.getStringAsJson(content);
         });
     }
 
