@@ -18,7 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lombok.version>1.18.30</lombok.version>
         <jacoco.version>0.8.11</jacoco.version>
-        <spring.boot.version>3.2.0</spring.boot.version>
+        <spring.boot.version>3.2.2</spring.boot.version>
     </properties>
 
     <modules>
