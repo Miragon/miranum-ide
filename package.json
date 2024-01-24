@@ -39,7 +39,7 @@
     "@types/uuid": "^9.0.4",
     "@types/vscode": "^1.76.0",
     "@types/vscode-webview": "^1.57.2",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.0.4",
     "@vitejs/plugin-vue2": "^2.2.0",
