@@ -95,6 +95,22 @@ io:
                         config: 'http://localhost:9005/rest/deployment'
 ```
 
+##### Custom Feign Request Interceptor
+
+You can add a custom Feign Request Interceptor to the Miranum Deployment Server REST starter.
+Therefore, create a custom bean of type `DeployFilePort` and provide the `RequestInterceptor` as a constructor parameter to `MiranumRestDeployment` like in the example below.
+
+```java
+private final RequestInterceptor requestInterceptor;
+private final DeploymentServerRestProperties deploymentServerRestProperties;
+
+@Bean
+public DeployFilePort deployFilePort() {
+    return new MiranumRestDeployment(this.deploymentServerRestProperties.getTargets(), List.of(requestInterceptor));
+}
+```
+
+
 #### Miranum Deployment Server Embedded
 
 In case you have a single spring application you can use the Miranum Deployment Server Embedded starter.
