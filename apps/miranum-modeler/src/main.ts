@@ -1,17 +1,15 @@
 import { ExtensionContext } from "vscode";
-import { Logger } from "@miranum-ide/vscode/miranum-vscode";
-import { BpmnModeler } from "./app/BpmnModeler";
-import { DmnModeler } from "./app/DmnModeler";
+import { setContext } from "@miranum-ide/vscode/miranum-vscode";
 
 export function activate(context: ExtensionContext) {
-    try {
-        context.subscriptions.push(Logger.get("Miranum: Modeler"));
-        context.subscriptions.push(BpmnModeler.register(context));
-        context.subscriptions.push(DmnModeler.register(context));
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
+    // 1. Configure the application
+
+    // 2. Set the context
+    const c = setContext(context);
+
+    // 3. Register the commands
+
+    // 4. Register CustomTextEditor
 }
 
 export function deactivate() {}
