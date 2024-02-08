@@ -1,24 +1,5 @@
-import { reverse, uniqBy } from "lodash";
-import {
-    asyncDebounce,
-    FolderContent,
-    MessageType,
-    VsCode,
-    VsCodeImpl,
-    VsCodeMock,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
-import { ContentController, createResolver, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
-import Modeler from "camunda-bpmn-js/lib/base/Modeler";
-import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
-import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
-import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
-import TokenSimulationModule from "bpmn-js-token-simulation";
-import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider";
 // css
 import "./styles.css";
 import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
@@ -26,38 +7,33 @@ import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 
-//
-// Global objects
-//
-declare const process: { env: { NODE_ENV: string } };
-declare const globalViewType: string;
+import {
+    asyncDebounce,
+    BpmnFileQuery,
+    createResolver,
+    ElementTemplatesQuery,
+    FolderContent,
+    FormKeysQuery,
+    GetBpmnFileCommand,
+    GetElementTemplatesCommand,
+    GetFormKeysCommand,
+    LogErrorCommand,
+    MessageType,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
+import { setFormKeys } from "./app";
+import { getVsCodeApi } from "./app/vscode";
 
-let modeler: Modeler;
-let contentController: ContentController;
-
-let vscode: VsCode<ModelerData>;
-if (process.env.NODE_ENV === "development") {
-    const response: ModelerData = {
-        executionPlatformVersion: ExecutionPlatformVersion.Camunda8,
-        bpmn: undefined,
-        additionalFiles: [],
-    };
-    vscode = new VsCodeMock(globalViewType, response);
-} else {
-    vscode = new VsCodeImpl<ModelerData>();
-}
-
+const vscode = getVsCodeApi();
 let isUpdateFromExtension = false;
 const updateXML = asyncDebounce(openXML, 100);
 
-//
-// Logic
-//
+// create resolver to wait for the response from the backend
+const bpmnFileResolver = createResolver<BpmnFileQuery>();
+const formKeysResolver = createResolver<FormKeysQuery>();
+const elementTemplatesResolver = createResolver<ElementTemplatesQuery>();
 
-const resolver = createResolver();
-
-// Listen to messages from the backend/extension
-setupListeners();
+setupListeners(); // Listen to messages from the backend/extension
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -66,58 +42,25 @@ setupListeners();
  * 1. A new .bpmn file was opened
  * 2. User switched to another tab and now switched back
  */
-window.onload = async function () {
+window.onload = async function() {
     try {
-        const state = vscode.getState();
-        if (state && state.data) {
-            // User switched back to the tab with this webview
-            postMessage(
-                MessageType.RESTORE,
-                undefined,
-                "State was restored successfully.",
-            );
+        vscode.postMessage(new GetBpmnFileCommand());
+        vscode.postMessage(new GetFormKeysCommand());
+        vscode.postMessage(new GetElementTemplatesCommand());
 
-            let bpmn = state.data.bpmn;
-            let files = state.data.additionalFiles;
-
-            const newData = await resolver.wait(); // await the response form the backend
-            if (instanceOfModelerData(newData)) {
-                // we only get new data when the user made changes while the webview was destroyed
-                if (newData.bpmn) {
-                    bpmn = newData.bpmn;
-                }
-                if (newData.additionalFiles) {
-                    if (!files) {
-                        files = newData.additionalFiles;
-                    } else {
-                        // replace old values with new ones
-                        files = reverse(
-                            uniqBy(
-                                reverse(files.concat(newData.additionalFiles)),
-                                "type",
-                            ),
-                        );
-                    }
-                }
-            }
-            return init(bpmn, files, state.data.executionPlatformVersion);
-        } else {
-            // A new .bpmn file was opened
-            postMessage(
-                MessageType.INITIALIZE,
-                undefined,
-                "Webview was loaded successfully.",
-            );
-
-            const data = await resolver.wait(); // await the response form the backend
-            if (instanceOfModelerData(data)) {
-                return init(
-                    data.bpmn,
-                    data.additionalFiles,
-                    data.executionPlatformVersion,
-                );
-            }
+        // await the response form the backend
+        const data = await resolver.wait();
+        if (instanceOfModelerData(data)) {
+            return init(data.bpmn, data.additionalFiles, data.executionPlatformVersion);
         }
+        const bpmnFile = await bpmnFileResolver.wait();
+        const formKeys = await formKeysResolver.wait();
+        const elementTemplates = await elementTemplatesResolver.wait();
+
+        if (bpmnFile && formKeys && elementTemplates) {
+            init(bpmnFile, formKeys, elementTemplates);
+        }
+
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : `${error}`;
         postMessage(
@@ -132,22 +75,24 @@ window.onload = async function () {
  * Set the initial data after the webview was loaded.
  * @param bpmn
  * @param files
- * @param executionPlatformVersion
+ * @param engine
  */
 function init(
     bpmn: string | undefined,
-    files: FolderContent[] | undefined,
-    executionPlatformVersion: ExecutionPlatformVersion | undefined,
+    formKeys: string[] | undefined,
+    elementTemplates: JSON[] | undefined,
+    engine: "c7" | "c8" | undefined,
 ): void {
-    if (executionPlatformVersion === undefined) {
-        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
+    if (engine === undefined) {
+        vscode.postMessage(new LogErrorCommand("ExecutionPlatformVersion undefined!"));
         return;
     }
-    modeler = createBpmnModeler(executionPlatformVersion);
+
+    const modeler = createBpmnModeler(engine);
     setupBpmnModelerListener();
 
     contentController = new ContentController(modeler);
-    vscode.updateState({ data: { executionPlatformVersion } });
+    vscode.updateState({ data: { executionPlatformVersion: engine } });
 
     openXML(bpmn);
     setFiles(files);
@@ -329,55 +274,6 @@ function postMessage(type: MessageType, data?: ModelerData, message?: string): v
     }
 }
 
-/**
- * Create the modeler depending on the XML.
- * @param executionPlatformVersion
- */
-function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
-    let bpmnModeler;
-    const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
-
-    switch (executionPlatformVersion) {
-        case ExecutionPlatformVersion.None:
-        case ExecutionPlatformVersion.Camunda7: {
-            bpmnModeler = new BpmnModeler7({
-                container: "#js-canvas",
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
-                additionalModules: [
-                    ...commonModules,
-                    ExtendElementTemplates,
-                    CreateAppendElementTemplatesModule,
-                    miragonProviderModule,
-                ],
-            });
-            break;
-        }
-        case ExecutionPlatformVersion.Camunda8: {
-            bpmnModeler = new BpmnModeler8({
-                container: "#js-canvas",
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                additionalModules: [...commonModules],
-            });
-            break;
-        }
-    }
-
-    return bpmnModeler;
-}
 
 /**
  * Create a list of information that will be sent to the backend and get logged.

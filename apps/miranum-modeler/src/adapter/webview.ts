@@ -1,19 +1,36 @@
 import { Uri, Webview, WebviewPanel } from "vscode";
 import { getContext, getNonce } from "@miranum-ide/vscode/miranum-vscode";
 
+/**
+ * The name of the directory where the necessary files for the webview are located after build.
+ */
 const bpmnModelerWebviewProjectPath = "miranum-modeler-bpmn-webview";
 const dmnModelerWebviewProjectPath = "miranum-modeler-dmn-webview";
 
 let miranumWebviewPanel: WebviewPanel | undefined;
 
-export function setMiranumWebview(webviewPanel: WebviewPanel): Webview {
+export function setMiranumWebview(
+    webviewPanel: WebviewPanel,
+    fileExtension: string,
+): Webview {
     miranumWebviewPanel = webviewPanel;
-    miranumWebviewPanel.webview.options = { enableScripts: true };
-    // TODO: Which modeler should be opened?
-    miranumWebviewPanel.webview.html = bpmnModelerHtml(
-        miranumWebviewPanel.webview,
-        getContext().extensionUri,
-    );
+
+    const webview = miranumWebviewPanel.webview;
+    webview.options = { enableScripts: true };
+
+    if (fileExtension === "bpmn") {
+        webview.html = bpmnModelerHtml(
+            miranumWebviewPanel.webview,
+            getContext().extensionUri,
+        );
+    } else if (fileExtension === "dmn") {
+        webview.html = dmnModelerHtml(
+            miranumWebviewPanel.webview,
+            getContext().extensionUri,
+        );
+    } else {
+        throw new Error(`Unsupported file extension: ${fileExtension}`);
+    }
 
     return miranumWebviewPanel.webview;
 }
@@ -59,7 +76,7 @@ function bpmnModelerHtml(webview: Webview, extensionUri: Uri): string {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${styleUri}" rel="stylesheet">
                 <link href="${fontUri}" rel="stylesheet">
-                <title>Miranum: Camunda Modeler</title>
+                <title>Miranum: BPMN Modeler</title>
             </head>
             <body>
                 <div class="content with-diagram" id="js-properties-panel">
