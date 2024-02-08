@@ -1,6 +1,7 @@
 import Vue from "vue";
-// eslint-disable-next-line import/extensions
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+// eslint-disable-next-line import/extensions
 import VJsf from "@muenchen/vjsf/lib/VJsf.js";
 import '@muenchen/vjsf/lib/VJsf.css';
 // eslint-disable-next-line import/extensions
