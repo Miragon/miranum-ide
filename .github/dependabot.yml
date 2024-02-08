@@ -4,6 +4,7 @@ updates:
   - package-ecosystem: npm
     directory: "/"
     target-branch: "main"
+    open-pull-requests-limit: 30
     labels:
       - "Technical Dept"
     schedule:
@@ -20,6 +21,7 @@ updates:
       interval: weekly
       time: "05:00"
     target-branch: "main"
+    open-pull-requests-limit: 20
     labels:
       - "Technical Dept"
     commit-message:
@@ -33,6 +35,7 @@ updates:
       interval: weekly
       time: "05:00"
     target-branch: "main"
+    open-pull-requests-limit: 20
     labels:
       - "Technical Dept"
     commit-message:
