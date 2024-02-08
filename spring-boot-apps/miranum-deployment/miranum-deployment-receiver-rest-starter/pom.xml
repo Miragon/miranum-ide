@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.miragon.miranum</groupId>
         <artifactId>miranum-deployment-parent</artifactId>
-        <version>0.3.1-SNAPSHOT</version>
+        <version>0.3.2-SNAPSHOT</version>
     </parent>
 
     <dependencies>
@@ -40,7 +40,6 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.2.0</version>
         </dependency>
 
         <!-- miranum-deployment-receiver library -->

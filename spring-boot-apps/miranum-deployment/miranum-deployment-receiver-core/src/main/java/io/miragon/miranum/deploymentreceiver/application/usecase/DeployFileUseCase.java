@@ -39,9 +39,10 @@ public class DeployFileUseCase implements DeployFile {
                 .type(deploymentDto.getType())
                 .filename(deploymentDto.getFilename())
                 .namespace(deploymentDto.getNamespace())
+                .tags(new ArrayList<>(tags))
                 .build();
 
-            miranumDeployment.deploy(deployment, new ArrayList<>(tags));
+            miranumDeployment.deploy(deployment);
 
             return new DeploymentStatus(true, "Deployment was successful");
         } catch (DeploymentFailedException exception) {

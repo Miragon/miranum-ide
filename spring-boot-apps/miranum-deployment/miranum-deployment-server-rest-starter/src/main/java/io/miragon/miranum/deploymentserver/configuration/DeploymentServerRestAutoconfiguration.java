@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Configuration
 @ComponentScan(basePackages = {"io.miragon.miranum.deploymentserver.adapter.out", "io.miragon.miranum.deploymentserver.adapter.in.rest"})
@@ -25,7 +27,8 @@ public class DeploymentServerRestAutoconfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "io.miranum.deploymentserver.rest.enabled", havingValue = "true")
     public DeployFilePort deployFilePort() {
-        return new MiranumRestDeployment(this.deploymentServerRestProperties.getTargets());
+        // create a new MiranumRestDeployment instance with the targets and no customRequestInterceptors
+        return new MiranumRestDeployment(this.deploymentServerRestProperties.getTargets(), List.of());
     }
 
     @Bean
