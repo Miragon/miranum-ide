@@ -15,7 +15,10 @@ import {
 declare const process: { env: { NODE_ENV: string } };
 
 type StateType = {
-    selectedElement: string;
+    bpmnFile: string;
+    engine: string;
+    formKeys: string[];
+    elementTemplates: JSON[];
 };
 
 type MessageType = Command | Query;
@@ -31,15 +34,12 @@ export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
 export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
     override updateState(state: Partial<StateType>): void {
         const currentState = this.getState();
-        let selectedElement: string;
-        if (state.selectedElement) {
-            selectedElement = state.selectedElement;
-        } else {
-            selectedElement = currentState.selectedElement;
-        }
 
         this.state = {
-            selectedElement,
+            bpmnFile: state.bpmnFile ?? currentState.bpmnFile,
+            engine: state.engine ?? currentState.engine,
+            formKeys: state.formKeys ?? currentState.formKeys,
+            elementTemplates: state.elementTemplates ?? currentState.elementTemplates,
         };
 
         console.debug("[Debug] updateState()", this.getState());
@@ -48,7 +48,6 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
     override postMessage(message: MessageType): void {
         switch (true) {
             case message.type === "GetBpmnFileCommand": {
-                // TODO: Use an actual bpmn file content
                 dispatchEvent(new BpmnFileQuery("", "c7"));
                 break;
             }
@@ -57,10 +56,7 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 break;
             }
             case message.type === "GetElementTemplatesCommand": {
-                // TODO: Use actual element templates
-                dispatchEvent(
-                    new ElementTemplatesQuery(["elementTemplate1", "elementTemplate2"]),
-                );
+                dispatchEvent(new ElementTemplatesQuery([elementTemplate]));
                 break;
             }
             case message.type === "SyncDocumentCommand": {
@@ -94,3 +90,177 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
         }
     }
 }
+
+const elementTemplate = `
+{
+  "name": "Send E-Mail",
+  "id": "de.muenchen.digitalwf.templates.send-email",
+  "appliesTo": [
+    "bpmn:CallActivity"
+  ],
+  "properties": [
+    {
+      "label": "Template",
+      "type": "String",
+      "editable": false,
+      "value": "StreamingTemplateV02",
+      "binding": {
+        "type": "property",
+        "name": "calledElement"
+      }
+    },
+    {
+      "label": "Event Topic",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "app_topic_name",
+        "target": "app_topic_name"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Event Message",
+      "type": "String",
+      "editable": false,
+      "value": "genericEvent",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "app_message_name",
+        "target": "app_message_name"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Type Header",
+      "type": "String",
+      "editable": false,
+      "value": "sendMailFromEventBus",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "app_type_name",
+        "target": "app_type_name"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Receiver (CC)",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "receiversCc",
+        "target": "receiversCc"
+      },
+      "constraints": {
+        "notEmpty": false
+      }
+    },
+    {
+      "label": "Receiver (BCC)",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "receiversBcc",
+        "target": "receiversBcc"
+      },
+      "constraints": {
+        "notEmpty": false
+      }
+    },
+    {
+      "label": "Receiver",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "receivers",
+        "target": "receivers"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Subject",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "subject",
+        "target": "subject"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Body",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "body",
+        "target": "body"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Reply-To Address",
+      "type": "String",
+      "value": "",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "replyTo",
+        "target": "replyTo"
+      }
+    },
+    {
+      "label": "Attachment Paths (S3)",
+      "type": "String",
+      "value": "",
+      "description": "Array of presigned urls created with s3 integration",
+      "binding": {
+        "type": "camunda:in",
+        "expression": true,
+        "name": "attachments",
+        "target": "attachments"
+      },
+      "constraints": {
+        "notEmpty": false
+      }
+    },
+    {
+      "label": "Dispatch Status",
+      "value": "mailSentStatus",
+      "type": "String",
+      "binding": {
+        "type": "camunda:out",
+        "source": "mailSentStatus"
+      },
+      "constraints": {
+        "notEmpty": false
+      }
+    }
+  ]
+}
+`;

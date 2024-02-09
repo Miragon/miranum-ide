@@ -1,6 +1,7 @@
 import { Command, Query } from "./messages";
 
-// ======Queries=====>
+// =================================== Queries ==================================>
+
 export abstract class MiranumModelerQuery implements Query {
     public readonly type: string;
 
@@ -39,9 +40,10 @@ export class ElementTemplatesQuery extends MiranumModelerQuery {
     }
 }
 
-// <=====Queries======
+// <================================== Queries ===================================
+//
+// =================================== Commands ==================================>
 
-// ======Commands=====>
 export abstract class MiranumModelerCommand implements Command {
     public readonly type: string;
 
@@ -77,4 +79,10 @@ export class SyncDocumentCommand extends MiranumModelerCommand {
     }
 }
 
-// <=====Commands======
+export class AlignElementsToOriginCommand extends MiranumModelerCommand {
+    constructor() {
+        super("AlignElementsToOriginCommand");
+    }
+}
+
+// <================================== Commands ===================================
