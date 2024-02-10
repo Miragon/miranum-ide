@@ -57,9 +57,9 @@
   "contributes": {
     "customEditors": [
       {
-        "id": "bpmn-modeler",
-        "viewType": "bpmn-modeler",
-        "displayName": "BPMN Modeler",
+        "id": "miranum-bpmn-modeler",
+        "viewType": "miranum-bpmn-modeler",
+        "displayName": "Miranum: BPMN Modeler",
         "selector": [
           {
             "filenamePattern": "*.bpmn"
@@ -68,9 +68,9 @@
         "priority": "default"
       },
       {
-        "id": "dmn-modeler",
-        "viewType": "dmn-modeler",
-        "displayName": "DMN Modeler",
+        "id": "miranum-dmn-modeler",
+        "viewType": "miranum-dmn-modeler",
+        "displayName": "Miranum: DMN Modeler",
         "selector": [
           {
             "filenamePattern": "*.dmn"
@@ -81,74 +81,54 @@
     ],
     "commands": [
       {
-        "command": "bpmn-modeler.toggleTextEditor",
+        "command": "miranum-modeler.toggleTextEditor",
         "title": "Miranum: Toggle Standard Text Editor",
         "icon": "$(notebook-mimetype)"
       },
       {
-        "command": "bpmn-modeler.toggleLogger",
-        "title": "Miranum: Toggle Logging Information",
-        "icon": "$(callstack-view-session)"
-      },
-      {
-        "command": "dmn-modeler.toggleTextEditor",
-        "title": "Miranum: Toggle Standard Text Editor",
-        "icon": "$(notebook-mimetype)"
-      },
-      {
-        "command": "dmn-modeler.toggleLogger",
+        "command": "miranum-modeler.toggleLogger",
         "title": "Miranum: Toggle Logging Information",
         "icon": "$(callstack-view-session)"
       }
     ],
     "keybindings": [
       {
-        "command": "bpmn-modeler.toggleTextEditor",
+        "command": "miranum-modeler.toggleTextEditor",
         "key": "ctrl+shift+e",
-        "when": "bpmn-modeler.openCustomEditors > 0"
+        "when": "miranum-modeler.openCustomEditors > 0"
       },
       {
-        "command": "bpmn-modeler.toggleLogger",
+        "command": "miranum-modeler.toggleLogger",
         "key": "ctrl+shift+l",
-        "when": "bpmn-modeler.openCustomEditors > 0"
+        "when": "miranum-modeler.openCustomEditors > 0"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "bpmn-modeler.toggleTextEditor",
-          "when": "bpmn-modeler.openCustomEditors > 0"
+          "command": "miranum-modeler.toggleTextEditor",
+          "when": "miranum-modeler.openCustomEditors > 0"
         },
         {
-          "command": "bpmn-modeler.toggleLogger",
-          "when": "bpmn-modeler.openCustomEditors > 0"
+          "command": "miranum-modeler.toggleLogger",
+          "when": "miranum-modeler.openCustomEditors > 0"
         }
       ],
       "editor/title": [
         {
-          "command": "bpmn-modeler.toggleTextEditor",
+          "command": "miranum-modeler.toggleTextEditor",
           "group": "navigation",
           "when": "activeWebviewPanelId == 'bpmn-modeler'"
         },
         {
-          "command": "bpmn-modeler.toggleLogger",
+          "command": "miranum-modeler.toggleLogger",
           "group": "navigation",
           "when": "activeWebviewPanelId == 'bpmn-modeler'"
-        },
-        {
-          "command": "dmn-modeler.toggleTextEditor",
-          "group": "navigation",
-          "when": "activeWebviewPanelId == 'dmn-modeler'"
-        },
-        {
-          "command": "dmn-modeler.toggleLogger",
-          "group": "navigation",
-          "when": "activeWebviewPanelId == 'dmn-modeler'"
         }
       ]
     },
     "configuration": {
-      "title": "MiranumModeler",
+      "title": "MiranumBpmnModeler",
       "properties": {
         "miranumIDE.modeler.alignToOrigin": {
           "type": "boolean",

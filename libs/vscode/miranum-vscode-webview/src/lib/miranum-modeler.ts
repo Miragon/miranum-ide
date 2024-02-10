@@ -22,6 +22,15 @@ export class BpmnFileQuery extends MiranumModelerQuery {
     }
 }
 
+export class DmnFileQuery extends MiranumModelerQuery {
+    public readonly content: string;
+
+    constructor(content: string) {
+        super("DmnFileQuery");
+        this.content = content;
+    }
+}
+
 export class FormKeysQuery extends MiranumModelerQuery {
     public readonly formKeys: string[];
 

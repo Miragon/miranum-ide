@@ -1,5 +1,12 @@
 import { Uri, Webview, WebviewPanel } from "vscode";
+
 import { getContext, getNonce } from "@miranum-ide/vscode/miranum-vscode";
+import {
+    MiranumModelerCommand,
+    MiranumModelerQuery,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+
+let miranumWebviewPanel: WebviewPanel | undefined;
 
 /**
  * The name of the directory where the necessary files for the webview are located after build.
@@ -7,32 +14,32 @@ import { getContext, getNonce } from "@miranum-ide/vscode/miranum-vscode";
 const bpmnModelerWebviewProjectPath = "miranum-modeler-bpmn-webview";
 const dmnModelerWebviewProjectPath = "miranum-modeler-dmn-webview";
 
-let miranumWebviewPanel: WebviewPanel | undefined;
+export type MiranumModelerViewType = "miranum-bpmn-modeler" | "miranum-dmn-modeler";
 
-export function setMiranumWebview(
+export function createMiranumWebview(
     webviewPanel: WebviewPanel,
-    fileExtension: string,
-): Webview {
+    viewType: MiranumModelerViewType,
+): WebviewPanel {
     miranumWebviewPanel = webviewPanel;
 
     const webview = miranumWebviewPanel.webview;
     webview.options = { enableScripts: true };
 
-    if (fileExtension === "bpmn") {
+    if (viewType === "miranum-bpmn-modeler") {
         webview.html = bpmnModelerHtml(
             miranumWebviewPanel.webview,
             getContext().extensionUri,
         );
-    } else if (fileExtension === "dmn") {
+    } else if (viewType === "miranum-dmn-modeler") {
         webview.html = dmnModelerHtml(
             miranumWebviewPanel.webview,
             getContext().extensionUri,
         );
     } else {
-        throw new Error(`Unsupported file extension: ${fileExtension}`);
+        throw new Error(`Unsupported file extension: ${viewType}`);
     }
 
-    return miranumWebviewPanel.webview;
+    return miranumWebviewPanel;
 }
 
 export function getMiranumWebview(): Webview {
@@ -42,6 +49,10 @@ export function getMiranumWebview(): Webview {
     return miranumWebviewPanel.webview;
 }
 
+export function setMiranumWebviewPanel(webviewPanel: WebviewPanel) {
+    miranumWebviewPanel = webviewPanel;
+}
+
 export function disposeWebview() {
     if (miranumWebviewPanel) {
         miranumWebviewPanel.dispose();
@@ -49,14 +60,14 @@ export function disposeWebview() {
     }
 }
 
-// TODO: Change the type of the message parameter to a more specific type.
-export function onDidReceiveMessage(callback: (message: any) => void) {
+export function onDidReceiveMessage(callback: (message: MiranumModelerCommand) => void) {
     miranumWebviewPanel?.webview.onDidReceiveMessage(callback);
 }
 
-// TODO: Change the type of the message parameter to a more specific type.
-export function onDidChangeViewState(callback: (e: any) => void) {
-    miranumWebviewPanel?.onDidChangeViewState(callback);
+export async function postMessage(
+    message: MiranumModelerCommand | MiranumModelerQuery,
+): Promise<boolean> {
+    return getMiranumWebview().postMessage(message);
 }
 
 function bpmnModelerHtml(webview: Webview, extensionUri: Uri): string {

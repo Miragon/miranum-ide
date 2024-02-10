@@ -16,7 +16,7 @@ declare const process: { env: { NODE_ENV: string } };
 
 type StateType = {
     bpmnFile: string;
-    engine: string;
+    engine: "c7" | "c8";
     formKeys: string[];
     elementTemplates: JSON[];
 };

@@ -1,4 +1,4 @@
-import { TextDocument } from "vscode";
+import { TextDocument, TextDocumentChangeEvent, workspace } from "vscode";
 
 let document: TextDocument | undefined;
 
@@ -12,4 +12,10 @@ export function getDocument(): TextDocument {
         throw new Error("No document set.");
     }
     return document;
+}
+
+export function onDidChangeTextDocument(
+    callback: (event: TextDocumentChangeEvent) => void,
+): void {
+    workspace.onDidChangeTextDocument(callback);
 }

@@ -1,69 +1,69 @@
 import { inject, singleton } from "tsyringe";
 
 import { onDidReceiveMessage } from "../webview";
-import { SendToWebviewInPort, SyncDocumentInPort } from "../../application/ports/in";
+import {
+    RestoreBpmnModelerInPort,
+    RestoreDmnModelerInPort,
+    SendToBpmnModelerInPort,
+    SendToDmnModelerInPort,
+    SyncDocumentInPort,
+} from "../../application/ports/in";
+import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 @singleton()
-class WebviewAdapter {
+export class BpmnModelerAdapter {
     constructor(
-        @inject("SendBpmnFileInPort")
-        private readonly sendToWebviewInPort: SendToWebviewInPort,
+        @inject("SendToBpmnFileInPort")
+        private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
+        @inject("RestoreBpmnModelerInPort")
+        private readonly restoreBpmnModelerInPort: RestoreBpmnModelerInPort,
     ) {
-        onDidReceiveMessage((message: any) => {
+        onDidReceiveMessage((message: MiranumModelerCommand) => {
             switch (message.type) {
                 case "GetBpmnFileCommand": {
-                    this.sendBpmnFile();
-                    break;
-                }
-                case "GetDmnFileCommand": {
-                    this.sendDmnFile();
+                    this.sendToBpmnModelerInPort.sendBpmnFile();
                     break;
                 }
                 case "GetFormKeysTemplatesCommand": {
-                    this.sendFormKeysTemplates();
+                    this.sendToBpmnModelerInPort.sendFormKeys();
                     break;
                 }
                 case "GetElementTemplatesCommand": {
-                    this.sendElementTemplates();
+                    this.sendToBpmnModelerInPort.sendElementTemplates();
                     break;
                 }
                 case "SyncDocumentCommand": {
-                    this.syncDocument();
+                    this.syncDocumentInPort.syncDocument();
+                    break;
+                }
+                case "RestoreWebviewCommand": {
+                    this.restoreBpmnModelerInPort.restoreBpmnModeler();
                     break;
                 }
             }
         });
     }
+}
 
-    sendBpmnFile(): void {
-        if (this.sendToWebviewInPort.sendBpmnFile()) {
-            console.log("Bpmn file content response");
-        }
-    }
-
-    sendDmnFile(): void {
-        if (this.sendToWebviewInPort.sendDmnFile()) {
-            console.log("Dmn file content response");
-        }
-    }
-
-    sendElementTemplates(): void {
-        if (this.sendToWebviewInPort.sendElementTemplates()) {
-            console.log("Element templates response");
-        }
-    }
-
-    sendFormKeysTemplates(): void {
-        if (this.sendToWebviewInPort.sendFormKeys()) {
-            console.log("Forms templates response");
-        }
-    }
-
-    syncDocument(): void {
-        if (this.syncDocumentInPort.syncDocument()) {
-            console.log("Sync document");
-        }
+@singleton()
+export class DmnModelerAdapter {
+    constructor(
+        @inject("SendToDmnFileInPort")
+        private readonly sendToDmnModelerInPort: SendToDmnModelerInPort,
+        @inject("SyncDocumentInPort")
+        private readonly syncDocumentInPort: SyncDocumentInPort,
+        @inject("RestoreDmnModelerInPort")
+        private readonly restoreDmnModelerInPort: RestoreDmnModelerInPort,
+    ) {
+        onDidReceiveMessage((message: MiranumModelerCommand) => {
+            switch (message.type) {
+                case "GetDmnFileCommand": {
+                    this.sendToDmnModelerInPort.sendDmnFile();
+                    break;
+                }
+            }
+        });
     }
 }

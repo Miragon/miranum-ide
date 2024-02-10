@@ -1,21 +1,27 @@
-export interface SendToWebviewInPort {
-    sendBpmnFile(): boolean;
+export interface SendToBpmnModelerInPort {
+    sendBpmnFile(): Promise<boolean>;
 
-    sendDmnFile(): boolean;
+    sendFormKeys(): Promise<boolean>;
 
-    sendFormKeys(): boolean;
+    sendElementTemplates(): Promise<boolean>;
+}
 
-    sendElementTemplates(): boolean;
+export interface SendToDmnModelerInPort {
+    sendDmnFile(): Promise<boolean>;
 }
 
 export interface SyncDocumentInPort {
     syncDocument(): boolean;
 }
 
-export interface SyncWebviewInPort {}
+export interface SyncWebviewInPort {
+    syncWebview(): boolean;
+}
 
-export interface RestoreWebviewInPort {}
+export interface RestoreBpmnModelerInPort {
+    restoreBpmnModeler(): Promise<void>;
+}
 
-export interface ReadVsCodeConfigInPort {}
-
-export interface ReadJsonFormInPort {}
+export interface RestoreDmnModelerInPort {
+    restoreDmnModeler(): Promise<void>;
+}

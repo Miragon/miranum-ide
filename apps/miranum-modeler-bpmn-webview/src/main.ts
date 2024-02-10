@@ -20,6 +20,7 @@ import {
     LogInfoCommand,
     MiranumModelerCommand,
     MiranumModelerQuery,
+    MissingStateError,
     SyncDocumentCommand,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 import {
@@ -57,22 +58,27 @@ window.onload = async function() {
     window.addEventListener("message", onReceiveMessage);
 
     try {
-        vscode.postMessage(new GetBpmnFileCommand());
-        vscode.postMessage(new GetFormKeysCommand());
-        vscode.postMessage(new GetElementTemplatesCommand());
-
-        const [bpmnFile, formKeys, elementTemplates] = await Promise.all([
-            bpmnFileResolver.wait(),
-            formKeysResolver.wait(),
-            elementTemplatesResolver.wait(),
-        ]);
-
-
-        await init(bpmnFile?.content, bpmnFile?.engine, formKeys?.formKeys, elementTemplates?.elementTemplates);
-
+        const state = vscode.getState();
+        const [bpmnFile, engine, formKeys, elementTemplates] = [state.bpmnFile, state.engine, state.formKeys, state.elementTemplates];
+        await init(bpmnFile, engine, formKeys, elementTemplates);
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : `${error}`;
-        vscode.postMessage(new LogErrorCommand(`Something went wrong when initializing the webview!\n${message}`));
+        if (error instanceof MissingStateError) {
+            vscode.postMessage(new GetBpmnFileCommand());
+            vscode.postMessage(new GetFormKeysCommand());
+            vscode.postMessage(new GetElementTemplatesCommand());
+
+            const [bpmnFile, formKeys, elementTemplates] = await Promise.all([
+                bpmnFileResolver.wait(),
+                formKeysResolver.wait(),
+                elementTemplatesResolver.wait(),
+            ]);
+
+
+            await init(bpmnFile?.content, bpmnFile?.engine, formKeys?.formKeys, elementTemplates?.elementTemplates);
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(new LogErrorCommand(`Something went wrong when initializing the webview!\n${message}`));
+        }
     }
 };
 
