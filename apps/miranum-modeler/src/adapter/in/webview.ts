@@ -11,7 +11,7 @@ import {
 import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 @singleton()
-export class BpmnModelerAdapter {
+export class BpmnWebviewAdapter {
     constructor(
         @inject("SendToBpmnFileInPort")
         private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
@@ -48,7 +48,7 @@ export class BpmnModelerAdapter {
 }
 
 @singleton()
-export class DmnModelerAdapter {
+export class DmnWebviewAdapter {
     constructor(
         @inject("SendToDmnFileInPort")
         private readonly sendToDmnModelerInPort: SendToDmnModelerInPort,

@@ -25,3 +25,28 @@ export interface RestoreBpmnModelerInPort {
 export interface RestoreDmnModelerInPort {
     restoreDmnModeler(): Promise<void>;
 }
+
+export interface SetArtifactsInPort {
+    setArtifacts(setArtifactCommand: FilePathCommand): Promise<void>;
+}
+
+export class FilePathCommand {
+    private readonly _path: string;
+
+    constructor(path: string) {
+        this._path = this.validatePath(path);
+    }
+
+    get path(): string {
+        return this._path;
+    }
+
+    private validatePath(path: string): string {
+        const segments = path.split("/");
+        const lastSegment = segments[segments.length - 1];
+        if (lastSegment.includes(".")) {
+            return segments.slice(0, -1).join("/");
+        }
+        return path;
+    }
+}

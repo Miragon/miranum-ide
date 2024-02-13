@@ -1,23 +1,48 @@
 import { container } from "tsyringe";
 
 import {
-    BpmnModelerAdapter as BpmnModelerInAdapter,
-    DmnModelerAdapter as DmnModelerInAdapter,
+    BpmnModelerAdapter,
+    BpmnWebviewAdapter as BpmnWebviewInAdapter,
+    DmnModelerAdapter,
+    DmnWebviewAdapter as DmnWebviewInAdapter,
 } from "./adapter/in";
 import {
+    ReadMiranumJsonUseCase,
     RestoreBpmnModelerUseCase,
     RestoreDmnModelerUseCase,
     SendToBpmnModelerUseCase,
     SendToDmnModelerUseCase,
 } from "./application/useCases";
 import {
-    BpmnModelerAdapter as BpmnModelerOutAdapter,
-    DmnModelerAdapter as DmnModelerOutAdapter,
+    BpmnWebviewAdapter as BpmnWebviewOutAdapter,
+    DmnWebviewAdapter as DmnWebviewOutAdapter,
+    ReadDigiWfFormKeysAdapter,
+    ReadElementTemplatesAdapter,
+    ReadMiranumJsonAdapter,
+    VsCodeReadAdapter,
 } from "./adapter/out";
 
-export function configBpmnModeler(): void {
+export function config(): void {
     // Out Adapter
-    container.register("SendToBpmnModelerOutPort", BpmnModelerOutAdapter);
+    container.register("VsCodeReadOutPort", { useClass: VsCodeReadAdapter });
+    container.register("ReadMiranumJsonOutPort", { useClass: ReadMiranumJsonAdapter });
+
+    // Use Cases
+    container.register("SetArtifactsInPort", { useClass: ReadMiranumJsonUseCase });
+
+    configBpmnModeler();
+    configDmnModeler();
+}
+
+function configBpmnModeler(): void {
+    container.register("BpmnModelerViewType", { useValue: "miranum-bpmn-modeler" });
+
+    // Out Adapter
+    container.register("ReadElementTemplatesOutPort", {
+        useClass: ReadElementTemplatesAdapter,
+    });
+    container.register("ReadFormKeysOutPort", { useClass: ReadDigiWfFormKeysAdapter });
+    container.register("SendToBpmnModelerOutPort", BpmnWebviewOutAdapter);
 
     // Use Cases
     container.register("SendToBpmnModelerInPort", {
@@ -28,12 +53,15 @@ export function configBpmnModeler(): void {
     });
 
     // In Adapter
-    container.register(BpmnModelerInAdapter, { useClass: BpmnModelerInAdapter });
+    container.register(BpmnModelerAdapter, { useClass: BpmnModelerAdapter });
+    container.register(BpmnWebviewInAdapter, { useClass: BpmnWebviewInAdapter });
 }
 
-export function configDmnModeler(): void {
+function configDmnModeler(): void {
+    container.register("DmnModelerViewType", { useValue: "miranum-dmn-modeler" });
+
     // Out Adapter
-    container.register("SendToDmnModelerOutPort", DmnModelerOutAdapter);
+    container.register("SendToDmnModelerOutPort", DmnWebviewOutAdapter);
 
     // Use Cases
     container.register("SendToDmnModelerInPort", {
@@ -44,5 +72,6 @@ export function configDmnModeler(): void {
     });
 
     // In Adapter
-    container.register(DmnModelerInAdapter, { useClass: DmnModelerInAdapter });
+    container.register(DmnModelerAdapter, { useClass: DmnModelerAdapter });
+    container.register(DmnWebviewInAdapter, { useClass: DmnWebviewInAdapter });
 }

@@ -3,8 +3,8 @@ import { inject, singleton } from "tsyringe";
 import { SendToBpmnModelerInPort, SendToDmnModelerInPort } from "../ports/in";
 import {
     DocumentOutPort,
-    ReadDigiWfFormKeysOutPort,
     ReadElementTemplatesOutPort,
+    ReadFormKeysOutPort,
     SendToBpmnModelerOutPort,
     SendToDmnModelerOutPort,
 } from "../ports/out";
@@ -16,7 +16,7 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
         @inject("ReadFileOutPort")
         private readonly readElementTemplateOutPort: ReadElementTemplatesOutPort,
         @inject("ReadFormKeysOutPort")
-        private readonly readFormKeysOutPort: ReadDigiWfFormKeysOutPort,
+        private readonly readFormKeysOutPort: ReadFormKeysOutPort,
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
         @inject("SendToWebviewOutPort")
@@ -48,25 +48,29 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
     }
 
     async sendFormKeys(): Promise<boolean> {
-        const path = this.documentOutPort.getWorkspacePath();
-        const formKeys = this.readFormKeysOutPort.readFormKeys(path);
+        const formKeys = await this.readFormKeysOutPort.readFormKeys();
+
         successfulMessageToBpmnModeler.formKeys =
             await this.sendToWebviewOutPort.sendFormKeys(formKeys);
+
         if (!successfulMessageToBpmnModeler.formKeys) {
             // TODO: Log the error and show message
         }
+
         return successfulMessageToBpmnModeler.formKeys;
     }
 
     async sendElementTemplates(): Promise<boolean> {
-        const path = this.documentOutPort.getWorkspacePath();
         const elementTemplates =
-            this.readElementTemplateOutPort.readElementTemplates(path);
+            await this.readElementTemplateOutPort.readElementTemplates();
+
         successfulMessageToBpmnModeler.elementTemplates =
             await this.sendToWebviewOutPort.sendElementTemplates(elementTemplates);
+
         if (!successfulMessageToBpmnModeler.elementTemplates) {
             // TODO: Log the error and show message
         }
+
         return successfulMessageToBpmnModeler.elementTemplates;
     }
 }

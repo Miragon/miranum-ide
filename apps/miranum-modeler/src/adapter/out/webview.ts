@@ -11,7 +11,7 @@ import {
 } from "../../application/ports/out";
 import { postMessage } from "../webview";
 
-export class BpmnModelerAdapter implements SendToBpmnModelerOutPort {
+export class BpmnWebviewAdapter implements SendToBpmnModelerOutPort {
     async sendBpmnFile(
         executionPlatform: "c7" | "c8",
         bpmnFile: string,
@@ -31,7 +31,7 @@ export class BpmnModelerAdapter implements SendToBpmnModelerOutPort {
     }
 }
 
-export class DmnModelerAdapter implements SendToDmnModelerOutPort {
+export class DmnWebviewAdapter implements SendToDmnModelerOutPort {
     async sendDmnFile(dmnFile: string): Promise<boolean> {
         const dmnFileQuery = new DmnFileQuery(dmnFile);
         return postMessage(dmnFileQuery);
