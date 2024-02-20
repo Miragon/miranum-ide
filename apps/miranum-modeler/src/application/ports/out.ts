@@ -91,10 +91,6 @@ export interface VsCodeReadOutPort {
     readFile(path: string): Promise<string>;
 }
 
-export interface ArtifactOutPort {
-    getFiles(workspace: string, fileExtension: string): Promise<string[]>;
-}
-
 export interface ShowMessageOutPort {
     showInfoMessage(message: string): void;
 

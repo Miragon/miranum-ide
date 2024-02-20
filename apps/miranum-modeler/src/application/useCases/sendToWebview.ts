@@ -6,7 +6,6 @@ import {
     DisplayDmnModelerInPort,
 } from "../ports/in";
 import {
-    ArtifactOutPort,
     DocumentOutPort,
     SendToBpmnModelerOutPort,
     SendToDmnModelerOutPort,
@@ -88,8 +87,6 @@ export class DisplayArtifactsUseCase implements DisplayBpmnModelerArtifactInPort
         private readonly workspaceOutPort: WorkspaceOutPort,
         @inject("VsCodeReadOutPort")
         private readonly vsCodeReadOutPort: VsCodeReadOutPort,
-        @inject("ArtifactOutPort")
-        private readonly artifactOutPort: ArtifactOutPort,
         @inject("SendToBpmnModelerOutPort")
         private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
         @inject("ShowMessageOutPort")
@@ -101,18 +98,30 @@ export class DisplayArtifactsUseCase implements DisplayBpmnModelerArtifactInPort
             const document = this.documentOutPort.getFilePath();
             const miranumConfigPath = await this.getMiranumConfigFile(document);
 
-            // TODO: The type is hardcoded but depends on the config
+            // FIXME: The type is hardcoded but depends on the config
             const workspaceItem =
                 (await this.getWorkspaceItem("form", miranumConfigPath)) ??
                 defaultFormConfig;
 
-            const formFiles = await this.artifactOutPort.getFiles(
-                miranumConfigPath.replace("/miranum.json", workspaceItem.path),
+            const formFiles = await this.getArtifacts(
+                miranumConfigPath.replace("miranum.json", workspaceItem.path),
                 workspaceItem.extension,
             );
 
+            const formKeys = Promise.all(
+                formFiles.map(async (file) => {
+                    return getFormKey(
+                        workspaceItem.extension,
+                        await this.vsCodeReadOutPort.readFile(file),
+                    );
+                }),
+            );
+
             successfulMessageToBpmnModeler.formKeys =
-                await this.sendToBpmnModelerOutPort.sendFormKeys(document, formKeys);
+                await this.sendToBpmnModelerOutPort.sendFormKeys(
+                    document,
+                    (await formKeys).filter((key): key is string => !!key),
+                );
 
             if (!successfulMessageToBpmnModeler.formKeys) {
                 // TODO: Log the error
@@ -193,6 +202,20 @@ export class DisplayArtifactsUseCase implements DisplayBpmnModelerArtifactInPort
             }
             return undefined;
         }
+    }
+
+    private async getArtifacts(folder: string, extension: string): Promise<string[]> {
+        const ws = await this.vsCodeReadOutPort.readDirectory(folder);
+
+        const files: string[] = [];
+        for (const [name, type] of ws) {
+            if (type === "directory") {
+                files.push(...(await this.getArtifacts(`${folder}/${name}`, extension)));
+            } else if (type === "file" && name.endsWith(extension)) {
+                files.push(`${folder}/${name}`);
+            }
+        }
+        return files;
     }
 }
 
@@ -305,5 +328,27 @@ export class SendToDmnModelerUseCase implements DisplayDmnModelerInPort {
             );
             return false;
         }
+    }
+}
+
+function getFormKey(extension: string, file: string): string | undefined {
+    switch (extension) {
+        case ".form": {
+            // DigiWf Form
+            const json = JSON.parse(file);
+            if (json.key) {
+                return json.key as string;
+            } else {
+                return undefined;
+            }
+        }
+        case ".form.json": {
+            // JSON Form
+            // TODO: Implement
+            return undefined;
+            break;
+        }
+        default:
+            return undefined;
     }
 }

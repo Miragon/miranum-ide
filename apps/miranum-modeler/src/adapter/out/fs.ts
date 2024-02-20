@@ -1,39 +1,9 @@
 import { FileType, Uri, workspace } from "vscode";
-import { inject, singleton } from "tsyringe";
 
-import { ArtifactOutPort, VsCodeReadOutPort } from "../../application/ports/out";
-
+import { VsCodeReadOutPort } from "../../application/ports/out";
 import { FileNotFound } from "../../application/errors";
 
 const fs = workspace.fs;
-
-@singleton()
-export class ReadArtifactAdapter implements ArtifactOutPort {
-    constructor(
-        @inject("VsCodeReadOutPort")
-        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
-    ) {}
-
-    async getFiles(directory: string, extension: string): Promise<string[]> {
-        const ws = await fs.readDirectory(Uri.file(directory));
-
-        const files: string[] = [];
-        for (const [name, type] of ws) {
-            if (type === FileType.Directory) {
-                files.push(...(await this.getFiles(`${directory}/${name}`, extension)));
-            } else if (type === FileType.File && name.endsWith(extension)) {
-                files.push(`${directory}/${name}`);
-            }
-        }
-        return files;
-    }
-
-    async readArtifacts(artifacts: string[]): Promise<string[]> {
-        return Promise.all(
-            artifacts.map((artifact) => this.vsCodeReadOutPort.readFile(artifact)),
-        );
-    }
-}
 
 export class VsCodeReadAdapter implements VsCodeReadOutPort {
     async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
