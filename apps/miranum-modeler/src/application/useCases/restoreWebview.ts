@@ -41,6 +41,6 @@ export class RestoreDmnModelerUseCase implements RestoreDmnModelerInPort {
 
     async restoreDmnModeler(): Promise<void> {
         if (!successfulMessageToDmnModeler.dmn)
-            this.sendToDmnModelerInPort.sendDmnFile();
+            this.sendToDmnModelerInPort.displayDmnFile();
     }
 }

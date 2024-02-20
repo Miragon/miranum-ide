@@ -10,9 +10,7 @@ import {
     createMiranumWebview,
     setDocument,
     setMiranumWebviewPanel,
-    setWorkspace,
 } from "../helper/vscode";
-import { FilePathCommand } from "../../application/ports/in";
 
 @singleton()
 export class BpmnModelerAdapter implements CustomTextEditorProvider {
@@ -27,7 +25,6 @@ export class BpmnModelerAdapter implements CustomTextEditorProvider {
         token: CancellationToken,
     ): void | Thenable<void> {
         try {
-            setWorkspace(new FilePathCommand(document.uri.path));
             setDocument(document);
             const wp = createMiranumWebview(
                 document.uri.path,
@@ -37,7 +34,6 @@ export class BpmnModelerAdapter implements CustomTextEditorProvider {
 
             webviewPanel.onDidChangeViewState((e) => {
                 if (e.webviewPanel.active) {
-                    setWorkspace(new FilePathCommand(document.uri.path));
                     setDocument(document);
                     setMiranumWebviewPanel(document.uri.path, wp);
                 }
@@ -61,7 +57,6 @@ export class DmnModelerAdapter implements CustomTextEditorProvider {
         token: CancellationToken,
     ): void | Thenable<void> {
         try {
-            setWorkspace(new FilePathCommand(document.uri.path));
             setDocument(document);
             const wp = createMiranumWebview(
                 document.uri.path,
@@ -71,7 +66,6 @@ export class DmnModelerAdapter implements CustomTextEditorProvider {
 
             webviewPanel.onDidChangeViewState((e) => {
                 if (e.webviewPanel.active) {
-                    setWorkspace(new FilePathCommand(document.uri.path));
                     setDocument(document);
                     setMiranumWebviewPanel(document.uri.path, wp);
                 }

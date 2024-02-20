@@ -305,7 +305,7 @@ export class SendToDmnModelerUseCase implements DisplayDmnModelerInPort {
         private readonly showMessageOutPort: ShowMessageOutPort,
     ) {}
 
-    async sendDmnFile(): Promise<boolean> {
+    async displayDmnFile(): Promise<boolean> {
         try {
             const webviewId = this.documentOutPort.getFilePath();
             const dmnFile = this.documentOutPort.getContent();

@@ -2,6 +2,7 @@ import { inject, singleton } from "tsyringe";
 
 import { onDidReceiveMessage } from "../helper/vscode";
 import {
+    DisplayBpmnModelerArtifactInPort,
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
     RestoreBpmnModelerInPort,
@@ -13,8 +14,10 @@ import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webvie
 @singleton()
 export class BpmnWebviewAdapter {
     constructor(
-        @inject("SendToBpmnModelerInPort")
-        private readonly sendToBpmnModelerInPort: DisplayBpmnModelerInPort,
+        @inject("DisplayBpmnModelerInPort")
+        private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
+        @inject("DisplayBpmnModelerArtifactInPort")
+        private readonly displayBpmnModelerArtifactInPort: DisplayBpmnModelerArtifactInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreBpmnModelerInPort")
@@ -23,15 +26,15 @@ export class BpmnWebviewAdapter {
         onDidReceiveMessage((message: MiranumModelerCommand) => {
             switch (message.type) {
                 case "GetBpmnFileCommand": {
-                    this.sendToBpmnModelerInPort.sendBpmnFile();
+                    this.displayBpmnModelerInPort.displayBpmnFile();
                     break;
                 }
                 case "GetFormKeysTemplatesCommand": {
-                    this.sendToBpmnModelerInPort.sendFormKeys();
+                    this.displayBpmnModelerArtifactInPort.sendFormKeys();
                     break;
                 }
                 case "GetElementTemplatesCommand": {
-                    this.sendToBpmnModelerInPort.sendElementTemplates();
+                    this.displayBpmnModelerArtifactInPort.sendElementTemplates();
                     break;
                 }
                 case "SyncDocumentCommand": {
@@ -50,8 +53,8 @@ export class BpmnWebviewAdapter {
 @singleton()
 export class DmnWebviewAdapter {
     constructor(
-        @inject("SendToDmnFileInPort")
-        private readonly sendToDmnModelerInPort: DisplayDmnModelerInPort,
+        @inject("DisplayDmnFileInPort")
+        private readonly displayDmnModelerInPort: DisplayDmnModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreDmnModelerInPort")
@@ -60,7 +63,7 @@ export class DmnWebviewAdapter {
         onDidReceiveMessage((message: MiranumModelerCommand) => {
             switch (message.type) {
                 case "GetDmnFileCommand": {
-                    this.sendToDmnModelerInPort.sendDmnFile();
+                    this.displayDmnModelerInPort.displayDmnFile();
                     break;
                 }
                 case "SyncDocumentCommand": {
