@@ -1,13 +1,13 @@
 import { workspace } from "vscode";
 import { inject, singleton } from "tsyringe";
 
-import { SendToBpmnModelerInPort } from "../../application/ports/in";
+import { DisplayBpmnModelerInPort } from "../../application/ports/in";
 
 @singleton()
 export class FileSystemWatcherAdapter {
     constructor(
         @inject("SendToBpmnModelerInPort")
-        private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
+        private readonly sendToBpmnModelerInPort: DisplayBpmnModelerInPort,
     ) {
         this.createWatcher();
     }

@@ -1,9 +1,9 @@
 import { inject, singleton } from "tsyringe";
 import {
+    DisplayBpmnModelerInPort,
+    DisplayDmnModelerInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
-    SendToBpmnModelerInPort,
-    SendToDmnModelerInPort,
 } from "../ports/in";
 import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from "../model";
 
@@ -11,36 +11,24 @@ import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from ".
 export class RestoreBpmnModelerUseCase implements RestoreBpmnModelerInPort {
     constructor(
         @inject("SendToBpmnModelerInPort")
-        private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
+        private readonly sendToBpmnModelerInPort: DisplayBpmnModelerInPort,
     ) {}
 
     async restoreBpmnModeler(): Promise<void> {
         switch (false) {
             case successfulMessageToBpmnModeler.bpmn: {
-                await this.sendBpmnFile();
-                break;
+                this.sendToBpmnModelerInPort.sendBpmnFile();
+                // break is omitted intentionally
             }
             case successfulMessageToBpmnModeler.formKeys: {
-                await this.sendFormKeys();
-                break;
+                this.sendToBpmnModelerInPort.sendFormKeys();
+                // break is omitted intentionally
             }
             case successfulMessageToBpmnModeler.elementTemplates: {
-                await this.sendElementTemplates();
-                break;
+                this.sendToBpmnModelerInPort.sendElementTemplates();
+                // break is omitted intentionally
             }
         }
-    }
-
-    private async sendBpmnFile(): Promise<boolean> {
-        return this.sendToBpmnModelerInPort.sendBpmnFile();
-    }
-
-    private async sendFormKeys(): Promise<boolean> {
-        return this.sendToBpmnModelerInPort.sendFormKeys();
-    }
-
-    private async sendElementTemplates(): Promise<boolean> {
-        return this.sendToBpmnModelerInPort.sendElementTemplates();
     }
 }
 
@@ -48,14 +36,11 @@ export class RestoreBpmnModelerUseCase implements RestoreBpmnModelerInPort {
 export class RestoreDmnModelerUseCase implements RestoreDmnModelerInPort {
     constructor(
         @inject("SendToDmnModelerInPort")
-        private readonly sendToDmnModelerInPort: SendToDmnModelerInPort,
+        private readonly sendToDmnModelerInPort: DisplayDmnModelerInPort,
     ) {}
 
     async restoreDmnModeler(): Promise<void> {
-        if (!successfulMessageToDmnModeler.dmn) await this.sendDmnFile();
-    }
-
-    private async sendDmnFile(): Promise<boolean> {
-        return this.sendToDmnModelerInPort.sendDmnFile();
+        if (!successfulMessageToDmnModeler.dmn)
+            this.sendToDmnModelerInPort.sendDmnFile();
     }
 }

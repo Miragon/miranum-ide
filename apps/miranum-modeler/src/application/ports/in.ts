@@ -1,12 +1,14 @@
-export interface SendToBpmnModelerInPort {
-    sendBpmnFile(): Promise<boolean>;
+export interface DisplayBpmnModelerInPort {
+    displayBpmnFile(): Promise<boolean>;
+}
 
+export interface DisplayBpmnModelerArtifactInPort {
     sendFormKeys(): Promise<boolean>;
 
     sendElementTemplates(): Promise<boolean>;
 }
 
-export interface SendToDmnModelerInPort {
+export interface DisplayDmnModelerInPort {
     sendDmnFile(): Promise<boolean>;
 }
 
@@ -27,7 +29,7 @@ export interface RestoreDmnModelerInPort {
 }
 
 export interface SetConfigInPort {
-    setMiranumJson(setConfigCommand: FilePathCommand): Promise<void>;
+    setMiranumConfig(setConfigCommand: FilePathCommand): Promise<void>;
 }
 
 export class FilePathCommand {

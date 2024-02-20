@@ -2,10 +2,10 @@ import { inject, singleton } from "tsyringe";
 
 import { onDidReceiveMessage } from "../helper/vscode";
 import {
+    DisplayBpmnModelerInPort,
+    DisplayDmnModelerInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
-    SendToBpmnModelerInPort,
-    SendToDmnModelerInPort,
     SyncDocumentInPort,
 } from "../../application/ports/in";
 import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webview";
@@ -14,7 +14,7 @@ import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webvie
 export class BpmnWebviewAdapter {
     constructor(
         @inject("SendToBpmnModelerInPort")
-        private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
+        private readonly sendToBpmnModelerInPort: DisplayBpmnModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreBpmnModelerInPort")
@@ -51,7 +51,7 @@ export class BpmnWebviewAdapter {
 export class DmnWebviewAdapter {
     constructor(
         @inject("SendToDmnFileInPort")
-        private readonly sendToDmnModelerInPort: SendToDmnModelerInPort,
+        private readonly sendToDmnModelerInPort: DisplayDmnModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreDmnModelerInPort")

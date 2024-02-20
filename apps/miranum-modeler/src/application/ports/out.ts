@@ -62,10 +62,27 @@ export interface DocumentOutPort {
 
 export interface WorkspaceOutPort {
     /**
-     * Get the workspace path.
-     * @throws {Error} if the workspace is not set
+     * Get workspace folders with a `miranum.json` file.
      */
-    getWorkspacePath(): string;
+    getWorkspaceFoldersWithMiranumConfig(): Promise<string[]>;
+
+    /**
+     * Get the workspace folder for the given file.
+     * @param document
+     * @returns {string} the path to the workspace folder
+     * @throws {NoWorkspaceFolderFoundError} if the document is not in a workspace
+     */
+    getWorkspaceFolderForDocument(document: string): string;
+
+    /**
+     * Get the path to the `miranum.json` file for the given file.
+     * @param document
+     * @returns {Promise<string[]>} the path to the `miranum.json` file
+     * If no `miranum.json` file is found, return an empty array
+     * If multiple `miranum.json` files are found, return all paths
+     * @throws {NoWorkspaceFolderFoundError} if the document is not in a workspace
+     */
+    getMiranumConfigForDocument(document: string): Promise<string[]>;
 }
 
 export interface VsCodeReadOutPort {
@@ -74,50 +91,8 @@ export interface VsCodeReadOutPort {
     readFile(path: string): Promise<string>;
 }
 
-export interface ReadMiranumJsonOutPort {
-    /**
-     * Reads the `miranum.json` file from the workspace.
-     * @param path is the path to the open file without the file name
-     * @returns "workspace" if the `miranum.json` file is found in the workspace
-     * @returns "default" if the `miranum.json` file is not found in the workspace and the default
-     * configuration is used
-     * ```typescript
-     * const defaultMiranumWorkspaceItems: MiranumWorkspaceItem[] = [
-     *   {
-     *     type: "element-template",
-     *     path: "element-templates",
-     *     extension: ".json",
-     *   },
-     *   {
-     *     type: "form",
-     *     path: "forms",
-     *     extension: ".form",
-     *   },
-     * ];
-     * ```
-     * @throws {SyntaxError} if the `miranum.json` file is not a valid JSON
-     */
-    readMiranumJson(path: string): Promise<"workspace" | "default">;
-}
-
-export interface ReadElementTemplatesOutPort {
-    /**
-     * Reads the element templates from the path configured in `miranum.json`.
-     * @returns {Array<string>} of element templates
-     * @throws {NoMiranumConfigFoundError} if the `miranum.json` file does not contain
-     * an item with the type `element-template`
-     */
-    readElementTemplates(): Promise<string[]>;
-}
-
-export interface ReadFormKeysOutPort {
-    /**
-     * Reads the form keys from the path configured in `miranum.json`.
-     * @returns {Array<string>} of form keys
-     * @throws {NoMiranumConfigFoundError} if the `miranum.json` file does not contain
-     * an item with the type `form`
-     */
-    readFormKeys(): Promise<string[]>;
+export interface ArtifactOutPort {
+    getFiles(workspace: string, fileExtension: string): Promise<string[]>;
 }
 
 export interface ShowMessageOutPort {

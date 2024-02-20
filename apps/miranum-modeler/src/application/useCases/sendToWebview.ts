@@ -1,33 +1,43 @@
 import { inject, singleton } from "tsyringe";
 
-import { SendToBpmnModelerInPort, SendToDmnModelerInPort } from "../ports/in";
 import {
+    DisplayBpmnModelerArtifactInPort,
+    DisplayBpmnModelerInPort,
+    DisplayDmnModelerInPort,
+} from "../ports/in";
+import {
+    ArtifactOutPort,
     DocumentOutPort,
-    ReadElementTemplatesOutPort,
-    ReadFormKeysOutPort,
     SendToBpmnModelerOutPort,
     SendToDmnModelerOutPort,
     ShowMessageOutPort,
+    VsCodeReadOutPort,
+    WorkspaceOutPort,
 } from "../ports/out";
-import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from "../model";
-import { NoMiranumConfigFoundError } from "../errors";
+import {
+    defaultFormConfig,
+    successfulMessageToBpmnModeler,
+    successfulMessageToDmnModeler,
+} from "../model";
+import {
+    FileNotFound,
+    NoMiranumConfigFoundError,
+    NoWorkspaceFolderFoundError,
+} from "../errors";
+import { MiranumConfig, MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 @singleton()
-export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
+export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
     constructor(
-        @inject("ReadFileOutPort")
-        private readonly readElementTemplateOutPort: ReadElementTemplatesOutPort,
-        @inject("ReadFormKeysOutPort")
-        private readonly readFormKeysOutPort: ReadFormKeysOutPort,
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("SendToWebviewOutPort")
-        private readonly sendToWebviewOutPort: SendToBpmnModelerOutPort,
+        @inject("SendToBpmnModelerOutPort")
+        private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
         @inject("ShowMessageOutPort")
         private readonly showMessageOutPort: ShowMessageOutPort,
     ) {}
 
-    async sendBpmnFile(): Promise<boolean> {
+    async displayBpmnFile(): Promise<boolean> {
         try {
             let executionPlatform: string;
             const webviewId = this.documentOutPort.getFilePath();
@@ -39,7 +49,7 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
             if (match) {
                 executionPlatform = match[1];
                 successfulMessageToBpmnModeler.bpmn =
-                    await this.sendToWebviewOutPort.sendBpmnFile(
+                    await this.sendToBpmnModelerOutPort.sendBpmnFile(
                         webviewId,
                         executionPlatform,
                         bpmnFile,
@@ -67,14 +77,42 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
             return false;
         }
     }
+}
+
+@singleton()
+export class DisplayArtifactsUseCase implements DisplayBpmnModelerArtifactInPort {
+    constructor(
+        @inject("DocumentOutPort")
+        private readonly documentOutPort: DocumentOutPort,
+        @inject("WorkspaceOutPort")
+        private readonly workspaceOutPort: WorkspaceOutPort,
+        @inject("VsCodeReadOutPort")
+        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
+        @inject("ArtifactOutPort")
+        private readonly artifactOutPort: ArtifactOutPort,
+        @inject("SendToBpmnModelerOutPort")
+        private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        private readonly showMessageOutPort: ShowMessageOutPort,
+    ) {}
 
     async sendFormKeys(): Promise<boolean> {
         try {
-            const webviewId = this.documentOutPort.getFilePath();
-            const formKeys = await this.readFormKeysOutPort.readFormKeys();
+            const document = this.documentOutPort.getFilePath();
+            const miranumConfigPath = await this.getMiranumConfigFile(document);
+
+            // TODO: The type is hardcoded but depends on the config
+            const workspaceItem =
+                (await this.getWorkspaceItem("form", miranumConfigPath)) ??
+                defaultFormConfig;
+
+            const formFiles = await this.artifactOutPort.getFiles(
+                miranumConfigPath.replace("/miranum.json", workspaceItem.path),
+                workspaceItem.extension,
+            );
 
             successfulMessageToBpmnModeler.formKeys =
-                await this.sendToWebviewOutPort.sendFormKeys(webviewId, formKeys);
+                await this.sendToBpmnModelerOutPort.sendFormKeys(document, formKeys);
 
             if (!successfulMessageToBpmnModeler.formKeys) {
                 // TODO: Log the error
@@ -86,49 +124,155 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
             return successfulMessageToBpmnModeler.formKeys;
         } catch (error) {
             // TODO: Log the error
-            if (error instanceof NoMiranumConfigFoundError) {
-                this.showMessageOutPort.showErrorMessage(
-                    "No configuration for type `form` found in `miranum.json`.",
-                );
-            }
             return false;
         }
     }
 
-    async sendElementTemplates(): Promise<boolean> {
+    async sendElementTemplates(): Promise<boolean> {}
+
+    private async getMiranumConfigFile(document: string): Promise<string> {
         try {
-            const webviewId = this.documentOutPort.getFilePath();
-            const elementTemplates =
-                await this.readElementTemplateOutPort.readElementTemplates();
-
-            successfulMessageToBpmnModeler.elementTemplates =
-                await this.sendToWebviewOutPort.sendElementTemplates(
-                    webviewId,
-                    elementTemplates,
-                );
-
-            if (!successfulMessageToBpmnModeler.elementTemplates) {
-                // TODO: Log the error
-                this.showMessageOutPort.showErrorMessage(
-                    "A problem occurred! `Element Templates` will not be selectable.",
-                );
+            const files =
+                await this.workspaceOutPort.getMiranumConfigForDocument(document);
+            switch (files.length) {
+                case 0:
+                    return document.split("/").slice(0, -1).join("/") + "/miranum.json";
+                case 1:
+                    return files[0];
+                default:
+                    // FIXME: What to do if there are multiple miranum.json files?
+                    //  - User select one
+                    //  - The files get merged
+                    return files[0];
             }
-
-            return successfulMessageToBpmnModeler.elementTemplates;
         } catch (error) {
-            // TODO: Log the error
-            if (error instanceof NoMiranumConfigFoundError) {
-                this.showMessageOutPort.showErrorMessage(
-                    "No configuration for type `element-template` found in `miranum.json`.",
+            if (error instanceof NoWorkspaceFolderFoundError) {
+                return document.split("/").slice(0, -1).join("/") + "/miranum.json";
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    private async getWorkspaceItem(
+        type: string,
+        miranumConfigPath: string,
+    ): Promise<MiranumWorkspaceItem | undefined> {
+        try {
+            const miranumConfig: MiranumConfig = JSON.parse(
+                await this.vsCodeReadOutPort.readFile(miranumConfigPath),
+            );
+            const workspaceItem = miranumConfig.workspace.find(
+                (item) => item.type === type,
+            );
+
+            if (!workspaceItem) {
+                throw new NoMiranumConfigFoundError(type);
+            }
+
+            return workspaceItem;
+        } catch (error) {
+            const root = miranumConfigPath.replace("/miranum.json", "");
+            const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
+            if (error instanceof FileNotFound) {
+                this.showMessageOutPort.showInfoMessage(
+                    `The \`miranum.json\` file is missing!\n${defaultMessage}.`,
+                );
+            } else if (error instanceof SyntaxError) {
+                this.showMessageOutPort.showInfoMessage(
+                    `The \`miranum.json\` file has incorrect JSON!\n${defaultMessage}.`,
+                );
+            } else if (error instanceof NoMiranumConfigFoundError) {
+                this.showMessageOutPort.showInfoMessage(
+                    `${error.message}!\n${defaultMessage}.`,
+                );
+            } else {
+                this.showMessageOutPort.showInfoMessage(
+                    `${(error as Error).message}!\n${defaultMessage}.`,
                 );
             }
-            return false;
+            return undefined;
         }
     }
 }
 
+// @singleton()
+// export class SendToBpmnModelerUseCase implements DisplayBpmnModelerInPort {
+//     constructor(
+//         @inject("DocumentOutPort")
+//         private readonly documentOutPort: DocumentOutPort,
+//         @inject("ReadArtifactOutPort")
+//         private readonly readArtifactOutPort: ArtifactOutPort,
+//         @inject("SendToWebviewOutPort")
+//         private readonly sendToWebviewOutPort: SendToBpmnModelerOutPort,
+//         @inject("ShowMessageOutPort")
+//         private readonly showMessageOutPort: ShowMessageOutPort,
+//     ) {}
+//
+//     async sendFormKeys(): Promise<boolean> {
+//         try {
+//             const webviewId = this.documentOutPort.getFilePath();
+//
+//             const formConfig = miranumWorkspaceConfig.getConfig("form");
+//             const formFiles = await this.readArtifactOutPort.getFiles();
+//             const formKeys = await this.readFormKeysOutPort.readFormKeys();
+//
+//             successfulMessageToBpmnModeler.formKeys =
+//                 await this.sendToWebviewOutPort.sendFormKeys(webviewId, formKeys);
+//
+//             if (!successfulMessageToBpmnModeler.formKeys) {
+//                 // TODO: Log the error
+//                 this.showMessageOutPort.showErrorMessage(
+//                     "A problem occurred! `Form Keys` will not be selectable.",
+//                 );
+//             }
+//
+//             return successfulMessageToBpmnModeler.formKeys;
+//         } catch (error) {
+//             // TODO: Log the error
+//             if (error instanceof NoMiranumConfigFoundError) {
+//                 this.showMessageOutPort.showErrorMessage(
+//                     "No configuration for type `form` found in `miranum.json`.",
+//                 );
+//             }
+//             return false;
+//         }
+//     }
+//
+//     async sendElementTemplates(): Promise<boolean> {
+//         try {
+//             const webviewId = this.documentOutPort.getFilePath();
+//             const elementTemplates =
+//                 await this.readElementTemplateOutPort.readElementTemplates();
+//
+//             successfulMessageToBpmnModeler.elementTemplates =
+//                 await this.sendToWebviewOutPort.sendElementTemplates(
+//                     webviewId,
+//                     elementTemplates,
+//                 );
+//
+//             if (!successfulMessageToBpmnModeler.elementTemplates) {
+//                 // TODO: Log the error
+//                 this.showMessageOutPort.showErrorMessage(
+//                     "A problem occurred! `Element Templates` will not be selectable.",
+//                 );
+//             }
+//
+//             return successfulMessageToBpmnModeler.elementTemplates;
+//         } catch (error) {
+//             // TODO: Log the error
+//             if (error instanceof NoMiranumConfigFoundError) {
+//                 this.showMessageOutPort.showErrorMessage(
+//                     "No configuration for type `element-template` found in `miranum.json`.",
+//                 );
+//             }
+//             return false;
+//         }
+//     }
+// }
+
 @singleton()
-export class SendToDmnModelerUseCase implements SendToDmnModelerInPort {
+export class SendToDmnModelerUseCase implements DisplayDmnModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
