@@ -1,6 +1,6 @@
 import { inject, singleton } from "tsyringe";
 
-import { onDidReceiveMessage } from "../webview";
+import { onDidReceiveMessage } from "../helper/vscode";
 import {
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
@@ -13,7 +13,7 @@ import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webvie
 @singleton()
 export class BpmnWebviewAdapter {
     constructor(
-        @inject("SendToBpmnFileInPort")
+        @inject("SendToBpmnModelerInPort")
         private readonly sendToBpmnModelerInPort: SendToBpmnModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
@@ -61,6 +61,14 @@ export class DmnWebviewAdapter {
             switch (message.type) {
                 case "GetDmnFileCommand": {
                     this.sendToDmnModelerInPort.sendDmnFile();
+                    break;
+                }
+                case "SyncDocumentCommand": {
+                    this.syncDocumentInPort.syncDocument();
+                    break;
+                }
+                case "RestoreWebviewCommand": {
+                    this.restoreDmnModelerInPort.restoreDmnModeler();
                     break;
                 }
             }

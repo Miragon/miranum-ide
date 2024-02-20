@@ -1,20 +1,22 @@
 import { TextDocument, TextDocumentChangeEvent, workspace } from "vscode";
-import { FilePathCommand } from "../application/ports/in";
+import { FilePathCommand } from "../../../application/ports/in";
 
 let document: TextDocument | undefined;
 
 let miranumWorkspacePath: string | undefined;
 
+// ====================================== Document =====================================>
 export function setDocument(newDocument: TextDocument): TextDocument {
     document = newDocument;
     return document;
 }
 
-export function getDocument(): TextDocument {
-    if (!document) {
-        throw new Error("No document set.");
-    }
-    return document;
+export function getContent(): string {
+    return getDocument().getText();
+}
+
+export function getFilePath(): string {
+    return getDocument().uri.path;
 }
 
 export function onDidChangeTextDocument(
@@ -23,14 +25,16 @@ export function onDidChangeTextDocument(
     workspace.onDidChangeTextDocument(callback);
 }
 
-export function getWorkspace(): string {
-    if (!miranumWorkspacePath) {
-        throw new Error("No workspace set.");
+function getDocument(): TextDocument {
+    if (!document) {
+        throw new Error("No document set.");
     }
-
-    return miranumWorkspacePath;
+    return document;
 }
 
+// <===================================== Document ======================================
+//
+// ===================================== Workspace ====================================>
 export function setWorkspace(filePathCommand: FilePathCommand): void {
     const path = filePathCommand.path;
     const workspaces = workspace.workspaceFolders;
@@ -63,3 +67,17 @@ export function setWorkspace(filePathCommand: FilePathCommand): void {
             );
     }
 }
+
+export function getWorkspacePath(): string {
+    return getWorkspace();
+}
+
+function getWorkspace(): string {
+    if (!miranumWorkspacePath) {
+        throw new Error("No workspace set.");
+    }
+
+    return miranumWorkspacePath;
+}
+
+// <==================================== Workspace =====================================

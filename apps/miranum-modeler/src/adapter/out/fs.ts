@@ -1,4 +1,5 @@
 import { FileType, Uri, workspace } from "vscode";
+import { inject, singleton } from "tsyringe";
 
 import {
     ReadElementTemplatesOutPort,
@@ -7,8 +8,8 @@ import {
     VsCodeReadOutPort,
 } from "../../application/ports/out";
 import { MiranumConfig, MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
+
 import { NoMiranumConfigFoundError } from "../../application/errors";
-import { inject, singleton } from "tsyringe";
 
 const fs = workspace.fs;
 
@@ -43,58 +44,65 @@ export class ReadMiranumJsonAdapter implements ReadMiranumJsonOutPort {
     }
 }
 
-@singleton()
-export class ReadElementTemplatesAdapter implements ReadElementTemplatesOutPort {
-    private readonly type = "element-template";
+abstract class ReadArtifact {
+    protected abstract readonly type: string;
 
-    constructor(
-        @inject("VsCodeReadOutPort")
-        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
-    ) {}
-
-    async readElementTemplates(): Promise<string[]> {
+    async getArtifacts(): Promise<string[]> {
         if (miranumWorkspaceItems.length === 0) {
             throw new NoMiranumConfigFoundError(this.type);
         }
-        // Check if `miranumWorkspaceItems` has an item with the type `element-templates`
-        const elementTemplateConfig = miranumWorkspaceItems.find(
-            (item) => item.type === this.type,
-        );
-        if (!elementTemplateConfig) {
+        const config = miranumWorkspaceItems.find((item) => item.type === this.type);
+        if (!config) {
             throw new NoMiranumConfigFoundError(this.type);
         }
 
-        const files = await getWorkspaceFiles(
-            elementTemplateConfig.path,
-            elementTemplateConfig.extension,
-        );
-
-        return Promise.all(files.map((file) => this.vsCodeReadOutPort.readFile(file)));
+        return getWorkspaceFiles(config.path, config.extension);
     }
 }
 
 @singleton()
-export class ReadDigiWfFormKeysAdapter implements ReadFormKeysOutPort {
-    private readonly type = "form";
+export class ReadElementTemplatesAdapter
+    extends ReadArtifact
+    implements ReadElementTemplatesOutPort
+{
+    protected readonly type = "element-template";
 
     constructor(
         @inject("VsCodeReadOutPort")
         private readonly vsCodeReadOutPort: VsCodeReadOutPort,
-    ) {}
+    ) {
+        super();
+    }
+
+    async readElementTemplates(): Promise<string[]> {
+        const artifacts = await this.getArtifacts();
+
+        return Promise.all(
+            artifacts.map((artifact) => this.vsCodeReadOutPort.readFile(artifact)),
+        );
+    }
+}
+
+@singleton()
+export class ReadDigiWfFormKeysAdapter
+    extends ReadArtifact
+    implements ReadFormKeysOutPort
+{
+    protected readonly type = "form";
+
+    constructor(
+        @inject("VsCodeReadOutPort")
+        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
+    ) {
+        super();
+    }
 
     async readFormKeys(): Promise<string[]> {
-        if (miranumWorkspaceItems.length === 0) {
-            throw new NoMiranumConfigFoundError(this.type);
-        }
-        // Check if `miranumWorkspaceItems` has an item with the type `forms`
-        const formConfig = miranumWorkspaceItems.find((item) => item.type === this.type);
-        if (!formConfig) {
-            throw new NoMiranumConfigFoundError(this.type);
-        }
+        const artifacts = await this.getArtifacts();
 
-        const files = await getWorkspaceFiles(formConfig.path, formConfig.extension);
-
-        return Promise.all(files.map((file) => this.vsCodeReadOutPort.readFile(file)));
+        return Promise.all(
+            artifacts.map((artifact) => this.vsCodeReadOutPort.readFile(artifact)),
+        );
     }
 }
 
@@ -112,14 +120,14 @@ export class ReadDigiWfFormKeysAdapter implements ReadFormKeysOutPort {
 export class VsCodeReadAdapter implements VsCodeReadOutPort {
     async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
         const dir = await fs.readDirectory(Uri.file(path));
-        // return dir.map(([name, type]) => [name, this.parseFileType(type)]);
+        // flatMap {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap}
         return dir.flatMap(([name, type]) => {
             const t = this.parseFileType(type);
             if (t !== "file" && t !== "directory") {
-                return [];
+                return []; // remove item
             }
 
-            return [[name, t]];
+            return [[name, t]]; // add item
         });
     }
 

@@ -1,3 +1,5 @@
+import { singleton } from "tsyringe";
+
 import {
     BpmnFileQuery,
     DmnFileQuery,
@@ -5,35 +7,41 @@ import {
     FormKeysQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
+import { postMessage } from "../helper/vscode";
 import {
     SendToBpmnModelerOutPort,
     SendToDmnModelerOutPort,
 } from "../../application/ports/out";
-import { postMessage } from "../webview";
 
+@singleton()
 export class BpmnWebviewAdapter implements SendToBpmnModelerOutPort {
     async sendBpmnFile(
+        webviewId: string,
         executionPlatform: "c7" | "c8",
         bpmnFile: string,
     ): Promise<boolean> {
         const bpmnFileQuery = new BpmnFileQuery(bpmnFile, executionPlatform);
-        return postMessage(bpmnFileQuery);
+        return postMessage(webviewId, bpmnFileQuery);
     }
 
-    async sendElementTemplates(elementTemplates: string[]): Promise<boolean> {
+    async sendElementTemplates(
+        webviewId: string,
+        elementTemplates: string[],
+    ): Promise<boolean> {
         const elementTemplatesQuery = new ElementTemplatesQuery(elementTemplates);
-        return postMessage(elementTemplatesQuery);
+        return postMessage(webviewId, elementTemplatesQuery);
     }
 
-    async sendFormKeys(formKeys: string[]): Promise<boolean> {
+    async sendFormKeys(webviewId: string, formKeys: string[]): Promise<boolean> {
         const formKeysQuery = new FormKeysQuery(formKeys);
-        return postMessage(formKeysQuery);
+        return postMessage(webviewId, formKeysQuery);
     }
 }
 
+@singleton()
 export class DmnWebviewAdapter implements SendToDmnModelerOutPort {
-    async sendDmnFile(dmnFile: string): Promise<boolean> {
+    async sendDmnFile(webviewId: string, dmnFile: string): Promise<boolean> {
         const dmnFileQuery = new DmnFileQuery(dmnFile);
-        return postMessage(dmnFileQuery);
+        return postMessage(webviewId, dmnFileQuery);
     }
 }

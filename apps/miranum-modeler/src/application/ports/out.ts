@@ -1,29 +1,71 @@
 export interface SendToBpmnModelerOutPort {
-    sendBpmnFile(executionPlatform: string, bpmnFile: string): Promise<boolean>;
+    /**
+     * Sends the BPMN file to the active webview.
+     * @param webviewId
+     * @param executionPlatform
+     * @param bpmnFile
+     * @returns {Promise<boolean>} true if the message was sent successfully
+     * @throws {Error} if the webview id does not match the active webview id
+     */
+    sendBpmnFile(
+        webviewId: string,
+        executionPlatform: string,
+        bpmnFile: string,
+    ): Promise<boolean>;
 
-    sendElementTemplates(elementTemplates: string[]): Promise<boolean>;
+    /**
+     * Sends the element templates to the active webview.
+     * @param webviewId
+     * @param elementTemplates
+     * @returns {Promise<boolean>} true if the message was sent successfully
+     * @throws {Error} if the webview id does not match the active webview id
+     */
+    sendElementTemplates(
+        webviewId: string,
+        elementTemplates: string[],
+    ): Promise<boolean>;
 
-    sendFormKeys(formKeys: string[]): Promise<boolean>;
+    /**
+     * Sends the form keys to the active webview.
+     * @param webviewId
+     * @param formKeys
+     * @returns {Promise<boolean>} true if the message was sent successfully
+     * @throws {Error} if the webview id does not match the active webview id
+     */
+    sendFormKeys(webviewId: string, formKeys: string[]): Promise<boolean>;
 }
 
 export interface SendToDmnModelerOutPort {
-    sendDmnFile(dmnFile: string): Promise<boolean>;
+    /**
+     * Sends the DMN file to the active webview.
+     * @param webviewId
+     * @param dmnFile
+     * @returns {Promise<boolean>} true if the message was sent successfully
+     * @throws {Error} if the webview id does not match the active webview id
+     */
+    sendDmnFile(webviewId: string, dmnFile: string): Promise<boolean>;
 }
 
 export interface DocumentOutPort {
-    getWorkspacePath(): string;
-
+    /**
+     * Get the content of the document.
+     * @throws {Error} if the document is not set
+     */
     getContent(): string;
-}
-
-export interface MiranumWorkspaceOutPort {
-    getWorkspace(): string;
 
     /**
-     * Sets the workspace path.
-     * @param path is the path to the opened file without the file name.
+     * Get the file path of the document.
+     * @throws {Error} if the document is not set
      */
-    setWorkspace(path: string): void;
+    getFilePath(): string;
+}
+
+export interface WorkspaceOutPort {
+    /**
+     * Get the workspace path.
+     * @throws {Error} if the workspace is not set
+     */
+    getWorkspacePath(): string;
 }
 
 export interface VsCodeReadOutPort {
@@ -76,4 +118,10 @@ export interface ReadFormKeysOutPort {
      * an item with the type `form`
      */
     readFormKeys(): Promise<string[]>;
+}
+
+export interface ShowMessageOutPort {
+    showInfoMessage(message: string): void;
+
+    showErrorMessage(message: string): void;
 }

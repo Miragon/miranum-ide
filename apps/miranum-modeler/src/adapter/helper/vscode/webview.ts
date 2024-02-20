@@ -6,6 +6,7 @@ import {
     MiranumModelerQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
+let activeWebviewId: string | undefined;
 let miranumWebviewPanel: WebviewPanel | undefined;
 
 /**
@@ -14,12 +15,12 @@ let miranumWebviewPanel: WebviewPanel | undefined;
 const bpmnModelerWebviewProjectPath = "miranum-modeler-bpmn-webview";
 const dmnModelerWebviewProjectPath = "miranum-modeler-dmn-webview";
 
-export type MiranumModelerViewType = "miranum-bpmn-modeler" | "miranum-dmn-modeler";
-
 export function createMiranumWebview(
+    id: string,
     webviewPanel: WebviewPanel,
-    viewType: MiranumModelerViewType,
+    viewType: string,
 ): WebviewPanel {
+    activeWebviewId = id;
     miranumWebviewPanel = webviewPanel;
 
     const webview = miranumWebviewPanel.webview;
@@ -42,32 +43,42 @@ export function createMiranumWebview(
     return miranumWebviewPanel;
 }
 
-export function getMiranumWebview(): Webview {
-    if (!miranumWebviewPanel) {
-        throw new Error("No webview panel set.");
-    }
-    return miranumWebviewPanel.webview;
-}
-
-export function setMiranumWebviewPanel(webviewPanel: WebviewPanel) {
+export function setMiranumWebviewPanel(id: string, webviewPanel: WebviewPanel) {
+    activeWebviewId = id;
     miranumWebviewPanel = webviewPanel;
 }
 
-export function disposeWebview() {
+export async function postMessage(
+    webviewId: string,
+    message: MiranumModelerCommand | MiranumModelerQuery,
+): Promise<boolean> {
+    if (activeWebviewId !== webviewId) {
+        throw new Error("Webview id does not match the active webview id.");
+    }
+    return getMiranumWebview().postMessage(message);
+}
+
+/**
+ * Registers a callback to be called when the webview is disposed.
+ * It disposes the webview panel plus disposables from the callback.
+ * @param callback
+ */
+export function onDidDispose(callback: () => void) {
     if (miranumWebviewPanel) {
         miranumWebviewPanel.dispose();
-        // TODO: Are there any other clean-up tasks?
+        miranumWebviewPanel.onDidDispose(callback);
     }
 }
 
 export function onDidReceiveMessage(callback: (message: MiranumModelerCommand) => void) {
-    miranumWebviewPanel?.webview.onDidReceiveMessage(callback);
+    getMiranumWebview().onDidReceiveMessage(callback);
 }
 
-export async function postMessage(
-    message: MiranumModelerCommand | MiranumModelerQuery,
-): Promise<boolean> {
-    return getMiranumWebview().postMessage(message);
+function getMiranumWebview(): Webview {
+    if (!miranumWebviewPanel) {
+        throw new Error("No webview panel set.");
+    }
+    return miranumWebviewPanel.webview;
 }
 
 function bpmnModelerHtml(webview: Webview, extensionUri: Uri): string {

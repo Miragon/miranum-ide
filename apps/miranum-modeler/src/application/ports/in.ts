@@ -26,8 +26,8 @@ export interface RestoreDmnModelerInPort {
     restoreDmnModeler(): Promise<void>;
 }
 
-export interface SetArtifactsInPort {
-    setArtifacts(setArtifactCommand: FilePathCommand): Promise<void>;
+export interface SetConfigInPort {
+    setMiranumJson(setConfigCommand: FilePathCommand): Promise<void>;
 }
 
 export class FilePathCommand {

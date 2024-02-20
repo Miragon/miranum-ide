@@ -1,2 +1,2 @@
 export * from "./webview";
-export * from "./textEditor";
+export * from "./custom_text_editor";

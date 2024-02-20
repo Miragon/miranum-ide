@@ -1,47 +1,60 @@
 import { inject, singleton } from "tsyringe";
 
-import { FilePathCommand, SetArtifactsInPort } from "../ports/in";
+import { FilePathCommand, SetConfigInPort } from "../ports/in";
 import {
-    MiranumWorkspaceOutPort,
     ReadMiranumJsonOutPort,
+    ShowMessageOutPort,
     VsCodeReadOutPort,
+    WorkspaceOutPort,
 } from "../ports/out";
 import { NoMiranumJsonFoundError } from "../errors";
 
 @singleton()
-export class ReadMiranumJsonUseCase implements SetArtifactsInPort {
+export class ReadMiranumJsonUseCase implements SetConfigInPort {
     private readonly name = "miranum.json";
 
     constructor(
         @inject("MiranumWorkspaceOutPort")
-        private readonly miranumWorkspaceOutPort: MiranumWorkspaceOutPort,
+        private readonly miranumWorkspaceOutPort: WorkspaceOutPort,
         @inject("VsCodeReadOutPort")
         private readonly vsCodeReadOutPort: VsCodeReadOutPort,
         @inject("ReadMiranumJsonOutPort")
         private readonly readMiranumJsonOutPort: ReadMiranumJsonOutPort,
+        @inject("ShowMessageOutPort")
+        private readonly showMessageOutPort: ShowMessageOutPort,
     ) {}
 
-    async setArtifacts(setArtifactCommand: FilePathCommand) {
-        const workspace = this.miranumWorkspaceOutPort.getWorkspace();
+    async setMiranumJson(setConfigCommand: FilePathCommand) {
+        const workspace = this.miranumWorkspaceOutPort.getWorkspacePath();
         try {
             const miranumJsonPath = await this.searchMiranumJsonFiles(
-                setArtifactCommand.path,
+                setConfigCommand.path,
                 workspace,
             );
             const result =
                 await this.readMiranumJsonOutPort.readMiranumJson(miranumJsonPath);
             if (result === "workspace") {
-                // TODO: Show info message that the workspace is set
+                this.showMessageOutPort.showInfoMessage(
+                    `Workspace is set (${workspace}).`,
+                );
             } else {
-                // TODO: Show info message that the default configuration is used
+                this.showMessageOutPort.showInfoMessage(
+                    `Default workspace is used. You can save element templates in \`${workspace}/element-templates\` and forms in \`${workspace}/forms\`.`,
+                );
             }
         } catch (error) {
             if (error instanceof NoMiranumJsonFoundError) {
-                // TODO: Show error message that the default configuration is used
+                this.showMessageOutPort.showErrorMessage(
+                    `The \`miranum.json\` file is missing.\nDefault workspace is used. You can save element templates in \`${workspace}/element-templates\` and forms in \`${workspace}/forms\`.`,
+                );
             } else if (error instanceof SyntaxError) {
-                // TODO: Show error message that the `miranum.json` file is not valid JSON and the default configuration is used
+                this.showMessageOutPort.showErrorMessage(
+                    `The \`miranum.json\` file has incorrect JSON.\nDefault workspace is used. You can save element templates in \`${workspace}/element-templates\` and forms in \`${workspace}/forms\`.`,
+                );
             } else {
-                // TODO: Show error message and that the default configuration is used
+                this.showMessageOutPort.showErrorMessage(
+                    `Something went wrong!\nDefault workspace is used. You can save element templates in \`${workspace}/element-templates\` and forms in \`${workspace}/forms\`.`,
+                );
             }
         }
     }

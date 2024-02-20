@@ -7,8 +7,10 @@ import {
     ReadFormKeysOutPort,
     SendToBpmnModelerOutPort,
     SendToDmnModelerOutPort,
+    ShowMessageOutPort,
 } from "../ports/out";
 import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from "../model";
+import { NoMiranumConfigFoundError } from "../errors";
 
 @singleton()
 export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
@@ -21,57 +23,107 @@ export class SendToBpmnModelerUseCase implements SendToBpmnModelerInPort {
         private readonly documentOutPort: DocumentOutPort,
         @inject("SendToWebviewOutPort")
         private readonly sendToWebviewOutPort: SendToBpmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        private readonly showMessageOutPort: ShowMessageOutPort,
     ) {}
 
     async sendBpmnFile(): Promise<boolean> {
-        let executionPlatform: string;
-        const bpmnFile = this.documentOutPort.getContent();
+        try {
+            let executionPlatform: string;
+            const webviewId = this.documentOutPort.getFilePath();
+            const bpmnFile = this.documentOutPort.getContent();
 
-        const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
-        const match = bpmnFile.match(regex);
+            const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
+            const match = bpmnFile.match(regex);
 
-        if (match) {
-            executionPlatform = match[1];
-            successfulMessageToBpmnModeler.bpmn =
-                await this.sendToWebviewOutPort.sendBpmnFile(
-                    executionPlatform,
-                    bpmnFile,
+            if (match) {
+                executionPlatform = match[1];
+                successfulMessageToBpmnModeler.bpmn =
+                    await this.sendToWebviewOutPort.sendBpmnFile(
+                        webviewId,
+                        executionPlatform,
+                        bpmnFile,
+                    );
+                if (!successfulMessageToBpmnModeler.bpmn) {
+                    // TODO: Log the error
+                    this.showMessageOutPort.showErrorMessage(
+                        "A problem occurred while trying to display the BPMN file.",
+                    );
+                }
+                return successfulMessageToBpmnModeler.bpmn;
+            } else {
+                // TODO: Log the error
+                this.showMessageOutPort.showErrorMessage(
+                    `Execution platform version not found!`,
                 );
-            if (!successfulMessageToBpmnModeler.bpmn) {
-                // TODO: Log the error and show message
+                return false;
             }
-            return successfulMessageToBpmnModeler.bpmn;
-        } else {
-            throw new Error("Execution platform version not found");
-            // TODO: Log the error and show message
+        } catch (error) {
+            // TODO: Log the error
+            this.showMessageOutPort.showErrorMessage(
+                `A problem occurred while trying to display the BPMN file.\n
+                ${(error as Error).message}`,
+            );
+            return false;
         }
     }
 
     async sendFormKeys(): Promise<boolean> {
-        const formKeys = await this.readFormKeysOutPort.readFormKeys();
+        try {
+            const webviewId = this.documentOutPort.getFilePath();
+            const formKeys = await this.readFormKeysOutPort.readFormKeys();
 
-        successfulMessageToBpmnModeler.formKeys =
-            await this.sendToWebviewOutPort.sendFormKeys(formKeys);
+            successfulMessageToBpmnModeler.formKeys =
+                await this.sendToWebviewOutPort.sendFormKeys(webviewId, formKeys);
 
-        if (!successfulMessageToBpmnModeler.formKeys) {
-            // TODO: Log the error and show message
+            if (!successfulMessageToBpmnModeler.formKeys) {
+                // TODO: Log the error
+                this.showMessageOutPort.showErrorMessage(
+                    "A problem occurred! `Form Keys` will not be selectable.",
+                );
+            }
+
+            return successfulMessageToBpmnModeler.formKeys;
+        } catch (error) {
+            // TODO: Log the error
+            if (error instanceof NoMiranumConfigFoundError) {
+                this.showMessageOutPort.showErrorMessage(
+                    "No configuration for type `form` found in `miranum.json`.",
+                );
+            }
+            return false;
         }
-
-        return successfulMessageToBpmnModeler.formKeys;
     }
 
     async sendElementTemplates(): Promise<boolean> {
-        const elementTemplates =
-            await this.readElementTemplateOutPort.readElementTemplates();
+        try {
+            const webviewId = this.documentOutPort.getFilePath();
+            const elementTemplates =
+                await this.readElementTemplateOutPort.readElementTemplates();
 
-        successfulMessageToBpmnModeler.elementTemplates =
-            await this.sendToWebviewOutPort.sendElementTemplates(elementTemplates);
+            successfulMessageToBpmnModeler.elementTemplates =
+                await this.sendToWebviewOutPort.sendElementTemplates(
+                    webviewId,
+                    elementTemplates,
+                );
 
-        if (!successfulMessageToBpmnModeler.elementTemplates) {
-            // TODO: Log the error and show message
+            if (!successfulMessageToBpmnModeler.elementTemplates) {
+                // TODO: Log the error
+                this.showMessageOutPort.showErrorMessage(
+                    "A problem occurred! `Element Templates` will not be selectable.",
+                );
+            }
+
+            return successfulMessageToBpmnModeler.elementTemplates;
+        } catch (error) {
+            // TODO: Log the error
+            if (error instanceof NoMiranumConfigFoundError) {
+                this.showMessageOutPort.showErrorMessage(
+                    "No configuration for type `element-template` found in `miranum.json`.",
+                );
+            }
+            return false;
         }
-
-        return successfulMessageToBpmnModeler.elementTemplates;
     }
 }
 
@@ -82,15 +134,32 @@ export class SendToDmnModelerUseCase implements SendToDmnModelerInPort {
         private readonly documentOutPort: DocumentOutPort,
         @inject("SendToDmnModelerOutPort")
         private readonly sendToWebviewOutPort: SendToDmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        private readonly showMessageOutPort: ShowMessageOutPort,
     ) {}
 
     async sendDmnFile(): Promise<boolean> {
-        const dmnFile = this.documentOutPort.getContent();
-        successfulMessageToDmnModeler.dmn =
-            await this.sendToWebviewOutPort.sendDmnFile(dmnFile);
-        if (!successfulMessageToDmnModeler.dmn) {
-            // TODO: Log the error and show message
+        try {
+            const webviewId = this.documentOutPort.getFilePath();
+            const dmnFile = this.documentOutPort.getContent();
+
+            successfulMessageToDmnModeler.dmn =
+                await this.sendToWebviewOutPort.sendDmnFile(webviewId, dmnFile);
+
+            if (!successfulMessageToDmnModeler.dmn) {
+                // TODO: Log the error
+                this.showMessageOutPort.showErrorMessage(
+                    "A problem occurred while trying to display the DMN file.",
+                );
+            }
+            return successfulMessageToDmnModeler.dmn;
+        } catch (error) {
+            // TODO: Log the error
+            this.showMessageOutPort.showErrorMessage(
+                `A problem occurred while trying to display the DMN file.\n
+                ${(error as Error).message}`,
+            );
+            return false;
         }
-        return successfulMessageToDmnModeler.dmn;
     }
 }

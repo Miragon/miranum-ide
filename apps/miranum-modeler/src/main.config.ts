@@ -16,19 +16,25 @@ import {
 import {
     BpmnWebviewAdapter as BpmnWebviewOutAdapter,
     DmnWebviewAdapter as DmnWebviewOutAdapter,
+    MiranumDocumentAdapter,
+    MiranumWorkspaceAdapter,
     ReadDigiWfFormKeysAdapter,
     ReadElementTemplatesAdapter,
     ReadMiranumJsonAdapter,
     VsCodeReadAdapter,
+    VsCodeShowMessageAdapter,
 } from "./adapter/out";
 
 export function config(): void {
     // Out Adapter
+    container.register("WorkspaceOutPort", { useClass: MiranumWorkspaceAdapter });
+    container.register("DocumentOutPort", { useClass: MiranumDocumentAdapter });
     container.register("VsCodeReadOutPort", { useClass: VsCodeReadAdapter });
     container.register("ReadMiranumJsonOutPort", { useClass: ReadMiranumJsonAdapter });
+    container.register("ShowMessageOutPort", { useClass: VsCodeShowMessageAdapter });
 
     // Use Cases
-    container.register("SetArtifactsInPort", { useClass: ReadMiranumJsonUseCase });
+    container.register("SetConfigInPort", { useClass: ReadMiranumJsonUseCase });
 
     configBpmnModeler();
     configDmnModeler();
