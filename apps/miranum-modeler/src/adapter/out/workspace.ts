@@ -1,28 +1,17 @@
-import { Uri, workspace } from "vscode";
+import { FileType, Uri, workspace } from "vscode";
 import { singleton } from "tsyringe";
 
 import { getContent, getFilePath } from "../helper/vscode";
-import { DocumentOutPort, WorkspaceOutPort } from "../../application/ports/out";
-import { NoWorkspaceFolderFoundError } from "../../application/errors";
+import {
+    DocumentOutPort,
+    VsCodeReadOutPort,
+    WorkspaceOutPort,
+} from "../../application/ports/out";
+import { FileNotFound, NoWorkspaceFolderFoundError } from "../../application/errors";
 
-@singleton()
+const fs = workspace.fs;
+
 export class MiranumWorkspaceAdapter implements WorkspaceOutPort {
-    async getMiranumConfigForDocument(document: string): Promise<string[]> {
-        const workspaceFolders = this.getWorkspaceFoldersWithMiranumConfig();
-        const workspaceFolder = this.getWorkspaceFolderForDocument(document);
-
-        const ws = (await workspaceFolders).find((folder) => folder === workspaceFolder);
-
-        if (!ws) {
-            // undefined = document is in a workspace without a miranum.json
-            return [];
-        }
-
-        return (await workspace.findFiles(`${ws}/**/miranum.json`)).map(
-            (uri) => uri.path,
-        );
-    }
-
     getWorkspaceFolderForDocument(document: string): string {
         const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(document));
         if (!workspaceFolder) {
@@ -52,5 +41,43 @@ export class MiranumDocumentAdapter implements DocumentOutPort {
 
     getFilePath(): string {
         return getFilePath();
+    }
+}
+
+export class VsCodeReadAdapter implements VsCodeReadOutPort {
+    async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
+        const dir = await fs.readDirectory(Uri.file(path));
+        // flatMap {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap}
+        return dir.flatMap(([name, type]) => {
+            const t = this.parseFileType(type);
+            if (t !== "file" && t !== "directory") {
+                return []; // remove item
+            }
+
+            return [[name, t]]; // add item
+        });
+    }
+
+    async readFile(path: string): Promise<string> {
+        return fs.readFile(Uri.file(path)).then(
+            (buffer) => buffer.toString(),
+            (reason) => {
+                // TODO: What is reason?
+                throw new FileNotFound(reason);
+            },
+        );
+    }
+
+    private parseFileType(type: FileType): string {
+        switch (type) {
+            case FileType.File:
+                return "file";
+            case FileType.Directory:
+                return "directory";
+            case FileType.SymbolicLink:
+                return "symbolicLink";
+            default:
+                return "unknown";
+        }
     }
 }

@@ -2,9 +2,9 @@ import { inject, singleton } from "tsyringe";
 
 import { onDidReceiveMessage } from "../helper/vscode";
 import {
-    DisplayBpmnModelerArtifactInPort,
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
+    DisplayFormKeysInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
     SyncDocumentInPort,
@@ -17,7 +17,7 @@ export class BpmnWebviewAdapter {
         @inject("DisplayBpmnModelerInPort")
         private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
         @inject("DisplayBpmnModelerArtifactInPort")
-        private readonly displayBpmnModelerArtifactInPort: DisplayBpmnModelerArtifactInPort,
+        private readonly displayBpmnModelerArtifactInPort: DisplayFormKeysInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreBpmnModelerInPort")

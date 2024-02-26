@@ -5,6 +5,12 @@ export class NoWorkspaceFolderFoundError extends Error {
 }
 
 export class NoMiranumConfigFoundError extends Error {
+    constructor() {
+        super("No miranum.json file found.");
+    }
+}
+
+export class NoMiranumWorkspaceItemError extends Error {
     constructor(type: string) {
         super(`No configuration for type \`${type}\` found in \`miranum.json\`.`);
     }

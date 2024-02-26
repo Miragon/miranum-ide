@@ -73,16 +73,6 @@ export interface WorkspaceOutPort {
      * @throws {NoWorkspaceFolderFoundError} if the document is not in a workspace
      */
     getWorkspaceFolderForDocument(document: string): string;
-
-    /**
-     * Get the path to the `miranum.json` file for the given file.
-     * @param document
-     * @returns {Promise<string[]>} the path to the `miranum.json` file
-     * If no `miranum.json` file is found, return an empty array
-     * If multiple `miranum.json` files are found, return all paths
-     * @throws {NoWorkspaceFolderFoundError} if the document is not in a workspace
-     */
-    getMiranumConfigForDocument(document: string): Promise<string[]>;
 }
 
 export interface VsCodeReadOutPort {
