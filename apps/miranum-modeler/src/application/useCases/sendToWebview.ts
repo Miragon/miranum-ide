@@ -202,6 +202,11 @@ export class DisplayFormKeysUseCase
             return successfulMessageToBpmnModeler.formKeys;
         } catch (error) {
             // TODO: Log the error
+            this.showMessageOutPort.showErrorMessage(
+                `A problem occurred while trying to display the forms.\n
+                ${(error as Error).message}`,
+            );
+
             successfulMessageToBpmnModeler.formKeys = false;
             return successfulMessageToBpmnModeler.formKeys;
         }
@@ -289,6 +294,11 @@ export class DisplayElementTemplatesUseCase
             return successfulMessageToBpmnModeler.elementTemplates;
         } catch (error) {
             // TODO: Log the error
+            this.showMessageOutPort.showErrorMessage(
+                `A problem occurred while trying to display the element templates.\n
+                ${(error as Error).message}`,
+            );
+
             successfulMessageToBpmnModeler.elementTemplates = false;
             return successfulMessageToBpmnModeler.elementTemplates;
         }

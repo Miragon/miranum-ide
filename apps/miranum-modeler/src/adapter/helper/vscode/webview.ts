@@ -1,4 +1,4 @@
-import { Uri, Webview, WebviewPanel } from "vscode";
+import { Disposable, Uri, Webview, WebviewPanel } from "vscode";
 
 import { getContext, getNonce } from "@miranum-ide/vscode/miranum-vscode";
 import {
@@ -6,8 +6,9 @@ import {
     MiranumModelerQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-let activeWebviewId: string | undefined;
-let miranumWebviewPanel: WebviewPanel | undefined;
+let activeWebviewPanel: { id: string; panel: WebviewPanel } | undefined;
+
+const disposables: Map<string, Disposable[]> = new Map();
 
 /**
  * The name of the directory where the necessary files for the webview are located after build.
@@ -20,53 +21,51 @@ export function createMiranumWebview(
     webviewPanel: WebviewPanel,
     viewType: string,
 ): WebviewPanel {
-    activeWebviewId = id;
-    miranumWebviewPanel = webviewPanel;
+    activeWebviewPanel = {
+        id,
+        panel: webviewPanel,
+    };
 
-    const webview = miranumWebviewPanel.webview;
+    const webview = activeWebviewPanel.panel.webview;
     webview.options = { enableScripts: true };
 
     if (viewType === "miranum-bpmn-modeler") {
-        webview.html = bpmnModelerHtml(
-            miranumWebviewPanel.webview,
-            getContext().extensionUri,
-        );
+        webview.html = bpmnModelerHtml(webview, getContext().extensionUri);
     } else if (viewType === "miranum-dmn-modeler") {
-        webview.html = dmnModelerHtml(
-            miranumWebviewPanel.webview,
-            getContext().extensionUri,
-        );
+        webview.html = dmnModelerHtml(webview, getContext().extensionUri);
     } else {
         throw new Error(`Unsupported file extension: ${viewType}`);
     }
 
-    return miranumWebviewPanel;
+    activeWebviewPanel.panel.onDidDispose(() => disposeWebview());
+
+    return activeWebviewPanel.panel;
 }
 
 export function setMiranumWebviewPanel(id: string, webviewPanel: WebviewPanel) {
-    activeWebviewId = id;
-    miranumWebviewPanel = webviewPanel;
+    activeWebviewPanel = {
+        id,
+        panel: webviewPanel,
+    };
 }
 
 export async function postMessage(
     webviewId: string,
     message: MiranumModelerCommand | MiranumModelerQuery,
 ): Promise<boolean> {
-    if (activeWebviewId !== webviewId) {
+    if (activeWebviewPanel?.id !== webviewId) {
         throw new Error("Webview id does not match the active webview id.");
     }
     return getMiranumWebview().postMessage(message);
 }
 
-/**
- * Registers a callback to be called when the webview is disposed.
- * It disposes the webview panel plus disposables from the callback.
- * @param callback
- */
-export function onDidDispose(callback: () => void) {
-    if (miranumWebviewPanel) {
-        miranumWebviewPanel.dispose();
-        miranumWebviewPanel.onDidDispose(callback);
+export function subscribeToWebviewDispose(webviewId: string, disposable: Disposable) {
+    const subscriptions = disposables.get(webviewId);
+
+    if (subscriptions) {
+        subscriptions.push(disposable);
+    } else {
+        disposables.set(webviewId, [disposable]);
     }
 }
 
@@ -75,10 +74,22 @@ export function onDidReceiveMessage(callback: (message: MiranumModelerCommand) =
 }
 
 function getMiranumWebview(): Webview {
-    if (!miranumWebviewPanel) {
+    if (!activeWebviewPanel) {
         throw new Error("No webview panel set.");
     }
-    return miranumWebviewPanel.webview;
+    return activeWebviewPanel.panel.webview;
+}
+
+function disposeWebview() {
+    if (activeWebviewPanel) {
+        activeWebviewPanel.panel.dispose();
+
+        const subscriptions = disposables.get(activeWebviewPanel.id);
+        if (subscriptions) {
+            subscriptions.forEach((subscription) => subscription.dispose());
+        }
+        disposables.delete(activeWebviewPanel.id);
+    }
 }
 
 function bpmnModelerHtml(webview: Webview, extensionUri: Uri): string {

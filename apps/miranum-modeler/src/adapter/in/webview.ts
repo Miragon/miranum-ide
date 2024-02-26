@@ -4,6 +4,7 @@ import { onDidReceiveMessage } from "../helper/vscode";
 import {
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
+    DisplayElementTemplatesInPort,
     DisplayFormKeysInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
@@ -17,7 +18,9 @@ export class BpmnWebviewAdapter {
         @inject("DisplayBpmnModelerInPort")
         private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
         @inject("DisplayBpmnModelerArtifactInPort")
-        private readonly displayBpmnModelerArtifactInPort: DisplayFormKeysInPort,
+        private readonly displayFormKeysInPort: DisplayFormKeysInPort,
+        @inject("DisplayElementTemplatesInPort")
+        private readonly displayElementTemplatesInPort: DisplayElementTemplatesInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreBpmnModelerInPort")
@@ -30,11 +33,11 @@ export class BpmnWebviewAdapter {
                     break;
                 }
                 case "GetFormKeysTemplatesCommand": {
-                    this.displayBpmnModelerArtifactInPort.sendFormKeys();
+                    this.displayFormKeysInPort.sendFormKeys();
                     break;
                 }
                 case "GetElementTemplatesCommand": {
-                    this.displayBpmnModelerArtifactInPort.sendElementTemplates();
+                    this.displayElementTemplatesInPort.sendElementTemplates();
                     break;
                 }
                 case "SyncDocumentCommand": {
