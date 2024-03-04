@@ -1,63 +1,88 @@
-export interface SendToBpmnModelerOutPort {
+import { BpmnModelerSetting } from "../model";
+
+interface EditorComponent {
+    /**
+     * Get the id of the active editor.
+     * @throws {Error} if editor is not set
+     */
+    getId(): string;
+}
+
+export interface DisplayBpmnModelerOutPort extends EditorComponent {
     /**
      * Sends the BPMN file to the active webview.
-     * @param webviewId
+     * @param editorId
      * @param executionPlatform
      * @param bpmnFile
-     * @returns {Promise<boolean>} true if the message was sent successfully
-     * @throws {Error} if the webview id does not match the active webview id
+     * @returns true if the message was sent successfully, false otherwise
+     * @throws {Error} if the editorId does not match the active editor
      */
-    sendBpmnFile(
-        webviewId: string,
-        executionPlatform: string,
+    displayBpmnFile(
+        editorId: string,
+        executionPlatform: "c7" | "c8",
         bpmnFile: string,
     ): Promise<boolean>;
 
     /**
      * Sends the element templates to the active webview.
-     * @param webviewId
+     * @param editorId
      * @param elementTemplates
-     * @returns {Promise<boolean>} true if the message was sent successfully
-     * @throws {Error} if the webview id does not match the active webview id
+     * @returns true if the message was sent successfully, false otherwise
+     * @throws {Error} if the editorId does not match the active editor
      */
-    sendElementTemplates(
-        webviewId: string,
-        elementTemplates: string[],
-    ): Promise<boolean>;
+    setElementTemplates(editorId: string, elementTemplates: string[]): Promise<boolean>;
 
     /**
      * Sends the form keys to the active webview.
-     * @param webviewId
+     * @param editorId
      * @param formKeys
-     * @returns {Promise<boolean>} true if the message was sent successfully
-     * @throws {Error} if the webview id does not match the active webview id
+     * @returns true if the message was sent successfully, false otherwise
+     * @throws {Error} if the editorId does not match the active editor
      */
-    sendFormKeys(webviewId: string, formKeys: string[]): Promise<boolean>;
+    setFormKeys(editorId: string, formKeys: string[]): Promise<boolean>;
+
+    /**
+     * Sends the settings to the active webview.
+     * @param editorId
+     * @param setting
+     * @returns true if the message was sent successfully, false otherwise
+     * @throws {Error} if the editorId does not match the active editor
+     */
+    setSettings(editorId: string, setting: BpmnModelerSetting): Promise<boolean>;
 }
 
-export interface SendToDmnModelerOutPort {
+export interface DisplayDmnModelerOutPort extends EditorComponent {
     /**
      * Sends the DMN file to the active webview.
-     * @param webviewId
+     * @param editorId
      * @param dmnFile
      * @returns {Promise<boolean>} true if the message was sent successfully
-     * @throws {Error} if the webview id does not match the active webview id
+     * @throws {Error} if the editorId does not match the active editor
      */
-    sendDmnFile(webviewId: string, dmnFile: string): Promise<boolean>;
+    displayDmnFile(editorId: string, dmnFile: string): Promise<boolean>;
 }
 
-export interface DocumentOutPort {
+export interface DocumentOutPort extends EditorComponent {
     /**
      * Get the content of the document.
-     * @throws {Error} if the document is not set
+     * @throws {Error} if editor is not set
      */
     getContent(): string;
 
     /**
      * Get the file path of the document.
-     * @throws {Error} if the document is not set
+     * @throws {Error} if editor is not set
      */
     getFilePath(): string;
+
+    /**
+     * Write the content to the document.
+     * @param content
+     * @returns true if the content was written successfully
+     * @throws {NoChangesToApplyError} if the content is the same as the current content
+     * @throws {Error} if editor is not set
+     */
+    write(content: string): Promise<boolean>;
 }
 
 export interface WorkspaceOutPort {
@@ -75,14 +100,36 @@ export interface WorkspaceOutPort {
     getWorkspaceFolderForDocument(document: string): string;
 }
 
-export interface VsCodeReadOutPort {
+export interface FileSystemOutPort {
     readDirectory(path: string): Promise<[string, "file" | "directory"][]>;
 
     readFile(path: string): Promise<string>;
 }
 
-export interface ShowMessageOutPort {
-    showInfoMessage(message: string): void;
+export interface BpmnModelerSettingsOutPort {
+    getAlignToOrigin(): boolean;
+}
 
-    showErrorMessage(message: string): void;
+export interface ShowMessageOutPort {
+    info(message: string): void;
+
+    error(message: string): void;
+}
+
+export interface TextEditorOutPort {
+    /**
+     * Toggles the text editor.
+     * @returns true if the text editor was opened, false if it was closed
+     */
+    toggle(documentPath: string): Promise<boolean>;
+}
+
+export interface ShowLoggerOutPort {
+    show(): void;
+}
+
+export interface LogMessageOutPort {
+    info(message: string): void;
+
+    error(error: Error): void;
 }

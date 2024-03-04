@@ -1,7 +1,7 @@
 import { GetMiranumConfigInPort, GetWorkspaceItemInPort } from "../ports/in";
 import { MiranumConfig, MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 import { inject, singleton } from "tsyringe";
-import { VsCodeReadOutPort, WorkspaceOutPort } from "../ports/out";
+import { FileSystemOutPort, WorkspaceOutPort } from "../ports/out";
 import { NoMiranumConfigFoundError, NoMiranumWorkspaceItemError } from "../errors";
 
 @singleton()
@@ -9,15 +9,15 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
     constructor(
         @inject("WorkspaceOutPort")
         private readonly workspaceOutPort: WorkspaceOutPort,
-        @inject("VsCodeReadOutPort")
-        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
+        @inject("FileSystemOutPort")
+        private readonly fileSystemOutPort: FileSystemOutPort,
     ) {}
 
-    async getMiranumConfig(documentPath: string): Promise<string> {
+    async get(documentDir: string): Promise<string> {
         const workspaceFolders =
             this.workspaceOutPort.getWorkspaceFoldersWithMiranumConfig();
         const workspaceFolderForDocument =
-            this.workspaceOutPort.getWorkspaceFolderForDocument(documentPath);
+            this.workspaceOutPort.getWorkspaceFolderForDocument(documentDir);
 
         const ws = (await workspaceFolders).find(
             (folder) => folder === workspaceFolderForDocument,
@@ -30,7 +30,7 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
 
         // Since we only want the config files in the same or parent directories
         // of the document, we don't need to search the whole workspace.
-        const files = await this.searchMiranumConfig(ws, documentPath);
+        const files = await this.searchMiranumConfig(ws, documentDir);
 
         switch (files.length) {
             case 0:
@@ -55,7 +55,7 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
         }
 
         const getConfig = async (dir: string): Promise<string | undefined> => {
-            const files = await this.vsCodeReadOutPort.readDirectory(dir);
+            const files = await this.fileSystemOutPort.readDirectory(dir);
             if (
                 files.find(([name, type]) => name === "miranum.json" && type === "file")
             ) {
@@ -84,7 +84,7 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
                     rootDir,
                     searchDir.split("/").slice(0, -1).join("/"),
                 )
-            )[0],
+            ),
         );
 
         return configs;
@@ -96,17 +96,19 @@ export class GetWorkspaceItemUseCase implements GetWorkspaceItemInPort {
     constructor(
         @inject("WorkspaceOutPort")
         private readonly workspaceOutPort: WorkspaceOutPort,
-        @inject("VsCodeReadOutPort")
-        private readonly vsCodeReadOutPort: VsCodeReadOutPort,
+        @inject("FileSystemOutPort")
+        private readonly fileSystemOutPort: FileSystemOutPort,
     ) {}
 
-    async getWorkspaceItemByType(
+    async getByType(
         miranumConfigPath: string,
         type: string,
     ): Promise<MiranumWorkspaceItem> {
         const miranumConfig: MiranumConfig = JSON.parse(
-            await this.vsCodeReadOutPort.readFile(miranumConfigPath),
+            await this.fileSystemOutPort.readFile(miranumConfigPath),
         );
+
+        // FIXME: The type is hardcoded but depends on the config
         const workspaceItem = miranumConfig.workspace.find((item) => item.type === type);
 
         if (!workspaceItem) {
@@ -116,7 +118,7 @@ export class GetWorkspaceItemUseCase implements GetWorkspaceItemInPort {
         return workspaceItem;
     }
 
-    getDefaultWorkspaceItemByType(type: string): MiranumWorkspaceItem {
+    getDefaultByType(type: string): MiranumWorkspaceItem {
         switch (type) {
             case "form":
                 return {

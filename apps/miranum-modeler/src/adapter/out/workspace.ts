@@ -1,17 +1,16 @@
 import { FileType, Uri, workspace } from "vscode";
 import { singleton } from "tsyringe";
-
-import { getContent, getFilePath } from "../helper/vscode";
 import {
-    DocumentOutPort,
-    VsCodeReadOutPort,
+    BpmnModelerSettingsOutPort,
+    FileSystemOutPort,
     WorkspaceOutPort,
 } from "../../application/ports/out";
 import { FileNotFound, NoWorkspaceFolderFoundError } from "../../application/errors";
 
 const fs = workspace.fs;
 
-export class MiranumWorkspaceAdapter implements WorkspaceOutPort {
+@singleton()
+export class VsCodeWorkspaceAdapter implements WorkspaceOutPort {
     getWorkspaceFolderForDocument(document: string): string {
         const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(document));
         if (!workspaceFolder) {
@@ -34,17 +33,7 @@ export class MiranumWorkspaceAdapter implements WorkspaceOutPort {
 }
 
 @singleton()
-export class MiranumDocumentAdapter implements DocumentOutPort {
-    getContent(): string {
-        return getContent();
-    }
-
-    getFilePath(): string {
-        return getFilePath();
-    }
-}
-
-export class VsCodeReadAdapter implements VsCodeReadOutPort {
+export class VsCodeReadAdapter implements FileSystemOutPort {
     async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
         const dir = await fs.readDirectory(Uri.file(path));
         // flatMap {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap}
@@ -79,5 +68,20 @@ export class VsCodeReadAdapter implements VsCodeReadOutPort {
             default:
                 return "unknown";
         }
+    }
+}
+
+@singleton()
+export class VsCodeBpmnModelerSettingsAdapter implements BpmnModelerSettingsOutPort {
+    getAlignToOrigin(): boolean {
+        const setting = workspace
+            .getConfiguration("miranumIDE.modeler")
+            .get<boolean>("alignToOrigin");
+
+        if (!setting) {
+            return false;
+        }
+
+        return setting;
     }
 }

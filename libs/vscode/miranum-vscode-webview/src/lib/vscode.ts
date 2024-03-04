@@ -1,6 +1,10 @@
 import { WebviewApi } from "vscode-webview";
 
 export interface VsCodeApi<T, M> {
+    /**
+     * Get the current state of the webview.
+     * @throws MissingStateError if the state is missing
+     */
     getState(): T;
 
     setState(state: T): void;

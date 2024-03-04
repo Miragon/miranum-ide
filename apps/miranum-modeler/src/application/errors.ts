@@ -21,3 +21,15 @@ export class FileNotFound extends Error {
         super(`File not found: ${path}`);
     }
 }
+
+export class UnableToCreateWatcherError extends Error {
+    constructor(webviewId?: string, reason?: string) {
+        super(`Unable to create watcher for webview ${webviewId}. ${reason}`);
+    }
+}
+
+export class NoChangesToApplyError extends Error {
+    constructor(editorId: string) {
+        super(`No changes to apply for ${editorId}.`);
+    }
+}

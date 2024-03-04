@@ -2,10 +2,10 @@ import { inject, singleton } from "tsyringe";
 import {
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
-    DisplayElementTemplatesInPort,
-    DisplayFormKeysInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
+    SetElementTemplatesInPort,
+    SetFormKeysInPort,
 } from "../ports/in";
 import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from "../model";
 
@@ -14,24 +14,24 @@ export class RestoreBpmnModelerUseCase implements RestoreBpmnModelerInPort {
     constructor(
         @inject("DisplayBpmnModelerInPort")
         private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
-        @inject("DisplayFormKeysInPort")
-        private readonly displayFormKeysInPort: DisplayFormKeysInPort,
-        @inject("DisplayElementTemplatesInPort")
-        private readonly displayElementTemplatesInPort: DisplayElementTemplatesInPort,
+        @inject("SetFormKeysInPort")
+        private readonly setFormKeysInPort: SetFormKeysInPort,
+        @inject("SetElementTemplatesInPort")
+        private readonly setElementTemplatesInPort: SetElementTemplatesInPort,
     ) {}
 
-    async restoreBpmnModeler(): Promise<void> {
+    async restore(editorId: string): Promise<void> {
         switch (false) {
             case successfulMessageToBpmnModeler.bpmn: {
-                this.displayBpmnModelerInPort.displayBpmnFile();
+                this.displayBpmnModelerInPort.display(editorId);
                 // break is omitted intentionally
             }
             case successfulMessageToBpmnModeler.formKeys: {
-                this.displayFormKeysInPort.sendFormKeys();
+                this.setFormKeysInPort.set(editorId);
                 // break is omitted intentionally
             }
             case successfulMessageToBpmnModeler.elementTemplates: {
-                this.displayElementTemplatesInPort.sendElementTemplates();
+                this.setElementTemplatesInPort.set(editorId);
                 // break is omitted intentionally
             }
         }
@@ -45,8 +45,8 @@ export class RestoreDmnModelerUseCase implements RestoreDmnModelerInPort {
         private readonly displayDmnModelerInPort: DisplayDmnModelerInPort,
     ) {}
 
-    async restoreDmnModeler(): Promise<void> {
+    async restore(editorId: string): Promise<void> {
         if (!successfulMessageToDmnModeler.dmn)
-            this.displayDmnModelerInPort.displayDmnFile();
+            this.displayDmnModelerInPort.display(editorId);
     }
 }

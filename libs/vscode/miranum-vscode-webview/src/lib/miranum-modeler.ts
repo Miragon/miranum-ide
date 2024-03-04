@@ -49,6 +49,19 @@ export class ElementTemplatesQuery extends MiranumModelerQuery {
     }
 }
 
+export interface WebviewSetting {
+    readonly alignToOrigin: boolean;
+}
+
+export class WebviewSettingQuery extends MiranumModelerQuery {
+    public readonly setting: WebviewSetting;
+
+    constructor(setting: WebviewSetting) {
+        super("WebviewConfigQuery");
+        this.setting = setting;
+    }
+}
+
 // <================================== Queries ===================================
 //
 // =================================== Commands ==================================>
@@ -79,6 +92,12 @@ export class GetElementTemplatesCommand extends MiranumModelerCommand {
     }
 }
 
+export class GetWebviewSettingCommand extends MiranumModelerCommand {
+    constructor() {
+        super("GetWebviewSettingCommand");
+    }
+}
+
 export class SyncDocumentCommand extends MiranumModelerCommand {
     public readonly content: string;
 
@@ -88,10 +107,10 @@ export class SyncDocumentCommand extends MiranumModelerCommand {
     }
 }
 
-export class AlignElementsToOriginCommand extends MiranumModelerCommand {
-    constructor() {
-        super("AlignElementsToOriginCommand");
-    }
-}
+// export class AlignElementsToOriginCommand extends MiranumModelerCommand {
+//     constructor() {
+//         super("AlignElementsToOriginCommand");
+//     }
+// }
 
 // <================================== Commands ===================================

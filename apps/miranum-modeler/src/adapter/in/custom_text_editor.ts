@@ -3,53 +3,89 @@ import {
     CustomTextEditorProvider,
     TextDocument,
     WebviewPanel,
+    window,
 } from "vscode";
-import { inject, singleton } from "tsyringe";
+import { container, inject, singleton } from "tsyringe";
 
+import { getContext } from "@miranum-ide/vscode/miranum-vscode";
+
+import { LogMessageInPort, ShowMessageInPort } from "../../application/ports/in";
+import { createEditor, setActiveEditor } from "../out";
+import { VsCodeBpmnWebviewAdapter, VsCodeDmnWebviewAdapter } from "./webview";
 import {
-    createMiranumWebview,
-    setDocument,
-    setMiranumWebviewPanel,
-} from "../helper/vscode";
+    VsCodeArtifactWatcherAdapter,
+    VsCodeBpmnDocumentAdapter,
+    VsCodeDmnDocumentAdapter,
+} from "./workspace";
 
 @singleton()
-export class BpmnModelerAdapter implements CustomTextEditorProvider {
+export class VsCodeBpmnModelerAdapter implements CustomTextEditorProvider {
     constructor(
         @inject("BpmnModelerViewType")
         private readonly viewType: string,
-    ) {}
+        @inject("ShowMessageInPort")
+        private readonly showMessageInPort: ShowMessageInPort,
+        @inject("LogMessageInPort")
+        private readonly logMessageInPort: LogMessageInPort,
+        private readonly bpmnWebviewAdapter: VsCodeBpmnWebviewAdapter,
+        private readonly bpmnDocumentAdapter: VsCodeBpmnDocumentAdapter,
+        private readonly artifactWatcherAdapter: VsCodeArtifactWatcherAdapter,
+    ) {
+        const bpmnModeler = window.registerCustomEditorProvider(
+            container.resolve("BpmnModelerViewType"),
+            this,
+        );
 
-    resolveCustomTextEditor(
+        getContext().subscriptions.push(bpmnModeler);
+    }
+
+    async resolveCustomTextEditor(
         document: TextDocument,
         webviewPanel: WebviewPanel,
         token: CancellationToken,
-    ): void | Thenable<void> {
+    ): Promise<void> {
         try {
-            setDocument(document);
-            const wp = createMiranumWebview(
-                document.uri.path,
-                webviewPanel,
-                this.viewType,
-            );
+            const editorId = document.uri.path;
+            const wp = createEditor(this.viewType, editorId, webviewPanel, document);
+            this.bpmnWebviewAdapter.register();
+            this.bpmnDocumentAdapter.register();
+            const errors = await this.artifactWatcherAdapter.create(editorId);
+
+            for (const error of errors) {
+                this.showMessageInPort.error(error.message);
+                this.logMessageInPort.error(error);
+            }
 
             webviewPanel.onDidChangeViewState((e) => {
+                // if the user switches from one webview to another
                 if (e.webviewPanel.active) {
-                    setDocument(document);
-                    setMiranumWebviewPanel(document.uri.path, wp);
+                    setActiveEditor(editorId, wp, document);
                 }
             });
         } catch (error) {
-            // TODO: Log the error
+            this.showMessageInPort.error((error as Error).message);
+            this.logMessageInPort.error(error as Error);
         }
     }
 }
 
 @singleton()
-export class DmnModelerAdapter implements CustomTextEditorProvider {
+export class VsCodeDmnModelerAdapter implements CustomTextEditorProvider {
     constructor(
         @inject("DmnModelerViewType")
         private readonly viewType: string,
-    ) {}
+        @inject("LogMessageInPort")
+        private readonly logMessageInPort: LogMessageInPort,
+        private readonly dmnWebviewAdapter: VsCodeDmnWebviewAdapter,
+        private readonly dmnDocumentAdapter: VsCodeDmnDocumentAdapter,
+    ) {
+        const dmnModeler = window.registerCustomEditorProvider(
+            container.resolve("DmnModelerViewType"),
+            this,
+        );
+
+        getContext().subscriptions.push(dmnModeler);
+    }
 
     resolveCustomTextEditor(
         document: TextDocument,
@@ -57,21 +93,18 @@ export class DmnModelerAdapter implements CustomTextEditorProvider {
         token: CancellationToken,
     ): void | Thenable<void> {
         try {
-            setDocument(document);
-            const wp = createMiranumWebview(
-                document.uri.path,
-                webviewPanel,
-                this.viewType,
-            );
+            const editorId = document.uri.path;
+            const wp = createEditor(this.viewType, editorId, webviewPanel, document);
+            this.dmnWebviewAdapter.register();
+            this.dmnDocumentAdapter.register();
 
             webviewPanel.onDidChangeViewState((e) => {
                 if (e.webviewPanel.active) {
-                    setDocument(document);
-                    setMiranumWebviewPanel(document.uri.path, wp);
+                    setActiveEditor(editorId, wp, document);
                 }
             });
         } catch (error) {
-            // TODO: Log the error
+            this.logMessageInPort.error(error as Error);
         }
     }
 }

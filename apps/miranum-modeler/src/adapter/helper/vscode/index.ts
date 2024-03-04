@@ -1,2 +1,1 @@
-export * from "./webview";
-export * from "./workspace";
+export * from "./editor";

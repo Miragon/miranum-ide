@@ -1,51 +1,67 @@
 import { inject, singleton } from "tsyringe";
 
-import { onDidReceiveMessage } from "../helper/vscode";
+import {
+    MiranumModelerCommand,
+    SyncDocumentCommand,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+
+import { onDidReceiveMessage } from "../out";
 import {
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
-    DisplayElementTemplatesInPort,
-    DisplayFormKeysInPort,
     RestoreBpmnModelerInPort,
     RestoreDmnModelerInPort,
+    SetBpmnModelerSettingsInPort,
+    SetElementTemplatesInPort,
+    SetFormKeysInPort,
     SyncDocumentInPort,
 } from "../../application/ports/in";
-import { MiranumModelerCommand } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 @singleton()
-export class BpmnWebviewAdapter {
+export class VsCodeBpmnWebviewAdapter {
     constructor(
         @inject("DisplayBpmnModelerInPort")
         private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
-        @inject("DisplayBpmnModelerArtifactInPort")
-        private readonly displayFormKeysInPort: DisplayFormKeysInPort,
-        @inject("DisplayElementTemplatesInPort")
-        private readonly displayElementTemplatesInPort: DisplayElementTemplatesInPort,
+        @inject("SetFormKeysInPort")
+        private readonly setFormKeysInPort: SetFormKeysInPort,
+        @inject("SetElementTemplatesInPort")
+        private readonly setElementTemplatesInPort: SetElementTemplatesInPort,
+        @inject("SetBpmnModelerSettingsInPort")
+        private readonly setBpmnModelerSettingsInPort: SetBpmnModelerSettingsInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreBpmnModelerInPort")
         private readonly restoreBpmnModelerInPort: RestoreBpmnModelerInPort,
-    ) {
-        onDidReceiveMessage((message: MiranumModelerCommand) => {
+    ) {}
+
+    register() {
+        onDidReceiveMessage((message: MiranumModelerCommand, editorId: string) => {
             switch (message.type) {
                 case "GetBpmnFileCommand": {
-                    this.displayBpmnModelerInPort.displayBpmnFile();
+                    this.displayBpmnModelerInPort.display(editorId);
                     break;
                 }
-                case "GetFormKeysTemplatesCommand": {
-                    this.displayFormKeysInPort.sendFormKeys();
+                case "GetFormKeysCommand": {
+                    this.setFormKeysInPort.set(editorId);
                     break;
                 }
                 case "GetElementTemplatesCommand": {
-                    this.displayElementTemplatesInPort.sendElementTemplates();
+                    this.setElementTemplatesInPort.set(editorId);
+                    break;
+                }
+                case "GetWebviewSettingCommand": {
+                    this.setBpmnModelerSettingsInPort.set(editorId);
                     break;
                 }
                 case "SyncDocumentCommand": {
-                    this.syncDocumentInPort.syncDocument();
+                    this.syncDocumentInPort.sync(
+                        editorId,
+                        (message as SyncDocumentCommand).content,
+                    );
                     break;
                 }
                 case "RestoreWebviewCommand": {
-                    this.restoreBpmnModelerInPort.restoreBpmnModeler();
+                    this.restoreBpmnModelerInPort.restore(editorId);
                     break;
                 }
             }
@@ -54,7 +70,7 @@ export class BpmnWebviewAdapter {
 }
 
 @singleton()
-export class DmnWebviewAdapter {
+export class VsCodeDmnWebviewAdapter {
     constructor(
         @inject("DisplayDmnFileInPort")
         private readonly displayDmnModelerInPort: DisplayDmnModelerInPort,
@@ -62,19 +78,24 @@ export class DmnWebviewAdapter {
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("RestoreDmnModelerInPort")
         private readonly restoreDmnModelerInPort: RestoreDmnModelerInPort,
-    ) {
-        onDidReceiveMessage((message: MiranumModelerCommand) => {
+    ) {}
+
+    register() {
+        onDidReceiveMessage((message: MiranumModelerCommand, editorId: string) => {
             switch (message.type) {
                 case "GetDmnFileCommand": {
-                    this.displayDmnModelerInPort.displayDmnFile();
+                    this.displayDmnModelerInPort.display(editorId);
                     break;
                 }
                 case "SyncDocumentCommand": {
-                    this.syncDocumentInPort.syncDocument();
+                    this.syncDocumentInPort.sync(
+                        editorId,
+                        (message as SyncDocumentCommand).content,
+                    );
                     break;
                 }
                 case "RestoreWebviewCommand": {
-                    this.restoreDmnModelerInPort.restoreDmnModeler();
+                    this.restoreDmnModelerInPort.restore(editorId);
                     break;
                 }
             }

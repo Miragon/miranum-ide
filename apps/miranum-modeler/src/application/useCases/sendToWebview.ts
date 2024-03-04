@@ -1,119 +1,146 @@
 import { inject, singleton } from "tsyringe";
 
+import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
+
 import {
     DisplayBpmnModelerInPort,
     DisplayDmnModelerInPort,
-    DisplayElementTemplatesInPort,
-    DisplayFormKeysInPort,
     GetMiranumConfigInPort,
     GetWorkspaceItemInPort,
+    SetBpmnModelerSettingsInPort,
+    SetElementTemplatesInPort,
+    SetFormKeysInPort,
 } from "../ports/in";
 import {
+    BpmnModelerSettingsOutPort,
+    DisplayBpmnModelerOutPort,
+    DisplayDmnModelerOutPort,
     DocumentOutPort,
-    SendToBpmnModelerOutPort,
-    SendToDmnModelerOutPort,
+    FileSystemOutPort,
+    LogMessageOutPort,
     ShowMessageOutPort,
-    VsCodeReadOutPort,
 } from "../ports/out";
-import { successfulMessageToBpmnModeler, successfulMessageToDmnModeler } from "../model";
+import {
+    SettingBuilder,
+    successfulMessageToBpmnModeler,
+    successfulMessageToDmnModeler,
+} from "../model";
 import {
     FileNotFound,
     NoMiranumWorkspaceItemError,
     NoWorkspaceFolderFoundError,
 } from "../errors";
-import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 @singleton()
 export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("SendToBpmnModelerOutPort")
-        private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
+        @inject("DisplayBpmnModelerOutPort")
+        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
         @inject("ShowMessageOutPort")
         private readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("LogMessageOutPort")
+        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
-    async displayBpmnFile(): Promise<boolean> {
+    async display(editorId: string): Promise<boolean> {
         try {
-            let executionPlatform: string;
-            const webviewId = this.documentOutPort.getFilePath();
-            const bpmnFile = this.documentOutPort.getContent();
+            if (editorId !== this.displayBpmnModelerOutPort.getId()) {
+                throw new Error("The `editorID` does not match the active editor.");
+            }
 
+            const bpmnFile = this.documentOutPort.getContent();
             const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
             const match = bpmnFile.match(regex);
 
             if (match) {
-                executionPlatform = match[1];
-                successfulMessageToBpmnModeler.bpmn =
-                    await this.sendToBpmnModelerOutPort.sendBpmnFile(
-                        webviewId,
-                        executionPlatform,
-                        bpmnFile,
-                    );
+                const executionPlatform = match[1];
+                switch (executionPlatform) {
+                    case "7": {
+                        successfulMessageToBpmnModeler.bpmn =
+                            await this.displayBpmnModelerOutPort.displayBpmnFile(
+                                editorId,
+                                "c7",
+                                bpmnFile,
+                            );
+                        break;
+                    }
+                   case "8": {
+                        successfulMessageToBpmnModeler.bpmn =
+                            await this.displayBpmnModelerOutPort.displayBpmnFile(
+                                editorId,
+                                "c8",
+                                bpmnFile,
+                            );
+                        break;
+                   }
+                    default:
+                        throw new Error(
+                            `The execution platform version ${executionPlatform} is not supported.`,
+                        );
+                }
+
                 if (!successfulMessageToBpmnModeler.bpmn) {
-                    // TODO: Log the error
-                    this.showMessageOutPort.showErrorMessage(
-                        "A problem occurred while trying to display the BPMN file.",
-                    );
+                    throw new Error("Unable to display the BPMN Modeler.");
                 }
                 return successfulMessageToBpmnModeler.bpmn;
             } else {
-                // TODO: Log the error
-                this.showMessageOutPort.showErrorMessage(
-                    `Execution platform version not found!`,
+                throw new Error(
+                    `Missing execution platform in BPMN file ${this.documentOutPort.getFilePath()}.`,
                 );
-                return false;
             }
         } catch (error) {
-            // TODO: Log the error
-            this.showMessageOutPort.showErrorMessage(
-                `A problem occurred while trying to display the BPMN file.\n
+            this.logMessageOutPort.error(error as Error);
+            this.showMessageOutPort.error(
+                `A problem occurred while trying to display the BPMN Modeler.\n
                 ${(error as Error).message}`,
             );
-            return false;
+            return (successfulMessageToBpmnModeler.bpmn = false);
         }
     }
 }
 
 @singleton()
-export class SendToDmnModelerUseCase implements DisplayDmnModelerInPort {
+export class DisplayDmnModelerUseCase implements DisplayDmnModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("SendToDmnModelerOutPort")
-        private readonly sendToWebviewOutPort: SendToDmnModelerOutPort,
+        @inject("DisplayDmnModelerOutPort")
+        private readonly displayDmnModelerOutPort: DisplayDmnModelerOutPort,
         @inject("ShowMessageOutPort")
         private readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("LogMessageOutPort")
+        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
-    async displayDmnFile(): Promise<boolean> {
+    async display(editorId: string): Promise<boolean> {
         try {
-            const webviewId = this.documentOutPort.getFilePath();
+            if (editorId !== this.displayDmnModelerOutPort.getId()) {
+                throw new Error("The `editorID` does not match the active editor.");
+            }
+
             const dmnFile = this.documentOutPort.getContent();
 
             successfulMessageToDmnModeler.dmn =
-                await this.sendToWebviewOutPort.sendDmnFile(webviewId, dmnFile);
+                await this.displayDmnModelerOutPort.displayDmnFile(editorId, dmnFile);
 
             if (!successfulMessageToDmnModeler.dmn) {
-                // TODO: Log the error
-                this.showMessageOutPort.showErrorMessage(
-                    "A problem occurred while trying to display the DMN file.",
-                );
+                throw new Error("Unable to display the DMN Modeler.");
             }
             return successfulMessageToDmnModeler.dmn;
         } catch (error) {
-            // TODO: Log the error
-            this.showMessageOutPort.showErrorMessage(
-                `A problem occurred while trying to display the DMN file.\n
+            this.logMessageOutPort.error(error as Error);
+            this.showMessageOutPort.error(
+                `A problem occurred while trying to display the DMN Modeler.\n
                 ${(error as Error).message}`,
             );
-            return false;
+            return (successfulMessageToDmnModeler.dmn = false);
         }
     }
 }
 
-abstract class DisplayArtifact {
+abstract class GetArtifact {
     protected abstract type: string;
 
     protected abstract getMiranumConfigUseCase: GetMiranumConfigInPort;
@@ -122,28 +149,18 @@ abstract class DisplayArtifact {
 
     protected abstract showMessageOutPort: ShowMessageOutPort;
 
-    protected abstract vsCodeReadOutPort: VsCodeReadOutPort;
+    protected abstract fileSystemOutPort: FileSystemOutPort;
 
-    async getArtifacts(documentPath: string): Promise<[string[], string]> {
-        const miranumConfigPath = await getMiranumConfig(
-            documentPath,
-            this.getMiranumConfigUseCase,
-        );
+    async getArtifacts(documentDir: string): Promise<[string[], string]> {
+        const miranumConfigPath = await this.getMiranumConfig(documentDir);
 
-        // FIXME: The type is hardcoded but depends on the config
-        const workspaceItem = await getWorkspaceItem(
-            miranumConfigPath,
-            this.type,
-            this.getWorkspaceItemUseCase,
-            this.showMessageOutPort,
-        );
+        const workspaceItem = await this.getWorkspaceItem(miranumConfigPath, this.type);
 
         return [
-            await readDirectory(
+            await this.readDirectory(
                 miranumConfigPath?.replace("miranum.json", workspaceItem.path) ??
-                    `${documentPath}/${workspaceItem.path}`,
+                    `${documentDir}/${workspaceItem.path}`,
                 workspaceItem.extension,
-                this.vsCodeReadOutPort,
             ),
             workspaceItem.extension,
         ];
@@ -153,13 +170,70 @@ abstract class DisplayArtifact {
         artifacts: string[],
         extension?: string,
     ): Promise<string[]>;
+
+    private async getMiranumConfig(documentPath: string): Promise<string | undefined> {
+        try {
+            return await this.getMiranumConfigUseCase.get(documentPath);
+        } catch (error) {
+            if (error instanceof NoWorkspaceFolderFoundError) {
+                return documentPath;
+            }
+            return undefined;
+        }
+    }
+
+    private async getWorkspaceItem(
+        miranumConfigPath: string | undefined,
+        type: string,
+    ): Promise<MiranumWorkspaceItem> {
+        if (!miranumConfigPath) {
+            return this.getWorkspaceItemUseCase.getDefaultByType(type);
+        }
+
+        try {
+            return await this.getWorkspaceItemUseCase.getByType(miranumConfigPath, type);
+        } catch (error) {
+            const root = miranumConfigPath.replace("/miranum.json", "");
+            const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
+
+            if (error instanceof FileNotFound) {
+                this.showMessageOutPort.info(
+                    `The \`miranum.json\` file is missing!\n${defaultMessage}.`,
+                );
+            } else if (error instanceof SyntaxError) {
+                this.showMessageOutPort.info(
+                    `The \`miranum.json\` file has incorrect JSON!\n${defaultMessage}.`,
+                );
+            } else if (error instanceof NoMiranumWorkspaceItemError) {
+                this.showMessageOutPort.info(`${error.message}!\n${defaultMessage}.`);
+            } else {
+                this.showMessageOutPort.info(
+                    `${(error as Error).message}!\n${defaultMessage}.`,
+                );
+            }
+            return this.getWorkspaceItemUseCase.getDefaultByType(type);
+        }
+    }
+
+    private async readDirectory(folder: string, extension: string): Promise<string[]> {
+        const ws = await this.fileSystemOutPort.readDirectory(folder);
+
+        const files: string[] = [];
+        for (const [name, type] of ws) {
+            if (type === "directory") {
+                files.push(
+                    ...(await this.readDirectory(`${folder}/${name}`, extension)),
+                );
+            } else if (type === "file" && name.endsWith(extension)) {
+                files.push(`${folder}/${name}`);
+            }
+        }
+        return files;
+    }
 }
 
 @singleton()
-export class DisplayFormKeysUseCase
-    extends DisplayArtifact
-    implements DisplayFormKeysInPort
-{
+export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort {
     protected readonly type = "form";
 
     constructor(
@@ -167,48 +241,53 @@ export class DisplayFormKeysUseCase
         protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
         protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
-        @inject("VsCodeReadOutPort")
-        protected readonly vsCodeReadOutPort: VsCodeReadOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("FileSystemOutPort")
+        protected readonly fileSystemOutPort: FileSystemOutPort,
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("SendToBpmnModelerOutPort")
-        private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
+        @inject("DisplayBpmnModelerOutPort")
+        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("LogMessageOutPort")
+        private readonly logMessageOutPort: LogMessageOutPort,
     ) {
         super();
     }
 
-    async sendFormKeys(): Promise<boolean> {
+    async set(editorId: string): Promise<boolean> {
         try {
-            const document = this.documentOutPort.getFilePath();
-            const documentPath = document.split("/").slice(0, -1).join("/");
+            if (editorId !== this.documentOutPort.getId()) {
+                throw new Error("The `editorID` does not match the active editor.");
+            }
 
-            const [artifacts, extension] = await this.getArtifacts(documentPath);
+            const documentDir = this.documentOutPort
+                .getFilePath()
+                .split("/")
+                .slice(0, -1)
+                .join("/");
+
+            const [artifacts, extension] = await this.getArtifacts(documentDir);
 
             successfulMessageToBpmnModeler.formKeys =
-                await this.sendToBpmnModelerOutPort.sendFormKeys(
-                    document,
+                await this.displayBpmnModelerOutPort.setFormKeys(
+                    editorId,
                     await this.readArtifacts(artifacts, extension),
                 );
 
             if (!successfulMessageToBpmnModeler.formKeys) {
-                // TODO: Log the error
-                this.showMessageOutPort.showErrorMessage(
-                    "A problem occurred! `Form Keys` will not be selectable.",
-                );
+                throw new Error("Unable to set the `formKeys` for the active editor.");
             }
 
             return successfulMessageToBpmnModeler.formKeys;
         } catch (error) {
-            // TODO: Log the error
-            this.showMessageOutPort.showErrorMessage(
-                `A problem occurred while trying to display the forms.\n
+            this.logMessageOutPort.error(error as Error);
+            this.showMessageOutPort.error(
+                `A problem occurred while trying to set the \`formKeys\`.\n
                 ${(error as Error).message}`,
             );
 
-            successfulMessageToBpmnModeler.formKeys = false;
-            return successfulMessageToBpmnModeler.formKeys;
+            return (successfulMessageToBpmnModeler.formKeys = false);
         }
     }
 
@@ -218,7 +297,7 @@ export class DisplayFormKeysUseCase
     ): Promise<string[]> {
         const formKeys = Promise.all(
             artifacts.map(async (artifact) => {
-                return getFormKey(await this.vsCodeReadOutPort.readFile(artifact));
+                return getFormKey(await this.fileSystemOutPort.readFile(artifact));
             }),
         );
 
@@ -248,9 +327,9 @@ export class DisplayFormKeysUseCase
 }
 
 @singleton()
-export class DisplayElementTemplatesUseCase
-    extends DisplayArtifact
-    implements DisplayElementTemplatesInPort
+export class SetElementTemplatesUseCase
+    extends GetArtifact
+    implements SetElementTemplatesInPort
 {
     protected readonly type = "element-template";
 
@@ -259,48 +338,56 @@ export class DisplayElementTemplatesUseCase
         protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
         protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
-        @inject("VsCodeReadOutPort")
-        protected readonly vsCodeReadOutPort: VsCodeReadOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("FileSystemOutPort")
+        protected readonly fileSystemOutPort: FileSystemOutPort,
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("SendToBpmnModelerOutPort")
-        private readonly sendToBpmnModelerOutPort: SendToBpmnModelerOutPort,
+        @inject("DisplayBpmnModelerOutPort")
+        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("LogMessageOutPort")
+        private readonly logMessageOutPort: LogMessageOutPort,
     ) {
         super();
     }
 
-    async sendElementTemplates(): Promise<boolean> {
+    async set(editorId: string): Promise<boolean> {
         try {
-            const document = this.documentOutPort.getFilePath();
-            const documentPath = document.split("/").slice(0, -1).join("/");
+            if (editorId !== this.documentOutPort.getId()) {
+                throw new Error("The `editorID` does not match the active editor.");
+            }
 
-            const artifacts = (await this.getArtifacts(documentPath))[0];
+            const documentDir = this.documentOutPort
+                .getFilePath()
+                .split("/")
+                .slice(0, -1)
+                .join("/");
+
+            const artifacts = (await this.getArtifacts(documentDir))[0];
 
             successfulMessageToBpmnModeler.elementTemplates =
-                await this.sendToBpmnModelerOutPort.sendElementTemplates(
-                    document,
+                await this.displayBpmnModelerOutPort.setElementTemplates(
+                    editorId,
                     await this.readArtifacts(artifacts),
                 );
 
             if (!successfulMessageToBpmnModeler.elementTemplates) {
-                // TODO: Log the error
-                this.showMessageOutPort.showErrorMessage(
-                    "A problem occurred! `Form Keys` will not be selectable.",
+                throw new Error(
+                    "Unable to set the `element templates` for the active editor.",
                 );
             }
 
             return successfulMessageToBpmnModeler.elementTemplates;
         } catch (error) {
-            // TODO: Log the error
-            this.showMessageOutPort.showErrorMessage(
-                `A problem occurred while trying to display the element templates.\n
-                ${(error as Error).message}`,
+            this.logMessageOutPort.error(error as Error);
+            this.showMessageOutPort.error(
+                `A problem occurred while trying to set the \`element templates\`. ${
+                    (error as Error).message
+                }`,
             );
 
-            successfulMessageToBpmnModeler.elementTemplates = false;
-            return successfulMessageToBpmnModeler.elementTemplates;
+            return (successfulMessageToBpmnModeler.elementTemplates = false);
         }
     }
 
@@ -310,81 +397,45 @@ export class DisplayElementTemplatesUseCase
     ): Promise<string[]> {
         return Promise.all(
             artifacts.map(async (artifact) => {
-                return this.vsCodeReadOutPort.readFile(artifact);
+                return this.fileSystemOutPort.readFile(artifact);
             }),
         );
     }
 }
 
-async function getMiranumConfig(
-    documentPath: string,
-    service: GetMiranumConfigInPort,
-): Promise<string | undefined> {
-    try {
-        return await service.getMiranumConfig(documentPath);
-    } catch (error) {
-        if (error instanceof NoWorkspaceFolderFoundError) {
-            return documentPath;
-        }
-        return undefined;
-    }
-}
+@singleton()
+export class SetBpmnModelerSettingsUseCase implements SetBpmnModelerSettingsInPort {
+    constructor(
+        @inject("BpmnModelerSettingsOutPort")
+        private readonly bpmnModelerSettingsOutPort: BpmnModelerSettingsOutPort,
+        @inject("DisplayBpmnModelerOutPort")
+        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
+        @inject("ShowMessageOutPort")
+        private readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("LogMessageOutPort")
+        private readonly logMessageOutPort: LogMessageOutPort,
+    ) {}
 
-async function getWorkspaceItem(
-    miranumConfigPath: string | undefined,
-    type: string,
-    getWorkspaceItemService: GetWorkspaceItemInPort,
-    showMessageService: ShowMessageOutPort,
-): Promise<MiranumWorkspaceItem> {
-    if (!miranumConfigPath) {
-        return getWorkspaceItemService.getDefaultWorkspaceItemByType(type);
-    }
+    async set(editorId: string): Promise<boolean> {
+        try {
+            const settings = new SettingBuilder()
+                .alignToOrigin(this.bpmnModelerSettingsOutPort.getAlignToOrigin())
+                .buildBpmnModeler();
 
-    try {
-        // FIXME: The type is hardcoded but depends on the config
-        return await getWorkspaceItemService.getWorkspaceItemByType(
-            miranumConfigPath,
-            type,
-        );
-    } catch (error) {
-        const root = miranumConfigPath.replace("/miranum.json", "");
-        const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
+            successfulMessageToBpmnModeler.settings =
+                await this.displayBpmnModelerOutPort.setSettings(editorId, settings);
 
-        if (error instanceof FileNotFound) {
-            showMessageService.showInfoMessage(
-                `The \`miranum.json\` file is missing!\n${defaultMessage}.`,
+            if (!successfulMessageToBpmnModeler.bpmn) {
+                throw new Error("Unable to set the settings of the active editor.");
+            }
+            return successfulMessageToBpmnModeler.bpmn;
+        } catch (error) {
+            this.logMessageOutPort.error(error as Error);
+            this.showMessageOutPort.error(
+                `A problem occurred while trying to set the settings.\n
+                ${(error as Error).message}`,
             );
-        } else if (error instanceof SyntaxError) {
-            showMessageService.showInfoMessage(
-                `The \`miranum.json\` file has incorrect JSON!\n${defaultMessage}.`,
-            );
-        } else if (error instanceof NoMiranumWorkspaceItemError) {
-            showMessageService.showInfoMessage(`${error.message}!\n${defaultMessage}.`);
-        } else {
-            showMessageService.showInfoMessage(
-                `${(error as Error).message}!\n${defaultMessage}.`,
-            );
-        }
-        return getWorkspaceItemService.getDefaultWorkspaceItemByType(type);
-    }
-}
-
-async function readDirectory(
-    folder: string,
-    extension: string,
-    service: VsCodeReadOutPort,
-): Promise<string[]> {
-    const ws = await service.readDirectory(folder);
-
-    const files: string[] = [];
-    for (const [name, type] of ws) {
-        if (type === "directory") {
-            files.push(
-                ...(await readDirectory(`${folder}/${name}`, extension, service)),
-            );
-        } else if (type === "file" && name.endsWith(extension)) {
-            files.push(`${folder}/${name}`);
+            return (successfulMessageToBpmnModeler.settings = false);
         }
     }
-    return files;
 }

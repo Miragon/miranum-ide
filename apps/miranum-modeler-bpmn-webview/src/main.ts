@@ -16,12 +16,15 @@ import {
     GetBpmnFileCommand,
     GetElementTemplatesCommand,
     GetFormKeysCommand,
+    GetWebviewSettingCommand,
     LogErrorCommand,
     LogInfoCommand,
     MiranumModelerCommand,
     MiranumModelerQuery,
     MissingStateError,
     SyncDocumentCommand,
+    WebviewSetting,
+    WebviewSettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 import {
     alignElementsToOrigin,
@@ -46,6 +49,7 @@ const debouncedUpdateXML = asyncDebounce(openXML, 100);
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
 const formKeysResolver = createResolver<FormKeysQuery>();
 const elementTemplatesResolver = createResolver<ElementTemplatesQuery>();
+const configResolver = createResolver<WebviewSettingQuery>();
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -59,22 +63,24 @@ window.onload = async function() {
 
     try {
         const state = vscode.getState();
-        const [bpmnFile, engine, formKeys, elementTemplates] = [state.bpmnFile, state.engine, state.formKeys, state.elementTemplates];
-        await init(bpmnFile, engine, formKeys, elementTemplates);
+        const [bpmnFile, engine, formKeys, elementTemplates, setting] = [state.bpmnFile, state.engine, state.formKeys, state.elementTemplates, state.setting];
+        await init(bpmnFile, engine, formKeys, elementTemplates, setting);
     } catch (error: unknown) {
         if (error instanceof MissingStateError) {
             vscode.postMessage(new GetBpmnFileCommand());
             vscode.postMessage(new GetFormKeysCommand());
             vscode.postMessage(new GetElementTemplatesCommand());
+            vscode.postMessage(new GetWebviewSettingCommand());
 
-            const [bpmnFile, formKeys, elementTemplates] = await Promise.all([
+            const [bpmnFile, formKeys, elementTemplates, setting] = await Promise.all([
                 bpmnFileResolver.wait(),
                 formKeysResolver.wait(),
                 elementTemplatesResolver.wait(),
+                configResolver.wait(),
             ]);
 
 
-            await init(bpmnFile?.content, bpmnFile?.engine, formKeys?.formKeys, elementTemplates?.elementTemplates);
+            await init(bpmnFile?.content, bpmnFile?.engine, formKeys?.formKeys, elementTemplates?.elementTemplates, setting?.setting);
         } else {
             const message = error instanceof Error ? error.message : `${error}`;
             vscode.postMessage(new LogErrorCommand(`Something went wrong when initializing the webview!\n${message}`));
@@ -88,12 +94,14 @@ window.onload = async function() {
  * @param engine
  * @param formKeys
  * @param elementTemplates
+ * @param setting
  */
 async function init(
     bpmnFile: string | undefined,
     engine: "c7" | "c8" | undefined,
     formKeys: string[] | undefined,
     elementTemplates: JSON[] | undefined,
+    setting: WebviewSetting | undefined,
 ) {
     if (engine === undefined) {
         vscode.postMessage(new LogErrorCommand("ExecutionPlatformVersion undefined!"));
@@ -126,6 +134,7 @@ async function init(
         engine,
         formKeys: formKeys ?? [],
         elementTemplates: elementTemplates ?? [],
+        setting: setting ?? { alignToOrigin: false },
     });
 
     vscode.postMessage(new LogInfoCommand(
@@ -160,6 +169,10 @@ async function sendChanges() {
     if (isUpdateFromExtension) {
         isUpdateFromExtension = false; // reset
         return;
+    }
+
+    if (vscode.getState().setting.alignToOrigin) {
+        alignElementsToOrigin();
     }
 
     const bpmn = await exportDiagram();
@@ -215,8 +228,16 @@ async function onReceiveMessage(message: MessageEvent<MiranumModelerQuery | Mira
             }
             break;
         }
-        case queryOrCommand.type === "AlignElementsToOriginCommand": {
-            alignElementsToOrigin();
+        case queryOrCommand.type === "WebviewConfigQuery": {
+            try {
+                vscode.getState();
+                const config = (message.data as WebviewSettingQuery).setting;
+                vscode.updateState({ setting: config });
+            } catch (error: unknown) {
+                if (error instanceof MissingStateError) {
+                    configResolver.done(message.data as WebviewSettingQuery);
+                }
+            }
             break;
         }
     }

@@ -10,6 +10,8 @@ import {
     VsCodeApi,
     VsCodeImpl,
     VsCodeMock,
+    WebviewSetting,
+    WebviewSettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 declare const process: { env: { NODE_ENV: string } };
@@ -19,6 +21,7 @@ type StateType = {
     engine: "c7" | "c8";
     formKeys: string[];
     elementTemplates: JSON[];
+    setting: WebviewSetting;
 };
 
 type MessageType = Command | Query;
@@ -40,6 +43,7 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
             engine: state.engine ?? currentState.engine,
             formKeys: state.formKeys ?? currentState.formKeys,
             elementTemplates: state.elementTemplates ?? currentState.elementTemplates,
+            setting: state.setting ?? currentState.setting,
         };
 
         console.debug("[Debug] updateState()", this.getState());
@@ -57,6 +61,10 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
             }
             case message.type === "GetElementTemplatesCommand": {
                 dispatchEvent(new ElementTemplatesQuery([elementTemplate]));
+                break;
+            }
+            case message.type === "GetWebviewConfigCommand": {
+                dispatchEvent(new WebviewSettingQuery({ alignToOrigin: true }));
                 break;
             }
             case message.type === "SyncDocumentCommand": {
