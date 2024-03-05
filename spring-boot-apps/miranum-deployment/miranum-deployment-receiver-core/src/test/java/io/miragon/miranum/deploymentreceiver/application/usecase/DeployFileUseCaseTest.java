@@ -33,11 +33,9 @@ class DeployFileUseCaseTest {
         final DeploymentStatus result = deployFileUseCase.deploy(deploymentDto);
 
         final ArgumentCaptor<Deployment> deploymentCaptor = ArgumentCaptor.forClass(Deployment.class);
-        final ArgumentCaptor<List<String>> tagsCaptor = ArgumentCaptor.forClass(List.class);
 
         Mockito.verify(miranumDeployment).deploy(
-            deploymentCaptor.capture(),
-            tagsCaptor.capture()
+            deploymentCaptor.capture()
         );
 
         assertThat(result.isSuccess()).isTrue();
@@ -48,7 +46,7 @@ class DeployFileUseCaseTest {
         assertThat(deploymentCaptor.getValue().getFilename()).isEqualTo(deploymentDto.getFilename());
         assertThat(deploymentCaptor.getValue().getNamespace()).isEqualTo(deploymentDto.getNamespace());
         // make sure the list contains the default tag (LATEST)
-        List.of("tag1", "tag2", "LATEST").forEach(tag -> assertThat(tagsCaptor.getValue()).contains(tag));
+        List.of("tag1", "tag2", "LATEST").forEach(tag -> assertThat(deploymentCaptor.getValue().getTags()).contains(tag));
     }
 
     @Test
@@ -63,7 +61,7 @@ class DeployFileUseCaseTest {
 
         Mockito.doThrow(new DeploymentFailedException())
             .when(miranumDeployment)
-            .deploy(Mockito.any(), Mockito.anyList());
+            .deploy(Mockito.any());
 
         final DeploymentStatus result = deployFileUseCase.deploy(deploymentDto);
 

@@ -64,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7-vscode...HEAD
+[0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode
 [0.5.6]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.5...release/v0.5.6
 [0.5.5]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.4...release/v0.5.5
 [0.5.4]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.3...release/v0.5.4
