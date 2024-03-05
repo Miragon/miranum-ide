@@ -1,4 +1,5 @@
 import {
+    commands,
     ConfigurationChangeEvent,
     Disposable,
     Range,
@@ -37,6 +38,7 @@ type ActiveEditor = {
 };
 
 let activeEditor: ActiveEditor | undefined;
+let counterActiveEditor = 0;
 const disposables: Map<string, Disposable[]> = new Map();
 
 export function createEditor(
@@ -51,6 +53,7 @@ export function createEditor(
         ui: panel,
         document,
     };
+    updateActiveEditorCounter(counterActiveEditor++);
     return panel;
 }
 
@@ -225,6 +228,11 @@ function disposeEditor() {
         }
         disposables.delete(activeEditor.id);
 
+        updateActiveEditorCounter(counterActiveEditor--);
         activeEditor = undefined;
     }
+}
+
+function updateActiveEditorCounter(counter: number) {
+    commands.executeCommand("setContext", `miranum-modeler.openCustomEditor`, counter);
 }

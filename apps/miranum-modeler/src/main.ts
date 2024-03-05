@@ -8,10 +8,10 @@ import { config } from "./main.config";
 import { VsCodeBpmnModelerAdapter, VsCodeDmnModelerAdapter } from "./adapter/in";
 
 export function activate(context: ExtensionContext) {
-    // 1. Set the global extension context
+    // 1. Set the global application context
     setContext(context);
 
-    // 2. Configure the extension
+    // 2. Configure the application
     config();
 
     // 3. Start the application

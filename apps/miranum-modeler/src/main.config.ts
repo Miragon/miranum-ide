@@ -26,6 +26,7 @@ import {
     SetFormKeysUseCase,
     ShowLoggerUseCase,
     ShowMessageUseCase,
+    SyncDocumentUseCase,
     ToggleTextEditorUseCase,
 } from "./application/useCases";
 import {
@@ -39,7 +40,6 @@ import {
     VsCodeTextEditorAdapter,
     VsCodeWorkspaceAdapter,
 } from "./adapter/out";
-import { SyncDocumentUseCase } from "./application/useCases/syncDocument";
 
 /**
  * The configuration of the adapter and use cases has to follow the following pattern:
