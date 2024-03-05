@@ -1,18 +1,5 @@
-import { MessageType, VsCodeImpl } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ContentController, ImportWarning, instanceOfModelerData } from "./app";
-import { debounce } from "lodash";
-
 // dmn-js
-import DmnModeler, { ErrorArray, WarningArray } from "dmn-js/lib/Modeler";
-
-import {
-    CamundaPropertiesProviderModule,
-    DmnPropertiesPanelModule,
-    DmnPropertiesProviderModule,
-} from "dmn-js-properties-panel";
-import camundaModdleDescriptors from "camunda-dmn-moddle/resources/camunda.json";
-
+import { DiagramWarning } from "dmn-js/lib/Modeler";
 // css
 import "./styles.css";
 import "dmn-js/dist/assets/diagram-js.css";
@@ -23,97 +10,123 @@ import "dmn-js/dist/assets/dmn-js-literal-expression.css";
 import "dmn-js/dist/assets/dmn-js-shared.css";
 import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
 
-const modeler = new DmnModeler({
-    drd: {
-        propertiesPanel: {
-            parent: "#js-properties-panel",
-        },
-        additionalModules: [
-            DmnPropertiesPanelModule,
-            DmnPropertiesProviderModule,
-            CamundaPropertiesProviderModule,
-        ],
-    },
-    common: {
-        expressionLanguages: {
-            options: [
-                {
-                    value: "feel",
-                    label: "FEEL",
-                },
-                {
-                    value: "juel",
-                    label: "JUEL",
-                },
-                {
-                    value: "javascript",
-                    label: "JavaScript",
-                },
-                {
-                    value: "groovy",
-                    label: "Groovy",
-                },
-                {
-                    value: "python",
-                    label: "Python",
-                },
-                {
-                    value: "jruby",
-                    label: "JRuby",
-                },
-            ],
-            defaults: {
-                editor: "feel",
-            },
-        },
-        dataTypes: ["string", "boolean", "integer", "long", "double", "date"],
-    },
-    container: "#js-canvas",
-    keyboard: {
-        bindTo: document,
-    },
-    moddleExtensions: {
-        camunda: camundaModdleDescriptors,
-    },
-});
+import {
+    asyncDebounce,
+    createResolver,
+    DmnFileQuery,
+    formatErrors,
+    GetDmnFileCommand,
+    LogErrorCommand,
+    LogInfoCommand,
+    MiranumModelerCommand,
+    MiranumModelerQuery,
+    MissingStateError,
+    NoModelerError,
+    SyncDocumentCommand,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
 
-const stateController = new VsCodeImpl<ModelerData>();
-const contentController = new ContentController(modeler);
+import {
+    createModeler,
+    exportDiagram,
+    getVsCodeApi,
+    loadDiagram,
+    newDiagram,
+    onCommandStackChanged,
+} from "./app";
 
+const vscode = getVsCodeApi();
 let isUpdateFromExtension = false;
 
-const updateXML = asyncDebounce(openXML, 100);
+/**
+ * Debounce the openXML function to avoid multiple calls when the user types fast.
+ * @param dmn
+ * @returns ImportWarning with warnings if any
+ * @throws NoModelerError if the modeler is not initialized
+ */
+const debouncedUpdateXML = asyncDebounce(openXML, 100);
 
-async function openXML(dmn: string | undefined) {
+// create resolver to wait for the response from the backend
+const dmnFileResolver = createResolver<DmnFileQuery>();
+
+/**
+ * The Main function that gets executed after the webview is fully loaded.
+ * This way we can ensure that when the backend sends a message, it is caught.
+ * There are two reasons why a webview gets build:
+ * 1. A new .dmn file was opened
+ * 2. User switched to another tab and now switched back
+ */
+window.onload = async function () {
+    window.addEventListener("message", onReceiveMessage);
+
     try {
-        let result: ImportWarning;
-
-        if (!dmn) {
-            result = await contentController.newDiagram();
-        } else {
-            result = await contentController.loadDiagram(dmn);
-        }
-
-        stateController.updateState({ data: { dmn } });
-
-        const warnings =
-            result.warnings.length > 0
-                ? `with following warnings: ${createList(result.warnings)}`
-                : "";
-
-        postMessage(MessageType.INFO, undefined, `${result.message} ${warnings}`);
+        const state = vscode.getState();
+        const dmnFile = state.dmnFile;
+        await init(dmnFile);
     } catch (error) {
-        if (error instanceof ImportWarning) {
-            const warnings =
-                error.warnings.length > 0
-                    ? `with following warnings: ${createList(error.warnings)}`
-                    : "";
-            postMessage(MessageType.ERROR, undefined, `${error.message} ${warnings}`);
+        if (error instanceof MissingStateError) {
+            vscode.postMessage(new GetDmnFileCommand());
+
+            const dmnFile = await dmnFileResolver.wait();
+
+            await init(dmnFile?.content);
         } else {
-            const message =
-                error instanceof Error ? error.message : "Failed to open xml.";
-            postMessage(MessageType.ERROR, undefined, message);
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(
+                new LogErrorCommand(
+                    `Something went wrong when initializing the webview!\n${message}`,
+                ),
+            );
         }
+    }
+};
+
+async function init(dmnFile: string | undefined) {
+    try {
+        createModeler();
+        onCommandStackChanged(sendChanges);
+
+        await openXML(dmnFile);
+    } catch (error) {
+        if (error instanceof NoModelerError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(new LogErrorCommand(`Unable to open XML ${message}`));
+        }
+    }
+
+    vscode.setState({
+        dmnFile: dmnFile ?? "",
+    });
+
+    vscode.postMessage(new LogInfoCommand(`Webview was initialized.`));
+}
+
+/**
+ * Open the given XML content in the modeler.
+ * @param dmn
+ * @returns ImportWarning with warnings if any
+ * @throws NoModelerError if the modeler is not initialized
+ */
+async function openXML(dmn: string | undefined) {
+    let result: DiagramWarning;
+
+    if (!dmn) {
+        result = await newDiagram();
+    } else {
+        result = await loadDiagram(dmn);
+    }
+
+    if (result.warnings.length > 0) {
+        const warnings = result.warnings.map(
+            (warning) =>
+                `${warning.message}\n${warning.error.message}\n${warning.error.stack}\n`,
+        );
+        const message = `Diagram was opened with following warnings: ${formatErrors(
+            warnings,
+        )}
+            `;
+        vscode.postMessage(new LogInfoCommand(message));
     }
 }
 
@@ -123,176 +136,39 @@ async function sendChanges() {
         return;
     }
 
-    const dmn = await contentController.exportDiagram();
-    stateController.updateState({ data: { dmn } });
-    postMessage(MessageType.MSGFROMWEBVIEW, { dmn }, undefined);
+    const dmn = await exportDiagram();
+    vscode.updateState({ dmnFile: dmn });
+    vscode.postMessage(new SyncDocumentCommand(dmn));
 }
 
-function setupListeners(): void {
-    window.addEventListener("message", (event) => {
-        try {
-            const message = event.data;
-            switch (message.type) {
-                case `dmn-modeler.${MessageType.INITIALIZE}`: {
-                    initialize(message.data);
-                    break;
-                }
-                case `dmn-modeler.${MessageType.RESTORE}`: {
-                    initialize(message.data);
-                    break;
-                }
-                case `dmn-modeler.${MessageType.UNDO}`:
-                case `dmn-modeler.${MessageType.REDO}`:
-                case `dmn-modeler.${MessageType.MSGFROMEXTENSION}`: {
-                    isUpdateFromExtension = true;
-                    updateXML(message.data.dmn);
-                    break;
-                }
-            }
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : "Could not handle message";
-            postMessage(MessageType.ERROR, undefined, message);
-        }
-    });
-
-    modeler.on("views.changed", () => {
-        const activeEditor = modeler.getActiveViewer();
-        const eventBus = activeEditor.get("eventBus");
-        eventBus.on("commandStack.changed", sendChanges);
-    });
-
-    postMessage(MessageType.INFO, undefined, "Listeners are set.");
-}
-
-function init(dmn: string | undefined): void {
-    openXML(dmn);
-    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
-}
-
-window.onload = async function () {
-    try {
-        const state = stateController.getState();
-        if (state && state.data) {
-            postMessage(
-                MessageType.RESTORE,
-                undefined,
-                "State was restored successfully.",
-            );
-            let dmn = state.data.dmn;
-            const newData = await initialized(); // await the response form the backend
-            if (instanceOfModelerData(newData)) {
-                // we only get new data when the user made changes while the webview was destroyed
-                if (newData.dmn) {
-                    dmn = newData.dmn;
-                }
-            }
-            return init(dmn);
-        } else {
-            postMessage(
-                MessageType.INITIALIZE,
-                undefined,
-                "Webview was loaded successfully.",
-            );
-            const data = await initialized(); // await the response form the backend
-            if (instanceOfModelerData(data)) {
-                return init(data.dmn);
-            }
-        }
-    } catch (error) {
-        const message =
-            error instanceof Error ? error.message : "Failed to initialize webview.";
-        postMessage(MessageType.ERROR, undefined, message);
-    }
-};
-
-setupListeners();
-
-// ----------------------------- Helper Functions ----------------------------->
-
-/**
- * Create a list of information that will be sent to the backend and get logged.
- * @param messages A list of further information.
- */
-function createList(messages: ErrorArray | WarningArray): string {
-    let msg = "";
-    if (messages && messages.length > 0) {
-        for (const message of messages) {
-            msg += `\n- ${message.message}`;
-        }
-    }
-    return msg;
-}
-
-/**
- * Post a message to the extension.
- * Depending on the type of message it contains either data or a string which is only logged
- * @param type A string that represents the type of the message.
- * @param data
- * @param message
- */
-function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
-    switch (type) {
-        case MessageType.MSGFROMWEBVIEW: {
-            stateController.postMessage({
-                type: `dmn-modeler.${type}`,
-                data,
-            });
-            break;
-        }
-        default: {
-            stateController.postMessage({
-                type: `dmn-modeler.${type}`,
-                message,
-            });
-            break;
-        }
-    }
-}
-
-/**
- * A promise that will resolve if initialize() is called.
- */
-function initialized() {
-    return new Promise((resolve) => {
-        initialize = (response: ModelerData | undefined) => {
-            resolve(response);
-        };
-    });
-}
-
-let initialize: any = null;
-
-/**
- * Makes the [lodash.debounce](https://lodash.com/docs/4.17.15#debounce) function async-friendly
- * @param func The function to debounce
- * @param wait The number of milliseconds to delay
- */
-function asyncDebounce<F extends (...args: any[]) => Promise<any>>(
-    func: F,
-    wait?: number,
+async function onReceiveMessage(
+    message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>,
 ) {
-    const resolveSet = new Set<(p: any) => void>();
-    const rejectSet = new Set<(p: any) => void>();
+    const queryOrCommand = message.data;
 
-    const debounced = debounce((args: Parameters<F>) => {
-        func(...args)
-            .then((...res) => {
-                resolveSet.forEach((resolve) => resolve(...res));
-                resolveSet.clear();
-            })
-            .catch((...res) => {
-                rejectSet.forEach((reject) => reject(...res));
-                rejectSet.clear();
-            });
-    }, wait);
+    switch (true) {
+        case queryOrCommand.type === "DmnFileQuery": {
+            try {
+                const dmnFileQuery = message.data as DmnFileQuery;
+                await debouncedUpdateXML(dmnFileQuery.content);
 
-    return (...args: Parameters<F>): ReturnType<F> =>
-        new Promise((resolve, reject) => {
-            resolveSet.add(resolve);
-            rejectSet.add(reject);
-            debounced(args);
-        }) as ReturnType<F>;
+                isUpdateFromExtension = true;
+                vscode.updateState({
+                    dmnFile: dmnFileQuery.content,
+                });
+            } catch (error) {
+                if (error instanceof NoModelerError) {
+                    dmnFileResolver.done(message.data as DmnFileQuery);
+                } else {
+                    const message = error instanceof Error ? error.message : `${error}`;
+                    vscode.postMessage(
+                        new LogErrorCommand(
+                            `Something went wrong when receiving the message ${message}`,
+                        ),
+                    );
+                }
+            }
+            break;
+        }
+    }
 }
-
-// <---------------------------- Helper Functions ------------------------------

@@ -4,8 +4,10 @@ import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
+
+import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
+import { NoModelerError } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import miragonProviderModule from "./PropertieProvider/provider";
 import { setFormKeys } from "./formKeys";
@@ -184,12 +186,6 @@ export function setForms(formKeys: string[] | undefined): void {
 export function alignElementsToOrigin(): void {
     const m = getModeler();
     m.get<any>("alignToOrigin").align();
-}
-
-export class NoModelerError extends Error {
-    constructor() {
-        super("Modeler is not initialized!");
-    }
 }
 
 export class UnsupportedEngineError extends Error {

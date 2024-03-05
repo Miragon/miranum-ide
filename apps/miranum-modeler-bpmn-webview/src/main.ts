@@ -12,6 +12,7 @@ import {
     BpmnFileQuery,
     createResolver,
     ElementTemplatesQuery,
+    formatErrors,
     FormKeysQuery,
     GetBpmnFileCommand,
     GetElementTemplatesCommand,
@@ -22,6 +23,7 @@ import {
     MiranumModelerCommand,
     MiranumModelerQuery,
     MissingStateError,
+    NoModelerError,
     SyncDocumentCommand,
     WebviewSetting,
     WebviewSettingQuery,
@@ -33,7 +35,6 @@ import {
     getVsCodeApi,
     loadDiagram,
     newDiagram,
-    NoModelerError,
     onCommandStackChanged,
     onElementTemplatesErrors,
     setElementTemplates,
@@ -58,12 +59,18 @@ const configResolver = createResolver<WebviewSettingQuery>();
  * 1. A new .bpmn file was opened
  * 2. User switched to another tab and now switched back
  */
-window.onload = async function() {
+window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
 
     try {
         const state = vscode.getState();
-        const [bpmnFile, engine, formKeys, elementTemplates, setting] = [state.bpmnFile, state.engine, state.formKeys, state.elementTemplates, state.setting];
+        const [bpmnFile, engine, formKeys, elementTemplates, setting] = [
+            state.bpmnFile,
+            state.engine,
+            state.formKeys,
+            state.elementTemplates,
+            state.setting,
+        ];
         await init(bpmnFile, engine, formKeys, elementTemplates, setting);
     } catch (error: unknown) {
         if (error instanceof MissingStateError) {
@@ -79,11 +86,20 @@ window.onload = async function() {
                 configResolver.wait(),
             ]);
 
-
-            await init(bpmnFile?.content, bpmnFile?.engine, formKeys?.formKeys, elementTemplates?.elementTemplates, setting?.setting);
+            await init(
+                bpmnFile?.content,
+                bpmnFile?.engine,
+                formKeys?.formKeys,
+                elementTemplates?.elementTemplates,
+                setting?.setting,
+            );
         } else {
             const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(new LogErrorCommand(`Something went wrong when initializing the webview!\n${message}`));
+            vscode.postMessage(
+                new LogErrorCommand(
+                    `Something went wrong when initializing the webview!\n${message}`,
+                ),
+            );
         }
     }
 };
@@ -111,7 +127,13 @@ async function init(
     try {
         createModeler(engine);
         onElementTemplatesErrors((errors) =>
-            vscode.postMessage(new LogErrorCommand(`Failed to load element templates with following errors: ${formatErrors(errors)}`)),
+            vscode.postMessage(
+                new LogErrorCommand(
+                    `Failed to load element templates with following errors: ${formatErrors(
+                        errors,
+                    )}`,
+                ),
+            ),
         );
         onCommandStackChanged(sendChanges);
 
@@ -137,9 +159,13 @@ async function init(
         setting: setting ?? { alignToOrigin: false },
     });
 
-    vscode.postMessage(new LogInfoCommand(
-        `Webview was initialized with ${elementTemplates?.length ?? 0} element templates and ${formKeys?.length ?? 0} forms.`,
-    ));
+    vscode.postMessage(
+        new LogInfoCommand(
+            `Webview was initialized with ${
+                elementTemplates?.length ?? 0
+            } element templates and ${formKeys?.length ?? 0} forms.`,
+        ),
+    );
 }
 
 /**
@@ -147,18 +173,25 @@ async function init(
  * @param bpmn
  */
 async function openXML(bpmn: string | undefined) {
-    let result: ImportXMLResult;
-    if (!bpmn) {
-        result = await newDiagram();
-    } else {
-        result = await loadDiagram(bpmn);
-    }
+    try {
+        let result: ImportXMLResult;
+        if (!bpmn) {
+            result = await newDiagram();
+        } else {
+            result = await loadDiagram(bpmn);
+        }
 
-    if (result.warnings.length > 0) {
-        const warnings = `with following warnings: ${formatErrors(
-            result.warnings,
-        )}`;
-        vscode.postMessage(new LogInfoCommand(warnings));
+        if (result.warnings.length > 0) {
+            const warnings = `with following warnings: ${formatErrors(result.warnings)}`;
+            vscode.postMessage(new LogInfoCommand(warnings));
+        }
+    } catch (error) {
+        if (error instanceof NoModelerError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
+        }
     }
 }
 
@@ -183,80 +216,78 @@ async function sendChanges() {
 /**
  * Listen to messages from the backend.
  */
-async function onReceiveMessage(message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>) {
+async function onReceiveMessage(
+    message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>,
+) {
     const queryOrCommand = message.data;
 
-    switch (true) {
-        case queryOrCommand.type === "BpmnFileQuery": {
-            try {
-                const bpmnFileQuery = (message.data as BpmnFileQuery);
-                await debouncedUpdateXML(bpmnFileQuery.content);
+    try {
+        switch (true) {
+            case queryOrCommand.type === "BpmnFileQuery": {
+                try {
+                    const bpmnFileQuery = message.data as BpmnFileQuery;
+                    await debouncedUpdateXML(bpmnFileQuery.content);
 
-                isUpdateFromExtension = true;
-                vscode.updateState({
-                    bpmnFile: bpmnFileQuery.content,
-                    engine: bpmnFileQuery.engine,
-                });
-            } catch (error: unknown) {
-                if (error instanceof NoModelerError) {
-                    bpmnFileResolver.done(message.data as BpmnFileQuery);
+                    isUpdateFromExtension = true;
+                    vscode.updateState({
+                        bpmnFile: bpmnFileQuery.content,
+                        engine: bpmnFileQuery.engine,
+                    });
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        bpmnFileResolver.done(message.data as BpmnFileQuery);
+                    } else {
+                        throw error;
+                    }
                 }
+                break;
             }
-            break;
-        }
-        case queryOrCommand.type === "FormKeysQuery": {
-            try {
-                const formKeys = (message.data as FormKeysQuery).formKeys;
-                setForms(formKeys);
-                vscode.updateState({ formKeys });
-            } catch (error: unknown) {
-                if (error instanceof NoModelerError) {
-                    formKeysResolver.done(message.data as FormKeysQuery);
+            case queryOrCommand.type === "FormKeysQuery": {
+                try {
+                    const formKeys = (message.data as FormKeysQuery).formKeys;
+                    setForms(formKeys);
+                    vscode.updateState({ formKeys });
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        formKeysResolver.done(message.data as FormKeysQuery);
+                    }
                 }
+                break;
             }
-            break;
-        }
-        case queryOrCommand.type === "ElementTemplatesQuery": {
-            try {
-                const elementTemplates = (message.data as ElementTemplatesQuery).elementTemplates;
-                setElementTemplates(elementTemplates);
-                vscode.updateState({ elementTemplates });
-            } catch (error: unknown) {
-                if (error instanceof NoModelerError) {
-                    elementTemplatesResolver.done(message.data as ElementTemplatesQuery);
+            case queryOrCommand.type === "ElementTemplatesQuery": {
+                try {
+                    const elementTemplates = (message.data as ElementTemplatesQuery)
+                        .elementTemplates;
+                    setElementTemplates(elementTemplates);
+                    vscode.updateState({ elementTemplates });
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        elementTemplatesResolver.done(
+                            message.data as ElementTemplatesQuery,
+                        );
+                    }
                 }
+                break;
             }
-            break;
-        }
-        case queryOrCommand.type === "WebviewConfigQuery": {
-            try {
-                vscode.getState();
-                const config = (message.data as WebviewSettingQuery).setting;
-                vscode.updateState({ setting: config });
-            } catch (error: unknown) {
-                if (error instanceof MissingStateError) {
-                    configResolver.done(message.data as WebviewSettingQuery);
+            case queryOrCommand.type === "WebviewConfigQuery": {
+                try {
+                    vscode.getState();
+                    const config = (message.data as WebviewSettingQuery).setting;
+                    vscode.updateState({ setting: config });
+                } catch (error: unknown) {
+                    if (error instanceof MissingStateError) {
+                        configResolver.done(message.data as WebviewSettingQuery);
+                    }
                 }
+                break;
             }
-            break;
         }
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : `${error}`;
+        vscode.postMessage(
+            new LogErrorCommand(
+                `Something went wrong when receiving the message ${message}`,
+            ),
+        );
     }
 }
-
-// ----------------------------- Helper Functions ----------------------------->
-
-/**
- * Create a list of information that will be sent to the backend and get logged.
- * @param errors A list of further information.
- */
-function formatErrors(errors: string[]): string {
-    let msg = "";
-    if (errors && errors.length > 0) {
-        for (const message of errors) {
-            msg += `\n- ${message}`;
-        }
-    }
-    return msg;
-}
-
-// <---------------------------- Helper Functions ------------------------------
