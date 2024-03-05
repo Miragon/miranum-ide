@@ -283,10 +283,10 @@ async function onReceiveMessage(
             }
         }
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : `${error}`;
+        const errorMessage = error instanceof Error ? error.message : `${error}`;
         vscode.postMessage(
             new LogErrorCommand(
-                `Something went wrong when receiving the message ${message}`,
+                `Something went wrong when receiving the message ${errorMessage}`,
             ),
         );
     }
