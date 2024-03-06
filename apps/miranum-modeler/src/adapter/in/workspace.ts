@@ -1,21 +1,14 @@
-import { RelativePattern, TextDocumentChangeEvent, workspace } from "vscode";
+import { RelativePattern, workspace } from "vscode";
 import { inject, singleton } from "tsyringe";
 
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
+import { addToDisposals } from "../out";
 import {
-    onDidChangeEditorSettings,
-    onDidChangeTextDocument,
-    subscribeToEditorDisposal,
-} from "../out";
-import {
-    DisplayBpmnModelerInPort,
-    DisplayDmnModelerInPort,
     GetDocumentInPort,
     GetMiranumConfigInPort,
     GetWorkspaceItemInPort,
     LogMessageInPort,
-    SetBpmnModelerSettingsInPort,
     SetElementTemplatesInPort,
     SetFormKeysInPort,
 } from "../../application/ports/in";
@@ -95,7 +88,7 @@ export class VsCodeArtifactWatcherAdapter {
                 }
             }
 
-            subscribeToEditorDisposal(id, watcher);
+            addToDisposals(id, watcher);
         }
 
         return errors;
@@ -129,52 +122,4 @@ export class VsCodeArtifactWatcherAdapter {
             return this.getWorkspaceItemUseCase.getDefaultByType(type);
         }
     }
-}
-
-@singleton()
-export class VsCodeBpmnDocumentAdapter {
-    constructor(
-        @inject("DisplayBpmnModelerInPort")
-        private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
-    ) {}
-
-    register() {
-        subscribeToDocumentChanges(this.displayBpmnModelerInPort.display);
-    }
-}
-
-@singleton()
-export class VsCodeDmnDocumentAdapter {
-    constructor(
-        @inject("DisplayDmnModelerInPort")
-        private readonly displayDmnModelerInPort: DisplayDmnModelerInPort,
-    ) {}
-
-    register() {
-        subscribeToDocumentChanges(this.displayDmnModelerInPort.display);
-    }
-}
-
-@singleton()
-export class VsCodeUpdateSettingsAdapter {
-    constructor(
-        @inject("SetBpmnModelerSettingsInPort")
-        private readonly setBpmnModelerSettingsInPort: SetBpmnModelerSettingsInPort,
-    ) {}
-
-    register() {
-        onDidChangeEditorSettings((event, editorId) => {
-            if (event.affectsConfiguration("miranumIDE.modeler.alignToOrigin")) {
-                this.setBpmnModelerSettingsInPort.set(editorId);
-            }
-        });
-    }
-}
-
-function subscribeToDocumentChanges(cb: (editorId: string) => Promise<boolean>) {
-    onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
-        if (event.contentChanges.length !== 0) {
-            cb(event.document.uri.path);
-        }
-    });
 }

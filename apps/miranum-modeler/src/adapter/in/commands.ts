@@ -19,12 +19,12 @@ export class VsCodeToggleTextEditorCommand {
         const context = getContext();
 
         context.subscriptions.push(
-            commands.registerCommand(this.command, this.toggleTextEditor),
+            commands.registerCommand(this.command, this.toggle, this),
         );
     }
 
-    async toggleTextEditor() {
-        await this.toggleTextEditorInPort.toggle();
+    toggle() {
+        this.toggleTextEditorInPort.toggle();
     }
 }
 
@@ -42,11 +42,11 @@ export class VsCodeShowLoggerCommand {
         const context = getContext();
 
         context.subscriptions.push(
-            commands.registerCommand(this.command, this.showLogger),
+            commands.registerCommand(this.command, this.show, this),
         );
     }
 
-    showLogger(): void {
+    show(): void {
         this.showLoggerOutPort.show();
     }
 }

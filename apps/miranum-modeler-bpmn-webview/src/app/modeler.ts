@@ -7,24 +7,27 @@ import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
 
 import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
-import { NoModelerError } from "@miranum-ide/vscode/miranum-vscode-webview";
+import {
+    BpmnModelerSetting,
+    NoModelerError,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import miragonProviderModule from "./PropertieProvider/provider";
 import { setFormKeys } from "./formKeys";
 
-let modeler: Modeler | undefined;
+type MiranumModeler = {
+    modeler: Modeler | undefined;
+    settings: BpmnModelerSetting;
+};
 
-/**
- * Get the modeler instance.
- * @throws NoModelerError if the modeler is not initialized
- */
-function getModeler(): Modeler {
-    if (!modeler) {
-        throw new NoModelerError();
-    }
+const DEFAULT_SETTINGS: BpmnModelerSetting = {
+    alignToOrigin: false,
+};
 
-    return modeler;
-}
+const bpmnModeler: MiranumModeler = {
+    modeler: undefined,
+    settings: DEFAULT_SETTINGS,
+};
 
 /**
  * Create a new modeler instance.
@@ -36,7 +39,7 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
 
     switch (engine) {
         case "c7": {
-            modeler = new BpmnModeler7({
+            bpmnModeler.modeler = new BpmnModeler7({
                 container: "#js-canvas",
                 propertiesPanel: {
                     parent: "#js-properties-panel",
@@ -56,7 +59,7 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
             break;
         }
         case "c8": {
-            modeler = new BpmnModeler8({
+            bpmnModeler.modeler = new BpmnModeler8({
                 container: "#js-canvas",
                 alignToOrigin: {
                     alignOnSave: false,
@@ -75,7 +78,7 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
         }
     }
 
-    return modeler;
+    return bpmnModeler.modeler;
 }
 
 /**
@@ -83,9 +86,8 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
  * @param cb
  * @throws NoModelerError if the modeler is not initialized
  */
-export function onElementTemplatesErrors(cb: (errors: any) => void): void {
-    const m = getModeler();
-    m.on("elementTemplates.errors", (event: any) => {
+export function onElementTemplatesErrors(cb: (errors: any) => void) {
+    getModeler().on("elementTemplates.errors", (event: any) => {
         const { errors } = event;
         cb(errors);
     });
@@ -96,9 +98,8 @@ export function onElementTemplatesErrors(cb: (errors: any) => void): void {
  * @param cb
  * @throws NoModelerError if the modeler is not initialized
  */
-export function onCommandStackChanged(cb: () => void): void {
-    const m = getModeler();
-    m.get<any>("eventBus").on("commandStack.changed", cb);
+export function onCommandStackChanged(cb: () => void) {
+    getModeler().get<any>("eventBus").on("commandStack.changed", cb);
 }
 
 /**
@@ -107,8 +108,7 @@ export function onCommandStackChanged(cb: () => void): void {
  * @throws NoModelerError if the modeler is not initialized
  */
 export async function newDiagram(): Promise<ImportXMLResult> {
-    const m = getModeler();
-    return m.createDiagram();
+    return getModeler().createDiagram();
 }
 
 /**
@@ -118,9 +118,8 @@ export async function newDiagram(): Promise<ImportXMLResult> {
  * @throws NoModelerError if the modeler is not initialized
  */
 export async function loadDiagram(bpmn: string): Promise<ImportXMLResult> {
-    const m = getModeler();
     try {
-        return await m.importXML(bpmn);
+        return await getModeler().importXML(bpmn);
     } catch (error: unknown) {
         if ((error as ImportXMLError).warnings) {
             const importError: ImportXMLError = error as ImportXMLError;
@@ -155,13 +154,12 @@ export async function exportDiagram(): Promise<string> {
  * @param templates
  * @throws NoModelerError if the modeler is not initialized
  */
-export function setElementTemplates(templates: JSON[] | undefined): void {
+export function setElementTemplates(templates: JSON[] | undefined) {
     if (!templates) {
         return;
     }
 
-    const m = getModeler();
-    m.get<any>("elementTemplatesLoader").setTemplates(templates);
+    getModeler().get<any>("elementTemplatesLoader").setTemplates(templates);
 }
 
 /**
@@ -169,10 +167,10 @@ export function setElementTemplates(templates: JSON[] | undefined): void {
  * @param formKeys
  * @throws NoModelerError if the modeler is not initialized
  */
-export function setForms(formKeys: string[] | undefined): void {
+export function setForms(formKeys: string[] | undefined) {
     if (!formKeys) {
         return;
-    } else if (!modeler) {
+    } else if (!bpmnModeler.modeler) {
         throw new NoModelerError();
     }
 
@@ -180,16 +178,44 @@ export function setForms(formKeys: string[] | undefined): void {
 }
 
 /**
+ * Set the settings to the modeler.
+ * @param settings
+ * @throws NoModelerError if the modeler is not initialized
+ */
+export function setSettings(settings: Partial<BpmnModelerSetting> | undefined) {
+    if (!settings) {
+        return;
+    } else if (!bpmnModeler.modeler) {
+        throw new NoModelerError();
+    }
+
+    bpmnModeler.settings = { ...bpmnModeler.settings, ...settings };
+}
+
+/**
  * Align the elements to the origin.
  * @throws NoModelerError if the modeler is not initialized
  */
-export function alignElementsToOrigin(): void {
-    const m = getModeler();
-    m.get<any>("alignToOrigin").align();
+export function alignElementsToOrigin() {
+    if (bpmnModeler.settings.alignToOrigin) {
+        getModeler().get<any>("alignToOrigin").align();
+    }
 }
 
 export class UnsupportedEngineError extends Error {
     constructor(engine: string) {
         super(`Unsupported engine: ${engine}`);
     }
+}
+
+/**
+ * Get the modeler instance.
+ * @throws NoModelerError if the modeler is not initialized
+ */
+function getModeler(): Modeler {
+    if (!bpmnModeler.modeler) {
+        throw new NoModelerError();
+    }
+
+    return bpmnModeler.modeler;
 }

@@ -22,7 +22,7 @@ export class GetDocumentUseCase implements GetDocumentInPort {
         private readonly documentOutPort: DocumentOutPort,
     ) {}
 
-    get(): string {
+    getPath(): string {
         return this.documentOutPort.getFilePath();
     }
 }
@@ -69,7 +69,7 @@ export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
     ) {}
 
     toggle(): Promise<boolean> {
-        const documentPath = this.getDocumentInPort.get();
+        const documentPath = this.getDocumentInPort.getPath();
         return this.textEditorOutPort.toggle(documentPath);
     }
 }

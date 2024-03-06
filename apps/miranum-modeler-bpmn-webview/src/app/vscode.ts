@@ -1,5 +1,6 @@
 import {
     BpmnFileQuery,
+    BpmnModelerSettingQuery,
     Command,
     ElementTemplatesQuery,
     FormKeysQuery,
@@ -10,19 +11,11 @@ import {
     VsCodeApi,
     VsCodeImpl,
     VsCodeMock,
-    WebviewSetting,
-    WebviewSettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 declare const process: { env: { NODE_ENV: string } };
 
-type StateType = {
-    bpmnFile: string;
-    engine: "c7" | "c8";
-    formKeys: string[];
-    elementTemplates: JSON[];
-    setting: WebviewSetting;
-};
+type StateType = unknown;
 
 type MessageType = Command | Query;
 
@@ -34,19 +27,9 @@ export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
     }
 }
 
-export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
-    override updateState(state: Partial<StateType>): void {
-        const currentState = this.getState();
-
-        this.state = {
-            bpmnFile: state.bpmnFile ?? currentState.bpmnFile,
-            engine: state.engine ?? currentState.engine,
-            formKeys: state.formKeys ?? currentState.formKeys,
-            elementTemplates: state.elementTemplates ?? currentState.elementTemplates,
-            setting: state.setting ?? currentState.setting,
-        };
-
-        console.debug("[Debug] updateState()", this.getState());
+class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
+    override updateState(): void {
+        throw new Error("Method not implemented.");
     }
 
     override postMessage(message: MessageType): void {
@@ -64,7 +47,7 @@ export class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 break;
             }
             case message.type === "GetWebviewConfigCommand": {
-                dispatchEvent(new WebviewSettingQuery({ alignToOrigin: true }));
+                dispatchEvent(new BpmnModelerSettingQuery({ alignToOrigin: true }));
                 break;
             }
             case message.type === "SyncDocumentCommand": {

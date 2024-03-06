@@ -24,14 +24,6 @@ export interface SyncDocumentInPort {
     sync(editorId: string, content: string): Promise<boolean>;
 }
 
-export interface RestoreBpmnModelerInPort {
-    restore(editorId: string): Promise<void>;
-}
-
-export interface RestoreDmnModelerInPort {
-    restore(editorId: string): Promise<void>;
-}
-
 export interface GetMiranumConfigInPort {
     /**
      * Get one or multiple `miranum.json` for the given document.
@@ -60,7 +52,7 @@ export interface GetWorkspaceItemInPort {
 }
 
 export interface GetDocumentInPort {
-    get(): string;
+    getPath(): string;
 }
 
 export interface ShowMessageInPort {

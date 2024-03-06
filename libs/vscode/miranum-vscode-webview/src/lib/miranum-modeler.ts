@@ -49,15 +49,15 @@ export class ElementTemplatesQuery extends MiranumModelerQuery {
     }
 }
 
-export interface WebviewSetting {
+export interface BpmnModelerSetting {
     readonly alignToOrigin: boolean;
 }
 
-export class WebviewSettingQuery extends MiranumModelerQuery {
-    public readonly setting: WebviewSetting;
+export class BpmnModelerSettingQuery extends MiranumModelerQuery {
+    public readonly setting: BpmnModelerSetting;
 
-    constructor(setting: WebviewSetting) {
-        super("WebviewConfigQuery");
+    constructor(setting: BpmnModelerSetting) {
+        super("BpmnModelerSettingQuery");
         this.setting = setting;
     }
 }
@@ -98,9 +98,9 @@ export class GetElementTemplatesCommand extends MiranumModelerCommand {
     }
 }
 
-export class GetWebviewSettingCommand extends MiranumModelerCommand {
+export class GetBpmnModelerSettingCommand extends MiranumModelerCommand {
     constructor() {
-        super("GetWebviewSettingCommand");
+        super("GetBpmnModelerSettingCommand");
     }
 }
 

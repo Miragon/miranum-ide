@@ -20,7 +20,6 @@ import {
     LogInfoCommand,
     MiranumModelerCommand,
     MiranumModelerQuery,
-    MissingStateError,
     NoModelerError,
     SyncDocumentCommand,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
@@ -30,7 +29,6 @@ import {
     exportDiagram,
     getVsCodeApi,
     loadDiagram,
-    newDiagram,
     onCommandStackChanged,
 } from "./app";
 
@@ -58,33 +56,15 @@ const dmnFileResolver = createResolver<DmnFileQuery>();
 window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
 
-    try {
-        const state = vscode.getState();
-        const dmnFile = state.dmnFile;
-        await init(dmnFile);
-    } catch (error) {
-        if (error instanceof MissingStateError) {
-            vscode.postMessage(new GetDmnFileCommand());
-
-            const dmnFile = await dmnFileResolver.wait();
-
-            await init(dmnFile?.content);
-        } else {
-            const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(
-                new LogErrorCommand(
-                    `Something went wrong when initializing the webview!\n${message}`,
-                ),
-            );
-        }
-    }
+    vscode.postMessage(new GetDmnFileCommand());
+    const dmnFile = await dmnFileResolver.wait();
+    await initializeModeler(dmnFile?.content);
 };
 
-async function init(dmnFile: string | undefined) {
+async function initializeModeler(dmnFile: string | undefined) {
     try {
         createModeler();
         onCommandStackChanged(sendChanges);
-
         await openXML(dmnFile);
     } catch (error) {
         if (error instanceof NoModelerError) {
@@ -94,12 +74,6 @@ async function init(dmnFile: string | undefined) {
             vscode.postMessage(new LogErrorCommand(`Unable to open XML ${message}`));
         }
     }
-
-    vscode.setState({
-        dmnFile: dmnFile ?? "",
-    });
-
-    vscode.postMessage(new LogInfoCommand(`Webview was initialized.`));
 }
 
 /**
@@ -109,13 +83,11 @@ async function init(dmnFile: string | undefined) {
  * @throws NoModelerError if the modeler is not initialized
  */
 async function openXML(dmn: string | undefined) {
-    let result: DiagramWarning;
-
     if (!dmn) {
-        result = await newDiagram();
-    } else {
-        result = await loadDiagram(dmn);
+        return;
     }
+
+    const result: DiagramWarning = await loadDiagram(dmn);
 
     if (result.warnings.length > 0) {
         const warnings = result.warnings.map(
@@ -137,7 +109,6 @@ async function sendChanges() {
     }
 
     const dmn = await exportDiagram();
-    vscode.updateState({ dmnFile: dmn });
     vscode.postMessage(new SyncDocumentCommand(dmn));
 }
 
@@ -153,9 +124,6 @@ async function onReceiveMessage(
                 await debouncedUpdateXML(dmnFileQuery.content);
 
                 isUpdateFromExtension = true;
-                vscode.updateState({
-                    dmnFile: dmnFileQuery.content,
-                });
             } catch (error) {
                 if (error instanceof NoModelerError) {
                     dmnFileResolver.done(message.data as DmnFileQuery);

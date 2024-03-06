@@ -8,7 +8,7 @@ interface EditorComponent {
     getId(): string;
 }
 
-export interface DisplayBpmnModelerOutPort extends EditorComponent {
+export interface BpmnUiOutPort extends EditorComponent {
     /**
      * Sends the BPMN file to the active webview.
      * @param editorId
@@ -51,7 +51,7 @@ export interface DisplayBpmnModelerOutPort extends EditorComponent {
     setSettings(editorId: string, setting: BpmnModelerSetting): Promise<boolean>;
 }
 
-export interface DisplayDmnModelerOutPort extends EditorComponent {
+export interface DmnUiOutPort extends EditorComponent {
     /**
      * Sends the DMN file to the active webview.
      * @param editorId

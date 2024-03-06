@@ -1,14 +1,3 @@
-export const successfulMessageToBpmnModeler = {
-    bpmn: true,
-    formKeys: true,
-    elementTemplates: true,
-    settings: true,
-};
-
-export const successfulMessageToDmnModeler = {
-    dmn: true,
-};
-
 export class BpmnModelerSetting {
     constructor(public readonly alignToOrigin: boolean) {}
 }

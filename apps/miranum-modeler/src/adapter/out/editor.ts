@@ -14,18 +14,22 @@ import { singleton } from "tsyringe";
 import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 import {
     BpmnFileQuery,
+    BpmnModelerSettingQuery,
     DmnFileQuery,
     ElementTemplatesQuery,
     FormKeysQuery,
     MiranumModelerCommand,
     MiranumModelerQuery,
-    WebviewSettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-import { bpmnEditorUi, dmnModelerHtml } from "../helper/vscode";
 import {
-    DisplayBpmnModelerOutPort,
-    DisplayDmnModelerOutPort,
+    blockChangeDocumentEvent,
+    bpmnEditorUi,
+    dmnModelerHtml,
+} from "../helper/vscode";
+import {
+    BpmnUiOutPort,
+    DmnUiOutPort,
     DocumentOutPort,
 } from "../../application/ports/out";
 import { NoChangesToApplyError } from "../../application/errors";
@@ -53,7 +57,8 @@ export function createEditor(
         ui: panel,
         document,
     };
-    updateActiveEditorCounter(counterActiveEditor++);
+    disposables.set(editorId, []);
+    updateActiveEditorCounter(++counterActiveEditor);
     return panel;
 }
 
@@ -72,8 +77,6 @@ export function createWebview(
         throw new Error(`Unsupported file extension: ${viewType}`);
     }
 
-    webviewPanel.onDidDispose(() => disposeEditor());
-
     return webviewPanel;
 }
 
@@ -89,7 +92,7 @@ export function setActiveEditor(
     };
 }
 
-export function subscribeToEditorDisposal(editorId: string, disposable: Disposable) {
+export function addToDisposals(editorId: string, disposable: Disposable) {
     const subscriptions = disposables.get(editorId);
 
     if (subscriptions) {
@@ -99,30 +102,63 @@ export function subscribeToEditorDisposal(editorId: string, disposable: Disposab
     }
 }
 
-export function onDidReceiveMessage(
+// TODO: Is there a better pattern to subscribe to events?
+export function subscribeToDisposeEvent() {
+    const id = getActiveEditor().id;
+    const panel = getActiveEditor().ui;
+    const d = disposables.get(id);
+    getActiveEditor().ui.onDidDispose(() => disposeEditor(id, panel), null, d);
+}
+
+export function subscribeToMessageEvent(
     callback: (message: MiranumModelerCommand, editorId: string) => void,
 ) {
-    getActiveEditor().ui.webview.onDidReceiveMessage((e: any) => {
-        callback(e, getActiveEditor().id);
-    });
+    const id = getActiveEditor().id;
+    const d = disposables.get(id);
+    getActiveEditor().ui.webview.onDidReceiveMessage(
+        (e: any) => {
+            callback(e, getActiveEditor().id);
+        },
+        null,
+        d,
+    );
 }
 
-export function onDidChangeTextDocument(
+export function subscribeToDocumentChangeEvent(
     callback: (event: TextDocumentChangeEvent) => void,
 ): void {
-    workspace.onDidChangeTextDocument(callback);
+    const id = getActiveEditor().id;
+    const d = disposables.get(id);
+    workspace.onDidChangeTextDocument(callback, null, d);
 }
 
-export function onDidChangeEditorSettings(
+export function subscribeToSettingChangeEvent(
     callback: (event: ConfigurationChangeEvent, editorId: string) => void,
 ) {
-    workspace.onDidChangeConfiguration((e) => {
-        callback(e, getActiveEditor().id);
+    const id = getActiveEditor().id;
+    const d = disposables.get(id);
+    workspace.onDidChangeConfiguration(
+        (e) => {
+            callback(e, getActiveEditor().id);
+        },
+        null,
+        d,
+    );
+}
+
+export function subscibeToEditorChangeEvent() {
+    const id = getActiveEditor().id;
+    const panel = getActiveEditor().ui;
+    const document = getActiveEditor().document;
+    getActiveEditor().ui.onDidChangeViewState(() => {
+        if (panel.active) {
+            setActiveEditor(id, panel, document);
+        }
     });
 }
 
 @singleton()
-export class VsCodeBpmnWebviewAdapter implements DisplayBpmnModelerOutPort {
+export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
     }
@@ -150,7 +186,7 @@ export class VsCodeBpmnWebviewAdapter implements DisplayBpmnModelerOutPort {
     }
 
     async setSettings(editorId: string, setting: BpmnModelerSetting): Promise<boolean> {
-        const webviewSettingsQuery = new WebviewSettingQuery({
+        const webviewSettingsQuery = new BpmnModelerSettingQuery({
             alignToOrigin: setting.alignToOrigin,
         });
         return postMessage(editorId, webviewSettingsQuery);
@@ -158,7 +194,7 @@ export class VsCodeBpmnWebviewAdapter implements DisplayBpmnModelerOutPort {
 }
 
 @singleton()
-export class VsCodeDmnWebviewAdapter implements DisplayDmnModelerOutPort {
+export class VsCodeDmnWebviewAdapter implements DmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
     }
@@ -187,6 +223,8 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         if (getActiveEditor().document.getText() === content) {
             throw new NoChangesToApplyError(getActiveEditor().id);
         }
+
+        blockChangeDocumentEvent(true);
 
         const edit = new WorkspaceEdit();
 
@@ -217,22 +255,19 @@ async function postMessage(
     return getActiveEditor().ui.webview.postMessage(message);
 }
 
-function disposeEditor() {
-    if (activeEditor) {
-        const panel = activeEditor.ui;
-        panel.dispose();
+function disposeEditor(editorId: string, panel: WebviewPanel) {
+    panel.dispose();
+    const subscriptions = disposables.get(editorId);
+    subscriptions?.forEach((subscription) => subscription.dispose());
+    disposables.delete(editorId);
 
-        const subscriptions = disposables.get(activeEditor.id);
-        if (subscriptions) {
-            subscriptions.forEach((subscription) => subscription.dispose());
-        }
-        disposables.delete(activeEditor.id);
+    updateActiveEditorCounter(--counterActiveEditor);
 
-        updateActiveEditorCounter(counterActiveEditor--);
+    if (activeEditor?.id === editorId) {
         activeEditor = undefined;
     }
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand("setContext", `miranum-modeler.openCustomEditor`, counter);
+    commands.executeCommand("setContext", `miranum-modeler.openCustomEditors`, counter);
 }

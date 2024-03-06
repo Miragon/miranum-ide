@@ -2,15 +2,10 @@ import { container } from "tsyringe";
 
 import {
     VsCodeArtifactWatcherAdapter,
-    VsCodeBpmnDocumentAdapter,
-    VsCodeBpmnModelerAdapter,
-    VsCodeBpmnWebviewAdapter as VsCodeBpmnWebviewInAdapter,
-    VsCodeDmnDocumentAdapter,
-    VsCodeDmnModelerAdapter,
-    VsCodeDmnWebviewAdapter as VsCodeDmnWebviewInAdapter,
+    VsCodeBpmnEditorAdapter,
+    VsCodeDmnEditorAdapter,
     VsCodeShowLoggerCommand,
     VsCodeToggleTextEditorCommand,
-    VsCodeUpdateSettingsAdapter,
 } from "./adapter/in";
 import {
     DisplayBpmnFileUseCase,
@@ -19,8 +14,6 @@ import {
     GetMiranumConfigUseCase,
     GetWorkspaceItemUseCase,
     LogMessageUseCase,
-    RestoreBpmnModelerUseCase,
-    RestoreDmnModelerUseCase,
     SetBpmnModelerSettingsUseCase,
     SetElementTemplatesUseCase,
     SetFormKeysUseCase,
@@ -31,8 +24,8 @@ import {
 } from "./application/useCases";
 import {
     VsCodeBpmnModelerSettingsAdapter,
-    VsCodeBpmnWebviewAdapter as VsCodeBpmnWebviewOutAdapter,
-    VsCodeDmnWebviewAdapter as VsCodeDmnWebviewOutAdapter,
+    VsCodeBpmnWebviewAdapter,
+    VsCodeDmnWebviewAdapter,
     VsCodeDocumentAdapter,
     VsCodeLoggerAdapter,
     VsCodeReadAdapter,
@@ -91,7 +84,7 @@ function configBpmnModeler(): void {
     container.register("BpmnModelerViewType", { useValue: "miranum-bpmn-modeler" });
 
     // Out Adapter
-    container.register("DisplayBpmnModelerOutPort", VsCodeBpmnWebviewOutAdapter);
+    container.register("BpmnUiOutPort", VsCodeBpmnWebviewAdapter);
     container.register("BpmnModelerSettingsOutPort", VsCodeBpmnModelerSettingsAdapter);
 
     // Use Cases
@@ -99,14 +92,10 @@ function configBpmnModeler(): void {
     container.register("SetFormKeysInPort", SetFormKeysUseCase);
     container.register("SetElementTemplatesInPort", SetElementTemplatesUseCase);
     container.register("SetBpmnModelerSettingsInPort", SetBpmnModelerSettingsUseCase);
-    container.register("RestoreBpmnModelerInPort", RestoreBpmnModelerUseCase);
 
     // In Adapter
     container.register(VsCodeArtifactWatcherAdapter, VsCodeArtifactWatcherAdapter);
-    container.register(VsCodeUpdateSettingsAdapter, VsCodeUpdateSettingsAdapter);
-    container.register(VsCodeBpmnWebviewInAdapter, VsCodeBpmnWebviewInAdapter);
-    container.register(VsCodeBpmnDocumentAdapter, VsCodeBpmnDocumentAdapter);
-    container.register(VsCodeBpmnModelerAdapter, VsCodeBpmnModelerAdapter); // ! ModelerAdapter is dependent on WebviewAdapter and ArtifactWatcherAdapter
+    container.register(VsCodeBpmnEditorAdapter, VsCodeBpmnEditorAdapter); // ! ModelerAdapter is dependent on WebviewAdapter and ArtifactWatcherAdapter
 }
 
 function configDmnModeler(): void {
@@ -114,14 +103,11 @@ function configDmnModeler(): void {
     container.register("DmnModelerViewType", { useValue: "miranum-dmn-modeler" });
 
     // Out Adapter
-    container.register("SendToDmnModelerOutPort", VsCodeDmnWebviewOutAdapter);
+    container.register("DmnUiOutPort", VsCodeDmnWebviewAdapter);
 
     // Use Cases
     container.register("DisplayDmnModelerInPort", DisplayDmnModelerUseCase);
-    container.register("RestoreDmnModelerInPort", RestoreDmnModelerUseCase);
 
     // In Adapter
-    container.register(VsCodeDmnWebviewInAdapter, VsCodeDmnWebviewInAdapter);
-    container.register(VsCodeDmnDocumentAdapter, VsCodeDmnDocumentAdapter);
-    container.register(VsCodeDmnModelerAdapter, VsCodeDmnModelerAdapter); // ! ModelerAdapter is dependent on WebviewAdapter
+    container.register(VsCodeDmnEditorAdapter, VsCodeDmnEditorAdapter); // ! ModelerAdapter is dependent on WebviewAdapter
 }

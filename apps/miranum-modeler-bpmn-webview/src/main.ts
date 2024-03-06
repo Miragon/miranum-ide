@@ -10,23 +10,22 @@ import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 import {
     asyncDebounce,
     BpmnFileQuery,
+    BpmnModelerSetting,
+    BpmnModelerSettingQuery,
     createResolver,
     ElementTemplatesQuery,
     formatErrors,
     FormKeysQuery,
     GetBpmnFileCommand,
+    GetBpmnModelerSettingCommand,
     GetElementTemplatesCommand,
     GetFormKeysCommand,
-    GetWebviewSettingCommand,
     LogErrorCommand,
     LogInfoCommand,
     MiranumModelerCommand,
     MiranumModelerQuery,
-    MissingStateError,
     NoModelerError,
     SyncDocumentCommand,
-    WebviewSetting,
-    WebviewSettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 import {
     alignElementsToOrigin,
@@ -39,18 +38,25 @@ import {
     onElementTemplatesErrors,
     setElementTemplates,
     setForms,
+    setSettings,
     UnsupportedEngineError,
 } from "./app";
 
 const vscode = getVsCodeApi();
 let isUpdateFromExtension = false;
+
+/**
+ * Debounce the update of the XML content to avoid too many updates.
+ * @param bpmn
+ * @throws NoModelerError if the modeler is not available
+ */
 const debouncedUpdateXML = asyncDebounce(openXML, 100);
 
 // create resolver to wait for the response from the backend
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
 const formKeysResolver = createResolver<FormKeysQuery>();
 const elementTemplatesResolver = createResolver<ElementTemplatesQuery>();
-const configResolver = createResolver<WebviewSettingQuery>();
+const settingResolver = createResolver<BpmnModelerSettingQuery>();
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -62,84 +68,40 @@ const configResolver = createResolver<WebviewSettingQuery>();
 window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
 
-    try {
-        const state = vscode.getState();
-        const [bpmnFile, engine, formKeys, elementTemplates, setting] = [
-            state.bpmnFile,
-            state.engine,
-            state.formKeys,
-            state.elementTemplates,
-            state.setting,
-        ];
-        await init(bpmnFile, engine, formKeys, elementTemplates, setting);
-    } catch (error: unknown) {
-        if (error instanceof MissingStateError) {
-            vscode.postMessage(new GetBpmnFileCommand());
-            vscode.postMessage(new GetFormKeysCommand());
-            vscode.postMessage(new GetElementTemplatesCommand());
-            vscode.postMessage(new GetWebviewSettingCommand());
+    vscode.postMessage(new GetBpmnFileCommand());
+    vscode.postMessage(new GetFormKeysCommand());
+    vscode.postMessage(new GetElementTemplatesCommand());
+    vscode.postMessage(new GetBpmnModelerSettingCommand());
 
-            const [bpmnFile, formKeys, elementTemplates, setting] = await Promise.all([
-                bpmnFileResolver.wait(),
-                formKeysResolver.wait(),
-                elementTemplatesResolver.wait(),
-                configResolver.wait(),
-            ]);
+    const bpmnFileQuery = await bpmnFileResolver.wait();
+    await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
 
-            await init(
-                bpmnFile?.content,
-                bpmnFile?.engine,
-                formKeys?.formKeys,
-                elementTemplates?.elementTemplates,
-                setting?.setting,
-            );
-        } else {
-            const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(
-                new LogErrorCommand(
-                    `Something went wrong when initializing the webview!\n${message}`,
-                ),
-            );
-        }
-    }
+    const [formKeysQuery, elementTemplatesQuery, settingQuery] = await Promise.all([
+        formKeysResolver.wait(),
+        elementTemplatesResolver.wait(),
+        settingResolver.wait(),
+    ]);
+
+    await initializeArtifacts(
+        formKeysQuery?.formKeys,
+        elementTemplatesQuery?.elementTemplates,
+        settingQuery?.setting,
+    );
 };
 
-/**
- * Set the initial data after the webview was loaded.
- * @param bpmnFile
- * @param engine
- * @param formKeys
- * @param elementTemplates
- * @param setting
- */
-async function init(
-    bpmnFile: string | undefined,
+async function initializeModeler(
+    bpmn: string | undefined,
     engine: "c7" | "c8" | undefined,
-    formKeys: string[] | undefined,
-    elementTemplates: JSON[] | undefined,
-    setting: WebviewSetting | undefined,
 ) {
-    if (engine === undefined) {
+    if (!engine) {
         vscode.postMessage(new LogErrorCommand("ExecutionPlatformVersion undefined!"));
         return;
     }
 
     try {
         createModeler(engine);
-        onElementTemplatesErrors((errors) =>
-            vscode.postMessage(
-                new LogErrorCommand(
-                    `Failed to load element templates with following errors: ${formatErrors(
-                        errors,
-                    )}`,
-                ),
-            ),
-        );
         onCommandStackChanged(sendChanges);
-
-        await openXML(bpmnFile);
-        setElementTemplates(elementTemplates);
-        setForms(formKeys);
+        await openXML(bpmn);
     } catch (error: unknown) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));
@@ -150,48 +112,61 @@ async function init(
             vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
         }
     }
-
-    vscode.setState({
-        bpmnFile: bpmnFile ?? "",
-        engine,
-        formKeys: formKeys ?? [],
-        elementTemplates: elementTemplates ?? [],
-        setting: setting ?? { alignToOrigin: false },
-    });
-
-    vscode.postMessage(
-        new LogInfoCommand(
-            `Webview was initialized with ${
-                elementTemplates?.length ?? 0
-            } element templates and ${formKeys?.length ?? 0} forms.`,
-        ),
-    );
 }
 
 /**
- * Open or update the modeler with the new XML content.
- * @param bpmn
+ * Set the initial data after the webview was loaded.
+ * @param formKeys
+ * @param elementTemplates
+ * @param setting
  */
-async function openXML(bpmn: string | undefined) {
+async function initializeArtifacts(
+    formKeys: string[] | undefined,
+    elementTemplates: JSON[] | undefined,
+    setting: BpmnModelerSetting | undefined,
+) {
     try {
-        let result: ImportXMLResult;
-        if (!bpmn) {
-            result = await newDiagram();
-        } else {
-            result = await loadDiagram(bpmn);
-        }
+        setElementTemplates(elementTemplates);
+        onElementTemplatesErrors((errors) =>
+            vscode.postMessage(
+                new LogErrorCommand(
+                    `Failed to load element templates with following errors: ${formatErrors(
+                        errors,
+                    )}`,
+                ),
+            ),
+        );
 
-        if (result.warnings.length > 0) {
-            const warnings = `with following warnings: ${formatErrors(result.warnings)}`;
-            vscode.postMessage(new LogInfoCommand(warnings));
-        }
-    } catch (error) {
+        setForms(formKeys);
+        setSettings(setting);
+    } catch (error: unknown) {
         if (error instanceof NoModelerError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else if (error instanceof UnsupportedEngineError) {
             vscode.postMessage(new LogErrorCommand(error.message));
         } else {
             const message = error instanceof Error ? error.message : `${error}`;
             vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
         }
+    }
+}
+
+/**
+ * Open or update the modeler with the new XML content.
+ * @param bpmn
+ * @throws NoModelerError if the modeler is not available
+ */
+async function openXML(bpmn: string | undefined) {
+    let result: ImportXMLResult;
+    if (!bpmn) {
+        result = await newDiagram();
+    } else {
+        result = await loadDiagram(bpmn);
+    }
+
+    if (result.warnings.length > 0) {
+        const warnings = `with following warnings: ${formatErrors(result.warnings)}`;
+        vscode.postMessage(new LogInfoCommand(warnings));
     }
 }
 
@@ -204,13 +179,9 @@ async function sendChanges() {
         return;
     }
 
-    if (vscode.getState().setting.alignToOrigin) {
-        alignElementsToOrigin();
-    }
-
     const bpmn = await exportDiagram();
-    vscode.updateState({ bpmnFile: bpmn });
     vscode.postMessage(new SyncDocumentCommand(bpmn));
+    alignElementsToOrigin();
 }
 
 /**
@@ -229,10 +200,6 @@ async function onReceiveMessage(
                     await debouncedUpdateXML(bpmnFileQuery.content);
 
                     isUpdateFromExtension = true;
-                    vscode.updateState({
-                        bpmnFile: bpmnFileQuery.content,
-                        engine: bpmnFileQuery.engine,
-                    });
                 } catch (error: unknown) {
                     if (error instanceof NoModelerError) {
                         bpmnFileResolver.done(message.data as BpmnFileQuery);
@@ -246,10 +213,11 @@ async function onReceiveMessage(
                 try {
                     const formKeys = (message.data as FormKeysQuery).formKeys;
                     setForms(formKeys);
-                    vscode.updateState({ formKeys });
                 } catch (error: unknown) {
                     if (error instanceof NoModelerError) {
                         formKeysResolver.done(message.data as FormKeysQuery);
+                    } else {
+                        throw error;
                     }
                 }
                 break;
@@ -259,24 +227,26 @@ async function onReceiveMessage(
                     const elementTemplates = (message.data as ElementTemplatesQuery)
                         .elementTemplates;
                     setElementTemplates(elementTemplates);
-                    vscode.updateState({ elementTemplates });
                 } catch (error: unknown) {
                     if (error instanceof NoModelerError) {
                         elementTemplatesResolver.done(
                             message.data as ElementTemplatesQuery,
                         );
+                    } else {
+                        throw error;
                     }
                 }
                 break;
             }
-            case queryOrCommand.type === "WebviewConfigQuery": {
+            case queryOrCommand.type === "BpmnModelerSettingQuery": {
                 try {
-                    vscode.getState();
-                    const config = (message.data as WebviewSettingQuery).setting;
-                    vscode.updateState({ setting: config });
+                    const setting = (message.data as BpmnModelerSettingQuery).setting;
+                    setSettings(setting);
                 } catch (error: unknown) {
-                    if (error instanceof MissingStateError) {
-                        configResolver.done(message.data as WebviewSettingQuery);
+                    if (error instanceof NoModelerError) {
+                        settingResolver.done(message.data as BpmnModelerSettingQuery);
+                    } else {
+                        throw error;
                     }
                 }
                 break;

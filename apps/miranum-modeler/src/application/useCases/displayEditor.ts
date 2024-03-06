@@ -13,18 +13,14 @@ import {
 } from "../ports/in";
 import {
     BpmnModelerSettingsOutPort,
-    DisplayBpmnModelerOutPort,
-    DisplayDmnModelerOutPort,
+    BpmnUiOutPort,
+    DmnUiOutPort,
     DocumentOutPort,
     FileSystemOutPort,
     LogMessageOutPort,
     ShowMessageOutPort,
 } from "../ports/out";
-import {
-    SettingBuilder,
-    successfulMessageToBpmnModeler,
-    successfulMessageToDmnModeler,
-} from "../model";
+import { SettingBuilder } from "../model";
 import {
     FileNotFound,
     NoMiranumWorkspaceItemError,
@@ -36,21 +32,28 @@ export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("DisplayBpmnModelerOutPort")
-        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
+        @inject("BpmnUiOutPort")
+        private readonly bpmnUiOutPort: BpmnUiOutPort,
         @inject("ShowMessageOutPort")
-        private readonly showMessageOutPort: ShowMessageOutPort,
+        protected readonly showMessageOutPort: ShowMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async display(editorId: string): Promise<boolean> {
         try {
-            if (editorId !== this.displayBpmnModelerOutPort.getId()) {
+            if (editorId !== this.bpmnUiOutPort.getId()) {
                 throw new Error("The `editorID` does not match the active editor.");
             }
 
-            const bpmnFile = this.documentOutPort.getContent();
+            let bpmnFile = this.documentOutPort.getContent();
+
+            if (bpmnFile === "") {
+                // If a new and empty BPMN file is created, the C7 Modeler will be displayed.
+                bpmnFile = EMPTY_C7_BPMN_DIAGRAM;
+                this.documentOutPort.write(bpmnFile);
+            }
+
             const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
             const match = bpmnFile.match(regex);
 
@@ -58,33 +61,36 @@ export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
                 const executionPlatform = match[1];
                 switch (executionPlatform) {
                     case "7": {
-                        successfulMessageToBpmnModeler.bpmn =
-                            await this.displayBpmnModelerOutPort.displayBpmnFile(
+                        if (
+                            await this.bpmnUiOutPort.displayBpmnFile(
                                 editorId,
                                 "c7",
                                 bpmnFile,
-                            );
-                        break;
+                            )
+                        ) {
+                            return true;
+                        } else {
+                            throw new Error("Displaying the BPMN Modeler failed.");
+                        }
                     }
-                   case "8": {
-                        successfulMessageToBpmnModeler.bpmn =
-                            await this.displayBpmnModelerOutPort.displayBpmnFile(
+                    case "8": {
+                        if (
+                            await this.bpmnUiOutPort.displayBpmnFile(
                                 editorId,
                                 "c8",
                                 bpmnFile,
-                            );
-                        break;
-                   }
+                            )
+                        ) {
+                            return true;
+                        } else {
+                            throw new Error("Displaying the BPMN Modeler failed.");
+                        }
+                    }
                     default:
                         throw new Error(
                             `The execution platform version ${executionPlatform} is not supported.`,
                         );
                 }
-
-                if (!successfulMessageToBpmnModeler.bpmn) {
-                    throw new Error("Unable to display the BPMN Modeler.");
-                }
-                return successfulMessageToBpmnModeler.bpmn;
             } else {
                 throw new Error(
                     `Missing execution platform in BPMN file ${this.documentOutPort.getFilePath()}.`,
@@ -93,10 +99,11 @@ export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
             this.showMessageOutPort.error(
-                `A problem occurred while trying to display the BPMN Modeler.\n
-                ${(error as Error).message}`,
+                `A problem occurred while trying to display the BPMN Modeler.\n${
+                    (error as Error).message ?? error
+                }`,
             );
-            return (successfulMessageToBpmnModeler.bpmn = false);
+            return false;
         }
     }
 }
@@ -106,36 +113,40 @@ export class DisplayDmnModelerUseCase implements DisplayDmnModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("DisplayDmnModelerOutPort")
-        private readonly displayDmnModelerOutPort: DisplayDmnModelerOutPort,
+        @inject("DmnUiOutPort")
+        private readonly dmnUiOutPort: DmnUiOutPort,
         @inject("ShowMessageOutPort")
-        private readonly showMessageOutPort: ShowMessageOutPort,
+        protected readonly showMessageOutPort: ShowMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async display(editorId: string): Promise<boolean> {
         try {
-            if (editorId !== this.displayDmnModelerOutPort.getId()) {
+            if (editorId !== this.dmnUiOutPort.getId()) {
                 throw new Error("The `editorID` does not match the active editor.");
             }
 
-            const dmnFile = this.documentOutPort.getContent();
+            let dmnFile = this.documentOutPort.getContent();
 
-            successfulMessageToDmnModeler.dmn =
-                await this.displayDmnModelerOutPort.displayDmnFile(editorId, dmnFile);
-
-            if (!successfulMessageToDmnModeler.dmn) {
-                throw new Error("Unable to display the DMN Modeler.");
+            if (dmnFile === "") {
+                dmnFile = EMPTY_DMN_DIAGRAM;
+                this.documentOutPort.write(dmnFile);
             }
-            return successfulMessageToDmnModeler.dmn;
+
+            if (await this.dmnUiOutPort.displayDmnFile(editorId, dmnFile)) {
+                return true;
+            } else {
+                throw new Error("Displaying the DMN Modeler failed.");
+            }
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
             this.showMessageOutPort.error(
-                `A problem occurred while trying to display the DMN Modeler.\n
-                ${(error as Error).message}`,
+                `A problem occurred while trying to display the DMN Modeler.\n${
+                    (error as Error).message ?? error
+                }`,
             );
-            return (successfulMessageToDmnModeler.dmn = false);
+            return false;
         }
     }
 }
@@ -237,16 +248,16 @@ export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort
     protected readonly type = "form";
 
     constructor(
+        @inject("BpmnUiOutPort")
+        private readonly bpmnUiOutPort: BpmnUiOutPort,
+        @inject("DocumentOutPort")
+        private readonly documentOutPort: DocumentOutPort,
         @inject("GetMiranumConfigInPort")
         protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
         protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
-        @inject("DocumentOutPort")
-        private readonly documentOutPort: DocumentOutPort,
-        @inject("DisplayBpmnModelerOutPort")
-        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
         @inject("ShowMessageOutPort")
         protected readonly showMessageOutPort: ShowMessageOutPort,
         @inject("LogMessageOutPort")
@@ -269,25 +280,20 @@ export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort
 
             const [artifacts, extension] = await this.getArtifacts(documentDir);
 
-            successfulMessageToBpmnModeler.formKeys =
-                await this.displayBpmnModelerOutPort.setFormKeys(
+            if (
+                await this.bpmnUiOutPort.setFormKeys(
                     editorId,
                     await this.readArtifacts(artifacts, extension),
-                );
-
-            if (!successfulMessageToBpmnModeler.formKeys) {
-                throw new Error("Unable to set the `formKeys` for the active editor.");
+                )
+            ) {
+                this.logMessageOutPort.info(`${artifacts.length} form keys are set.`);
+                return true;
+            } else {
+                throw new Error("Setting the `formKeys` failed.");
             }
-
-            return successfulMessageToBpmnModeler.formKeys;
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
-            this.showMessageOutPort.error(
-                `A problem occurred while trying to set the \`formKeys\`.\n
-                ${(error as Error).message}`,
-            );
-
-            return (successfulMessageToBpmnModeler.formKeys = false);
+            return false;
         }
     }
 
@@ -334,16 +340,16 @@ export class SetElementTemplatesUseCase
     protected readonly type = "element-template";
 
     constructor(
+        @inject("BpmnUiOutPort")
+        private readonly bpmnUiOutPort: BpmnUiOutPort,
+        @inject("DocumentOutPort")
+        private readonly documentOutPort: DocumentOutPort,
         @inject("GetMiranumConfigInPort")
         protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
         protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
-        @inject("DocumentOutPort")
-        private readonly documentOutPort: DocumentOutPort,
-        @inject("DisplayBpmnModelerOutPort")
-        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
         @inject("ShowMessageOutPort")
         protected readonly showMessageOutPort: ShowMessageOutPort,
         @inject("LogMessageOutPort")
@@ -366,28 +372,22 @@ export class SetElementTemplatesUseCase
 
             const artifacts = (await this.getArtifacts(documentDir))[0];
 
-            successfulMessageToBpmnModeler.elementTemplates =
-                await this.displayBpmnModelerOutPort.setElementTemplates(
+            if (
+                await this.bpmnUiOutPort.setElementTemplates(
                     editorId,
                     await this.readArtifacts(artifacts),
+                )
+            ) {
+                this.logMessageOutPort.info(
+                    `${artifacts.length} element templates are set.`,
                 );
-
-            if (!successfulMessageToBpmnModeler.elementTemplates) {
-                throw new Error(
-                    "Unable to set the `element templates` for the active editor.",
-                );
+                return true;
+            } else {
+                throw new Error("Setting the `elementTemplates` failed.");
             }
-
-            return successfulMessageToBpmnModeler.elementTemplates;
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
-            this.showMessageOutPort.error(
-                `A problem occurred while trying to set the \`element templates\`. ${
-                    (error as Error).message
-                }`,
-            );
-
-            return (successfulMessageToBpmnModeler.elementTemplates = false);
+            return false;
         }
     }
 
@@ -406,12 +406,10 @@ export class SetElementTemplatesUseCase
 @singleton()
 export class SetBpmnModelerSettingsUseCase implements SetBpmnModelerSettingsInPort {
     constructor(
+        @inject("BpmnUiOutPort")
+        private readonly bpmnUiOutPort: BpmnUiOutPort,
         @inject("BpmnModelerSettingsOutPort")
         private readonly bpmnModelerSettingsOutPort: BpmnModelerSettingsOutPort,
-        @inject("DisplayBpmnModelerOutPort")
-        private readonly displayBpmnModelerOutPort: DisplayBpmnModelerOutPort,
-        @inject("ShowMessageOutPort")
-        private readonly showMessageOutPort: ShowMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
@@ -422,20 +420,53 @@ export class SetBpmnModelerSettingsUseCase implements SetBpmnModelerSettingsInPo
                 .alignToOrigin(this.bpmnModelerSettingsOutPort.getAlignToOrigin())
                 .buildBpmnModeler();
 
-            successfulMessageToBpmnModeler.settings =
-                await this.displayBpmnModelerOutPort.setSettings(editorId, settings);
-
-            if (!successfulMessageToBpmnModeler.bpmn) {
-                throw new Error("Unable to set the settings of the active editor.");
+            if (await this.bpmnUiOutPort.setSettings(editorId, settings)) {
+                return true;
+            } else {
+                throw new Error("Setting the settings failed.");
             }
-            return successfulMessageToBpmnModeler.bpmn;
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
-            this.showMessageOutPort.error(
-                `A problem occurred while trying to set the settings.\n
-                ${(error as Error).message}`,
-            );
-            return (successfulMessageToBpmnModeler.settings = false);
+            return false;
         }
     }
 }
+
+const EMPTY_C7_BPMN_DIAGRAM = `
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1d2hcmz" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.20.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.20.0">
+  <bpmn:process id="Process_0gjrx3e" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0gjrx3e">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="159" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+`;
+
+const EMPTY_DMN_DIAGRAM = `
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="Definitions_1y42u6n" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.8.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.18.0">
+  <decision id="Decision_16wqg49" name="Decision 1">
+    <decisionTable id="DecisionTable_1wi1sbd">
+      <input id="Input_1">
+        <inputExpression id="InputExpression_1" typeRef="string">
+          <text></text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" typeRef="string" />
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_16wqg49">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
+`;
