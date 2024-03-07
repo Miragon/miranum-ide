@@ -1,22 +1,14 @@
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
-export interface DisplayBpmnModelerInPort {
+export interface DisplayModelerInPort {
     display(editorId: string): Promise<boolean>;
 }
 
-export interface DisplayDmnModelerInPort {
-    display(editorId: string): Promise<boolean>;
-}
-
-export interface SetFormKeysInPort {
+export interface SetArtifactInPort {
     set(editorId: string): Promise<boolean>;
 }
 
-export interface SetElementTemplatesInPort {
-    set(editorId: string): Promise<boolean>;
-}
-
-export interface SetBpmnModelerSettingsInPort {
+export interface SetModelerSettingInPort {
     set(editorId: string): Promise<boolean>;
 }
 

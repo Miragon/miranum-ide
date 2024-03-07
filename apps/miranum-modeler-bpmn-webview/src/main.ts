@@ -43,7 +43,6 @@ import {
 } from "./app";
 
 const vscode = getVsCodeApi();
-let isUpdateFromExtension = false;
 
 /**
  * Debounce the update of the XML content to avoid too many updates.
@@ -174,11 +173,6 @@ async function openXML(bpmn: string | undefined) {
  * Send the changed XML content to the backend to update the .bpmn file.
  */
 async function sendChanges() {
-    if (isUpdateFromExtension) {
-        isUpdateFromExtension = false; // reset
-        return;
-    }
-
     const bpmn = await exportDiagram();
     vscode.postMessage(new SyncDocumentCommand(bpmn));
     alignElementsToOrigin();
@@ -198,8 +192,6 @@ async function onReceiveMessage(
                 try {
                     const bpmnFileQuery = message.data as BpmnFileQuery;
                     await debouncedUpdateXML(bpmnFileQuery.content);
-
-                    isUpdateFromExtension = true;
                 } catch (error: unknown) {
                     if (error instanceof NoModelerError) {
                         bpmnFileResolver.done(message.data as BpmnFileQuery);

@@ -3,13 +3,11 @@ import { inject, singleton } from "tsyringe";
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 import {
-    DisplayBpmnModelerInPort,
-    DisplayDmnModelerInPort,
+    DisplayModelerInPort,
     GetMiranumConfigInPort,
     GetWorkspaceItemInPort,
-    SetBpmnModelerSettingsInPort,
-    SetElementTemplatesInPort,
-    SetFormKeysInPort,
+    SetArtifactInPort,
+    SetModelerSettingInPort,
 } from "../ports/in";
 import {
     BpmnModelerSettingsOutPort,
@@ -28,7 +26,7 @@ import {
 } from "../errors";
 
 @singleton()
-export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
+export class DisplayBpmnFileUseCase implements DisplayModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
@@ -109,7 +107,7 @@ export class DisplayBpmnFileUseCase implements DisplayBpmnModelerInPort {
 }
 
 @singleton()
-export class DisplayDmnModelerUseCase implements DisplayDmnModelerInPort {
+export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
@@ -154,9 +152,9 @@ export class DisplayDmnModelerUseCase implements DisplayDmnModelerInPort {
 abstract class GetArtifact {
     protected abstract type: string;
 
-    protected abstract getMiranumConfigUseCase: GetMiranumConfigInPort;
+    protected abstract getMiranumConfigInPort: GetMiranumConfigInPort;
 
-    protected abstract getWorkspaceItemUseCase: GetWorkspaceItemInPort;
+    protected abstract getWorkspaceItemInPort: GetWorkspaceItemInPort;
 
     protected abstract showMessageOutPort: ShowMessageOutPort;
 
@@ -184,7 +182,7 @@ abstract class GetArtifact {
 
     private async getMiranumConfig(documentPath: string): Promise<string | undefined> {
         try {
-            return await this.getMiranumConfigUseCase.get(documentPath);
+            return await this.getMiranumConfigInPort.get(documentPath);
         } catch (error) {
             if (error instanceof NoWorkspaceFolderFoundError) {
                 return documentPath;
@@ -198,11 +196,11 @@ abstract class GetArtifact {
         type: string,
     ): Promise<MiranumWorkspaceItem> {
         if (!miranumConfigPath) {
-            return this.getWorkspaceItemUseCase.getDefaultByType(type);
+            return this.getWorkspaceItemInPort.getDefaultByType(type);
         }
 
         try {
-            return await this.getWorkspaceItemUseCase.getByType(miranumConfigPath, type);
+            return await this.getWorkspaceItemInPort.getByType(miranumConfigPath, type);
         } catch (error) {
             const root = miranumConfigPath.replace("/miranum.json", "");
             const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
@@ -222,7 +220,7 @@ abstract class GetArtifact {
                     `${(error as Error).message}!\n${defaultMessage}.`,
                 );
             }
-            return this.getWorkspaceItemUseCase.getDefaultByType(type);
+            return this.getWorkspaceItemInPort.getDefaultByType(type);
         }
     }
 
@@ -244,7 +242,7 @@ abstract class GetArtifact {
 }
 
 @singleton()
-export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort {
+export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort {
     protected readonly type = "form";
 
     constructor(
@@ -253,9 +251,9 @@ export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
         @inject("GetMiranumConfigInPort")
-        protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
+        protected readonly getMiranumConfigInPort: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
-        protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
+        protected readonly getWorkspaceItemInPort: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
         @inject("ShowMessageOutPort")
@@ -335,7 +333,7 @@ export class SetFormKeysUseCase extends GetArtifact implements SetFormKeysInPort
 @singleton()
 export class SetElementTemplatesUseCase
     extends GetArtifact
-    implements SetElementTemplatesInPort
+    implements SetArtifactInPort
 {
     protected readonly type = "element-template";
 
@@ -345,9 +343,9 @@ export class SetElementTemplatesUseCase
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
         @inject("GetMiranumConfigInPort")
-        protected readonly getMiranumConfigUseCase: GetMiranumConfigInPort,
+        protected readonly getMiranumConfigInPort: GetMiranumConfigInPort,
         @inject("GetWorkspaceItemInPort")
-        protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
+        protected readonly getWorkspaceItemInPort: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
         @inject("ShowMessageOutPort")
@@ -404,7 +402,7 @@ export class SetElementTemplatesUseCase
 }
 
 @singleton()
-export class SetBpmnModelerSettingsUseCase implements SetBpmnModelerSettingsInPort {
+export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
     constructor(
         @inject("BpmnUiOutPort")
         private readonly bpmnUiOutPort: BpmnUiOutPort,

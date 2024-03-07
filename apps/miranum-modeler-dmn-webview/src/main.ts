@@ -33,7 +33,6 @@ import {
 } from "./app";
 
 const vscode = getVsCodeApi();
-let isUpdateFromExtension = false;
 
 /**
  * Debounce the openXML function to avoid multiple calls when the user types fast.
@@ -103,11 +102,6 @@ async function openXML(dmn: string | undefined) {
 }
 
 async function sendChanges() {
-    if (isUpdateFromExtension) {
-        isUpdateFromExtension = false; // reset
-        return;
-    }
-
     const dmn = await exportDiagram();
     vscode.postMessage(new SyncDocumentCommand(dmn));
 }
@@ -122,8 +116,6 @@ async function onReceiveMessage(
             try {
                 const dmnFileQuery = message.data as DmnFileQuery;
                 await debouncedUpdateXML(dmnFileQuery.content);
-
-                isUpdateFromExtension = true;
             } catch (error) {
                 if (error instanceof NoModelerError) {
                     dmnFileResolver.done(message.data as DmnFileQuery);

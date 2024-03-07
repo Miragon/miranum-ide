@@ -9,8 +9,7 @@ import {
     GetMiranumConfigInPort,
     GetWorkspaceItemInPort,
     LogMessageInPort,
-    SetElementTemplatesInPort,
-    SetFormKeysInPort,
+    SetArtifactInPort,
 } from "../../application/ports/in";
 import {
     NoWorkspaceFolderFoundError,
@@ -39,9 +38,9 @@ export class VsCodeArtifactWatcherAdapter {
         @inject("GetWorkspaceItemInPort")
         protected readonly getWorkspaceItemUseCase: GetWorkspaceItemInPort,
         @inject("SetFormKeysInPort")
-        private readonly setFormKeysInPort: SetFormKeysInPort,
+        private readonly setFormKeysInPort: SetArtifactInPort,
         @inject("SetElementTemplatesInPort")
-        private readonly setElementTemplatesInPort: SetElementTemplatesInPort,
+        private readonly setElementTemplatesInPort: SetArtifactInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
     ) {}

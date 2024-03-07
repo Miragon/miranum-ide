@@ -22,11 +22,7 @@ import {
     MiranumModelerQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-import {
-    blockChangeDocumentEvent,
-    bpmnEditorUi,
-    dmnModelerHtml,
-} from "../helper/vscode";
+import { bpmnEditorUi, dmnModelerHtml } from "../helper/vscode";
 import {
     BpmnUiOutPort,
     DmnUiOutPort,
@@ -146,7 +142,7 @@ export function subscribeToSettingChangeEvent(
     );
 }
 
-export function subscibeToEditorChangeEvent() {
+export function subscribeToTabChangeEvent() {
     const id = getActiveEditor().id;
     const panel = getActiveEditor().ui;
     const document = getActiveEditor().document;
@@ -224,8 +220,6 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
             throw new NoChangesToApplyError(getActiveEditor().id);
         }
 
-        blockChangeDocumentEvent(true);
-
         const edit = new WorkspaceEdit();
 
         edit.replace(
@@ -233,6 +227,8 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
             new Range(0, 0, getActiveEditor().document.lineCount, 0),
             content,
         );
+
+        console.debug("write");
 
         return Promise.resolve(workspace.applyEdit(edit));
     }
@@ -251,6 +247,12 @@ async function postMessage(
 ): Promise<boolean> {
     if (getActiveEditor().id !== editorId) {
         throw new Error("The given editor id does not match the active editor.");
+    }
+    if (!getActiveEditor().ui.options.retainContextWhenHidden) {
+        // If `retainContextWhenHidden` is not set, messages can only be sent to visible webviews.
+        if (!getActiveEditor().ui.visible) {
+            return false;
+        }
     }
     return getActiveEditor().ui.webview.postMessage(message);
 }

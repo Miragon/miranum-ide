@@ -15,53 +15,89 @@ import {
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import {
-    DisplayBpmnModelerInPort,
-    DisplayDmnModelerInPort,
+    DisplayModelerInPort,
     GetDocumentInPort,
     LogMessageInPort,
-    SetBpmnModelerSettingsInPort,
-    SetElementTemplatesInPort,
-    SetFormKeysInPort,
+    SetArtifactInPort,
+    SetModelerSettingInPort,
     ShowMessageInPort,
     SyncDocumentInPort,
 } from "../../application/ports/in";
 import {
     createEditor,
-    subscibeToEditorChangeEvent,
     subscribeToDisposeEvent,
     subscribeToDocumentChangeEvent,
     subscribeToMessageEvent,
     subscribeToSettingChangeEvent,
+    subscribeToTabChangeEvent,
 } from "../out";
 import { VsCodeArtifactWatcherAdapter } from "./workspace";
-import {
-    blockChangeDocumentEvent,
-    isChangeDocumentEventBlocked,
-} from "../helper/vscode";
+
+abstract class VsCodeCustomEditor {
+    protected abstract readonly extension: string;
+
+    protected abstract readonly displayModelerInPort: DisplayModelerInPort;
+
+    protected abstract readonly getDocumentUseCase: GetDocumentInPort;
+
+    protected isChangeDocumentEventBlocked = false;
+
+    protected abstract subscribeToMessageEvent(): void;
+
+    protected subscribeToDocumentChangeEvent() {
+        subscribeToDocumentChangeEvent((event: TextDocumentChangeEvent) => {
+            const documentPath = this.getDocumentUseCase.getPath();
+            console.debug("OnDidChangeTextDocument -> trigger");
+            if (
+                event.contentChanges.length !== 0 &&
+                documentPath.split(".").pop() === this.extension &&
+                documentPath === event.document.uri.path &&
+                !this.isChangeDocumentEventBlocked
+            ) {
+                console.debug("OnDidChangeTextDocument -> send");
+                this.displayModelerInPort.display(event.document.uri.path);
+            }
+        });
+    }
+
+    protected subscribeToTabChangeEvent() {
+        subscribeToTabChangeEvent();
+    }
+
+    protected subscribeToDisposeEvent() {
+        subscribeToDisposeEvent();
+    }
+}
 
 @singleton()
-export class VsCodeBpmnEditorAdapter implements CustomTextEditorProvider {
+export class VsCodeBpmnEditorAdapter
+    extends VsCodeCustomEditor
+    implements CustomTextEditorProvider
+{
+    protected extension = "bpmn";
+
     constructor(
         @inject("BpmnModelerViewType")
         private readonly viewType: string,
         @inject("DisplayBpmnModelerInPort")
-        private readonly displayBpmnModelerInPort: DisplayBpmnModelerInPort,
+        protected readonly displayModelerInPort: DisplayModelerInPort,
         @inject("SetFormKeysInPort")
-        private readonly setFormKeysInPort: SetFormKeysInPort,
+        private readonly setFormKeysInPort: SetArtifactInPort,
         @inject("SetElementTemplatesInPort")
-        private readonly setElementTemplatesInPort: SetElementTemplatesInPort,
+        private readonly setElementTemplatesInPort: SetArtifactInPort,
         @inject("SetBpmnModelerSettingsInPort")
-        private readonly setBpmnModelerSettingsInPort: SetBpmnModelerSettingsInPort,
+        private readonly setBpmnModelerSettingsInPort: SetModelerSettingInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("GetDocumentInPort")
-        private readonly getDocumentUseCase: GetDocumentInPort,
+        protected readonly getDocumentUseCase: GetDocumentInPort,
         @inject("ShowMessageInPort")
         private readonly showMessageInPort: ShowMessageInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
         private readonly artifactWatcherAdapter: VsCodeArtifactWatcherAdapter,
     ) {
+        super();
         const bpmnModeler = window.registerCustomEditorProvider(
             container.resolve("BpmnModelerViewType"),
             this,
@@ -83,8 +119,8 @@ export class VsCodeBpmnEditorAdapter implements CustomTextEditorProvider {
             this.subscribeToMessageEvent();
             this.subscribeToDocumentChangeEvent();
             this.subscribeToSettingChangeEvent();
-            subscibeToEditorChangeEvent();
-            subscribeToDisposeEvent();
+            this.subscribeToTabChangeEvent();
+            this.subscribeToDisposeEvent();
 
             const errors = await this.artifactWatcherAdapter.create(editorId);
             for (const error of errors) {
@@ -97,12 +133,17 @@ export class VsCodeBpmnEditorAdapter implements CustomTextEditorProvider {
         }
     }
 
-    private subscribeToMessageEvent() {
+    protected subscribeToMessageEvent() {
         subscribeToMessageEvent(
             async (message: MiranumModelerCommand, editorId: string) => {
+                console.debug(
+                    `[${new Date(
+                        Date.now(),
+                    ).toJSON()}] Message received -> ${message.type}`,
+                );
                 switch (message.type) {
                     case "GetBpmnFileCommand": {
-                        if (await this.displayBpmnModelerInPort.display(editorId)) {
+                        if (await this.displayModelerInPort.display(editorId)) {
                             this.logMessageInPort.info("Bpmn modeler is ready");
                         }
                         break;
@@ -120,30 +161,24 @@ export class VsCodeBpmnEditorAdapter implements CustomTextEditorProvider {
                         break;
                     }
                     case "SyncDocumentCommand": {
-                        this.syncDocumentInPort.sync(
+                        this.isChangeDocumentEventBlocked = true;
+                        console.debug("SyncDocumentCommand -> blocked");
+                        await this.syncDocumentInPort.sync(
                             editorId,
                             (message as SyncDocumentCommand).content,
                         );
+                        this.isChangeDocumentEventBlocked = false;
+                        console.debug("SyncDocumentCommand -> released");
                         break;
                     }
                 }
+                console.debug(
+                    `[${new Date(
+                        Date.now(),
+                    ).toJSON()}] Message processed -> ${message.type}`,
+                );
             },
         );
-    }
-
-    private subscribeToDocumentChangeEvent() {
-        subscribeToDocumentChangeEvent((event: TextDocumentChangeEvent) => {
-            const documentPath = this.getDocumentUseCase.getPath();
-            if (
-                event.contentChanges.length !== 0 &&
-                documentPath.split(".").pop() === "bpmn" &&
-                documentPath === event.document.uri.path &&
-                !isChangeDocumentEventBlocked
-            ) {
-                this.displayBpmnModelerInPort.display(event.document.uri.path);
-                blockChangeDocumentEvent(false);
-            }
-        });
     }
 
     private subscribeToSettingChangeEvent() {
@@ -156,21 +191,25 @@ export class VsCodeBpmnEditorAdapter implements CustomTextEditorProvider {
 }
 
 @singleton()
-export class VsCodeDmnEditorAdapter implements CustomTextEditorProvider {
+export class VsCodeDmnEditorAdapter
+    extends VsCodeCustomEditor
+    implements CustomTextEditorProvider
+{
+    protected extension = "dmn";
+
     constructor(
         @inject("DmnModelerViewType")
         private readonly viewType: string,
         @inject("DisplayDmnModelerInPort")
-        private readonly displayDmnModelerInPort: DisplayDmnModelerInPort,
+        protected readonly displayModelerInPort: DisplayModelerInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("GetDocumentInPort")
-        private readonly getDocumentUseCase: GetDocumentInPort,
-        @inject("SetBpmnModelerSettingsInPort")
-        private readonly setBpmnModelerSettingsInPort: SetBpmnModelerSettingsInPort,
+        protected readonly getDocumentUseCase: GetDocumentInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
     ) {
+        super();
         const dmnModeler = window.registerCustomEditorProvider(
             container.resolve("DmnModelerViewType"),
             this,
@@ -190,56 +229,46 @@ export class VsCodeDmnEditorAdapter implements CustomTextEditorProvider {
 
             this.subscribeToMessageEvent();
             this.subscribeToDocumentChangeEvent();
-            this.subscribeToSettingChangeEvent();
-            subscibeToEditorChangeEvent();
-            subscribeToDisposeEvent();
+            this.subscribeToTabChangeEvent();
+            this.subscribeToDisposeEvent();
         } catch (error) {
             this.logMessageInPort.error(error as Error);
         }
     }
 
-    private subscribeToMessageEvent() {
+    protected subscribeToMessageEvent() {
         subscribeToMessageEvent(
             async (message: MiranumModelerCommand, editorId: string) => {
+                console.debug(
+                    `[${new Date(
+                        Date.now(),
+                    ).toJSON()}] Message received -> ${message.type}`,
+                );
                 switch (message.type) {
                     case "GetDmnFileCommand": {
-                        if (await this.displayDmnModelerInPort.display(editorId)) {
+                        if (await this.displayModelerInPort.display(editorId)) {
                             this.logMessageInPort.info("Dmn modeler is ready");
                         }
                         break;
                     }
                     case "SyncDocumentCommand": {
-                        this.syncDocumentInPort.sync(
+                        this.isChangeDocumentEventBlocked = true;
+                        console.debug("SyncDocumentCommand -> blocked");
+                        await this.syncDocumentInPort.sync(
                             editorId,
                             (message as SyncDocumentCommand).content,
                         );
+                        this.isChangeDocumentEventBlocked = false;
+                        console.debug("SyncDocumentCommand -> released");
                         break;
                     }
                 }
+                console.debug(
+                    `[${new Date(
+                        Date.now(),
+                    ).toJSON()}] Message processed -> ${message.type}`,
+                );
             },
         );
-    }
-
-    private subscribeToDocumentChangeEvent() {
-        subscribeToDocumentChangeEvent((event: TextDocumentChangeEvent) => {
-            const documentPath = this.getDocumentUseCase.getPath();
-            if (
-                event.contentChanges.length !== 0 &&
-                documentPath.split(".").pop() === "dmn" &&
-                documentPath === event.document.uri.path &&
-                !isChangeDocumentEventBlocked
-            ) {
-                this.displayDmnModelerInPort.display(event.document.uri.path);
-                blockChangeDocumentEvent(false);
-            }
-        });
-    }
-
-    private subscribeToSettingChangeEvent() {
-        subscribeToSettingChangeEvent((event, editorId) => {
-            if (event.affectsConfiguration("miranumIDE.modeler.alignToOrigin")) {
-                this.setBpmnModelerSettingsInPort.set(editorId);
-            }
-        });
     }
 }

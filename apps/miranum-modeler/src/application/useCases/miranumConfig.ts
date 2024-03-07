@@ -39,9 +39,10 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
                 return files[0];
             default:
                 // FIXME: What to do if there are multiple miranum.json files?
-                //  - User select one
-                //  - The files get merged into one valid miranum.json
-                //     Which one has priority?
+                //  - Solution 1: User select one
+                //  - Solution 2: The files get merged into one valid miranum.json
+                //     - Which one has priority?
+                //  ! Right now the `miranum.json` nearest to the document gets returned.
                 return files[0];
         }
     }
@@ -79,12 +80,10 @@ export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {
         }
 
         configs.push(
-            ...(
-                await this.searchMiranumConfig(
-                    rootDir,
-                    searchDir.split("/").slice(0, -1).join("/"),
-                )
-            ),
+            ...(await this.searchMiranumConfig(
+                rootDir,
+                searchDir.split("/").slice(0, -1).join("/"),
+            )),
         );
 
         return configs;
