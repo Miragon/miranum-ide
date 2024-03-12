@@ -46,7 +46,7 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 dispatchEvent(new ElementTemplatesQuery([elementTemplate]));
                 break;
             }
-            case message.type === "GetWebviewConfigCommand": {
+            case message.type === "GetBpmnModelerSettingCommand": {
                 dispatchEvent(new BpmnModelerSettingQuery({ alignToOrigin: true }));
                 break;
             }
