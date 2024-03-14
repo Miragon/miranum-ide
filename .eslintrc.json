@@ -11,8 +11,7 @@
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "airbnb-typescript",
-        "react-app"
+        "airbnb-typescript"
       ],
       "rules": {
         "@nx/enforce-module-boundaries": [
