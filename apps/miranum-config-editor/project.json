@@ -3,9 +3,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-config-editor/src",
   "projectType": "application",
-  "implicitDependencies": [
-    "miranum-config-editor-webview"
-  ],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
