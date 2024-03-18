@@ -13,11 +13,6 @@
             "command": "npx nx observe miranum-config-editor",
             "prefix": "miranum-config-editor",
             "color": "blue"
-          },
-          {
-            "command": "npx nx observe miranum-config-editor-webview",
-            "prefix": "miranum-config-editor-webview",
-            "color": "green"
           }
         ]
       }
