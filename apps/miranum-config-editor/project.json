@@ -3,6 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-config-editor/src",
   "projectType": "application",
+  "implicitDependencies": ["miranum-config-editor-webview"],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
@@ -13,6 +14,11 @@
             "command": "npx nx observe miranum-config-editor",
             "prefix": "miranum-config-editor",
             "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-config-editor-webview",
+            "prefix": "miranum-config-editor-webview",
+            "color": "green"
           }
         ]
       }
