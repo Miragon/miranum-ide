@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { getCurrentInstance, onBeforeMount, shallowRef, toRaw } from "vue";
+import { onBeforeMount, shallowRef, toRaw } from "vue";
 import { JsonForms } from "@jsonforms/vue";
 import { vuetifyRenderers } from "@jsonforms/vue-vuetify";
 import { JsonSchema, UISchemaElement } from "@jsonforms/core";
@@ -12,12 +12,14 @@ import {
 
 import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./composables/vscode";
 import { createResolver } from "./composables/utils";
+import { useTheme } from "vuetify";
 
 //
 // Declare variables
 //
 declare const process: { env: { NODE_ENV: string } };
 
+const theme = useTheme();
 const renderers = [...vuetifyRenderers];
 
 const schema = shallowRef<JsonSchema | undefined>(undefined);
@@ -39,6 +41,7 @@ const resolver = createResolver<ConfigEditorData>();
 // Declare functions
 //
 function onChange(event: any) {
+    console.log("onChange", event.data);
     if (JSON.stringify(event.data) === "{}") {
         return;
     }
@@ -93,11 +96,8 @@ function receiveMessage(message: MessageEvent<VscMessage<ConfigEditorData>>) {
 onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
-    if (document.body.className === "vscode-dark") {
-        const vuetify = getCurrentInstance()?.proxy["$vuetify"];
-        if (vuetify) {
-            vuetify.theme.dark = true;
-        }
+    if (document.body.className.includes("vscode-dark")) {
+        theme.global.name.value = "darkTheme";
     }
 
     try {

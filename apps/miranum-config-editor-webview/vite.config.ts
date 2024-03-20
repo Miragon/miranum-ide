@@ -27,10 +27,15 @@ export default defineConfig({
     // },
 
     build: {
-        outDir: "../../dist/apps/miranum-config-editor-webview",
-        reportCompressedSize: true,
-        commonjsOptions: {
-            transformMixedEsModules: true,
+        target: "es2021",
+        commonjsOptions: { transformMixedEsModules: true },
+        chunkSizeWarningLimit: 1200,
+        rollupOptions: {
+            output: {
+                // don't hash the name of the output file (index.js)
+                entryFileNames: `[name].js`,
+                assetFileNames: `[name].[ext]`,
+            },
         },
     },
 
