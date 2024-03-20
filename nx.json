@@ -33,9 +33,6 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": [
-    "@nxrocks/nx-spring-boot"
-  ],
   "generators": {
     "@nx/web:application": {
       "bundler": "vite",
