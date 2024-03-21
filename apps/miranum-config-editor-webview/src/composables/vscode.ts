@@ -4,9 +4,9 @@
 import { JsonSchema, UISchemaElement } from "@jsonforms/core";
 import { WebviewApi } from "vscode-webview";
 
-import jsonSchema from "../../assets/schema.json";
-import jsonUiSchema from "../../assets/uischema.json";
-import jsonData from "../../assets/data.json";
+import jsonSchema from "../assets/schema.json";
+import jsonUiSchema from "../assets/uischema.json";
+import jsonData from "../assets/data.json";
 import {
     ConfigEditorData,
     MessageType,

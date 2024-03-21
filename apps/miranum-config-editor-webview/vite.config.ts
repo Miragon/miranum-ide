@@ -1,13 +1,13 @@
-/// <reference types="vitest" />
+/// <reference types='vitest' />
 import { defineConfig } from "vite";
 
 import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
-import vue from "@vitejs/plugin-vue2";
-import { VuetifyResolver } from "unplugin-vue-components/resolvers";
-import Component from "unplugin-vue-components/vite";
+import vue from "@vitejs/plugin-vue";
+import vuetify from "vite-plugin-vuetify";
 
 export default defineConfig({
-    cacheDir: "../../node_modules/.vite/miranum-config-editor-webview",
+    root: __dirname,
+    cacheDir: "../../node_modules/.vite/apps/miranum-config-editor-webview",
 
     server: {
         port: 4200,
@@ -19,13 +19,12 @@ export default defineConfig({
         host: "localhost",
     },
 
-    plugins: [
-        nxViteTsPaths(),
-        vue(),
-        Component({
-            resolvers: [VuetifyResolver()],
-        }),
-    ],
+    plugins: [nxViteTsPaths(), vue(), vuetify({ autoImport: true })],
+
+    // Uncomment this if you are using workers.
+    // worker: {
+    //  plugins: [ nxViteTsPaths() ],
+    // },
 
     build: {
         target: "es2021",
@@ -40,10 +39,6 @@ export default defineConfig({
         },
     },
 
-    define: {
-        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-    },
-
     test: {
         globals: true,
         cache: {
@@ -51,5 +46,11 @@ export default defineConfig({
         },
         environment: "jsdom",
         include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+
+        reporters: ["default"],
+        coverage: {
+            reportsDirectory: "../../coverage/apps/miranum-config-editor-webview",
+            provider: "v8",
+        },
     },
 });

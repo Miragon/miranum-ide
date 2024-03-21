@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { getCurrentInstance, onBeforeMount, ref } from "vue";
-import { JsonForms } from "@jsonforms/vue2";
-import { vuetifyRenderers } from "@jsonforms/vue2-vuetify";
+import { onBeforeMount, shallowRef, toRaw } from "vue";
+import { JsonForms } from "@jsonforms/vue";
+import { vuetifyRenderers } from "@jsonforms/vue-vuetify";
 import { JsonSchema, UISchemaElement } from "@jsonforms/core";
 
 import {
@@ -12,19 +12,19 @@ import {
 
 import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./composables/vscode";
 import { createResolver } from "./composables/utils";
+import { useTheme } from "vuetify";
 
 //
 // Declare variables
 //
 declare const process: { env: { NODE_ENV: string } };
 
-const renderers = ref([...vuetifyRenderers]);
+const theme = useTheme();
+const renderers = [...vuetifyRenderers];
 
-const schema = ref<JsonSchema>(JSON.parse("{}"));
-const uischema = ref<UISchemaElement>({
-    type: "VerticalLayout",
-});
-const formData = ref<JSON>(JSON.parse("{}"));
+const schema = shallowRef<JsonSchema | undefined>(undefined);
+const uischema = shallowRef<UISchemaElement | undefined>(undefined);
+const formData = shallowRef<JSON | undefined>(undefined);
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
@@ -41,12 +41,13 @@ const resolver = createResolver<ConfigEditorData>();
 // Declare functions
 //
 function onChange(event: any) {
+    console.log("onChange", event.data);
     if (JSON.stringify(event.data) === "{}") {
         return;
     }
 
     try {
-        vscode.updateState({ data: event.data });
+        vscode.updateState({ data: toRaw(event.data) });
         vscode.postMessage({
             type: MessageType.syncDocument,
             payload: { data: JSON.stringify(event.data) },
@@ -95,11 +96,8 @@ function receiveMessage(message: MessageEvent<VscMessage<ConfigEditorData>>) {
 onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
-    if (document.body.className === "vscode-dark") {
-        const vuetify = getCurrentInstance()?.proxy["$vuetify"];
-        if (vuetify) {
-            vuetify.theme.dark = true;
-        }
+    if (document.body.className.includes("vscode-dark")) {
+        theme.global.name.value = "darkTheme";
     }
 
     try {
@@ -134,9 +132,9 @@ onBeforeMount(async () => {
                 formData.value = JSON.parse(payload.data ?? "{}");
 
                 vscode.setState({
-                    schema: schema.value,
-                    uischema: uischema.value,
-                    data: formData.value,
+                    schema: schema.value!,
+                    uischema: uischema.value!,
+                    data: formData.value!,
                 });
             }
 
@@ -160,7 +158,7 @@ onBeforeMount(async () => {
 <template>
     <v-app>
         <v-container class="form" fluid>
-            <v-card>
+            <v-card v-if="schema && uischema && formData">
                 <json-forms
                     :data="formData"
                     :renderers="renderers"
