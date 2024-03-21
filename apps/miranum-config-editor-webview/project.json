@@ -74,13 +74,6 @@
         }
       }
     },
-    "test": {
-      "executor": "@nx/vite:test",
-      "outputs": ["{options.reportsDirectory}"],
-      "options": {
-        "reportsDirectory": "../../coverage/apps/miranum-config-editor-webview"
-      }
-    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
