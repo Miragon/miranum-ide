@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Update to Vue 3 and Vuetify 3 (#529)
+
 ## [0.5.6] - 2023-11-08
 
 ### Added
