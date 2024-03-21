@@ -26,29 +26,6 @@ const darkTheme: ThemeDefinition = {
         warning: "#FB8C00",
     },
 };
-// export const preset: Partial<VuetifyPreset> = {
-//     icons: {
-//         iconfont: "mdi",
-//         values: {},
-//     },
-//     theme: {
-//         dark: false,
-//         default: "light",
-//         disable: false,
-//         options: {
-//             cspNonce: undefined,
-//             customProperties: undefined,
-//             minifyTheme: undefined,
-//             themeCache: undefined,
-//         },
-//         themes: {
-//             light: {
-//             },
-//             dark: {
-//             },
-//         },
-//     },
-// };
 
 export default createVuetify({
     theme: {
