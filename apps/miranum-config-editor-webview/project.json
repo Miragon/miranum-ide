@@ -7,9 +7,7 @@
   "targets": {
     "observe": {
       "executor": "@nx/vite:build",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
         "watch": true,

@@ -25,9 +25,7 @@
     },
     "observe": {
       "executor": "@nx/webpack:webpack",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
