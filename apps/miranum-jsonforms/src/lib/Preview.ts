@@ -65,19 +65,11 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
     }
 
     public get title(): string {
-        try {
-            return this.webviewPanel.title;
-        } catch (error) {
-            throw error;
-        }
+        return this.webviewPanel.title;
     }
 
     protected get webview(): Webview {
-        try {
-            return this.webviewPanel.webview;
-        } catch (error) {
-            throw error;
-        }
+        return this.webviewPanel.webview;
     }
 
     private get webviewPanel(): WebviewPanel {
@@ -93,42 +85,38 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
      * Create a new webview panel.
      */
     public open(...data: T[]): void {
-        try {
-            this._lastViewState = ViewState.open;
-            this._isOpen = true;
+        this._lastViewState = ViewState.open;
+        this._isOpen = true;
 
-            // Setup webview
-            const webviewPanel = vscode.window.createWebviewPanel(
-                this.viewType,
-                this.webviewOptions.title,
-                {
-                    preserveFocus: true,
-                    viewColumn: vscode.ViewColumn.Beside,
-                },
-            );
-            webviewPanel.iconPath = this.webviewOptions.icon;
-            webviewPanel.webview.options = { enableScripts: true };
-            webviewPanel.webview.html = this.getHtml(
-                webviewPanel.webview,
-                this.extensionUri,
-            );
-            const disposables = this.setEventHandlers(webviewPanel, ...data);
+        // Setup webview
+        const webviewPanel = vscode.window.createWebviewPanel(
+            this.viewType,
+            this.webviewOptions.title,
+            {
+                preserveFocus: true,
+                viewColumn: vscode.ViewColumn.Beside,
+            },
+        );
+        webviewPanel.iconPath = this.webviewOptions.icon;
+        webviewPanel.webview.options = { enableScripts: true };
+        webviewPanel.webview.html = this.getHtml(
+            webviewPanel.webview,
+            this.extensionUri,
+        );
+        const disposables = this.setEventHandlers(webviewPanel, ...data);
 
-            // Make sure there will never be more than 2 webview panels inside our array
-            while (this.webviews.length > 1) {
-                const wp = this.webviews.pop();
-                wp?.webviewPanel.dispose();
-            }
-
-            // add the current webview panel on top of our array
-            // so our active preview window is always on index 0
-            this.webviews.unshift({
-                webviewPanel,
-                disposables,
-            });
-        } catch (error) {
-            throw error;
+        // Make sure there will never be more than 2 webview panels inside our array
+        while (this.webviews.length > 1) {
+            const wp = this.webviews.pop();
+            wp?.webviewPanel.dispose();
         }
+
+        // add the current webview panel on top of our array
+        // so our active preview window is always on index 0
+        this.webviews.unshift({
+            webviewPanel,
+            disposables,
+        });
     }
 
     /**
@@ -139,12 +127,8 @@ export abstract class Preview<T> implements Observer, UIComponent<T> {
             this.closeCaller = CloseCaller.implicit;
         }
 
-        try {
-            // Trigger onDidDispose-Event
-            this.webviews[0].webviewPanel.dispose();
-        } catch (error) {
-            throw error;
-        }
+        // Trigger onDidDispose-Event
+        this.webviews[0].webviewPanel.dispose();
     }
 
     public toggle(...data: T[]): void {
