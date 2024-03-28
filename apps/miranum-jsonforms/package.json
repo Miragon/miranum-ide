@@ -1,0 +1,130 @@
+{
+    "name": "miranum-json-forms",
+    "displayName": "Miranum JSON Forms",
+    "description": "Create and edit forms with an modern easy to use editor.",
+    "license": "SEE LICENSE IN LICENSE",
+    "version": "0.1.7",
+    "publisher": "miragon-gmbh",
+    "preview": true,
+    "homepage": "https://www.miranum.io/",
+    "galleryBanner": {
+        "color": "#F0F8FF",
+        "theme": "light"
+    },
+    "badges": [
+        {
+            "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+            "href": "https://twitter.com/miragon_io",
+            "description": "Our Twitter profile."
+        },
+        {
+            "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+            "href": "https://www.linkedin.com/company/miragon-io",
+            "description": "Our LinkedIn profile."
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Miragon/miranum-json-forms.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Miragon/miranum-json-forms/issues"
+    },
+    "engines": {
+        "vscode": "^1.76.0"
+    },
+    "icon": "images/miranum_logo.png",
+    "categories": [
+        "Other",
+        "Visualization"
+    ],
+    "keywords": [
+        "JSON",
+        "JSON Forms",
+        "JSON Schema",
+        "Formbuilder"
+    ],
+    "main": "./main.js",
+    "contributes": {
+        "customEditors": [
+            {
+                "viewType": "jsonforms-builder",
+                "id": "jsonforms-builder",
+                "displayName": "Miranum Json Forms",
+                "selector": [
+                    {
+                        "filenamePattern": "*.form.json"
+                    }
+                ],
+                "priority": "default"
+            }
+        ],
+        "commands": [
+            {
+                "command": "jsonforms-renderer.togglePreview",
+                "title": "Miranum: Toggle Preview",
+                "icon": "$(notebook-render-output)"
+            },
+            {
+                "command": "jsonforms-builder.toggleTextEditor",
+                "title": "Miranum: Toggle Standard Text Editor",
+                "icon": "$(notebook-mimetype)"
+            },
+            {
+                "command": "jsonforms-builder.toggleLogger",
+                "title": "Miranum: Toggle Logging Information",
+                "icon": "$(callstack-view-session)"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "jsonforms-renderer.togglePreview",
+                "key": "ctrl+shift+p",
+                "when": "jsonforms-builder.openCustomEditors > 0"
+            },
+            {
+                "command": "jsonforms-builder.toggleTextEditor",
+                "key": "ctrl+shift+t",
+                "when": "jsonforms-builder.openCustomEditors > 0"
+            },
+            {
+                "command": "jsonforms-builder.toggleLogger",
+                "key": "ctrl+shift+l",
+                "when": "jsonforms-builder.openCustomEditors > 0"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "jsonforms-renderer.togglePreview",
+                    "when": "jsonforms-builder.openCustomEditors > 0"
+                },
+                {
+                    "command": "jsonforms-builder.toggleTextEditor",
+                    "when": "jsonforms-builder.openCustomEditors > 0"
+                },
+                {
+                    "command": "jsonforms-builder.toggleLogger",
+                    "when": "jsonforms-builder.openCustomEditors > 0"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "jsonforms-renderer.togglePreview",
+                    "group": "navigation",
+                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                },
+                {
+                    "command": "jsonforms-builder.toggleTextEditor",
+                    "group": "navigation",
+                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                },
+                {
+                    "command": "jsonforms-builder.toggleLogger",
+                    "group": "navigation",
+                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                }
+            ]
+        }
+    }
+}

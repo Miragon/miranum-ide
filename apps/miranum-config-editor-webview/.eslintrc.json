@@ -1,39 +1,17 @@
 {
-  "extends": [
-    "../../.eslintrc.json",
-    "plugin:vue/essential",
-    "prettier",
-    "@vue/typescript/recommended",
-    "@vue/eslint-config-prettier"
-  ],
-  "ignorePatterns": [
-    "!**/*"
-  ],
+  "extends": ["../../.eslintrc.json"],
+  "ignorePatterns": ["!**/*"],
   "overrides": [
     {
-      "files": [
-        "*.ts",
-        "*.tsx",
-        "*.js",
-        "*.jsx"
-      ],
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {}
     },
     {
-      "files": [
-        "*.ts",
-        "*.tsx"
-      ],
-      "rules": {
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-empty-interface": "warn"
-      }
+      "files": ["*.ts", "*.tsx"],
+      "rules": {}
     },
     {
-      "files": [
-        "*.js",
-        "*.jsx"
-      ],
+      "files": ["*.js", "*.jsx"],
       "rules": {}
     }
   ]
