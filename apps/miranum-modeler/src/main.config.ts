@@ -4,32 +4,32 @@ import {
     VsCodeArtifactWatcherAdapter,
     VsCodeBpmnEditorAdapter,
     VsCodeDmnEditorAdapter,
-    VsCodeShowLoggerCommand,
+    VsCodeOpenLoggingConsoleCommand,
     VsCodeToggleTextEditorCommand,
 } from "./adapter/in";
 import {
-    DisplayBpmnFileUseCase,
+    DisplayBpmnModelerUseCase,
     DisplayDmnModelerUseCase,
+    DisplayMessageUseCase,
     GetDocumentUseCase,
     GetMiranumConfigUseCase,
     GetWorkspaceItemUseCase,
     LogMessageUseCase,
+    OpenLoggingConsoleUseCase,
     SetBpmnModelerSettingsUseCase,
     SetElementTemplatesUseCase,
     SetFormKeysUseCase,
-    ShowLoggerUseCase,
-    ShowMessageUseCase,
     SyncDocumentUseCase,
     ToggleTextEditorUseCase,
 } from "./application/useCases";
 import {
     VsCodeBpmnModelerSettingsAdapter,
     VsCodeBpmnWebviewAdapter,
+    VsCodeDisplayMessageAdapter,
     VsCodeDmnWebviewAdapter,
     VsCodeDocumentAdapter,
     VsCodeLoggerAdapter,
     VsCodeReadAdapter,
-    VsCodeShowMessageAdapter,
     VsCodeTextEditorAdapter,
     VsCodeWorkspaceAdapter,
 } from "./adapter/out";
@@ -48,17 +48,17 @@ export function config(): void {
     container.register("ToggleTextEditorCommand", {
         useValue: "miranum-modeler.toggleTextEditor",
     });
-    container.register("ShowLoggerCommand", {
-        useValue: "miranum-modeler.showLogger",
+    container.register("OpenLoggingConsoleCommand", {
+        useValue: "miranum-modeler.openLoggingConsole",
     });
 
     // Out Adapter
     container.register("WorkspaceOutPort", VsCodeWorkspaceAdapter);
     container.register("DocumentOutPort", VsCodeDocumentAdapter);
     container.register("FileSystemOutPort", VsCodeReadAdapter);
-    container.register("ShowMessageOutPort", VsCodeShowMessageAdapter);
+    container.register("DisplayMessageOutPort", VsCodeDisplayMessageAdapter);
     container.register("TextEditorOutPort", VsCodeTextEditorAdapter);
-    container.register("ShowLoggerOutPort", VsCodeLoggerAdapter);
+    container.register("OpenLoggingConsoleOutPort", VsCodeLoggerAdapter);
     container.register("LogMessageOutPort", VsCodeLoggerAdapter);
 
     // Use Cases
@@ -66,14 +66,14 @@ export function config(): void {
     container.register("GetWorkspaceItemInPort", GetWorkspaceItemUseCase);
     container.register("GetDocumentInPort", GetDocumentUseCase);
     container.register("SyncDocumentInPort", SyncDocumentUseCase);
-    container.register("ShowMessageInPort", ShowMessageUseCase);
+    container.register("DisplayMessageInPort", DisplayMessageUseCase);
     container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase);
-    container.register("ShowLoggerInPort", ShowLoggerUseCase);
+    container.register("OpenLoggingConsoleInPort", OpenLoggingConsoleUseCase);
     container.register("LogMessageInPort", LogMessageUseCase);
 
     // In Adapter
     container.register(VsCodeToggleTextEditorCommand, VsCodeToggleTextEditorCommand);
-    container.register(VsCodeShowLoggerCommand, VsCodeShowLoggerCommand);
+    container.register(VsCodeOpenLoggingConsoleCommand, VsCodeOpenLoggingConsoleCommand);
 
     configBpmnModeler();
     configDmnModeler();
@@ -88,7 +88,7 @@ function configBpmnModeler(): void {
     container.register("BpmnModelerSettingsOutPort", VsCodeBpmnModelerSettingsAdapter);
 
     // Use Cases
-    container.register("DisplayBpmnModelerInPort", DisplayBpmnFileUseCase);
+    container.register("DisplayBpmnModelerInPort", DisplayBpmnModelerUseCase);
     container.register("SetFormKeysInPort", SetFormKeysUseCase);
     container.register("SetElementTemplatesInPort", SetElementTemplatesUseCase);
     container.register("SetBpmnModelerSettingsInPort", SetBpmnModelerSettingsUseCase);

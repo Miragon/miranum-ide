@@ -2,8 +2,10 @@ import { commands } from "vscode";
 import { inject, singleton } from "tsyringe";
 
 import { getContext } from "@miranum-ide/vscode/miranum-vscode";
-import { ToggleTextEditorInPort } from "../../application/ports/in";
-import { ShowLoggerOutPort } from "../../application/ports/out";
+import {
+    OpenLoggingConsoleInPort,
+    ToggleTextEditorInPort,
+} from "../../application/ports/in";
 
 @singleton()
 export class VsCodeToggleTextEditorCommand {
@@ -29,13 +31,13 @@ export class VsCodeToggleTextEditorCommand {
 }
 
 @singleton()
-export class VsCodeShowLoggerCommand {
+export class VsCodeOpenLoggingConsoleCommand {
     private readonly command: string;
 
     constructor(
-        @inject("ShowLoggerCommand") command: string,
-        @inject("ShowLoggerOutPort")
-        private readonly showLoggerOutPort: ShowLoggerOutPort,
+        @inject("OpenLoggingConsoleCommand") command: string,
+        @inject("OpenLoggingConsoleInPort")
+        private readonly openLoggingConsoleInPort: OpenLoggingConsoleInPort,
     ) {
         this.command = command;
 
@@ -47,6 +49,6 @@ export class VsCodeShowLoggerCommand {
     }
 
     show(): void {
-        this.showLoggerOutPort.show();
+        this.openLoggingConsoleInPort.open();
     }
 }

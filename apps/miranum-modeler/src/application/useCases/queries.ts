@@ -1,17 +1,17 @@
 import { inject, singleton } from "tsyringe";
 
 import {
+    DisplayMessageInPort,
     GetDocumentInPort,
     LogMessageInPort,
-    ShowLoggerInPort,
-    ShowMessageInPort,
+    OpenLoggingConsoleInPort,
     ToggleTextEditorInPort,
 } from "../ports/in";
 import {
+    DisplayMessageOutPort,
     DocumentOutPort,
     LogMessageOutPort,
-    ShowLoggerOutPort,
-    ShowMessageOutPort,
+    OpenLoggingConsoleOutPort,
     TextEditorOutPort,
 } from "../ports/out";
 
@@ -28,18 +28,18 @@ export class GetDocumentUseCase implements GetDocumentInPort {
 }
 
 @singleton()
-export class ShowMessageUseCase implements ShowMessageInPort {
+export class DisplayMessageUseCase implements DisplayMessageInPort {
     constructor(
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("DisplayMessageOutPort")
+        protected readonly displayMessageOutPort: DisplayMessageOutPort,
     ) {}
 
     info(message: string) {
-        this.showMessageOutPort.info(message);
+        this.displayMessageOutPort.info(message);
     }
 
     error(message: string) {
-        this.showMessageOutPort.error(message);
+        this.displayMessageOutPort.error(message);
     }
 }
 
@@ -75,13 +75,13 @@ export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
 }
 
 @singleton()
-export class ShowLoggerUseCase implements ShowLoggerInPort {
+export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
     constructor(
-        @inject("ShowLoggerOutPort")
-        private readonly showLoggerOutPort: ShowLoggerOutPort,
+        @inject("OpenLoggingConsoleOutPort")
+        private readonly openLoggingConsoleOutPort: OpenLoggingConsoleOutPort,
     ) {}
 
-    show() {
-        this.showLoggerOutPort.show();
+    open() {
+        this.openLoggingConsoleOutPort.open();
     }
 }

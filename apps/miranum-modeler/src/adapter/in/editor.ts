@@ -15,12 +15,12 @@ import {
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import {
+    DisplayMessageInPort,
     DisplayModelerInPort,
     GetDocumentInPort,
     LogMessageInPort,
     SetArtifactInPort,
     SetModelerSettingInPort,
-    ShowMessageInPort,
     SyncDocumentInPort,
 } from "../../application/ports/in";
 import {
@@ -91,8 +91,8 @@ export class VsCodeBpmnEditorAdapter
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("GetDocumentInPort")
         protected readonly getDocumentUseCase: GetDocumentInPort,
-        @inject("ShowMessageInPort")
-        private readonly showMessageInPort: ShowMessageInPort,
+        @inject("DisplayMessageInPort")
+        private readonly displayMessageInPort: DisplayMessageInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
         private readonly artifactWatcherAdapter: VsCodeArtifactWatcherAdapter,
@@ -124,11 +124,11 @@ export class VsCodeBpmnEditorAdapter
 
             const errors = await this.artifactWatcherAdapter.create(editorId);
             for (const error of errors) {
-                this.showMessageInPort.error(error.message);
+                this.displayMessageInPort.error(error.message);
                 this.logMessageInPort.error(error);
             }
         } catch (error) {
-            this.showMessageInPort.error((error as Error).message);
+            this.displayMessageInPort.error((error as Error).message);
             this.logMessageInPort.error(error as Error);
         }
     }
@@ -137,9 +137,9 @@ export class VsCodeBpmnEditorAdapter
         subscribeToMessageEvent(
             async (message: MiranumModelerCommand, editorId: string) => {
                 console.debug(
-                    `[${new Date(
-                        Date.now(),
-                    ).toJSON()}] Message received -> ${message.type}`,
+                    `[${new Date(Date.now()).toJSON()}] Message received -> ${
+                        message.type
+                    }`,
                 );
                 switch (message.type) {
                     case "GetBpmnFileCommand": {
@@ -173,9 +173,9 @@ export class VsCodeBpmnEditorAdapter
                     }
                 }
                 console.debug(
-                    `[${new Date(
-                        Date.now(),
-                    ).toJSON()}] Message processed -> ${message.type}`,
+                    `[${new Date(Date.now()).toJSON()}] Message processed -> ${
+                        message.type
+                    }`,
                 );
             },
         );
@@ -240,9 +240,9 @@ export class VsCodeDmnEditorAdapter
         subscribeToMessageEvent(
             async (message: MiranumModelerCommand, editorId: string) => {
                 console.debug(
-                    `[${new Date(
-                        Date.now(),
-                    ).toJSON()}] Message received -> ${message.type}`,
+                    `[${new Date(Date.now()).toJSON()}] Message received -> ${
+                        message.type
+                    }`,
                 );
                 switch (message.type) {
                     case "GetDmnFileCommand": {
@@ -264,9 +264,9 @@ export class VsCodeDmnEditorAdapter
                     }
                 }
                 console.debug(
-                    `[${new Date(
-                        Date.now(),
-                    ).toJSON()}] Message processed -> ${message.type}`,
+                    `[${new Date(Date.now()).toJSON()}] Message processed -> ${
+                        message.type
+                    }`,
                 );
             },
         );

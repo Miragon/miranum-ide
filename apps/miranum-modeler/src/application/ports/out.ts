@@ -110,7 +110,10 @@ export interface BpmnModelerSettingsOutPort {
     getAlignToOrigin(): boolean;
 }
 
-export interface ShowMessageOutPort {
+/**
+ * Display a message to the user in the UI.
+ */
+export interface DisplayMessageOutPort {
     info(message: string): void;
 
     error(message: string): void;
@@ -124,10 +127,13 @@ export interface TextEditorOutPort {
     toggle(documentPath: string): Promise<boolean>;
 }
 
-export interface ShowLoggerOutPort {
-    show(): void;
+export interface OpenLoggingConsoleOutPort {
+    open(): void;
 }
 
+/**
+ * Log a message to the console.
+ */
 export interface LogMessageOutPort {
     info(message: string): void;
 

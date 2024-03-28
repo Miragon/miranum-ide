@@ -9,15 +9,15 @@ import {
 import { singleton } from "tsyringe";
 
 import {
+    DisplayMessageOutPort,
     LogMessageOutPort,
-    ShowLoggerOutPort,
-    ShowMessageOutPort,
+    OpenLoggingConsoleOutPort,
     TextEditorOutPort,
 } from "../../application/ports/out";
 import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 
 @singleton()
-export class VsCodeShowMessageAdapter implements ShowMessageOutPort {
+export class VsCodeDisplayMessageAdapter implements DisplayMessageOutPort {
     info(message: string): void {
         window.showInformationMessage(message);
     }
@@ -101,7 +101,9 @@ export class VsCodeTextEditorAdapter implements TextEditorOutPort {
 }
 
 @singleton()
-export class VsCodeLoggerAdapter implements ShowLoggerOutPort, LogMessageOutPort {
+export class VsCodeLoggerAdapter
+    implements OpenLoggingConsoleOutPort, LogMessageOutPort
+{
     private readonly prefix = "[MiranumIDE.Modeler] ";
 
     private readonly logger: LogOutputChannel = window.createOutputChannel(
@@ -109,7 +111,7 @@ export class VsCodeLoggerAdapter implements ShowLoggerOutPort, LogMessageOutPort
         { log: true },
     );
 
-    show() {
+    open() {
         this.logger.show(true);
     }
 

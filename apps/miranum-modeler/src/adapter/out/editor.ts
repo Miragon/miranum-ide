@@ -241,6 +241,15 @@ function getActiveEditor(): ActiveEditor {
     return activeEditor;
 }
 
+/**
+ * Posts a message to the active editor webview.
+ * @param editorId
+ * @param message
+ * @returns `true` if the message was sent successfully.
+ * @throws {Error} If the given editor id does not match the active editor.
+ * @throws {Error} If the active editor is hidden and `retainContextWhenHidden` is not set.
+ * @throws {Error} If the message could not be sent to the webview.
+ */
 async function postMessage(
     editorId: string,
     message: MiranumModelerCommand | MiranumModelerQuery,
@@ -251,10 +260,14 @@ async function postMessage(
     if (!getActiveEditor().ui.options.retainContextWhenHidden) {
         // If `retainContextWhenHidden` is not set, messages can only be sent to visible webviews.
         if (!getActiveEditor().ui.visible) {
-            return false;
+            throw new Error("The active editor is hidden.");
         }
     }
-    return getActiveEditor().ui.webview.postMessage(message);
+    if (await getActiveEditor().ui.webview.postMessage(message)) {
+        return true;
+    } else {
+        throw new Error("Failed to send message to the webview.");
+    }
 }
 
 function disposeEditor(editorId: string, panel: WebviewPanel) {

@@ -8,7 +8,7 @@ import { config } from "./main.config";
 import {
     VsCodeBpmnEditorAdapter,
     VsCodeDmnEditorAdapter,
-    VsCodeShowLoggerCommand,
+    VsCodeOpenLoggingConsoleCommand,
     VsCodeToggleTextEditorCommand,
 } from "./adapter/in";
 
@@ -20,8 +20,9 @@ export function activate(context: ExtensionContext) {
     config();
 
     // 3. Register the commands
-    container.resolve(VsCodeToggleTextEditorCommand); // otherwise tsyringe won't create the instance
-    container.resolve(VsCodeShowLoggerCommand);
+    // otherwise tsyringe won't create the instance
+    container.resolve(VsCodeToggleTextEditorCommand);
+    container.resolve(VsCodeOpenLoggingConsoleCommand);
 
     // 4. Start the application
     container.resolve(VsCodeBpmnEditorAdapter);

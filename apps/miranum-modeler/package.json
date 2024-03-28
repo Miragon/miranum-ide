@@ -80,7 +80,7 @@
         "icon": "$(notebook-mimetype)"
       },
       {
-        "command": "miranum-modeler.showLogger",
+        "command": "miranum-modeler.openLoggingConsole",
         "title": "Miranum: Display Logging Information",
         "icon": "$(callstack-view-session)"
       }
@@ -99,7 +99,7 @@
           "when": "miranum-modeler.openCustomEditors > 0"
         },
         {
-          "command": "miranum-modeler.showLogger",
+          "command": "miranum-modeler.openLoggingConsole",
           "when": "miranum-modeler.openCustomEditors > 0"
         }
       ],

@@ -12,11 +12,11 @@ import {
 import {
     BpmnModelerSettingsOutPort,
     BpmnUiOutPort,
+    DisplayMessageOutPort,
     DmnUiOutPort,
     DocumentOutPort,
     FileSystemOutPort,
     LogMessageOutPort,
-    ShowMessageOutPort,
 } from "../ports/out";
 import { SettingBuilder } from "../model";
 import {
@@ -26,24 +26,26 @@ import {
 } from "../errors";
 
 @singleton()
-export class DisplayBpmnFileUseCase implements DisplayModelerInPort {
+export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
         @inject("BpmnUiOutPort")
         private readonly bpmnUiOutPort: BpmnUiOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("DisplayMessageOutPort")
+        protected readonly displayMessageOutPort: DisplayMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async display(editorId: string): Promise<boolean> {
-        try {
-            if (editorId !== this.bpmnUiOutPort.getId()) {
-                throw new Error("The `editorID` does not match the active editor.");
-            }
+        if (editorId !== this.bpmnUiOutPort.getId()) {
+            return this.handleError(
+                new Error("The `editorID` does not match the active editor."),
+            );
+        }
 
+        try {
             let bpmnFile = this.documentOutPort.getContent();
 
             if (bpmnFile === "") {
@@ -59,50 +61,46 @@ export class DisplayBpmnFileUseCase implements DisplayModelerInPort {
                 const executionPlatform = match[1];
                 switch (executionPlatform) {
                     case "7": {
-                        if (
-                            await this.bpmnUiOutPort.displayBpmnFile(
-                                editorId,
-                                "c7",
-                                bpmnFile,
-                            )
-                        ) {
-                            return true;
-                        } else {
-                            throw new Error("Displaying the BPMN Modeler failed.");
-                        }
+                        return await this.bpmnUiOutPort.displayBpmnFile(
+                            editorId,
+                            "c7",
+                            bpmnFile,
+                        );
                     }
                     case "8": {
-                        if (
-                            await this.bpmnUiOutPort.displayBpmnFile(
-                                editorId,
-                                "c8",
-                                bpmnFile,
-                            )
-                        ) {
-                            return true;
-                        } else {
-                            throw new Error("Displaying the BPMN Modeler failed.");
-                        }
+                        return await this.bpmnUiOutPort.displayBpmnFile(
+                            editorId,
+                            "c8",
+                            bpmnFile,
+                        );
                     }
                     default:
-                        throw new Error(
-                            `The execution platform version ${executionPlatform} is not supported.`,
+                        return this.handleError(
+                            new Error(
+                                `The execution platform version ${executionPlatform} is not supported.`,
+                            ),
                         );
                 }
             } else {
-                throw new Error(
-                    `Missing execution platform in BPMN file ${this.documentOutPort.getFilePath()}.`,
+                return this.handleError(
+                    new Error(
+                        `Missing execution platform in BPMN file ${this.documentOutPort.getFilePath()}.`,
+                    ),
                 );
             }
         } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            this.showMessageOutPort.error(
-                `A problem occurred while trying to display the BPMN Modeler.\n${
-                    (error as Error).message ?? error
-                }`,
-            );
-            return false;
+            return this.handleError(error as Error);
         }
+    }
+
+    private handleError(error: Error): boolean {
+        this.logMessageOutPort.error(error as Error);
+        this.displayMessageOutPort.error(
+            `A problem occurred while trying to display the BPMN Modeler.\n${
+                (error as Error).message ?? error
+            }`,
+        );
+        return false;
     }
 }
 
@@ -113,18 +111,20 @@ export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
         private readonly documentOutPort: DocumentOutPort,
         @inject("DmnUiOutPort")
         private readonly dmnUiOutPort: DmnUiOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("DisplayMessageOutPort")
+        protected readonly displayMessageOutPort: DisplayMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async display(editorId: string): Promise<boolean> {
-        try {
-            if (editorId !== this.dmnUiOutPort.getId()) {
-                throw new Error("The `editorID` does not match the active editor.");
-            }
+        if (editorId !== this.dmnUiOutPort.getId()) {
+            return this.handleError(
+                new Error("The `editorID` does not match the active editor."),
+            );
+        }
 
+        try {
             let dmnFile = this.documentOutPort.getContent();
 
             if (dmnFile === "") {
@@ -132,20 +132,20 @@ export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
                 this.documentOutPort.write(dmnFile);
             }
 
-            if (await this.dmnUiOutPort.displayDmnFile(editorId, dmnFile)) {
-                return true;
-            } else {
-                throw new Error("Displaying the DMN Modeler failed.");
-            }
+            return await this.dmnUiOutPort.displayDmnFile(editorId, dmnFile);
         } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            this.showMessageOutPort.error(
-                `A problem occurred while trying to display the DMN Modeler.\n${
-                    (error as Error).message ?? error
-                }`,
-            );
-            return false;
+            return this.handleError(error as Error);
         }
+    }
+
+    private handleError(error: Error): boolean {
+        this.logMessageOutPort.error(error as Error);
+        this.displayMessageOutPort.error(
+            `A problem occurred while trying to display the BPMN Modeler.\n${
+                (error as Error).message ?? error
+            }`,
+        );
+        return false;
     }
 }
 
@@ -156,7 +156,7 @@ abstract class GetArtifact {
 
     protected abstract getWorkspaceItemInPort: GetWorkspaceItemInPort;
 
-    protected abstract showMessageOutPort: ShowMessageOutPort;
+    protected abstract displayMessageOutPort: DisplayMessageOutPort;
 
     protected abstract fileSystemOutPort: FileSystemOutPort;
 
@@ -206,17 +206,17 @@ abstract class GetArtifact {
             const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
 
             if (error instanceof FileNotFound) {
-                this.showMessageOutPort.info(
+                this.displayMessageOutPort.info(
                     `The \`miranum.json\` file is missing!\n${defaultMessage}.`,
                 );
             } else if (error instanceof SyntaxError) {
-                this.showMessageOutPort.info(
+                this.displayMessageOutPort.info(
                     `The \`miranum.json\` file has incorrect JSON!\n${defaultMessage}.`,
                 );
             } else if (error instanceof NoMiranumWorkspaceItemError) {
-                this.showMessageOutPort.info(`${error.message}!\n${defaultMessage}.`);
+                this.displayMessageOutPort.info(`${error.message}!\n${defaultMessage}.`);
             } else {
-                this.showMessageOutPort.info(
+                this.displayMessageOutPort.info(
                     `${(error as Error).message}!\n${defaultMessage}.`,
                 );
             }
@@ -256,8 +256,8 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
         protected readonly getWorkspaceItemInPort: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("DisplayMessageOutPort")
+        protected readonly displayMessageOutPort: DisplayMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {
@@ -265,11 +265,13 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
     }
 
     async set(editorId: string): Promise<boolean> {
-        try {
-            if (editorId !== this.documentOutPort.getId()) {
-                throw new Error("The `editorID` does not match the active editor.");
-            }
+        if (editorId !== this.documentOutPort.getId()) {
+            return this.handleError(
+                new Error("The `editorID` does not match the active editor."),
+            );
+        }
 
+        try {
             const documentDir = this.documentOutPort
                 .getFilePath()
                 .split("/")
@@ -287,11 +289,10 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
                 this.logMessageOutPort.info(`${artifacts.length} form keys are set.`);
                 return true;
             } else {
-                throw new Error("Setting the `formKeys` failed.");
+                return this.handleError(new Error("Setting the `formKeys` failed."));
             }
         } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            return false;
+            return this.handleError(error as Error);
         }
     }
 
@@ -328,6 +329,11 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
             }
         }
     }
+
+    private handleError(error: Error): boolean {
+        this.logMessageOutPort.error(error as Error);
+        return false;
+    }
 }
 
 @singleton()
@@ -348,8 +354,8 @@ export class SetElementTemplatesUseCase
         protected readonly getWorkspaceItemInPort: GetWorkspaceItemInPort,
         @inject("FileSystemOutPort")
         protected readonly fileSystemOutPort: FileSystemOutPort,
-        @inject("ShowMessageOutPort")
-        protected readonly showMessageOutPort: ShowMessageOutPort,
+        @inject("DisplayMessageOutPort")
+        protected readonly displayMessageOutPort: DisplayMessageOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {
@@ -357,11 +363,13 @@ export class SetElementTemplatesUseCase
     }
 
     async set(editorId: string): Promise<boolean> {
-        try {
-            if (editorId !== this.documentOutPort.getId()) {
-                throw new Error("The `editorID` does not match the active editor.");
-            }
+        if (editorId !== this.documentOutPort.getId()) {
+            return this.handleError(
+                new Error("The `editorID` does not match the active editor."),
+            );
+        }
 
+        try {
             const documentDir = this.documentOutPort
                 .getFilePath()
                 .split("/")
@@ -381,11 +389,12 @@ export class SetElementTemplatesUseCase
                 );
                 return true;
             } else {
-                throw new Error("Setting the `elementTemplates` failed.");
+                return this.handleError(
+                    new Error("Setting the `elementTemplates` failed."),
+                );
             }
         } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            return false;
+            return this.handleError(error as Error);
         }
     }
 
@@ -398,6 +407,11 @@ export class SetElementTemplatesUseCase
                 return this.fileSystemOutPort.readFile(artifact);
             }),
         );
+    }
+
+    private handleError(error: Error): boolean {
+        this.logMessageOutPort.error(error as Error);
+        return false;
     }
 }
 
@@ -421,12 +435,17 @@ export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
             if (await this.bpmnUiOutPort.setSettings(editorId, settings)) {
                 return true;
             } else {
-                throw new Error("Setting the settings failed.");
+                return this.handleError(new Error("Unable to set preferences."));
             }
         } catch (error) {
             this.logMessageOutPort.error(error as Error);
             return false;
         }
+    }
+
+    private handleError(error: Error): boolean {
+        this.logMessageOutPort.error(error as Error);
+        return false;
     }
 }
 

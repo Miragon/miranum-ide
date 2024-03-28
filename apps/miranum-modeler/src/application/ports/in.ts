@@ -47,7 +47,10 @@ export interface GetDocumentInPort {
     getPath(): string;
 }
 
-export interface ShowMessageInPort {
+/**
+ * Display a message to the user in the UI.
+ */
+export interface DisplayMessageInPort {
     info(message: string): void;
 
     error(message: string): void;
@@ -57,10 +60,13 @@ export interface ToggleTextEditorInPort {
     toggle(): Promise<boolean>;
 }
 
-export interface ShowLoggerInPort {
-    show(): void;
+export interface OpenLoggingConsoleInPort {
+    open(): void;
 }
 
+/**
+ * Log a message to the console.
+ */
 export interface LogMessageInPort {
     info(message: string): void;
 
