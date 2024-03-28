@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2024-03-28
+
+### Fixed
+
+* Enable keyboard shortcuts for the modeler (#467)
+
+### Changed
+
+* Apply a hexagonal architecture to the modeler (#521)
+
 ## [0.5.7] - 2024-01-10
 
 ### Fixed
@@ -64,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8-vscode...HEAD
+[0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
 [0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode
 [0.5.6]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.5...release/v0.5.6
 [0.5.5]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.4...release/v0.5.5

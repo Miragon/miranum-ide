@@ -1,6 +1,6 @@
 {
   "name": "miranum-vs-code-forms",
-  "displayName": "Miranum: Form Builder",
+  "displayName": "Miranum: DigiWf Form Builder (deprecated)",
   "description": "Edit JSON Schema files with an modern easy to use editor.",
   "license": "SEE LICENSE IN LICENSE",
   "version": "0.1.0",
