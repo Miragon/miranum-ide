@@ -1,6 +1,6 @@
 {
   "name": "miranum-ide",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "license": "Apache-2.0",
   "scripts": {
     "build": "npx nx run-many --target build --all --prod && node tools/scripts/set-version.js && npm run doc",
@@ -94,10 +94,10 @@
     "@jsonforms/core": "^3.0.0",
     "@jsonforms/vue2": "^3.0.0",
     "@jsonforms/vue2-vuetify": "^3.0.0",
-    "@muenchen/vjsf": "^2.21.10",
-    "@muenchen/digiwf-form-builder": "^1.7.5",
-    "@muenchen/digiwf-form-builder-settings": "^1.7.5",
-    "@muenchen/digiwf-form-renderer": "^1.7.5",
+    "@muenchen/vjsf": "^2.21.13",
+    "@muenchen/digiwf-form-builder": "^1.9.1",
+    "@muenchen/digiwf-form-builder-settings": "^1.9.1",
+    "@muenchen/digiwf-form-renderer": "^1.9.1",
     "@mui/icons-material": "^5.14.9",
     "@mui/material": "^5.14.10",
     "@svgr/webpack": "^8.1.0",
