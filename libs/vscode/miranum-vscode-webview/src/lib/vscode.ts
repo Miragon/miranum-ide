@@ -1,99 +1,70 @@
 import { WebviewApi } from "vscode-webview";
-import { MessageType, VscMessage, VscState } from "./types";
-import { isArray, mergeWith, reverse, uniqBy } from "lodash";
 
-type Subset<K> = {
-    [attr in keyof K]?: K[attr] extends object ? Subset<K[attr]> : K[attr];
-};
+export interface VsCodeApi<T, M> {
+    /**
+     * Get the current state of the webview.
+     * @throws MissingStateError if the state is missing
+     */
+    getState(): T;
 
-export interface VsCode<T> {
-    getState(): VscState<T> | undefined;
+    setState(state: T): void;
 
-    setState(state: VscState<T>): void;
+    updateState(state: Partial<T>): void;
 
-    updateState(state: Subset<VscState<T>>): void;
-
-    postMessage(message: VscMessage<T>): void;
+    postMessage(message: M): void;
 }
 
-export class VsCodeImpl<T> implements VsCode<T> {
-    private vscode: WebviewApi<VscState<T>>;
+export class MissingStateError extends Error {
+    constructor() {
+        super("State is missing.");
+    }
+}
+
+export class VsCodeImpl<T, M> implements VsCodeApi<T, M> {
+    private vscode: WebviewApi<T>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): VscState<T> | undefined {
-        return this.vscode.getState();
+    getState(): T {
+        const state = this.vscode.getState();
+        if (!state) throw new MissingStateError();
+        return state;
     }
 
-    public setState(state: VscState<T>) {
-        this.vscode.setState(state);
-    }
-
-    public updateState(state: Subset<VscState<T>>) {
-        function customizer(objValue: any, srcValue: any): any {
-            if (isArray(objValue)) {
-                return reverse(uniqBy(reverse(objValue.concat(srcValue)), "type"));
-            }
-        }
-
-        const newState = mergeWith(this.getState(), state, customizer);
-        this.setState({
-            ...newState,
+    setState(state: T) {
+        this.vscode.setState({
+            ...state,
         });
     }
 
-    public postMessage(message: VscMessage<T>) {
+    updateState(state: Partial<T>) {
+        this.setState({
+            ...this.getState(),
+            ...state,
+        });
+    }
+
+    postMessage(message: M) {
         this.vscode.postMessage(message);
     }
 }
 
-export class VsCodeMock<T> implements VsCode<T> {
-    constructor(
-        private readonly viewType: string,
-        private readonly response: T,
-    ) {}
+export abstract class VsCodeMock<T, M> implements VsCodeApi<T, M> {
+    protected state: T | undefined;
 
-    getState(): VscState<T> | undefined {
-        return undefined;
+    getState(): T {
+        if (!this.state) throw new MissingStateError();
+        return this.state;
     }
 
-    postMessage(msg: VscMessage<T>): void {
-        const { type, data, message } = msg;
-        switch (type) {
-            case `${this.viewType}.${MessageType.INITIALIZE}`: {
-                console.log("[Log] postMessage()", type, message);
-                window.dispatchEvent(
-                    new MessageEvent("message", {
-                        data: {
-                            type: `${this.viewType}.${MessageType.INITIALIZE}`,
-                            data: this.response,
-                        },
-                    }),
-                );
-                break;
-            }
-            case `${this.viewType}.${MessageType.MSGFROMWEBVIEW}`: {
-                console.log("[Log] postMessage()", type, data);
-                break;
-            }
-            case `${this.viewType}.${MessageType.ERROR}`: {
-                console.error("[Log] postMessage()", type, message);
-                break;
-            }
-            case `${this.viewType}.${MessageType.INFO}`: {
-                console.log("[Log] postMessage()", type, message);
-                break;
-            }
-        }
+    setState(state: T) {
+        this.state = state;
+        console.debug("[Debug] setState()", this.getState());
     }
 
-    setState(state: VscState<T>): void {
-        console.log("[Log] setState():", state);
-    }
+    abstract updateState(state: Partial<T>): void;
 
-    updateState(state: Subset<VscState<T>>): void {
-        console.log("[Log] updateState():", state);
-    }
+    abstract postMessage(message: M): void;
 }

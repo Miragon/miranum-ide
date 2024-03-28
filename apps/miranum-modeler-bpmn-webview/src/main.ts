@@ -1,24 +1,5 @@
-import { reverse, uniqBy } from "lodash";
-import {
-    asyncDebounce,
-    FolderContent,
-    MessageType,
-    VsCode,
-    VsCodeImpl,
-    VsCodeMock,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ExecutionPlatformVersion, ModelerData } from "@miranum-ide/vscode/shared/miranum-modeler";
-import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
-import { ContentController, createResolver, instanceOfModelerData, setFormKeys } from "./app";
 // bpmn.js
-import Modeler from "camunda-bpmn-js/lib/base/Modeler";
-import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
-import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
-import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
-import TokenSimulationModule from "bpmn-js-token-simulation";
-import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
-import miragonProviderModule from "./app/PropertieProvider/provider";
 // css
 import "./styles.css";
 import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
@@ -26,38 +7,55 @@ import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
 import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
 
-//
-// Global objects
-//
-declare const process: { env: { NODE_ENV: string } };
-declare const globalViewType: string;
+import {
+    asyncDebounce,
+    BpmnFileQuery,
+    BpmnModelerSetting,
+    BpmnModelerSettingQuery,
+    createResolver,
+    ElementTemplatesQuery,
+    formatErrors,
+    FormKeysQuery,
+    GetBpmnFileCommand,
+    GetBpmnModelerSettingCommand,
+    GetElementTemplatesCommand,
+    GetFormKeysCommand,
+    LogErrorCommand,
+    LogInfoCommand,
+    MiranumModelerCommand,
+    MiranumModelerQuery,
+    NoModelerError,
+    SyncDocumentCommand,
+} from "@miranum-ide/vscode/miranum-vscode-webview";
+import {
+    alignElementsToOrigin,
+    createModeler,
+    exportDiagram,
+    getVsCodeApi,
+    loadDiagram,
+    newDiagram,
+    onCommandStackChanged,
+    onElementTemplatesErrors,
+    setElementTemplates,
+    setForms,
+    setSettings,
+    UnsupportedEngineError,
+} from "./app";
 
-let modeler: Modeler;
-let contentController: ContentController;
+const vscode = getVsCodeApi();
 
-let vscode: VsCode<ModelerData>;
-if (process.env.NODE_ENV === "development") {
-    const response: ModelerData = {
-        executionPlatformVersion: ExecutionPlatformVersion.Camunda8,
-        bpmn: undefined,
-        additionalFiles: [],
-    };
-    vscode = new VsCodeMock(globalViewType, response);
-} else {
-    vscode = new VsCodeImpl<ModelerData>();
-}
+/**
+ * Debounce the update of the XML content to avoid too many updates.
+ * @param bpmn
+ * @throws NoModelerError if the modeler is not available
+ */
+const debouncedUpdateXML = asyncDebounce(openXML, 100);
 
-let isUpdateFromExtension = false;
-const updateXML = asyncDebounce(openXML, 100);
-
-//
-// Logic
-//
-
-const resolver = createResolver();
-
-// Listen to messages from the backend/extension
-setupListeners();
+// create resolver to wait for the response from the backend
+const bpmnFileResolver = createResolver<BpmnFileQuery>();
+const formKeysResolver = createResolver<FormKeysQuery>();
+const elementTemplatesResolver = createResolver<ElementTemplatesQuery>();
+const settingResolver = createResolver<BpmnModelerSettingQuery>();
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -67,330 +65,191 @@ setupListeners();
  * 2. User switched to another tab and now switched back
  */
 window.onload = async function () {
-    try {
-        const state = vscode.getState();
-        if (state && state.data) {
-            // User switched back to the tab with this webview
-            postMessage(
-                MessageType.RESTORE,
-                undefined,
-                "State was restored successfully.",
-            );
+    window.addEventListener("message", onReceiveMessage);
 
-            let bpmn = state.data.bpmn;
-            let files = state.data.additionalFiles;
+    vscode.postMessage(new GetBpmnFileCommand());
+    vscode.postMessage(new GetFormKeysCommand());
+    vscode.postMessage(new GetElementTemplatesCommand());
+    vscode.postMessage(new GetBpmnModelerSettingCommand());
 
-            const newData = await resolver.wait(); // await the response form the backend
-            if (instanceOfModelerData(newData)) {
-                // we only get new data when the user made changes while the webview was destroyed
-                if (newData.bpmn) {
-                    bpmn = newData.bpmn;
-                }
-                if (newData.additionalFiles) {
-                    if (!files) {
-                        files = newData.additionalFiles;
-                    } else {
-                        // replace old values with new ones
-                        files = reverse(
-                            uniqBy(
-                                reverse(files.concat(newData.additionalFiles)),
-                                "type",
-                            ),
-                        );
-                    }
-                }
-            }
-            return init(bpmn, files, state.data.executionPlatformVersion);
-        } else {
-            // A new .bpmn file was opened
-            postMessage(
-                MessageType.INITIALIZE,
-                undefined,
-                "Webview was loaded successfully.",
-            );
+    const bpmnFileQuery = await bpmnFileResolver.wait();
+    await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
 
-            const data = await resolver.wait(); // await the response form the backend
-            if (instanceOfModelerData(data)) {
-                return init(
-                    data.bpmn,
-                    data.additionalFiles,
-                    data.executionPlatformVersion,
-                );
-            }
-        }
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : `${error}`;
-        postMessage(
-            MessageType.ERROR,
-            undefined,
-            `Something went wrong when initializing the webview!\n${message}`,
-        );
-    }
+    const [formKeysQuery, elementTemplatesQuery, settingQuery] = await Promise.all([
+        formKeysResolver.wait(),
+        elementTemplatesResolver.wait(),
+        settingResolver.wait(),
+    ]);
+
+    await initializeArtifacts(
+        formKeysQuery?.formKeys,
+        elementTemplatesQuery?.elementTemplates,
+        settingQuery?.setting,
+    );
 };
+
+async function initializeModeler(
+    bpmn: string | undefined,
+    engine: "c7" | "c8" | undefined,
+) {
+    if (!engine) {
+        vscode.postMessage(new LogErrorCommand("ExecutionPlatformVersion undefined!"));
+        return;
+    }
+
+    try {
+        createModeler(engine);
+        onCommandStackChanged(sendChanges);
+        await openXML(bpmn);
+    } catch (error: unknown) {
+        if (error instanceof NoModelerError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else if (error instanceof UnsupportedEngineError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
+        }
+    }
+}
 
 /**
  * Set the initial data after the webview was loaded.
- * @param bpmn
- * @param files
- * @param executionPlatformVersion
+ * @param formKeys
+ * @param elementTemplates
+ * @param setting
  */
-function init(
-    bpmn: string | undefined,
-    files: FolderContent[] | undefined,
-    executionPlatformVersion: ExecutionPlatformVersion | undefined,
-): void {
-    if (executionPlatformVersion === undefined) {
-        postMessage(MessageType.ERROR, undefined, "ExecutionPlatformVersion undefined!");
-        return;
+async function initializeArtifacts(
+    formKeys: string[] | undefined,
+    elementTemplates: JSON[] | undefined,
+    setting: BpmnModelerSetting | undefined,
+) {
+    try {
+        setElementTemplates(elementTemplates);
+        onElementTemplatesErrors((errors) =>
+            vscode.postMessage(
+                new LogErrorCommand(
+                    `Failed to load element templates with following errors: ${formatErrors(
+                        errors,
+                    )}`,
+                ),
+            ),
+        );
+
+        setForms(formKeys);
+        setSettings(setting);
+    } catch (error: unknown) {
+        if (error instanceof NoModelerError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else if (error instanceof UnsupportedEngineError) {
+            vscode.postMessage(new LogErrorCommand(error.message));
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
+        }
     }
-    modeler = createBpmnModeler(executionPlatformVersion);
-    setupBpmnModelerListener();
-
-    contentController = new ContentController(modeler);
-    vscode.updateState({ data: { executionPlatformVersion } });
-
-    openXML(bpmn);
-    setFiles(files);
-
-    postMessage(MessageType.INFO, undefined, "Webview was initialized.");
 }
 
 /**
  * Open or update the modeler with the new XML content.
  * @param bpmn
+ * @throws NoModelerError if the modeler is not available
  */
 async function openXML(bpmn: string | undefined) {
-    try {
-        let result: ImportXMLResult;
-        if (!bpmn) {
-            result = await contentController.newDiagram();
-        } else {
-            result = await contentController.loadDiagram(bpmn);
-        }
-        vscode.updateState({ data: { bpmn } });
-
-        if (result.warnings.length > 0) {
-            const warnings = `with following warnings: ${createErrorList(
-                result.warnings,
-            )}`;
-            postMessage(MessageType.INFO, undefined, warnings);
-        }
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : `${error}`;
-        postMessage(
-            MessageType.ERROR,
-            undefined,
-            `Unable to open/update XML\n${message}`,
-        );
-    }
-}
-
-/**
- * Set or update the given files.
- * @param folders
- */
-function setFiles(folders: FolderContent[] | undefined): void {
-    if (!folders) {
-        return;
+    let result: ImportXMLResult;
+    if (!bpmn) {
+        result = await newDiagram();
+    } else {
+        result = await loadDiagram(bpmn);
     }
 
-    const message: string[] = ["Files were set:"];
-    // right now we only care about element templates and forms
-    for (const folder of folders) {
-        switch (folder.type) {
-            case "element-template": {
-                modeler.get<any>("elementTemplatesLoader").setTemplates(folder.files);
-                vscode.updateState({
-                    data: {
-                        additionalFiles: [{ type: folder.type, files: folder.files }],
-                    },
-                });
-                message.push(`\t\t\t- Element Templates: ${folder.files.length}`);
-                break;
-            }
-            case "form": {
-                setFormKeys(folder.files as string[]);
-                vscode.updateState({
-                    data: {
-                        additionalFiles: [{ type: folder.type, files: folder.files }],
-                    },
-                });
-                message.push(`\t\t\t- Forms: ${folder.files.length}`);
-                break;
-            }
-        }
+    if (result.warnings.length > 0) {
+        const warnings = `with following warnings: ${formatErrors(result.warnings)}`;
+        vscode.postMessage(new LogInfoCommand(warnings));
     }
-
-    postMessage(MessageType.INFO, undefined, message.join("\n"));
 }
 
 /**
  * Send the changed XML content to the backend to update the .bpmn file.
  */
 async function sendChanges() {
-    if (isUpdateFromExtension) {
-        isUpdateFromExtension = false; // reset
-        return;
-    }
-
-    const bpmn = await contentController.exportDiagram();
-    vscode.updateState({ data: { bpmn } });
-    postMessage(MessageType.MSGFROMWEBVIEW, { bpmn }, undefined);
-}
-
-/**
- * Setup modeler specific event listener.
- */
-function setupBpmnModelerListener() {
-    modeler.on("elementTemplates.errors", (event: any) => {
-        const { errors } = event;
-        postMessage(
-            MessageType.ERROR,
-            undefined,
-            `Failed to load element templates with following errors: ${createErrorList(
-                errors,
-            )}`,
-        );
-    });
-
-    modeler.get<any>("eventBus").on("commandStack.changed", sendChanges);
+    const bpmn = await exportDiagram();
+    vscode.postMessage(new SyncDocumentCommand(bpmn));
+    alignElementsToOrigin();
 }
 
 /**
  * Listen to messages from the backend.
  */
-function setupListeners(): void {
-    window.addEventListener("message", (event) => {
-        try {
-            const message = event.data;
-            switch (message.type) {
-                case `${globalViewType}.${MessageType.INITIALIZE}`: {
-                    resolver.done(message.data);
-                    break;
-                }
-                case `${globalViewType}.${MessageType.RESTORE}`: {
-                    resolver.done(message.data);
-                    break;
-                }
-                case `${globalViewType}.${MessageType.UNDO}`:
-                case `${globalViewType}.${MessageType.REDO}`:
-                case `${globalViewType}.${MessageType.MSGFROMEXTENSION}`: {
-                    isUpdateFromExtension = true;
-                    updateXML(message.data.bpmn);
-                    break;
-                }
-                case `${globalViewType}.${MessageType.ALIGN}`: {
-                    const alignToOrigin = modeler.get<any>("alignToOrigin");
-                    if (alignToOrigin) {
-                        alignToOrigin.align();
+async function onReceiveMessage(
+    message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>,
+) {
+    const queryOrCommand = message.data;
+
+    try {
+        switch (true) {
+            case queryOrCommand.type === "BpmnFileQuery": {
+                try {
+                    const bpmnFileQuery = message.data as BpmnFileQuery;
+                    await debouncedUpdateXML(bpmnFileQuery.content);
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        bpmnFileResolver.done(message.data as BpmnFileQuery);
+                    } else {
+                        throw error;
                     }
-                    break;
                 }
-                case `FileSystemWatcher.${MessageType.RELOADFILES}`: {
-                    setFiles(message.files);
-                    break;
-                }
+                break;
             }
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : `${error}`;
-            postMessage(
-                MessageType.ERROR,
-                undefined,
-                `Unable to process message!\n${message}`,
-            );
+            case queryOrCommand.type === "FormKeysQuery": {
+                try {
+                    const formKeys = (message.data as FormKeysQuery).formKeys;
+                    setForms(formKeys);
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        formKeysResolver.done(message.data as FormKeysQuery);
+                    } else {
+                        throw error;
+                    }
+                }
+                break;
+            }
+            case queryOrCommand.type === "ElementTemplatesQuery": {
+                try {
+                    const elementTemplates = (message.data as ElementTemplatesQuery)
+                        .elementTemplates;
+                    setElementTemplates(elementTemplates);
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        elementTemplatesResolver.done(
+                            message.data as ElementTemplatesQuery,
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+                break;
+            }
+            case queryOrCommand.type === "BpmnModelerSettingQuery": {
+                try {
+                    const setting = (message.data as BpmnModelerSettingQuery).setting;
+                    setSettings(setting);
+                } catch (error: unknown) {
+                    if (error instanceof NoModelerError) {
+                        settingResolver.done(message.data as BpmnModelerSettingQuery);
+                    } else {
+                        throw error;
+                    }
+                }
+                break;
+            }
         }
-    });
-}
-
-// ----------------------------- Helper Functions ----------------------------->
-/**
- * Post a message to the extension.
- * Depending on the type of message it contains either data or a string which is only logged
- * @param type A string that represents the type of the message.
- * @param data
- * @param message
- */
-function postMessage(type: MessageType, data?: ModelerData, message?: string): void {
-    switch (type) {
-        case MessageType.MSGFROMWEBVIEW: {
-            vscode.postMessage({
-                type: `${globalViewType}.${type}`,
-                data,
-            });
-            break;
-        }
-        default: {
-            vscode.postMessage({
-                type: `${globalViewType}.${type}`,
-                message,
-            });
-            break;
-        }
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : `${error}`;
+        vscode.postMessage(
+            new LogErrorCommand(
+                `Something went wrong when receiving the message ${errorMessage}`,
+            ),
+        );
     }
 }
-
-/**
- * Create the modeler depending on the XML.
- * @param executionPlatformVersion
- */
-function createBpmnModeler(executionPlatformVersion: ExecutionPlatformVersion): Modeler {
-    let bpmnModeler;
-    const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
-
-    switch (executionPlatformVersion) {
-        case ExecutionPlatformVersion.None:
-        case ExecutionPlatformVersion.Camunda7: {
-            bpmnModeler = new BpmnModeler7({
-                container: "#js-canvas",
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
-                additionalModules: [
-                    ...commonModules,
-                    ExtendElementTemplates,
-                    CreateAppendElementTemplatesModule,
-                    miragonProviderModule,
-                ],
-            });
-            break;
-        }
-        case ExecutionPlatformVersion.Camunda8: {
-            bpmnModeler = new BpmnModeler8({
-                container: "#js-canvas",
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                additionalModules: [...commonModules],
-            });
-            break;
-        }
-    }
-
-    return bpmnModeler;
-}
-
-/**
- * Create a list of information that will be sent to the backend and get logged.
- * @param messages A list of further information.
- */
-function createErrorList(messages: string[]): string {
-    let msg = "";
-    if (messages && messages.length > 0) {
-        for (const message of messages) {
-            msg += `\n- ${message}`;
-        }
-    }
-    return msg;
-}
-
-// <---------------------------- Helper Functions ------------------------------

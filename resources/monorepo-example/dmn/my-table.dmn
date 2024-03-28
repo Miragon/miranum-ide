@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1y42u6n" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.8.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.18.0">
+  <decision id="Decision_16wqg49" name="Decision 1">
+    <decisionTable id="DecisionTable_1wi1sbd">
+      <input id="Input_1" label="Some Input">
+        <inputExpression id="InputExpression_1" typeRef="string" expressionLanguage="feel">
+          <text></text>
+        </inputExpression>
+        <inputValues id="UnaryTests_1rasvnq">
+          <text>"some","value"</text>
+        </inputValues>
+      </input>
+      <output id="Output_1" label="Some Output" typeRef="string">
+        <outputValues id="UnaryTests_1otg2r7">
+          <text>"some","output"</text>
+        </outputValues>
+      </output>
+      <rule id="DecisionRule_101gwbz">
+        <inputEntry id="UnaryTests_1dj8g8z">
+          <text>"some"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0l2ba6r">
+          <text>"output"</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_02famrp">
+        <inputEntry id="UnaryTests_0h4t3ow">
+          <text>"value"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_14ilmzj">
+          <text>"some"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_16wqg49">
+        <dc:Bounds height="80" width="180" x="110" y="140" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
