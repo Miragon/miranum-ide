@@ -40,13 +40,13 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/komet.svg",
-            "input": "./",
+            "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
-            "input": "./images/",
             "glob": "miranum_logo.png",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           }
         ]
@@ -75,33 +75,33 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "input": "./images/",
             "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
-            "input": "./images/",
             "glob": "miranum_logo.png",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
-            "input": "./",
             "glob": "LICENSE",
+            "input": "{workspaceRoot}",
             "output": "/"
           },
           {
-            "input": "./apps/miranum-jsonforms/",
             "glob": ".vscodeignore",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": "./apps/miranum-jsonforms/",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": "./apps/miranum-jsonforms/",
+            "input": ".",
             "output": "/"
           }
         ]
