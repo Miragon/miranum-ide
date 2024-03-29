@@ -28,7 +28,7 @@
     "@nx/web": "18.1.3",
     "@nx/webpack": "18.1.3",
     "@nx/workspace": "18.1.3",
-    "@nxrocks/nx-spring-boot": "^10.0.0",
+    "@nxrocks/nx-spring-boot": "^10.0.1",
     "@openapitools/openapi-generator-cli": "^2.7.0",
     "@swc-node/register": "1.8.0",
     "@swc/core": "~1.3.85",
