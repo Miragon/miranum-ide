@@ -10,6 +10,8 @@ import {
 import "./css/vfm.css";
 import "./css/styles.css";
 import "./css/form.stylea.css";
+import "./css/schemaTool.css";
+import "./css/deleteDialog.css";
 import "@backoffice-plus/formbuilder/style.css";
 
 provideVSCodeDesignSystem().register(vsCodeCheckbox(), vsCodeTextArea());

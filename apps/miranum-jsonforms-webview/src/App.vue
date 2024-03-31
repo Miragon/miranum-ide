@@ -42,7 +42,6 @@ const jsonFormsPreview = ref<FormBuilderData>(); // only for development
 
 const schemaReadOnly = ref(false);
 const mode = ref(globalViewType);
-const key = ref(0);
 
 //
 // Logic
@@ -56,9 +55,6 @@ function updateForm(schema?: JsonSchema, uischema?: Layout): void {
         mode: globalViewType,
         data: { schema, uischema },
     });
-
-    // todo: Is there a better way to reload the component?
-    key.value++;
 }
 
 const getDataFromExtension = debounce(receiveMessage, 50);

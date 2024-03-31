@@ -74,7 +74,7 @@ export function getHtmlForWebview(
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${viewType}';
                 </script>
-                <script type="text/javascript" src="${scriptUri}" nonce="${nonce}"></script>
+                <script type="module" src="${scriptUri}" nonce="${nonce}"></script>
             </body>
             </html>
         `;

@@ -92,7 +92,7 @@
     "vue-template-compiler": "^2.7.16"
   },
   "dependencies": {
-    "@backoffice-plus/formbuilder": "github:peterhnm/formbuilder",
+    "@backoffice-plus/formbuilder": "^0.0.50",
     "@bpmn-io/element-template-chooser": "^1.0.0",
     "@bpmn-io/properties-panel": "^3.18.2",
     "@jsonforms/core": "3.2.0-alpha.3",

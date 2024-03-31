@@ -292,20 +292,25 @@ export class JsonFormsBuilder implements vscode.CustomTextEditorProvider {
         webviewPanel.onDidChangeViewState(
             (wp) => {
                 try {
-                    /* ------- Panel is active/visible ------- */
-                    if (wp.webviewPanel.active) {
-                        this.controller.document = document;
-                        if (
-                            !this.preview.isOpen &&
-                            this.preview.lastViewState === ViewState.open
-                        ) {
-                            this.preview.open(this.controller);
+                    switch (true) {
+                        /* ------- Panel is active/visible ------- */
+                        case wp.webviewPanel.active: {
+                            this.controller.document = document;
+                            if (!this.preview.isOpen && this.preview.lastViewState === ViewState.open) {
+                                this.preview.open(this.controller);
+                            }
+                            /* falls through */
                         }
-                    } else {
-                        if (!this.preview.active && this.closePreview) {
-                            this.preview.close();
+                        case wp.webviewPanel.visible: {
+                            break;
                         }
-                        this.closePreview = true; // reset
+                        /* ------- Panel is NOT active/visible ------- */
+                        case !wp.webviewPanel.active: {
+                            if (!this.preview.active && this.closePreview) {
+                                this.preview.close();
+                            }
+                            this.closePreview = true; // reset
+                        }
                     }
                 } catch (error) {
                     const message = error instanceof Error ? error.message : `${error}`;

@@ -53,7 +53,7 @@
 .styleA select,
 .styleA textarea,
 .styleA .tagInput {
-    @apply vsc-input-bg
+    @apply vsc-input-bg vsc-input-fg
     focus:vsc-inputOpt-active-fg
     focus:vsc-inputOpt-active-bg
 
@@ -140,11 +140,12 @@ fieldset.styleA.group {
 fieldset.styleA.group > legend {
     @apply w-full
     px-2;
+    color: var(--vscode-textLink-foreground);
 }
 
 .styleA fieldset.group .group-item,
 fieldset.styleA.group .group-item {
-    /*@apply*/
+    @apply vsc-editor-fg
 }
 
 .styleA .control .description,
@@ -282,4 +283,12 @@ fieldset.styleA.group .group-item {
 .styleA .tabs button:disabled {
     @apply opacity-50
     hover:bg-opacity-0;
+}
+
+article header {
+    color: var(--vscode-textLink-foreground);
+}
+
+article footer button {
+    @apply vsc-button;
 }

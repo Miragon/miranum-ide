@@ -74,6 +74,7 @@
     .vscode .card {
         background-color: var(--base-300);
     }
+
     .vscode .card textarea {
         background-color: var(--vscode-editor-background);
         font-size: var(--vscode-font-size);
@@ -92,9 +93,11 @@
     .vsc-font-size {
         font-size: var(--vscode-font-size);
     }
+
     .vsc-font-size-desc {
         font-size: calc(var(--vscode-font-size) - 2px);
     }
+
     .vsc-disabled-fg {
         color: var(--vscode-disabledForeground);
     }
@@ -103,6 +106,7 @@
     .vsc-editor-fg {
         color: var(--vscode-editor-foreground);
     }
+
     .vsc-editor-error-fg {
         color: var(--vscode-editorError-foreground);
     }
@@ -111,18 +115,23 @@
     .vsc-input-fg {
         color: var(--vscode-input-foreground);
     }
+
     .vsc-input-bg {
         background-color: var(--vscode-input-background);
     }
+
     .vsc-input-border {
         border-color: var(--vscode-input-border);
     }
+
     .vsc-inputOpt-active-fg {
         color: var(--vscode-inputOption-activeForeground);
     }
+
     .vsc-inputOpt-active-bg {
         background-color: var(--vscode-inputOption-activeBackground);
     }
+
     .vsc-inputOpt-active-border {
         border-color: var(--vscode-inputOption-activeBorder);
     }
@@ -131,19 +140,31 @@
     .vsc-tab-fg {
         color: var(--vscode-tab-inactiveForeground);
     }
+
     .vsc-tab-bg {
         background-color: var(--vscode-tab-inactiveBackground);
     }
+
     .vsc-tab-border {
         border-color: var(--vscode-tab-border);
     }
+
     .vsc-tab-active-fg {
         color: var(--vscode-tab-activeForeground);
     }
+
     .vsc-tab-active-bg {
         background-color: var(--vscode-tab-activeBackground);
     }
+
     .vsc-tab-active-border {
         border-color: var(--vscode-inputOption-activeBorder);
+    }
+
+    .vsc-button {
+        @apply px-2 py-1 rounded-md;
+        color: var(--vscode-button-foreground);
+        background-color: var(--vscode-button-background);
+        border-color: var(--vscode-button-border);
     }
 }
