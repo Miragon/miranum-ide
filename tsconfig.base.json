@@ -10,10 +10,7 @@
     "importHelpers": true,
     "target": "ES2020",
     "module": "esnext",
-    "lib": [
-      "ES2020",
-      "dom"
-    ],
+    "lib": ["ES2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "strict": true,
@@ -26,15 +23,11 @@
       "@miranum-ide/digiwf-deployment-plugin-rest": [
         "libs/digiwf-deployment-plugin-rest/src/index.ts"
       ],
-      "@miranum-ide/miranum-core": [
-        "libs/miranum-core/src/index.ts"
-      ],
+      "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"],
       "@miranum-ide/miranum-create-append-c7-element-templates": [
         "libs/miranum-create-append-c7-element-templates/src/index.ts"
       ],
-      "@miranum-ide/vscode/miranum-vscode": [
-        "libs/vscode/miranum-vscode/src/index.ts"
-      ],
+      "@miranum-ide/vscode/miranum-vscode": ["libs/vscode/miranum-vscode/src/index.ts"],
       "@miranum-ide/vscode/miranum-vscode-webview": [
         "libs/vscode/miranum-vscode-webview/src/index.ts"
       ],
@@ -44,16 +37,10 @@
       "@miranum-ide/vscode/shared/miranum-console": [
         "libs/vscode/shared/miranum-console/src/index.ts"
       ],
-      "@miranum-ide/vscode/shared/miranum-modeler": [
-        "libs/vscode/shared/miranum-modeler/src/index.ts"
-      ],
       "@miranum-ide/vscode/shared/miranum-jsonforms": [
         "libs/vscode/shared/miranum-jsonforms/src/index.ts"
       ]
     }
   },
-  "exclude": [
-    "miranum-ide/node_modules",
-    "tmp"
-  ]
+  "exclude": ["miranum-ide/node_modules", "tmp"]
 }

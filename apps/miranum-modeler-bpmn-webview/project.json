@@ -52,7 +52,8 @@
       ],
       "options": {
         "jestConfig": "apps/miranum-modeler-bpmn-webview/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverageReporters": ["clover"]
       }
     },
     "lint": {

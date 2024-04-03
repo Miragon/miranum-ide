@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-jsonforms/src",
   "projectType": "application",
-  "implicitDependencies": ["miranum-jsonforms-webview"],
+  "implicitDependencies": ["miranum-jsonforms-builder-webview"],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
@@ -133,7 +133,8 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/miranum-jsonforms/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverageReporters": ["clover"]
       },
       "configurations": {
         "ci": {

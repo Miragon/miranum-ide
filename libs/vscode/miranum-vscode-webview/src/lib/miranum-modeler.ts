@@ -1,16 +1,7 @@
 import { Command, Query } from "./messages";
 
 // =================================== Queries ==================================>
-
-export abstract class MiranumModelerQuery implements Query {
-    public readonly type: string;
-
-    protected constructor(type: string) {
-        this.type = type;
-    }
-}
-
-export class BpmnFileQuery extends MiranumModelerQuery {
+export class BpmnFileQuery extends Query {
     public readonly content: string;
 
     public readonly engine: "c7" | "c8";
@@ -22,7 +13,7 @@ export class BpmnFileQuery extends MiranumModelerQuery {
     }
 }
 
-export class DmnFileQuery extends MiranumModelerQuery {
+export class DmnFileQuery extends Query {
     public readonly content: string;
 
     constructor(content: string) {
@@ -31,7 +22,7 @@ export class DmnFileQuery extends MiranumModelerQuery {
     }
 }
 
-export class FormKeysQuery extends MiranumModelerQuery {
+export class FormKeysQuery extends Query {
     public readonly formKeys: string[];
 
     constructor(formKeys: string[]) {
@@ -40,7 +31,7 @@ export class FormKeysQuery extends MiranumModelerQuery {
     }
 }
 
-export class ElementTemplatesQuery extends MiranumModelerQuery {
+export class ElementTemplatesQuery extends Query {
     public readonly elementTemplates: JSON[];
 
     constructor(elementTemplates: string[]) {
@@ -53,7 +44,7 @@ export interface BpmnModelerSetting {
     readonly alignToOrigin: boolean;
 }
 
-export class BpmnModelerSettingQuery extends MiranumModelerQuery {
+export class BpmnModelerSettingQuery extends Query {
     public readonly setting: BpmnModelerSetting;
 
     constructor(setting: BpmnModelerSetting) {
@@ -65,51 +56,33 @@ export class BpmnModelerSettingQuery extends MiranumModelerQuery {
 // <================================== Queries ===================================
 //
 // =================================== Commands ==================================>
-
-export abstract class MiranumModelerCommand implements Command {
-    public readonly type: string;
-
-    protected constructor(type: string) {
-        this.type = type;
-    }
-}
-
-export class GetBpmnFileCommand extends MiranumModelerCommand {
+export class GetBpmnFileCommand extends Command {
     constructor() {
         super("GetBpmnFileCommand");
     }
 }
 
-export class GetDmnFileCommand extends MiranumModelerCommand {
+export class GetDmnFileCommand extends Command {
     constructor() {
         super("GetDmnFileCommand");
     }
 }
 
-export class GetFormKeysCommand extends MiranumModelerCommand {
+export class GetFormKeysCommand extends Command {
     constructor() {
         super("GetFormKeysCommand");
     }
 }
 
-export class GetElementTemplatesCommand extends MiranumModelerCommand {
+export class GetElementTemplatesCommand extends Command {
     constructor() {
         super("GetElementTemplatesCommand");
     }
 }
 
-export class GetBpmnModelerSettingCommand extends MiranumModelerCommand {
+export class GetBpmnModelerSettingCommand extends Command {
     constructor() {
         super("GetBpmnModelerSettingCommand");
-    }
-}
-
-export class SyncDocumentCommand extends MiranumModelerCommand {
-    public readonly content: string;
-
-    constructor(content: string) {
-        super("SyncDocumentCommand");
-        this.content = content;
     }
 }
 

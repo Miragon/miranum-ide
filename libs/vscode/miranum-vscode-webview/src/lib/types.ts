@@ -3,25 +3,3 @@ export interface VscMessage<T> {
     data?: T;
     message?: string;
 }
-
-export interface VscState<T> {
-    data?: T;
-}
-
-export enum MessageType {
-    ALIGN = "align",
-    INITIALIZE = "initialize",
-    RESTORE = "restore",
-    MSGFROMEXTENSION = "msgFromExtension",
-    MSGFROMWEBVIEW = "msgFromWebview",
-    UNDO = "undo",
-    REDO = "redo",
-    RELOADFILES = "reloadFiles",
-    INFO = "info",
-    ERROR = "error",
-}
-
-export interface FolderContent {
-    type: string;
-    files: JSON[] | string[];
-}

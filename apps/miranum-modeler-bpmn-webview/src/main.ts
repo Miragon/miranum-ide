@@ -12,6 +12,7 @@ import {
     BpmnFileQuery,
     BpmnModelerSetting,
     BpmnModelerSettingQuery,
+    Command,
     createResolver,
     ElementTemplatesQuery,
     formatErrors,
@@ -22,9 +23,8 @@ import {
     GetFormKeysCommand,
     LogErrorCommand,
     LogInfoCommand,
-    MiranumModelerCommand,
-    MiranumModelerQuery,
     NoModelerError,
+    Query,
     SyncDocumentCommand,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 import {
@@ -155,7 +155,7 @@ async function initializeArtifacts(
  * @param bpmn
  * @throws NoModelerError if the modeler is not available
  */
-async function openXML(bpmn: string | undefined) {
+async function openXML(bpmn?: string) {
     let result: ImportXMLResult;
     if (!bpmn) {
         result = await newDiagram();
@@ -181,9 +181,7 @@ async function sendChanges() {
 /**
  * Listen to messages from the backend.
  */
-async function onReceiveMessage(
-    message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>,
-) {
+async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     const queryOrCommand = message.data;
 
     try {

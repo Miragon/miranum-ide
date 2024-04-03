@@ -1,24 +1,30 @@
 <script lang="ts" setup>
 import { onBeforeMount, shallowRef, toRaw } from "vue";
+import { useTheme } from "vuetify";
 import { JsonForms } from "@jsonforms/vue";
 import { vuetifyRenderers } from "@jsonforms/vue-vuetify";
-import { JsonSchema, UISchemaElement } from "@jsonforms/core";
+import type { JsonSchema, UISchemaElement } from "@jsonforms/core";
 
 import {
-    ConfigEditorData,
+    type ConfigEditorData,
     MessageType,
-    VscMessage,
+    type VscMessage,
 } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
-import { MissingStateError, VsCode, VsCodeImpl, VsCodeMock } from "./composables/vscode";
+import {
+    MissingStateError,
+    type VsCode,
+    VsCodeImpl,
+    VsCodeMock,
+} from "./composables/vscode";
 import { createResolver } from "./composables/utils";
-import { useTheme } from "vuetify";
 
 //
 // Declare variables
 //
 declare const process: { env: { NODE_ENV: string } };
 
+// eslint-disable-next-line react-hooks/rules-of-hooks
 const theme = useTheme();
 const renderers = [...vuetifyRenderers];
 
