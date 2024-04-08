@@ -24,7 +24,7 @@
           "apps/miranum-cli/src/Dockerfile",
           {
             "glob": "LICENSE",
-            "input": "./",
+            "input": "{workspaceRoot}",
             "output": "/"
           }
         ]

@@ -2,41 +2,43 @@
   "migrations": [
     {
       "cli": "nx",
-      "version": "17.0.0-beta.1",
-      "description": "Updates the default cache directory to .nx/cache",
-      "implementation": "./src/migrations/update-17-0-0/move-cache-directory",
+      "version": "18.0.0-beta.2",
+      "description": "Updates nx.json to disabled adding plugins when generating projects in an existing Nx workspace",
+      "implementation": "./src/migrations/update-18-0-0/disable-crystal-for-existing-workspaces",
+      "x-repair-skip": true,
       "package": "nx",
-      "name": "17.0.0-move-cache-directory"
+      "name": "18.0.0-disable-adding-plugins-for-existing-workspaces"
+    },
+    {
+      "version": "18.1.0-beta.3",
+      "description": "Moves affected.defaultBase to defaultBase in `nx.json`",
+      "implementation": "./src/migrations/update-17-2-0/move-default-base",
+      "package": "nx",
+      "name": "move-default-base-to-nx-json-root"
     },
     {
       "cli": "nx",
-      "version": "17.0.0-beta.3",
-      "description": "Use minimal config for tasksRunnerOptions",
-      "implementation": "./src/migrations/update-17-0-0/use-minimal-config-for-tasks-runner-options",
-      "package": "nx",
-      "name": "17.0.0-use-minimal-config-for-tasks-runner-options"
-    },
-    {
-      "version": "17.0.0-rc.1",
-      "description": "Migration for v17.0.0-rc.1",
-      "implementation": "./src/migrations/update-17-0-0/rm-default-collection-npm-scope",
-      "package": "nx",
-      "name": "rm-default-collection-npm-scope"
+      "version": "18.1.0-beta.3",
+      "description": "Update to Cypress ^13.6.6 if the workspace is using Cypress v13 to ensure workspaces don't use v13.6.5 which has an issue when verifying Cypress.",
+      "implementation": "./src/migrations/update-18-1-0/update-cypress-version-13-6-6",
+      "package": "@nx/cypress",
+      "name": "update-cypress-version-13-6-6"
     },
     {
       "cli": "nx",
-      "version": "16.8.2-beta.0",
-      "description": "Remove invalid options (strict, noInterop) for ES6 type modules.",
-      "factory": "./src/migrations/update-16-8-2/update-swcrc",
-      "package": "@nx/js",
-      "name": "16-8-2-update-swcrc"
+      "version": "18.0.0-beta.0",
+      "description": "Add NX_MF_DEV_SERVER_STATIC_REMOTES to inputs for task hashing when '@nx/webpack:webpack' is used for Module Federation.",
+      "factory": "./src/migrations/update-18-0-0/add-mf-env-var-to-target-defaults",
+      "package": "@nx/react",
+      "name": "add-module-federation-env-var-to-target-defaults"
     },
     {
-      "version": "17.0.0-beta.7",
-      "description": "update-17-0-0-rename-to-eslint",
-      "implementation": "./src/migrations/update-17-0-0-rename-to-eslint/update-17-0-0-rename-to-eslint",
-      "package": "@nx/eslint",
-      "name": "update-17-0-0-rename-to-eslint"
+      "cli": "nx",
+      "version": "18.1.1-beta.0",
+      "description": "Ensure targetDefaults inputs for task hashing when '@nx/webpack:webpack' is used are correct for Module Federation.",
+      "factory": "./src/migrations/update-18-1-1/fix-target-defaults-inputs",
+      "package": "@nx/react",
+      "name": "fix-target-defaults-for-webpack"
     }
   ]
 }

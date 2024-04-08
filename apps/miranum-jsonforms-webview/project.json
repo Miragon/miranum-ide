@@ -1,0 +1,81 @@
+{
+  "name": "miranum-jsonforms-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-jsonforms-webview/src",
+  "tags": [],
+  "targets": {
+    "observe": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-webview",
+        "configFile": "apps/miranum-jsonforms-webview/vite.config.ts",
+        "emptyOutDir": false,
+        "postcssConfig": "apps/miranum-jsonforms-webview/postcss.config.js"
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false,
+          "vendorChunk": true
+        }
+      }
+    },
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-webview",
+        "postcssConfig": "apps/miranum-jsonforms-webview/postcss.config.js"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-jsonforms-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-jsonforms-webview:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "miranum-jsonforms-webview:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "miranum-jsonforms-webview:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "miranum-jsonforms-webview:build:development"
+        },
+        "production": {
+          "buildTarget": "miranum-jsonforms-webview:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

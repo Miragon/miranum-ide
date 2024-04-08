@@ -32,26 +32,23 @@
       "@miranum-ide/miranum-create-append-c7-element-templates": [
         "libs/miranum-create-append-c7-element-templates/src/index.ts"
       ],
-      "@miranum-ide/shared/shared-console": [
-        "libs/shared/shared-console/src/index.ts"
-      ],
       "@miranum-ide/vscode/miranum-vscode": [
         "libs/vscode/miranum-vscode/src/index.ts"
       ],
       "@miranum-ide/vscode/miranum-vscode-webview": [
         "libs/vscode/miranum-vscode-webview/src/index.ts"
       ],
+      "@miranum-ide/vscode/shared/miranum-config-editor": [
+        "libs/vscode/shared/miranum-config-editor/src/index.ts"
+      ],
       "@miranum-ide/vscode/shared/miranum-console": [
         "libs/vscode/shared/miranum-console/src/index.ts"
-      ],
-      "@miranum-ide/vscode/shared/miranum-forms": [
-        "libs/vscode/shared/miranum-forms/src/index.ts"
       ],
       "@miranum-ide/vscode/shared/miranum-modeler": [
         "libs/vscode/shared/miranum-modeler/src/index.ts"
       ],
-      "@miranum-ide/vscode/shared/miranum-config-editor": [
-        "libs/vscode/shared/miranum-config-editor/src/index.ts"
+      "@miranum-ide/vscode/shared/miranum-jsonforms": [
+        "libs/vscode/shared/miranum-jsonforms/src/index.ts"
       ]
     }
   },

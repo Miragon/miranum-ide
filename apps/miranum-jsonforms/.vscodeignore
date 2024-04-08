@@ -1,0 +1,13 @@
+.vscode/**
+.github
+.gitignore
+.idea
+.prettierignore
+
+diagrams/
+src/**
+node_modules/
+examples/**
+
+**/tsconfig*.json
+**/.eslintrc.js

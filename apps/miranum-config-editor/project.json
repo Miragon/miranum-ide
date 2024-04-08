@@ -3,9 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-config-editor/src",
   "projectType": "application",
-  "implicitDependencies": [
-    "miranum-config-editor-webview"
-  ],
+  "implicitDependencies": ["miranum-config-editor-webview"],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
@@ -27,9 +25,7 @@
     },
     "observe": {
       "executor": "@nx/webpack:webpack",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "development",
       "options": {
         "watch": true,
@@ -44,8 +40,8 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/komet.svg",
-            "input": "./",
+            "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           }
         ]
@@ -60,9 +56,7 @@
     },
     "build": {
       "executor": "@nx/webpack:webpack",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "target": "node",
@@ -76,33 +70,33 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "input": "./images/",
             "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
-            "input": "./images/",
             "glob": "miranum_logo.png",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
-            "input": "./",
             "glob": "LICENSE",
+            "input": "{workspaceRoot}",
             "output": "/"
           },
           {
-            "input": "./apps/miranum-config-editor/",
             "glob": ".vscodeignore",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": "./apps/miranum-config-editor/",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": "./apps/miranum-config-editor/",
+            "input": ".",
             "output": "/"
           }
         ]
@@ -124,20 +118,14 @@
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/miranum-config-editor/**/*.ts"
-        ]
+        "lintFilePatterns": ["apps/miranum-config-editor/**/*.ts"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/miranum-config-editor/jest.config.ts",
         "passWithNoTests": true

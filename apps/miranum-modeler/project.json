@@ -50,8 +50,8 @@
         "babelUpwardRootMode": true,
         "assets": [
           {
-            "glob": "images/komet.svg",
-            "input": "./",
+            "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           }
         ]
@@ -83,32 +83,32 @@
         "assets": [
           {
             "glob": "komet.svg",
-            "input": "./images/",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
             "glob": "miranum_logo.png",
-            "input": "./images/",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
             "glob": "LICENSE",
-            "input": "./",
+            "input": "{workspaceRoot}",
             "output": "/"
           },
           {
             "glob": ".vscodeignore",
-            "input": "./apps/miranum-modeler/",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": "./apps/miranum-modeler/",
+            "input": ".",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": "./apps/miranum-modeler/",
+            "input": ".",
             "output": "/"
           }
         ]

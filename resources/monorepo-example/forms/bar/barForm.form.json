@@ -1,0 +1,19 @@
+{
+    "schema": {
+        "type": "object",
+        "properties": {
+            "mytext": {
+                "type": "number"
+            }
+        }
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": [
+            {
+                "type": "Control",
+                "scope": "#/properties/mytext"
+            }
+        ]
+    }
+}

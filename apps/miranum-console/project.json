@@ -45,12 +45,12 @@
         "assets": [
           {
             "glob": "komet.svg",
-            "input": "./images",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
             "glob": "*.png",
-            "input": "./apps/miranum-console/icons",
+            "input": "./icons",
             "output": "/assets/icons"
           }
         ]
@@ -82,37 +82,37 @@
         "assets": [
           {
             "glob": "komet.svg",
-            "input": "./images",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
             "glob": "miranum_logo.png",
-            "input": "./images",
+            "input": "{workspaceRoot}/images",
             "output": "/assets"
           },
           {
+            "glob": "LICENSE",
+            "input": "{workspaceRoot}/",
+            "output": "/"
+          },
+          {
             "glob": "*.png",
-            "input": "./apps/miranum-console/icons",
+            "input": "./icons",
             "output": "/assets/icons"
           },
           {
-            "glob": "LICENSE",
+            "glob": ".vscodeignore",
             "input": "./",
             "output": "/"
           },
           {
-            "glob": ".vscodeignore",
-            "input": "./apps/miranum-console/",
-            "output": "/"
-          },
-          {
             "glob": "README.md",
-            "input": "./apps/miranum-console/",
+            "input": "./",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": "./apps/miranum-console/",
+            "input": "./",
             "output": "/"
           }
         ]

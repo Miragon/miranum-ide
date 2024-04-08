@@ -58,10 +58,10 @@ jobs:
         run: |
           cd apps/miranum-console
           vsce package --no-dependencies --out miranum-console.vsix
-      - name: Build vsix miranum-forms
+      - name: Build vsix miranum-jsonforms
         run: |
-          cd apps/miranum-forms
-          vsce package --no-dependencies --out miranum-forms.vsix
+          cd apps/miranum-jsonforms
+          vsce package --no-dependencies --out miranum-jsonforms.vsix
       - name: Build vsix miranum-modeler
         run: |
           cd apps/miranum-modeler
