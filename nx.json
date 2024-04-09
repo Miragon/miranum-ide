@@ -31,7 +31,7 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": ["@nxrocks/nx-spring-boot"],
+  "plugins": [],
   "generators": {
     "@nx/web:application": {
       "style": "css",
