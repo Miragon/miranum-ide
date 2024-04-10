@@ -12,15 +12,15 @@ import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
 
 import {
     asyncDebounce,
+    Command,
     createResolver,
     DmnFileQuery,
     formatErrors,
     GetDmnFileCommand,
     LogErrorCommand,
     LogInfoCommand,
-    MiranumModelerCommand,
-    MiranumModelerQuery,
     NoModelerError,
+    Query,
     SyncDocumentCommand,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
@@ -106,9 +106,7 @@ async function sendChanges() {
     vscode.postMessage(new SyncDocumentCommand(dmn));
 }
 
-async function onReceiveMessage(
-    message: MessageEvent<MiranumModelerQuery | MiranumModelerCommand>,
-) {
+async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     const queryOrCommand = message.data;
 
     switch (true) {

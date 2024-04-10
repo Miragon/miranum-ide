@@ -13,12 +13,10 @@ import { debounce } from "lodash";
 import {
     Command,
     createResolver,
-    GetSchemaCommand,
-    GetUiSchemaCommand,
+    GetJsonFormCommand,
+    JsonFormQuery,
     Query,
-    SchemaQuery,
     SyncDocumentCommand,
-    UiSchemaQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import { getVsCodeApi } from "./vscode";
@@ -32,18 +30,17 @@ const vscode = getVsCodeApi();
 
 const debouncedUpdate = debounce(updateForm, 100);
 
-const schemaResolver = createResolver<SchemaQuery>();
-const uiSchemaResolver = createResolver<UiSchemaQuery>();
+const jsonFormResolver = createResolver<JsonFormQuery>();
 
 const jsonForms = ref<JsonForms>();
 const schemaReadOnly = ref(false);
 
 const tools = [...defaultTools];
-const jsonFormsRenderers = Object.freeze([
+const jsonFormsRenderers = [
     ...vanillaRenderers,
     ...boplusVueVanillaRenderers,
     ...formbuilderRenderers,
-]);
+];
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -55,15 +52,9 @@ const jsonFormsRenderers = Object.freeze([
 onBeforeMount(async () => {
     window.addEventListener("message", onReceiveMessage);
 
-    vscode.postMessage(new GetSchemaCommand());
-    vscode.postMessage(new GetUiSchemaCommand());
-
-    const [schemaQuery, uiSchemaQuery] = await Promise.all([
-        schemaResolver.wait(),
-        uiSchemaResolver.wait(),
-    ]);
-
-    updateForm(schemaQuery?.schema, uiSchemaQuery?.uiSchema);
+    vscode.postMessage(new GetJsonFormCommand());
+    const jsonFormQuery = await jsonFormResolver.wait();
+    updateForm(jsonFormQuery?.schema, jsonFormQuery?.uischema);
 });
 
 onUnmounted(() => {
@@ -93,14 +84,9 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     const queryOrCommand = message.data;
 
     switch (true) {
-        case queryOrCommand.type === "SchemaQuery": {
-            const schemaQuery = queryOrCommand as SchemaQuery;
-            await debouncedUpdate(schemaQuery.schema);
-            break;
-        }
-        case queryOrCommand.type === "UiSchemaQuery": {
-            const uiSchemaQuery = queryOrCommand as UiSchemaQuery;
-            await debouncedUpdate(undefined, uiSchemaQuery.uiSchema);
+        case queryOrCommand.type === "JsonFormQuery": {
+            const jsonFormQuery = queryOrCommand as JsonFormQuery;
+            await debouncedUpdate(jsonFormQuery.schema, jsonFormQuery.uischema);
             break;
         }
     }
@@ -108,7 +94,7 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
 </script>
 
 <template>
-    <div class="container max-w-screen-lg mx-auto flex flex-col gap-4 p-4">
+    <div class="vscode container max-w-screen-lg mx-auto flex flex-col gap-4 p-4">
         <vscode-checkbox
             :checked="schemaReadOnly"
             @change="

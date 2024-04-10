@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/miranum-jsonforms/src",
   "projectType": "application",
-  "implicitDependencies": ["miranum-jsonforms-builder-webview"],
+  "implicitDependencies": ["miranum-jsonforms-builder-webview", "miranum-jsonforms-preview-webview"],
   "targets": {
     "observe-all": {
       "executor": "nx:run-commands",
@@ -16,9 +16,14 @@
             "color": "blue"
           },
           {
-            "command": "npx nx observe miranum-jsonforms-webview",
-            "prefix": "miranum-jsonforms-webview",
+            "command": "npx nx observe miranum-jsonforms-builder-webview",
+            "prefix": "miranum-jsonforms-builder-webview",
             "color": "green"
+          },
+          {
+            "command": "npx nx observe miranum-jsonforms-preview-webview",
+            "prefix": "miranum-jsonforms-preview-webview",
+            "color": "yellow"
           }
         ]
       }

@@ -6,13 +6,13 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-// import "./css/vscode-theme-colors.css";
+import "@backoffice-plus/formbuilder/style.css";
+import "./css/vscode-theme-colors.css";
 import "./css/vfm.css";
 import "./css/styles.css";
 import "./css/form.stylea.css";
 import "./css/schemaTool.css";
-import "./css/deleteDialog.css";
-import "@backoffice-plus/formbuilder/style.css";
+import "./css/dialog.css";
 
 provideVSCodeDesignSystem().register(vsCodeCheckbox(), vsCodeTextArea());
 

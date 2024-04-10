@@ -37,8 +37,8 @@
 */
 
 .styleA input:not([type]),
-.styleA
-    input:where(
+.styleA,
+input:where(
         [type="text"],
         [type="number"],
         [type="email"],
@@ -49,8 +49,8 @@
         [type="xxx"],
         [type="xxx"]
     ),
-.styleA
-    input:where(
+.styleA,
+input:where(
         [type="date"],
         [type="datetime-local"],
         [type="month"],
@@ -128,7 +128,8 @@
 .styleA .horizontal-layout,
 .styleA.horizontal-layout,
 .styleA .vertical-layout,
-.styleA.vertical-layout /** root **/ {
+.styleA.vertical-layout /** root **/
+{
     @apply gap-2;
 }
 

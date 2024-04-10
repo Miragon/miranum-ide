@@ -1,61 +1,53 @@
-import { JsonSchema, Layout } from "@jsonforms/core";
+import type { JsonSchema, UISchemaElement } from "@jsonforms/core";
 
 import { Command, Query } from "./messages";
 
 // =================================== Queries ==================================>
 
-export class SchemaQuery extends Query {
+export class JsonFormQuery extends Query {
     public readonly schema: JsonSchema;
 
+    public readonly uischema: UISchemaElement;
+
     /**
-     * @param schema
-     * @throws {SyntaxError} if the schema is not a valid JSON string
+     * @param jsonForm
+     * @throws {SyntaxError} if the schema or uischema is not a valid JSON string
      */
-    constructor(schema: string) {
-        super("SchemaQuery");
-        this.schema = JSON.parse(schema);
+    constructor(jsonForm: string) {
+        super("JsonFormQuery");
+        const jsonFormObj = JSON.parse(jsonForm);
+        this.schema = jsonFormObj.schema;
+        this.uischema = jsonFormObj.uischema;
     }
 }
 
-export class UiSchemaQuery extends Query {
-    public readonly uiSchema: Layout;
+export type RendererOption = "vanilla" | "vuetify";
 
-    /**
-     * @param uiSchema
-     * @throws {SyntaxError} if the uiSchema is not a valid JSON string
-     */
-    constructor(uiSchema: string) {
-        super("UiSchemaQuery");
-        this.uiSchema = JSON.parse(uiSchema);
-    }
-}
-
-export enum Renderer {
-    VANILLA = "vanilla",
-    VUETIFY = "vuetify",
+function isOfTypeRendererOption(value: string): value is RendererOption {
+    return ["vanilla", "vuetify"].includes(value);
 }
 
 export class SettingQuery extends Query {
-    public readonly renderer: Renderer;
+    public readonly renderer: RendererOption;
 
-    constructor(renderer: Renderer) {
+    constructor(renderer: string) {
         super("SettingQuery");
-        this.renderer = renderer;
+
+        if (isOfTypeRendererOption(renderer)) {
+            this.renderer = renderer;
+        } else {
+            // FIXME: Maybe it's better to throw an error
+            this.renderer = "vuetify";
+        }
     }
 }
 
 // <================================== Queries ===================================
 //
 // =================================== Commands ==================================>
-export class GetSchemaCommand extends Command {
+export class GetJsonFormCommand extends Command {
     constructor() {
-        super("GetSchemaCommand");
-    }
-}
-
-export class GetUiSchemaCommand extends Command {
-    constructor() {
-        super("GetUiSchemaCommand");
+        super("GetJsonFormCommand");
     }
 }
 

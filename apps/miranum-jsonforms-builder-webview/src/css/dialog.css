@@ -1,0 +1,35 @@
+.formbuilder dialog[open] {
+    border-color: var(--vscode-button-border);
+    background-color: var(--vscode-editor-background);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.formbuilder dialog[open]::-webkit-scrollbar {
+    display: none;
+}
+
+.formbuilder dialog[open] div h1 {
+    color: var(--vscode-editor-foreground);
+}
+
+.formbuilder dialog[open] div p {
+    color: var(--vscode-editorError-foreground);
+}
+
+.formbuilder dialog[open] div .flex {
+    justify-content: center;
+}
+
+.formbuilder dialog[open] div button {
+    @apply p-2 mt-2;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.formbuilder dialog[open] .close {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    width: 1.25rem;
+    height: 1.25rem;
+}

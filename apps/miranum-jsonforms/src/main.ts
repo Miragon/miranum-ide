@@ -1,20 +1,29 @@
-/**
- * This module contains the activate-Function which is called when the user opens a `.form`-File.
- * @module Extension
- */
+import "reflect-metadata";
+import { ExtensionContext } from "vscode";
 
-import * as vscode from "vscode";
-import { JsonFormsBuilder } from "./JsonFormsBuilder";
-import { Logger } from "./components";
+import { setContext } from "@miranum-ide/vscode/miranum-vscode";
 
-/**
- * Function called by vscode when the user opens a .form-file and no JsonFormsBuilder is registered.
- * It registers a [Custom Text Editor](https://code.visualstudio.com/api/extension-guides/custom-editors).
- * @param context The context of the extension
- */
-export function activate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(Logger.get("Miranum: JsonForms"));
-    context.subscriptions.push(
-        vscode.window.registerCustomEditorProvider(JsonFormsBuilder.VIEWTYPE, new JsonFormsBuilder(context))
-    );
+import { config } from "./main.config";
+import { container } from "tsyringe";
+import {
+    VsCodeFormBuilderAdapter,
+    VsCodeOpenLoggingConsoleCommand,
+    VsCodeToggleFormPreviewCommand,
+    VsCodeToggleTextEditorCommand,
+} from "./adapter/in";
+
+export function activate(context: ExtensionContext) {
+    // 1. Set the global application context
+    setContext(context);
+
+    // 2. Configure the application
+    config();
+
+    // 3. Register the commands
+    container.resolve(VsCodeToggleFormPreviewCommand);
+    container.resolve(VsCodeToggleTextEditorCommand);
+    container.resolve(VsCodeOpenLoggingConsoleCommand);
+
+    // 4. Start the application
+    container.resolve(VsCodeFormBuilderAdapter);
 }

@@ -11,7 +11,7 @@
       "options": {
         "watch": true,
         "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-preview-webview",
-        "configFile": "apps/miranum-jsonforms-preview-webview/vite.config.ts",
+        "configFile": "apps/miranum-jsonforms-preview-webview/vite.config.mts",
         "emptyOutDir": false
       },
       "configurations": {

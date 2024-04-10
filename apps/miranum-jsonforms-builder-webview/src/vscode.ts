@@ -1,13 +1,11 @@
 import {
     Command,
+    JsonFormQuery,
     LogErrorCommand,
     LogInfoCommand,
     Query,
-    Renderer,
-    SchemaQuery,
     SettingQuery,
     SyncDocumentCommand,
-    UiSchemaQuery,
     type VsCodeApi,
     VsCodeImpl,
     VsCodeMock,
@@ -34,16 +32,12 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
 
     override postMessage(message: MessageType): void {
         switch (true) {
-            case message.type === "GetSchemaCommand": {
-                dispatchEvent(new SchemaQuery(minimalSchema));
-                break;
-            }
-            case message.type === "GetUiSchemaCommand": {
-                dispatchEvent(new UiSchemaQuery(minimalUiSchema));
+            case message.type === "GetJsonFormCommand": {
+                dispatchEvent(new JsonFormQuery(minimalJsonForm));
                 break;
             }
             case message.type === "GetSettingCommand": {
-                dispatchEvent(new SettingQuery(Renderer.VUETIFY));
+                dispatchEvent(new SettingQuery("vuetify"));
                 break;
             }
             case message.type === "SyncDocumentCommand": {
@@ -86,4 +80,9 @@ const minimalSchema = `{
 const minimalUiSchema = `{
     "type": "VerticalLayout",
     "elements": []
+}`;
+
+const minimalJsonForm = `{
+    "schema": ${minimalSchema},
+    "uischema": ${minimalUiSchema}
 }`;

@@ -12,7 +12,7 @@
       "options": {
         "watch": true,
         "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-builder-webview",
-        "configFile": "apps/miranum-jsonforms-builder-webview/vite.config.ts",
+        "configFile": "apps/miranum-jsonforms-builder-webview/vite.config.mts",
         "emptyOutDir": false,
         "postcssConfig": "apps/miranum-jsonforms-builder-webview/postcss.config.js"
       },

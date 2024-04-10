@@ -9,17 +9,17 @@ import {
     workspace,
     WorkspaceEdit,
 } from "vscode";
-import { singleton } from "tsyringe";
+import { container, singleton } from "tsyringe";
 
-import { getContext } from "@miranum-ide/vscode/miranum-vscode";
+import { getContext, NoChangesToApplyError } from "@miranum-ide/vscode/miranum-vscode";
 import {
     BpmnFileQuery,
     BpmnModelerSettingQuery,
+    Command,
     DmnFileQuery,
     ElementTemplatesQuery,
     FormKeysQuery,
-    MiranumModelerCommand,
-    MiranumModelerQuery,
+    Query,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import { bpmnEditorUi, dmnModelerHtml } from "../helper/vscode";
@@ -28,7 +28,6 @@ import {
     DmnUiOutPort,
     DocumentOutPort,
 } from "../../application/ports/out";
-import { NoChangesToApplyError } from "../../application/errors";
 import { BpmnModelerSetting } from "../../application/model";
 
 type ActiveEditor = {
@@ -107,7 +106,7 @@ export function subscribeToDisposeEvent() {
 }
 
 export function subscribeToMessageEvent(
-    callback: (message: MiranumModelerCommand, editorId: string) => void,
+    callback: (message: Command, editorId: string) => void,
 ) {
     const id = getActiveEditor().id;
     const d = disposables.get(id);
@@ -252,7 +251,7 @@ function getActiveEditor(): ActiveEditor {
  */
 async function postMessage(
     editorId: string,
-    message: MiranumModelerCommand | MiranumModelerQuery,
+    message: Command | Query,
 ): Promise<boolean> {
     if (getActiveEditor().id !== editorId) {
         throw new Error("The given editor id does not match the active editor.");
@@ -284,5 +283,9 @@ function disposeEditor(editorId: string, panel: WebviewPanel) {
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand("setContext", `miranum-modeler.openCustomEditors`, counter);
+    commands.executeCommand(
+        "setContext",
+        container.resolve("FormBuilderCounter"),
+        counter,
+    );
 }
