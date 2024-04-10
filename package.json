@@ -80,7 +80,7 @@
     "sass": "~1.32",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "5.3.3",
+    "typescript": "5.4.4",
     "unplugin-vue-components": "^0.25.2",
     "vite": "^5.1.6",
     "vite-plugin-eslint": "^1.8.1",
