@@ -39,11 +39,11 @@
       "targetEnvironments": [
         {
           "name": "local",
-          "url": "http://localhost:9002"
+          "url": "http://localhost:8090"
         },
         {
           "name": "dev",
-          "url": "http://localhost:9001"
+          "url": "http://localhost:8090"
         },
         {
           "name": "test",
@@ -51,7 +51,7 @@
         },
         {
           "name": "prod",
-          "url": "http://localhost:9001"
+          "url": "http://localhost:8090"
         }
       ]
     }

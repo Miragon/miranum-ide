@@ -37,16 +37,9 @@ flowchart LR
 
 ## Setup local dev environment
 
-### Miranum-Deployment
-
-1. Build the miranum-deployment project with `npx nx build miranum-deployment`.
-2. Start the deployment-service application
-    - You have to set the Env variables from the [local.env](../spring-boot-apps/miranum-deployment/local.env) file
-3. Start the example application
-   - You have to set the Env variables from the [local.env](../spring-boot-apps/miranum-deployment/local.env) file
-4. Run `npx nx deploy miranum-cli` to test the deployment
-
 ### Miranum-CLI
+
+> You may want to start the miranum-deployment-example service before running miranum-cli commands. See [stack](../stack).
 
 ```bash
 # shows help page
@@ -137,8 +130,7 @@ gitGraph
 After every commit, the *test* workflow is executed that runs the lint command and all available tests.
 
 **Pull Request**
-For every open Pull Request (PR) the *pr-labeler* workflow is executed that adds labels to the PR for every app, lib,
-spring-boot-app that was changed in the PR.
+For every open Pull Request (PR) the *pr-labeler* workflow is executed that adds labels to the PR for every app, lib that was changed in the PR.
 Additionally, PR to the main branch create a build by running the lint command, executing all tests and building the
 applications and libs.
 

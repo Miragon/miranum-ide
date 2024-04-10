@@ -14,7 +14,7 @@
       "targetEnvironments": [
         {
           "name": "test",
-          "url": "http://localhost:9002"
+          "url": "http://localhost:8090"
         }
       ]
     }
