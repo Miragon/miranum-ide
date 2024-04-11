@@ -33,7 +33,7 @@
     "engines": {
         "vscode": "^1.76.0"
     },
-    "icon": "images/miranum_logo.png",
+    "icon": "assets/miranum_logo.png",
     "categories": [
         "Other",
         "Visualization"
@@ -44,7 +44,7 @@
         "JSON Schema",
         "Formbuilder"
     ],
-    "main": "./main.js",
+    "main": "main.js",
     "contributes": {
         "customEditors": [
             {
