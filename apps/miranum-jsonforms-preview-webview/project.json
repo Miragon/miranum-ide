@@ -7,7 +7,7 @@
     "observe": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "development",
+      "defaultConfiguration": "production",
       "options": {
         "watch": true,
         "outputPath": "dist/apps/miranum-jsonforms/miranum-jsonforms-preview-webview",
@@ -15,11 +15,8 @@
         "emptyOutDir": false
       },
       "configurations": {
-        "development": {
-          "extractLicenses": false,
-          "optimization": false,
-          "sourceMap": false,
-          "vendorChunk": true
+        "production": {
+          "mode": "production"
         }
       }
     },

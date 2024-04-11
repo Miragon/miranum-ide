@@ -20,6 +20,8 @@ import "vue-json-pretty/lib/styles.css";
 
 import {
     Command,
+    createResolver,
+    GetJsonFormCommand,
     JsonFormQuery,
     LogErrorCommand,
     Query,
@@ -31,21 +33,19 @@ import { translationsErrors as localeCatalogue } from "./translations/de";
 import { getVsCodeApi } from "./vscode";
 import { minimalSchema, minimalUiSchema, personSchema, personUiSchema } from "./schemas";
 
-declare const process: { env: { NODE_ENV: string } };
-
-let defaultSchema: JsonSchema;
-let defaultUiSchema: UISchemaElement;
+let defaultSchema: JsonSchema = minimalSchema;
+let defaultUiSchema: UISchemaElement = minimalUiSchema;
 let defaultRenderer: JsonFormsRendererRegistryEntry[] = [];
-if (process.env.NODE_ENV === "development") {
+
+if (import.meta.env.MODE === "development") {
     defaultSchema = personSchema;
     defaultUiSchema = personUiSchema;
     defaultRenderer = [...vuetifyRenderers];
-} else {
-    defaultSchema = minimalSchema;
-    defaultUiSchema = minimalUiSchema;
 }
 
 const vscode = getVsCodeApi();
+
+const jsonFormResolver = createResolver<JsonFormQuery>();
 
 const ajv = createAjv({
     validateSchema: false,
@@ -61,8 +61,20 @@ const previewData = ref<any>({});
 const displayData = ref<any | undefined>(undefined);
 const displayErrors = ref<any | undefined>(undefined);
 
+let loading = true;
+let jsonComponentTheme = ref<"light" | "dark">("light");
+
 onBeforeMount(async () => {
     window.addEventListener("message", onReceiveMessage);
+
+    if (document.body.className.includes("vscode-dark")) {
+        jsonComponentTheme.value = "dark";
+    }
+
+    vscode.postMessage(new GetJsonFormCommand());
+    const jsonFormQuery = await jsonFormResolver.wait();
+    loading = false;
+    updateRenderer(jsonFormQuery?.schema, jsonFormQuery?.uischema);
 });
 
 onUnmounted(() => {
@@ -75,6 +87,12 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     switch (true) {
         case queryOrCommand.type === "JsonFormQuery": {
             const jsonFormQuery = queryOrCommand as JsonFormQuery;
+
+            if (loading) {
+                jsonFormResolver.done(jsonFormQuery);
+                return;
+            }
+
             await debouncedUpdate(jsonFormQuery.schema, jsonFormQuery.uischema);
             break;
         }
@@ -134,10 +152,10 @@ function onUpdate(jsonForm: any) {
 
         <div class="grid grid-cols-2 v-container py-6 max-h-[750px] overflow-hidden">
             <div class="overflow-y-scroll hide-scrollbar">
-                <vue-json-pretty :data="displayData" />
+                <vue-json-pretty :data="displayData" :theme="jsonComponentTheme" />
             </div>
             <div class="overflow-y-scroll hide-scrollbar">
-                <vue-json-pretty :data="displayErrors" />
+                <vue-json-pretty :data="displayErrors" :theme="jsonComponentTheme" />
             </div>
         </div>
     </div>

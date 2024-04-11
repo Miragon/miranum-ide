@@ -7,7 +7,7 @@ import {
 } from "@vscode/webview-ui-toolkit";
 
 import "@backoffice-plus/formbuilder/style.css";
-import "./css/vscode-theme-colors.css";
+// import "./css/vscode-theme-colors.css";
 import "./css/vfm.css";
 import "./css/styles.css";
 import "./css/form.stylea.css";

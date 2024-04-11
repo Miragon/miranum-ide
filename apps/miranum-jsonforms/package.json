@@ -126,12 +126,12 @@
                 {
                     "command": "miranum-jsonforms.togglePreview",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
                 },
                 {
                     "command": "miranum-jsonforms.toggleTextEditor",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
                 }
             ]
         }

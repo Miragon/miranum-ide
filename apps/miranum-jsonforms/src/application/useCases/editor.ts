@@ -14,6 +14,7 @@ import {
     FormPreviewUiOutPort,
     LogMessageOutPort,
 } from "../ports/out";
+import { NoChangesToApplyError } from "@miranum-ide/vscode/miranum-vscode";
 
 @singleton()
 export class DisplayFormBuilderUseCase implements DisplayFormBuilderInPort {
@@ -75,17 +76,14 @@ export class SyncDocumentUseCase implements SyncDocumentInPort {
         try {
             return await this.documentOutPort.write(content);
         } catch (error) {
-            return this.handleError(error as Error);
+            this.logMessageOutPort.error(error as Error);
+            if (!(error instanceof NoChangesToApplyError)) {
+                this.displayMessageOutPort.error(
+                    `A problem occurred while trying to write to the document. ${(error as Error).message}`,
+                );
+            }
+            return false;
         }
-    }
-
-    private handleError(error: Error): boolean {
-        this.logMessageOutPort.error(error);
-        this.displayMessageOutPort.error(
-            `A problem occurred while trying to display the JsonForm Builder.\n
-            ${(error as Error).message}`,
-        );
-        return false;
     }
 }
 

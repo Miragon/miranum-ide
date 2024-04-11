@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"foo":{"type":"string"}}},"uischema":{"type":"VerticalLayout","elements":[{"type":"Control","scope":"#/properties/foo"}]}}

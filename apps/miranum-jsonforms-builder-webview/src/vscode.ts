@@ -11,14 +11,12 @@ import {
     VsCodeMock,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-declare const process: { env: { NODE_ENV: string } };
-
 type StateType = unknown;
 
 type MessageType = Command | Query;
 
 export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.MODE === "development") {
         return new MockedVsCodeApi();
     } else {
         return new VsCodeImpl<StateType, MessageType>();

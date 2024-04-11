@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onBeforeMount, onUnmounted, ref } from "vue";
-import type { JsonSchema, Layout } from "@jsonforms/core";
+import type { JsonSchema, UISchemaElement } from "@jsonforms/core";
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
 import {
     boplusVueVanillaRenderers,
@@ -23,15 +23,17 @@ import { getVsCodeApi } from "./vscode";
 
 type JsonForms = {
     schema: JsonSchema | undefined;
-    uischema: Layout | undefined;
+    uischema: UISchemaElement | undefined;
 };
 
 const vscode = getVsCodeApi();
 
 const debouncedUpdate = debounce(updateForm, 100);
+const debouncedSendChanges = debounce(sendChanges, 100);
 
 const jsonFormResolver = createResolver<JsonFormQuery>();
 
+const key = ref(0);
 const jsonForms = ref<JsonForms>();
 const schemaReadOnly = ref(false);
 
@@ -41,6 +43,8 @@ const jsonFormsRenderers = [
     ...boplusVueVanillaRenderers,
     ...formbuilderRenderers,
 ];
+
+let loading = true;
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -54,6 +58,7 @@ onBeforeMount(async () => {
 
     vscode.postMessage(new GetJsonFormCommand());
     const jsonFormQuery = await jsonFormResolver.wait();
+    loading = false;
     updateForm(jsonFormQuery?.schema, jsonFormQuery?.uischema);
 });
 
@@ -61,7 +66,7 @@ onUnmounted(() => {
     window.removeEventListener("message", onReceiveMessage);
 });
 
-function updateForm(schema?: JsonSchema, uischema?: Layout): void {
+function updateForm(schema?: JsonSchema, uischema?: UISchemaElement): void {
     if (schema) {
         jsonForms.value = {
             schema: schema,
@@ -74,9 +79,13 @@ function updateForm(schema?: JsonSchema, uischema?: Layout): void {
             uischema: uischema,
         };
     }
+    key.value++;
 }
 
 function sendChanges(data: JsonForms) {
+    if (loading) {
+        return;
+    }
     vscode.postMessage(new SyncDocumentCommand(JSON.stringify(data)));
 }
 
@@ -86,6 +95,12 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     switch (true) {
         case queryOrCommand.type === "JsonFormQuery": {
             const jsonFormQuery = queryOrCommand as JsonFormQuery;
+
+            if (loading) {
+                jsonFormResolver.done(jsonFormQuery);
+                return;
+            }
+
             await debouncedUpdate(jsonFormQuery.schema, jsonFormQuery.uischema);
             break;
         }
@@ -107,11 +122,12 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
         </vscode-checkbox>
 
         <FormBuilder
+            :key="key"
             :jsonForms="jsonForms"
             :jsonFormsRenderers="jsonFormsRenderers"
             :schemaReadOnly="schemaReadOnly"
             :tools="tools"
-            @schemaUpdated="sendChanges"
+            @schemaUpdated="debouncedSendChanges"
         />
     </div>
 </template>

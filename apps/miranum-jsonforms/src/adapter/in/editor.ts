@@ -56,10 +56,16 @@ export class VsCodeFormPreviewAdapter {
     }
 
     toggle(): boolean {
-        if (this.panel?.visible) {
-            this.panel.dispose();
-        } else {
-            this.create();
+        try {
+            if (this.panel?.visible) {
+                this.panel.dispose();
+            } else {
+                this.create();
+            }
+        } catch (error) {
+            if ((error as Error).message === "Webview is disposed") {
+                this.create();
+            }
         }
         return true;
     }
@@ -68,7 +74,6 @@ export class VsCodeFormPreviewAdapter {
         this.panel = createPreview(this.viewType);
 
         this.subscribeToMessageEvent();
-        this.subscribeToTabChangeEvent();
         this.subscribeToSettingChangeEvent();
 
         this.panel.onDidDispose(() => {
@@ -82,6 +87,10 @@ export class VsCodeFormPreviewAdapter {
                 `[${new Date(Date.now()).toJSON()}] (Preview) Message received -> ${message.type}`,
             );
             switch (message.type) {
+                case "GetJsonFormCommand": {
+                    this.displayFormPreviewInPort.display();
+                    break;
+                }
                 case "LogInfoCommand": {
                     this.logMessageInPort.info((message as LogInfoCommand).message);
                     break;
@@ -99,16 +108,6 @@ export class VsCodeFormPreviewAdapter {
                 }`,
             );
         });
-    }
-
-    private subscribeToTabChangeEvent() {
-        this.panel?.onDidChangeViewState(
-            (event) => {
-                console.debug("(Preview) Tab changed", event.webviewPanel.title);
-            },
-            null,
-            this.disposables,
-        );
     }
 
     private subscribeToSettingChangeEvent() {
