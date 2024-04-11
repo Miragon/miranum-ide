@@ -16,6 +16,7 @@ import {
     DmnUiOutPort,
     DocumentOutPort,
     FileSystemOutPort,
+    GetExecutionPlatformVersionOutPort,
     LogMessageOutPort,
 } from "../ports/out";
 import { SettingBuilder } from "../model";
@@ -28,12 +29,18 @@ import {
 @singleton()
 export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     constructor(
+        @inject("C7ExecutionPlatformVersion")
+        private readonly c7ExecutionPlatformVersion: string,
+        @inject("C8ExecutionPlatformVersion")
+        private readonly c8ExecutionPlatformVersion: string,
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
         @inject("BpmnUiOutPort")
         private readonly bpmnUiOutPort: BpmnUiOutPort,
         @inject("DisplayMessageOutPort")
         protected readonly displayMessageOutPort: DisplayMessageOutPort,
+        @inject("GetExecutionPlatformVersionOutPort")
+        private readonly getExecutionPlatformVersionOutPort: GetExecutionPlatformVersionOutPort,
         @inject("LogMessageOutPort")
         private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
@@ -82,11 +89,13 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                         );
                 }
             } else {
-                return this.handleError(
-                    new Error(
-                        `Missing execution platform in BPMN file ${this.documentOutPort.getFilePath()}.`,
-                    ),
-                );
+                const ep =
+                    await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
+                const newBpmnFile = this.addExecutionPlatform(bpmnFile, ep);
+
+                await this.bpmnUiOutPort.displayBpmnFile(editorId, ep, newBpmnFile);
+
+                return await this.documentOutPort.write(newBpmnFile);
             }
         } catch (error) {
             return this.handleError(error as Error);
@@ -101,6 +110,30 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
             }`,
         );
         return false;
+    }
+
+    private addExecutionPlatform(bpmnFile: string, executionPlatform: string): string {
+        const regex = /<bpmn:definitions[^>]*>/;
+        const match = bpmnFile.match(regex);
+
+        let insert = "";
+        if (executionPlatform === "c7") {
+            insert = `modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="${this.c7ExecutionPlatformVersion}"`;
+        } else if (executionPlatform === "c8") {
+            insert = `modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="${this.c8ExecutionPlatformVersion}"`;
+        }
+
+        if (match) {
+            const definition = match[0].split(" ");
+            if (definition[definition.length - 1].endsWith(">")) {
+                const end = definition.pop();
+                definition.push(insert);
+                definition.push(end ?? ">");
+            }
+            return bpmnFile.replace(regex, `<bpmn:definitions ${definition.join(" ")}`);
+        } else {
+            throw new Error("The BPMN file does not contain a `bpmn:definitions` tag.");
+        }
     }
 }
 
