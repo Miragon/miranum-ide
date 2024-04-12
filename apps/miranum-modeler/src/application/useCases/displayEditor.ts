@@ -61,37 +61,27 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                 this.documentOutPort.write(bpmnFile);
             }
 
-            const regex = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
-            const match = bpmnFile.match(regex);
-
-            if (match) {
-                const executionPlatform = match[1];
-                switch (executionPlatform) {
-                    case "7": {
-                        return await this.bpmnUiOutPort.displayBpmnFile(
-                            editorId,
-                            "c7",
-                            bpmnFile,
-                        );
-                    }
-                    case "8": {
-                        return await this.bpmnUiOutPort.displayBpmnFile(
-                            editorId,
-                            "c8",
-                            bpmnFile,
-                        );
-                    }
-                    default:
-                        return this.handleError(
-                            new Error(
-                                `The execution platform version ${executionPlatform} is not supported.`,
-                            ),
-                        );
-                }
-            } else {
+            try {
+                return await this.bpmnUiOutPort.displayBpmnFile(
+                    editorId,
+                    this.detectExecutionPlatform(bpmnFile),
+                    bpmnFile,
+                );
+            } catch (error) {
                 const ep =
                     await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
-                const newBpmnFile = this.addExecutionPlatform(bpmnFile, ep);
+                const newBpmnFile =
+                    ep === "c7"
+                        ? addExecutionPlatform(
+                              bpmnFile,
+                              "Camunda Platform",
+                              this.c7ExecutionPlatformVersion,
+                          )
+                        : addExecutionPlatform(
+                              bpmnFile,
+                              "Camunda Cloud",
+                              this.c8ExecutionPlatformVersion,
+                          );
 
                 await this.bpmnUiOutPort.displayBpmnFile(editorId, ep, newBpmnFile);
 
@@ -112,27 +102,32 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
         return false;
     }
 
-    private addExecutionPlatform(bpmnFile: string, executionPlatform: string): string {
-        const regex = /<bpmn:definitions[^>]*>/;
-        const match = bpmnFile.match(regex);
+    private detectExecutionPlatform(bpmnFile: string): "c7" | "c8" {
+        const regexFirst = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
+        const regexSecond = /xmln:zeebe=".*"/;
 
-        let insert = "";
-        if (executionPlatform === "c7") {
-            insert = `modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="${this.c7ExecutionPlatformVersion}"`;
-        } else if (executionPlatform === "c8") {
-            insert = `modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="${this.c8ExecutionPlatformVersion}"`;
-        }
+        const matchExecutionPlatformVersion = bpmnFile.match(regexFirst);
 
-        if (match) {
-            const definition = match[0].split(" ");
-            if (definition[definition.length - 1].endsWith(">")) {
-                const end = definition.pop();
-                definition.push(insert);
-                definition.push(end ?? ">");
+        if (matchExecutionPlatformVersion) {
+            switch (matchExecutionPlatformVersion?.[1]) {
+                case "7": {
+                    return "c7";
+                }
+                case "8": {
+                    return "c8";
+                }
+                default:
+                    throw new Error(
+                        `The execution platform version ${matchExecutionPlatformVersion[1]} is not supported.`,
+                    );
             }
-            return bpmnFile.replace(regex, `<bpmn:definitions ${definition.join(" ")}`);
         } else {
-            throw new Error("The BPMN file does not contain a `bpmn:definitions` tag.");
+            const matchZeebe = bpmnFile.match(regexSecond);
+            if (matchZeebe) {
+                return "c8";
+            } else {
+                return "c7";
+            }
         }
     }
 }
@@ -479,6 +474,30 @@ export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
     private handleError(error: Error): boolean {
         this.logMessageOutPort.error(error as Error);
         return false;
+    }
+}
+
+export function addExecutionPlatform(
+    bpmnFile: string,
+    executionPlatform: string,
+    executionPlatformVersion: string,
+): string {
+    const regex = /<bpmn:definitions[^>]*>/;
+    const match = bpmnFile.match(regex);
+
+    const insert = `modeler:executionPlatform="${executionPlatform}" modeler:executionPlatformVersion="${executionPlatformVersion}">`;
+
+    if (match) {
+        const definition = match[0].split(" ");
+        if (definition[definition.length - 1].endsWith(">")) {
+            definition[definition.length - 1] = definition[
+                definition.length - 1
+            ].replace(">", "");
+            definition.push(insert);
+        }
+        return bpmnFile.replace(regex, `${definition.join(" ")}`);
+    } else {
+        throw new Error("The BPMN file does not contain a `bpmn:definitions` tag.");
     }
 }
 
