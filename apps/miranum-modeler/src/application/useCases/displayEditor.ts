@@ -103,10 +103,9 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     }
 
     private detectExecutionPlatform(bpmnFile: string): "c7" | "c8" {
-        const regexFirst = /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
-        const regexSecond = /xmln:zeebe=".*"/;
-
-        const matchExecutionPlatformVersion = bpmnFile.match(regexFirst);
+        const regexExecutionPlatform =
+            /modeler:executionPlatformVersion="([78])\.\d+\.\d+"/;
+        const matchExecutionPlatformVersion = bpmnFile.match(regexExecutionPlatform);
 
         if (matchExecutionPlatformVersion) {
             switch (matchExecutionPlatformVersion?.[1]) {
@@ -122,11 +121,15 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                     );
             }
         } else {
-            const matchZeebe = bpmnFile.match(regexSecond);
-            if (matchZeebe) {
+            const regexZebee = /xmlns:zeebe=".*"/;
+            const regexCamunda = /xmlns:camunda=".*"/;
+
+            if (bpmnFile.match(regexCamunda)) {
+                return "c7";
+            } else if (bpmnFile.match(regexZebee)) {
                 return "c8";
             } else {
-                return "c7";
+                throw new Error("The execution platform could not be detected.");
             }
         }
     }
