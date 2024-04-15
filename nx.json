@@ -32,13 +32,6 @@
   },
   "defaultProject": "miranum-cli",
   "plugins": [
-    "@nxrocks/nx-spring-boot",
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
-    },
     {
       "plugin": "@nx/vite/plugin",
       "options": {

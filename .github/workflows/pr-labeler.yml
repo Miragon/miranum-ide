@@ -9,4 +9,4 @@ jobs:
         uses: tinkurlab/monorepo-pr-labeler-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_DIRS: "apps|libs|spring-boot-apps|tools"
+          BASE_DIRS: "apps|libs|tools"

@@ -1,2 +1,0 @@
-server:
-    port: '${MIRANUM_DEPLOYMENT_EXAMPLE_PORT:8080}'
