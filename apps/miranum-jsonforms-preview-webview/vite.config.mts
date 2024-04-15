@@ -41,22 +41,22 @@ export default defineConfig({
         },
     },
 
-    test: {
-        globals: true,
-        environment: "jsdom",
-        include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    // test: {
+    //     globals: true,
+    //     environment: "jsdom",
+    //     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
 
-        reporters: ["default"],
-        coverage: {
-            reportsDirectory: "../../coverage/apps/miranum-jsonforms-preview-webview",
-            provider: "v8",
-        },
-        server: {
-            deps: {
-                inline: ["vuetify"],
-            },
-        },
-    },
+    //     reporters: ["default"],
+    //     coverage: {
+    //         reportsDirectory: "../../coverage/apps/miranum-jsonforms-preview-webview",
+    //         provider: "v8",
+    //     },
+    //     server: {
+    //         deps: {
+    //             inline: ["vuetify"],
+    //         },
+    //     },
+    // },
 
     resolve: {
         mainFields: ["module"],

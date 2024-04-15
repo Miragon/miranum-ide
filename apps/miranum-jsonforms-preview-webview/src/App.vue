@@ -2,7 +2,6 @@
 import { onBeforeMount, onUnmounted, ref, toRaw } from "vue";
 import { debounce } from "lodash";
 import {
-    createAjv,
     type JsonFormsRendererRegistryEntry,
     type JsonSchema,
     type UISchemaElement,
@@ -10,10 +9,7 @@ import {
 import { vuetifyRenderers } from "@jsonforms/vue-vuetify";
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
 import { JsonForms } from "@jsonforms/vue";
-import {
-    boplusVueVanillaRenderers,
-    createI18nTranslate,
-} from "@backoffice-plus/formbuilder";
+import { boplusVueVanillaRenderers } from "@backoffice-plus/formbuilder";
 
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
@@ -28,8 +24,6 @@ import {
     type RendererOption,
     SettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
-
-import { translationsErrors as localeCatalogue } from "./translations/de";
 import { getVsCodeApi } from "./vscode";
 import { minimalSchema, minimalUiSchema, personSchema, personUiSchema } from "./schemas";
 
@@ -46,11 +40,6 @@ if (import.meta.env.MODE === "development") {
 const vscode = getVsCodeApi();
 
 const jsonFormResolver = createResolver<JsonFormQuery>();
-
-const ajv = createAjv({
-    validateSchema: false,
-    addUsedSchema: false,
-});
 
 const previewSchema = ref<JsonSchema>(defaultSchema);
 const previewUiSchema = ref<UISchemaElement>(defaultUiSchema);
@@ -140,9 +129,7 @@ function onUpdate(jsonForm: any) {
     <div class="flex flex-col">
         <div class="card p-4" style="min-height: 106px">
             <JsonForms
-                :ajv="ajv"
                 :data="previewData"
-                :i18n="{ translate: createI18nTranslate(localeCatalogue) }"
                 :renderers="renderers"
                 :schema="previewSchema"
                 :uischema="previewUiSchema"
