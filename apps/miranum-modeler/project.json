@@ -98,17 +98,17 @@
           },
           {
             "glob": ".vscodeignore",
-            "input": ".",
+            "input": "apps/miranum-modeler",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": ".",
+            "input": "apps/miranum-modeler",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": ".",
+            "input": "apps/miranum-modeler",
             "output": "/"
           }
         ]

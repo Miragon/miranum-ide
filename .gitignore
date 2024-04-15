@@ -42,3 +42,5 @@ Thumbs.db
 resources/my-generations
 
 .nx/cache
+
+**/vite.config.mts.timestamp-*

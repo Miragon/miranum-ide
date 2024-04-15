@@ -50,7 +50,7 @@
           },
           {
             "glob": "*.png",
-            "input": "./icons",
+            "input": "apps/miranum-console/icons",
             "output": "/assets/icons"
           }
         ]
@@ -97,22 +97,22 @@
           },
           {
             "glob": "*.png",
-            "input": "./icons",
+            "input": "apps/miranum-console/icons",
             "output": "/assets/icons"
           },
           {
             "glob": ".vscodeignore",
-            "input": "./",
+            "input": "apps/miranum-console",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": "./",
+            "input": "apps/miranum-console",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": "./",
+            "input": "apps/miranum-console",
             "output": "/"
           }
         ]

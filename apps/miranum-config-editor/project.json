@@ -86,17 +86,17 @@
           },
           {
             "glob": ".vscodeignore",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           }
         ]
