@@ -5,11 +5,7 @@
     "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"]
   },
   "include": [
-<<<<<<<< HEAD:apps/miranum-jsonforms-builder-webview/tsconfig.spec.json
     "vite.config.mts",
-========
-    "vite.config.ts",
->>>>>>>> refs/heads/main:apps/miranum-jsonforms-webview/tsconfig.spec.json
     "vitest.config.ts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
