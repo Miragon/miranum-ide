@@ -1,6 +1,7 @@
 .formbuilder dialog[open] {
     border-color: var(--vscode-button-border);
     background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
@@ -35,5 +36,10 @@
 }
 
 .formbuilder dialog[open] div.errorMsg {
+    color: var(--vscode-errorForeground);
+}
+
+/* TODO: There should be a better way to style this */
+.formbuilder dialog[open] div.p-4.shadow.rounded div {
     color: var(--vscode-errorForeground);
 }

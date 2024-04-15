@@ -28,6 +28,10 @@ export interface FormPreviewUiOutPort extends EditorComponent {
     setSetting(renderer: string): Promise<boolean>;
 }
 
+export interface FormPreviewSettingsOutPort {
+    getRenderer(): string;
+}
+
 export interface DocumentOutPort extends EditorComponent {
     /**
      * Get the content of the document.
@@ -51,8 +55,8 @@ export interface DocumentOutPort extends EditorComponent {
     write(content: string): Promise<boolean>;
 }
 
-export interface FormPreviewSettingsOutPort {
-    getRenderer(): string;
+export interface CreateFileOutPort {
+    write(content: string, filePath: string): Promise<void>;
 }
 
 /**

@@ -187,10 +187,12 @@ export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
                 case "SyncDocumentCommand": {
                     this.isChangeDocumentEventBlocked = true;
                     console.debug("(Builder) SyncDocumentCommand -> blocked");
-                    await this.syncDocumentInPort.sync(
-                        editorId,
-                        (message as SyncDocumentCommand).content,
+                    const json = JSON.stringify(
+                        JSON.parse((message as SyncDocumentCommand).content),
+                        null,
+                        4,
                     );
+                    await this.syncDocumentInPort.sync(editorId, json);
                     this.isChangeDocumentEventBlocked = false;
                     console.debug("(Builder) SyncDocumentCommand -> released");
                     break;

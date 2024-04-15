@@ -8,6 +8,7 @@ import { container } from "tsyringe";
 import {
     VsCodeFormBuilderAdapter,
     VsCodeOpenLoggingConsoleCommand,
+    VsCodeSplitFormFileCommand,
     VsCodeToggleFormPreviewCommand,
     VsCodeToggleTextEditorCommand,
 } from "./adapter/in";
@@ -20,6 +21,7 @@ export function activate(context: ExtensionContext) {
     config();
 
     // 3. Register the commands
+    container.resolve(VsCodeSplitFormFileCommand);
     container.resolve(VsCodeToggleFormPreviewCommand);
     container.resolve(VsCodeToggleTextEditorCommand);
     container.resolve(VsCodeOpenLoggingConsoleCommand);

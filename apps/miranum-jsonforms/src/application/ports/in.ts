@@ -18,6 +18,10 @@ export interface GetDocumentInPort {
     getPath(): string;
 }
 
+export interface SplitFileInPort {
+    split(): Promise<boolean>;
+}
+
 /**
  * Display a message to the user in the UI.
  */

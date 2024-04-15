@@ -8,8 +8,8 @@ import {
 
 import "@backoffice-plus/formbuilder/style.css";
 // import "./css/vscode-theme-colors.css";
-import "./css/vfm.css";
 import "./css/styles.css";
+import "./css/vfm.css";
 import "./css/form.stylea.css";
 import "./css/schemaTool.css";
 import "./css/dialog.css";

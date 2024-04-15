@@ -41,6 +41,7 @@ const vscode = getVsCodeApi();
 
 const jsonFormResolver = createResolver<JsonFormQuery>();
 
+const previewSetting = ref<string>();
 const previewSchema = ref<JsonSchema>(defaultSchema);
 const previewUiSchema = ref<UISchemaElement>(defaultUiSchema);
 const renderers = ref<JsonFormsRendererRegistryEntry[]>(defaultRenderer);
@@ -88,6 +89,7 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
         case queryOrCommand.type === "SettingQuery": {
             const settingQuery = queryOrCommand as SettingQuery;
             try {
+                previewSetting.value = settingQuery.renderer;
                 renderers.value = getRenderers(settingQuery.renderer);
             } catch (error) {
                 vscode.postMessage(new LogErrorCommand((error as Error).message));
@@ -128,13 +130,24 @@ function onUpdate(jsonForm: any) {
 <template>
     <div class="flex flex-col">
         <div class="card p-4" style="min-height: 106px">
-            <JsonForms
-                :data="previewData"
-                :renderers="renderers"
-                :schema="previewSchema"
-                :uischema="previewUiSchema"
-                @change="onUpdate"
-            />
+            <div v-if="previewSetting === 'vanilla'" class="styleA">
+                <JsonForms
+                    :data="previewData"
+                    :renderers="renderers"
+                    :schema="previewSchema"
+                    :uischema="previewUiSchema"
+                    @change="onUpdate"
+                />
+            </div>
+            <div v-else>
+                <JsonForms
+                    :data="previewData"
+                    :renderers="renderers"
+                    :schema="previewSchema"
+                    :uischema="previewUiSchema"
+                    @change="onUpdate"
+                />
+            </div>
         </div>
 
         <div class="grid grid-cols-2 v-container py-6 max-h-[750px] overflow-hidden">

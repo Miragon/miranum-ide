@@ -28,6 +28,33 @@ export class GetDocumentUseCase implements GetDocumentInPort {
 }
 
 @singleton()
+export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
+    constructor(
+        @inject("GetDocumentInPort")
+        private readonly getDocumentInPort: GetDocumentInPort,
+        @inject("TextEditorOutPort")
+        private readonly textEditorOutPort: TextEditorOutPort,
+    ) {}
+
+    toggle(): Promise<boolean> {
+        const documentPath = this.getDocumentInPort.getPath();
+        return this.textEditorOutPort.toggle(documentPath);
+    }
+}
+
+@singleton()
+export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
+    constructor(
+        @inject("OpenLoggingConsoleOutPort")
+        private readonly openLoggingConsoleOutPort: OpenLoggingConsoleOutPort,
+    ) {}
+
+    open() {
+        this.openLoggingConsoleOutPort.open();
+    }
+}
+
+@singleton()
 export class DisplayMessageUseCase implements DisplayMessageInPort {
     constructor(
         @inject("DisplayMessageOutPort")
@@ -56,32 +83,5 @@ export class LogMessageUseCase implements LogMessageInPort {
 
     error(error: Error): void {
         this.logMessageOutPort.error(error);
-    }
-}
-
-@singleton()
-export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
-    constructor(
-        @inject("GetDocumentInPort")
-        private readonly getDocumentInPort: GetDocumentInPort,
-        @inject("TextEditorOutPort")
-        private readonly textEditorOutPort: TextEditorOutPort,
-    ) {}
-
-    toggle(): Promise<boolean> {
-        const documentPath = this.getDocumentInPort.getPath();
-        return this.textEditorOutPort.toggle(documentPath);
-    }
-}
-
-@singleton()
-export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
-    constructor(
-        @inject("OpenLoggingConsoleOutPort")
-        private readonly openLoggingConsoleOutPort: OpenLoggingConsoleOutPort,
-    ) {}
-
-    open() {
-        this.openLoggingConsoleOutPort.open();
     }
 }

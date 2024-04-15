@@ -3,6 +3,7 @@ import { container } from "tsyringe";
 import {
     VsCodeDisplayMessageAdapter,
     VsCodeDocumentAdapter,
+    VsCodeFileSystemAdapter,
     VsCodeFormBuilderWebviewAdapter,
     VsCodeFormPreviewSettingsAdapter,
     VsCodeFormPreviewWebviewAdapter,
@@ -17,6 +18,7 @@ import {
     LogMessageUseCase,
     OpenLoggingConsoleUseCase,
     SetSettingUseCase,
+    SplitJsonFormUseCase,
     SyncDocumentUseCase,
     ToggleTextEditorUseCase,
 } from "./application/useCases";
@@ -24,6 +26,7 @@ import {
     VsCodeFormBuilderAdapter,
     VsCodeFormPreviewAdapter,
     VsCodeOpenLoggingConsoleCommand,
+    VsCodeSplitFormFileCommand,
     VsCodeToggleFormPreviewCommand,
     VsCodeToggleTextEditorCommand,
 } from "./adapter/in";
@@ -51,6 +54,9 @@ export function config() {
 
 function configFormBuilder() {
     // Primitives
+    container.register("SplitFormFileCommand", {
+        useValue: "miranum-jsonforms.splitFormFile",
+    });
     container.register("ToggleTextEditorCommand", {
         useValue: "miranum-jsonforms.toggleTextEditor",
     });
@@ -64,6 +70,7 @@ function configFormBuilder() {
     // Out-Adapter
     container.register("DocumentOutPort", VsCodeDocumentAdapter);
     container.register("FormBuilderUiOutPort", VsCodeFormBuilderWebviewAdapter);
+    container.register("CreateFileOutPort", VsCodeFileSystemAdapter);
 
     // UseCases
     container.register("TextEditorOutPort", VsCodeTextEditorAdapter);
@@ -71,8 +78,10 @@ function configFormBuilder() {
     container.register("SyncDocumentInPort", SyncDocumentUseCase);
     container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase);
     container.register("DisplayFormBuilderInPort", DisplayFormBuilderUseCase);
+    container.register("SplitFileInPort", SplitJsonFormUseCase);
 
     // In-Adapter
+    container.register(VsCodeSplitFormFileCommand, VsCodeSplitFormFileCommand);
     container.register(VsCodeToggleTextEditorCommand, VsCodeToggleTextEditorCommand);
     container.register(VsCodeOpenLoggingConsoleCommand, VsCodeOpenLoggingConsoleCommand);
     container.register(VsCodeFormBuilderAdapter, VsCodeFormBuilderAdapter);

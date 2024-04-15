@@ -62,18 +62,23 @@
         "commands": [
             {
                 "command": "miranum-jsonforms.togglePreview",
-                "title": "Miranum: Toggle Preview",
+                "title": "Miranum JsonForm: Toggle Preview",
                 "icon": "$(notebook-render-output)"
             },
             {
                 "command": "miranum-jsonforms.toggleTextEditor",
-                "title": "Miranum: Toggle Standard Text Editor",
+                "title": "Miranum JsonForm: Toggle Standard Text Editor",
                 "icon": "$(notebook-mimetype)"
             },
             {
                 "command": "miranum-jsonforms.openLoggingConsole",
-                "title": "Miranum: Display Logging Information",
+                "title": "Miranum JsonForm: Display Logging Information",
                 "icon": "$(callstack-view-session)"
+            },
+            {
+              "command": "miranum-jsonforms.splitFormFile",
+              "title": "Miranum JsonForm: Split JsonForm file into schema and ui schema",
+              "icon": "$(file-text)"
             }
         ],
         "configuration": {

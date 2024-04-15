@@ -1,1 +1,19 @@
-{"schema":{"type":"object","properties":{"bar":{"type":"string"}}},"uischema":{"type":"VerticalLayout","elements":[{"type":"Control","scope":"#/properties/bar"}]}}
+{
+    "schema": {
+        "type": "object",
+        "properties": {
+            "bar": {
+                "type": "string"
+            }
+        }
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": [
+            {
+                "type": "Control",
+                "scope": "#/properties/bar"
+            }
+        ]
+    }
+}

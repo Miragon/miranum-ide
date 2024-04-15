@@ -1,6 +1,9 @@
-import { workspace } from "vscode";
+import { Uri, workspace } from "vscode";
 import { singleton } from "tsyringe";
-import { FormPreviewSettingsOutPort } from "../../application/ports/out";
+import {
+    CreateFileOutPort,
+    FormPreviewSettingsOutPort,
+} from "../../application/ports/out";
 
 @singleton()
 export class VsCodeFormPreviewSettingsAdapter implements FormPreviewSettingsOutPort {
@@ -14,5 +17,15 @@ export class VsCodeFormPreviewSettingsAdapter implements FormPreviewSettingsOutP
         }
 
         return setting;
+    }
+}
+
+@singleton()
+export class VsCodeFileSystemAdapter implements CreateFileOutPort {
+    private readonly fs = workspace.fs;
+
+    async write(content: string, filePath: string) {
+        const uri = Uri.file(filePath);
+        return this.fs.writeFile(uri, Buffer.from(content, "utf8"));
     }
 }

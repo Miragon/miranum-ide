@@ -5,9 +5,33 @@ import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 
 import {
     OpenLoggingConsoleInPort,
+    SplitFileInPort,
     ToggleTextEditorInPort,
 } from "../../application/ports/in";
 import { VsCodeFormPreviewAdapter } from "./editor";
+
+@singleton()
+export class VsCodeSplitFormFileCommand {
+    private readonly command: string;
+
+    constructor(
+        @inject("SplitFormFileCommand") command: string,
+        @inject("SplitFileInPort")
+        private readonly splitFileInPort: SplitFileInPort,
+    ) {
+        this.command = command;
+
+        const context = getContext();
+
+        context.subscriptions.push(
+            commands.registerCommand(this.command, this.split, this),
+        );
+    }
+
+    split() {
+        this.splitFileInPort.split();
+    }
+}
 
 @singleton()
 export class VsCodeToggleFormPreviewCommand {
