@@ -33,9 +33,9 @@ describe("getNewBpmnDefinition", () => {
     it("should work", async () => {
         const bpmnDefinition = addExecutionPlatform(
             bpmnWithoutExecutionPlatform,
-            `xmlns:camunda="http://camunda.org/schema/1.0/bpmn"`,
             "Camunda Platform",
             "7.20.0",
+            `xmlns:camunda="http://camunda.org/schema/1.0/bpmn"`,
         );
 
         expect(bpmnDefinition).toEqual(bpmnWithExecutionPlatform);
