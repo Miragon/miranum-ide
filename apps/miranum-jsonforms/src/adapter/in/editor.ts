@@ -161,6 +161,7 @@ export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
         try {
             const editorId = document.uri.path;
             createEditor(this.viewType, editorId, webviewPanel, document);
+            this.displayFormPreviewInPort.display();
 
             // Subscribe to events
             this.subscribeToMessageEvent();
