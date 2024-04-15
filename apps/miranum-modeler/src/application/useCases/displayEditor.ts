@@ -70,18 +70,40 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
             } catch (error) {
                 const ep =
                     await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
-                const newBpmnFile =
-                    ep === "c7"
-                        ? addExecutionPlatform(
-                              bpmnFile,
-                              "Camunda Platform",
-                              this.c7ExecutionPlatformVersion,
-                          )
-                        : addExecutionPlatform(
-                              bpmnFile,
-                              "Camunda Cloud",
-                              this.c8ExecutionPlatformVersion,
-                          );
+
+                let newBpmnFile;
+                if (
+                    (error as Error).message ===
+                    "The execution platform could not be detected."
+                ) {
+                    newBpmnFile =
+                        ep === "c7"
+                            ? addExecutionPlatform(
+                                  bpmnFile,
+                                  "Camunda Platform",
+                                  this.c7ExecutionPlatformVersion,
+                                  `xmlns:camunda="http://camunda.org/schema/1.0/bpmn"`,
+                              )
+                            : addExecutionPlatform(
+                                  bpmnFile,
+                                  "Camunda Cloud",
+                                  this.c8ExecutionPlatformVersion,
+                                  `xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"`,
+                              );
+                } else {
+                    newBpmnFile =
+                        ep === "c7"
+                            ? addExecutionPlatform(
+                                  bpmnFile,
+                                  "Camunda Platform",
+                                  this.c7ExecutionPlatformVersion,
+                              )
+                            : addExecutionPlatform(
+                                  bpmnFile,
+                                  "Camunda Cloud",
+                                  this.c8ExecutionPlatformVersion,
+                              );
+                }
 
                 await this.bpmnUiOutPort.displayBpmnFile(editorId, ep, newBpmnFile);
 
@@ -484,11 +506,12 @@ export function addExecutionPlatform(
     bpmnFile: string,
     executionPlatform: string,
     executionPlatformVersion: string,
+    schema?: string,
 ): string {
     const regex = /<bpmn:definitions[^>]*>/;
     const match = bpmnFile.match(regex);
 
-    const insert = `modeler:executionPlatform="${executionPlatform}" modeler:executionPlatformVersion="${executionPlatformVersion}">`;
+    const insert = `${schema} modeler:executionPlatform="${executionPlatform}" modeler:executionPlatformVersion="${executionPlatformVersion}">`;
 
     if (match) {
         const definition = match[0].split(" ");
