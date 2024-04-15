@@ -1,4 +1,4 @@
-import { createVuetify, ThemeDefinition } from "vuetify";
+import { createVuetify, type ThemeDefinition } from "vuetify";
 import "vuetify/styles";
 
 const lightTheme: ThemeDefinition = {

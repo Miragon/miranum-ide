@@ -96,17 +96,17 @@
           },
           {
             "glob": ".vscodeignore",
-            "input": ".",
+            "input": "apps/miranum-jsonforms",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": ".",
+            "input": "apps/miranum-jsonforms",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": ".",
+            "input": "apps/miranum-jsonforms",
             "output": "/"
           }
         ]
