@@ -1,5 +1,7 @@
 import { BpmnModelerSetting } from "../model";
 
+type ExecutionPlatformVersion = "c7" | "c8";
+
 interface EditorComponent {
     /**
      * Get the id of the active editor.
@@ -19,7 +21,7 @@ export interface BpmnUiOutPort extends EditorComponent {
      */
     displayBpmnFile(
         editorId: string,
-        executionPlatform: "c7" | "c8",
+        executionPlatform: ExecutionPlatformVersion,
         bpmnFile: string,
     ): Promise<boolean>;
 
@@ -108,6 +110,10 @@ export interface FileSystemOutPort {
 
 export interface BpmnModelerSettingsOutPort {
     getAlignToOrigin(): boolean;
+}
+
+export interface GetExecutionPlatformVersionOutPort {
+    getExecutionPlatformVersion(): Promise<ExecutionPlatformVersion>;
 }
 
 /**

@@ -29,6 +29,7 @@ import {
     VsCodeDmnWebviewAdapter,
     VsCodeDocumentAdapter,
     VsCodeLoggerAdapter,
+    VsCodeQuickPickAdapter,
     VsCodeReadAdapter,
     VsCodeTextEditorAdapter,
     VsCodeWorkspaceAdapter,
@@ -82,10 +83,13 @@ export function config(): void {
 function configBpmnModeler(): void {
     // Primitives
     container.register("BpmnModelerViewType", { useValue: "miranum-bpmn-modeler" });
+    container.register("C7ExecutionPlatformVersion", { useValue: "7.20.0" });
+    container.register("C8ExecutionPlatformVersion", { useValue: "8.4.0" });
 
     // Out Adapter
     container.register("BpmnUiOutPort", VsCodeBpmnWebviewAdapter);
     container.register("BpmnModelerSettingsOutPort", VsCodeBpmnModelerSettingsAdapter);
+    container.register("GetExecutionPlatformVersionOutPort", VsCodeQuickPickAdapter);
 
     // Use Cases
     container.register("DisplayBpmnModelerInPort", DisplayBpmnModelerUseCase);
