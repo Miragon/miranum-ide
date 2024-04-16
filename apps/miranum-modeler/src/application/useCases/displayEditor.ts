@@ -68,15 +68,14 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                     bpmnFile,
                 );
             } catch (error) {
-                const ep =
-                    await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
+                const msg = (error as Error).message;
+                if (msg === "The active editor is hidden.") {
+                    return false;
+                } else if (msg === "The execution platform could not be detected.") {
+                    const ep =
+                        await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
 
-                let newBpmnFile;
-                if (
-                    (error as Error).message ===
-                    "The execution platform could not be detected."
-                ) {
-                    newBpmnFile =
+                    const newBpmnFile =
                         ep === "c7"
                             ? addExecutionPlatform(
                                   bpmnFile,
@@ -90,24 +89,12 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                                   this.c8ExecutionPlatformVersion,
                                   `xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"`,
                               );
+
+                    await this.bpmnUiOutPort.displayBpmnFile(editorId, ep, newBpmnFile);
+                    return await this.documentOutPort.write(newBpmnFile);
                 } else {
-                    newBpmnFile =
-                        ep === "c7"
-                            ? addExecutionPlatform(
-                                  bpmnFile,
-                                  "Camunda Platform",
-                                  this.c7ExecutionPlatformVersion,
-                              )
-                            : addExecutionPlatform(
-                                  bpmnFile,
-                                  "Camunda Cloud",
-                                  this.c8ExecutionPlatformVersion,
-                              );
+                    return this.handleError(error as Error);
                 }
-
-                await this.bpmnUiOutPort.displayBpmnFile(editorId, ep, newBpmnFile);
-
-                return await this.documentOutPort.write(newBpmnFile);
             }
         } catch (error) {
             return this.handleError(error as Error);
@@ -187,6 +174,10 @@ export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
 
             return await this.dmnUiOutPort.displayDmnFile(editorId, dmnFile);
         } catch (error) {
+            const msg = (error as Error).message;
+            if (msg === "The active editor is hidden.") {
+                return false;
+            }
             return this.handleError(error as Error);
         }
     }
