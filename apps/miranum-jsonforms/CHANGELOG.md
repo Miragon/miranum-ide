@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2024-04-16
+
+### Added
+
+* Command to split the `.form.json` file into `.schema.json` and `.uischema.json` files (#564)
+
+### Changed
+
+* Refactor to apply a hexagonal architecture to the modeler (#564)
+
 ## [0.1.6] - 2023-09-06
 
 ### Fixed
@@ -39,8 +49,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Correction of tabs placement in preview (#59)
 
-[unreleased]: https://github.com/Miragon/miranum-json-forms/compare/release/v0.1.6...HEAD
-[0.1.6]: https://github.com/Miragon/miranum-json-forms/compare/release/v0.1.5...release/v0.1.6
-[0.1.5]: https://github.com/Miragon/miranum-json-forms/compare/release/v0.1.4...release/v0.1.5
-[0.1.4]: https://github.com/Miragon/miranum-json-forms/compare/release/v0.1.3...release/v0.1.4
-[0.1.3]: https://github.com/Miragon/miranum-json-forms/compare/release/v0.1.2...release/v0.1.3
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9-vscode...HEAD
+[0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
