@@ -104,7 +104,8 @@
       ],
       "options": {
         "jestConfig": "apps/miranum-cli/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverageReporters": ["clover"]
       }
     }
   },

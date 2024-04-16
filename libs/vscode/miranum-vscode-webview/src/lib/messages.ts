@@ -2,8 +2,30 @@ interface MessageType {
     type: string;
 }
 
-export type Query = MessageType;
-export type Command = MessageType;
+export abstract class Query implements MessageType {
+    public readonly type: string;
+
+    protected constructor(type: string) {
+        this.type = type;
+    }
+}
+
+export abstract class Command implements MessageType {
+    public readonly type: string;
+
+    protected constructor(type: string) {
+        this.type = type;
+    }
+}
+
+export class SyncDocumentCommand extends Command {
+    public readonly content: string;
+
+    constructor(content: string) {
+        super("SyncDocumentCommand");
+        this.content = content;
+    }
+}
 
 export class LogMessageCommand implements Command {
     public readonly type: string = "LogMessageCommand";

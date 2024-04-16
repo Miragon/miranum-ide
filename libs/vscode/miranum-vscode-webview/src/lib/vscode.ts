@@ -1,4 +1,4 @@
-import { WebviewApi } from "vscode-webview";
+import type { WebviewApi } from "vscode-webview";
 
 export interface VsCodeApi<T, M> {
     /**

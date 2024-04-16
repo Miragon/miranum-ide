@@ -14,7 +14,7 @@
       "options": {
         "watch": true,
         "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
-        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts",
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.mts",
         "emptyOutDir": false
       },
       "configurations": {
@@ -34,7 +34,7 @@
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
-        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts"
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.mts"
       },
       "configurations": {
         "production": {
@@ -49,7 +49,8 @@
       ],
       "options": {
         "jestConfig": "apps/miranum-modeler-dmn-webview/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverageReporters": ["clover"]
       }
     },
     "lint": {

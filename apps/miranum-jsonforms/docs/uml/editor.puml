@@ -1,0 +1,73 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+skinparam component {
+  backgroundColor<<Global>> LightGray
+  backgroundColor<<InAdapter>> LightGreen
+  backgroundColor<<UseCase>> LightBlue
+  backgroundColor<<OutAdapter>> LightYellow
+}
+
+component VsCodeFormBuilderAdapter <<InAdapter>>
+component VsCodeFormPreviewAdapter <<InAdapter>>
+
+note top of [VsCodeFormBuilderAdapter]
+  main task is to ensure that the UI and
+  the underlying document are in sync
+end note
+
+component {
+    portin DisplayFormBuilderInPort
+    portin DisplayFormPreviewInPort
+    portin SetSettingInPort
+    portin GetDocumentInPort
+    portin SyncDocumentInPort
+
+    portout FormBuilderUiOutPort
+    portout FormPreviewUiOutPort
+    portout FormPreviewSettingsOutPort
+    portout DocumentOutPort
+
+    component DisplayFormBuilderUseCase <<UseCase>>
+    component DisplayFormPreviewUseCase <<UseCase>>
+    component SetSettingUseCase <<UseCase>>
+    component GetDocumentUseCase <<UseCase>>
+    component SyncDocumentUseCase <<UseCase>>
+}
+
+component VsCodeFormBuilderWebviewAdapter <<OutAdapter>>
+component VsCodeFormPreviewWebviewAdapter <<OutAdapter>>
+component VsCodeFormPreviewSettingsAdapter <<OutAdapter>>
+component VsCodeDocumentAdapter <<OutAdapter>>
+
+'InAdapter
+VsCodeFormBuilderAdapter --> DisplayFormBuilderInPort
+VsCodeFormBuilderAdapter --> DisplayFormPreviewInPort
+VsCodeFormBuilderAdapter --> SyncDocumentInPort
+VsCodeFormBuilderAdapter --> GetDocumentInPort
+
+VsCodeFormPreviewAdapter --> DisplayFormPreviewInPort
+VsCodeFormPreviewAdapter --> SetSettingInPort
+
+'UseCase
+DisplayFormBuilderUseCase -up-> DisplayFormBuilderInPort
+DisplayFormPreviewUseCase -up-> DisplayFormPreviewInPort
+SetSettingUseCase -up-> SetSettingInPort
+SyncDocumentUseCase -up-> SyncDocumentInPort
+GetDocumentUseCase -up-> GetDocumentInPort
+
+DisplayFormBuilderUseCase -down-> FormBuilderUiOutPort
+DisplayFormBuilderUseCase -down-> DocumentOutPort
+DisplayFormPreviewUseCase -down-> FormPreviewUiOutPort
+DisplayFormPreviewUseCase -down-> FormPreviewSettingsOutPort
+DisplayFormPreviewUseCase -down-> DocumentOutPort
+SetSettingUseCase -down-> FormPreviewSettingsOutPort
+SetSettingUseCase -down-> FormPreviewUiOutPort
+SyncDocumentUseCase -down-> DocumentOutPort
+GetDocumentUseCase -down-> DocumentOutPort
+
+VsCodeFormBuilderWebviewAdapter -up-> FormBuilderUiOutPort
+VsCodeFormPreviewWebviewAdapter -up-> FormPreviewUiOutPort
+VsCodeFormPreviewSettingsAdapter -up-> FormPreviewSettingsOutPort
+VsCodeDocumentAdapter -up-> DocumentOutPort
+@enduml

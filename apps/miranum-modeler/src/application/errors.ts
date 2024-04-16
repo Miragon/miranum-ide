@@ -27,9 +27,3 @@ export class UnableToCreateWatcherError extends Error {
         super(`Unable to create watcher for webview ${webviewId}. ${reason}`);
     }
 }
-
-export class NoChangesToApplyError extends Error {
-    constructor(editorId: string) {
-        super(`No changes to apply for ${editorId}.`);
-    }
-}

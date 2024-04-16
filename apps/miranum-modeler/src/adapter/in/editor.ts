@@ -10,7 +10,7 @@ import { container, inject, singleton } from "tsyringe";
 
 import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 import {
-    MiranumModelerCommand,
+    Command,
     SyncDocumentCommand,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
@@ -134,51 +134,47 @@ export class VsCodeBpmnEditorAdapter
     }
 
     protected subscribeToMessageEvent() {
-        subscribeToMessageEvent(
-            async (message: MiranumModelerCommand, editorId: string) => {
-                console.debug(
-                    `[${new Date(Date.now()).toJSON()}] Message received -> ${
-                        message.type
-                    }`,
-                );
-                switch (message.type) {
-                    case "GetBpmnFileCommand": {
-                        if (await this.displayModelerInPort.display(editorId)) {
-                            this.logMessageInPort.info("Bpmn modeler is ready");
-                        }
-                        break;
+        subscribeToMessageEvent(async (message: Command, editorId: string) => {
+            console.debug(
+                `[${new Date(Date.now()).toJSON()}] Message received -> ${message.type}`,
+            );
+            switch (message.type) {
+                case "GetBpmnFileCommand": {
+                    if (await this.displayModelerInPort.display(editorId)) {
+                        this.logMessageInPort.info("Bpmn modeler is ready");
                     }
-                    case "GetFormKeysCommand": {
-                        this.setFormKeysInPort.set(editorId);
-                        break;
-                    }
-                    case "GetElementTemplatesCommand": {
-                        this.setElementTemplatesInPort.set(editorId);
-                        break;
-                    }
-                    case "GetBpmnModelerSettingCommand": {
-                        this.setBpmnModelerSettingsInPort.set(editorId);
-                        break;
-                    }
-                    case "SyncDocumentCommand": {
-                        this.isChangeDocumentEventBlocked = true;
-                        console.debug("SyncDocumentCommand -> blocked");
-                        await this.syncDocumentInPort.sync(
-                            editorId,
-                            (message as SyncDocumentCommand).content,
-                        );
-                        this.isChangeDocumentEventBlocked = false;
-                        console.debug("SyncDocumentCommand -> released");
-                        break;
-                    }
+                    break;
                 }
-                console.debug(
-                    `[${new Date(Date.now()).toJSON()}] Message processed -> ${
-                        message.type
-                    }`,
-                );
-            },
-        );
+                case "GetFormKeysCommand": {
+                    this.setFormKeysInPort.set(editorId);
+                    break;
+                }
+                case "GetElementTemplatesCommand": {
+                    this.setElementTemplatesInPort.set(editorId);
+                    break;
+                }
+                case "GetBpmnModelerSettingCommand": {
+                    this.setBpmnModelerSettingsInPort.set(editorId);
+                    break;
+                }
+                case "SyncDocumentCommand": {
+                    this.isChangeDocumentEventBlocked = true;
+                    console.debug("SyncDocumentCommand -> blocked");
+                    await this.syncDocumentInPort.sync(
+                        editorId,
+                        (message as SyncDocumentCommand).content,
+                    );
+                    this.isChangeDocumentEventBlocked = false;
+                    console.debug("SyncDocumentCommand -> released");
+                    break;
+                }
+            }
+            console.debug(
+                `[${new Date(Date.now()).toJSON()}] Message processed -> ${
+                    message.type
+                }`,
+            );
+        });
     }
 
     private subscribeToSettingChangeEvent() {
@@ -237,38 +233,34 @@ export class VsCodeDmnEditorAdapter
     }
 
     protected subscribeToMessageEvent() {
-        subscribeToMessageEvent(
-            async (message: MiranumModelerCommand, editorId: string) => {
-                console.debug(
-                    `[${new Date(Date.now()).toJSON()}] Message received -> ${
-                        message.type
-                    }`,
-                );
-                switch (message.type) {
-                    case "GetDmnFileCommand": {
-                        if (await this.displayModelerInPort.display(editorId)) {
-                            this.logMessageInPort.info("Dmn modeler is ready");
-                        }
-                        break;
+        subscribeToMessageEvent(async (message: Command, editorId: string) => {
+            console.debug(
+                `[${new Date(Date.now()).toJSON()}] Message received -> ${message.type}`,
+            );
+            switch (message.type) {
+                case "GetDmnFileCommand": {
+                    if (await this.displayModelerInPort.display(editorId)) {
+                        this.logMessageInPort.info("Dmn modeler is ready");
                     }
-                    case "SyncDocumentCommand": {
-                        this.isChangeDocumentEventBlocked = true;
-                        console.debug("SyncDocumentCommand -> blocked");
-                        await this.syncDocumentInPort.sync(
-                            editorId,
-                            (message as SyncDocumentCommand).content,
-                        );
-                        this.isChangeDocumentEventBlocked = false;
-                        console.debug("SyncDocumentCommand -> released");
-                        break;
-                    }
+                    break;
                 }
-                console.debug(
-                    `[${new Date(Date.now()).toJSON()}] Message processed -> ${
-                        message.type
-                    }`,
-                );
-            },
-        );
+                case "SyncDocumentCommand": {
+                    this.isChangeDocumentEventBlocked = true;
+                    console.debug("SyncDocumentCommand -> blocked");
+                    await this.syncDocumentInPort.sync(
+                        editorId,
+                        (message as SyncDocumentCommand).content,
+                    );
+                    this.isChangeDocumentEventBlocked = false;
+                    console.debug("SyncDocumentCommand -> released");
+                    break;
+                }
+            }
+            console.debug(
+                `[${new Date(Date.now()).toJSON()}] Message processed -> ${
+                    message.type
+                }`,
+            );
+        });
     }
 }
