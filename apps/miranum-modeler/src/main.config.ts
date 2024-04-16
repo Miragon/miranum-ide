@@ -82,7 +82,10 @@ export function config(): void {
 
 function configBpmnModeler(): void {
     // Primitives
-    container.register("BpmnModelerViewType", { useValue: "miranum-bpmn-modeler" });
+    container.register("BpmnModelerViewType", { useValue: "miranum-modeler.bpmn" });
+    container.register("BpmnModelerCounter", {
+        useValue: "miranum-modeler.openCustomEditors",
+    });
     container.register("C7ExecutionPlatformVersion", { useValue: "7.20.0" });
     container.register("C8ExecutionPlatformVersion", { useValue: "8.4.0" });
 
@@ -104,7 +107,7 @@ function configBpmnModeler(): void {
 
 function configDmnModeler(): void {
     // Primitives
-    container.register("DmnModelerViewType", { useValue: "miranum-dmn-modeler" });
+    container.register("DmnModelerViewType", { useValue: "miranum-modeler.dmn" });
 
     // Out Adapter
     container.register("DmnUiOutPort", VsCodeDmnWebviewAdapter);

@@ -51,8 +51,8 @@
   "contributes": {
     "customEditors": [
       {
-        "id": "miranum-bpmn-modeler",
-        "viewType": "miranum-bpmn-modeler",
+        "id": "miranum-modeler.bpmn",
+        "viewType": "miranum-modeler.bpmn",
         "displayName": "Miranum: BPMN Modeler",
         "selector": [
           {
@@ -62,8 +62,8 @@
         "priority": "default"
       },
       {
-        "id": "miranum-dmn-modeler",
-        "viewType": "miranum-dmn-modeler",
+        "id": "miranum-modeler.dmn",
+        "viewType": "miranum-modeler.dmn",
         "displayName": "Miranum: DMN Modeler",
         "selector": [
           {

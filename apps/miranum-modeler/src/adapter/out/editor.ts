@@ -64,9 +64,9 @@ export function createWebview(
     const webview = webviewPanel.webview;
     webview.options = { enableScripts: true };
 
-    if (viewType === "miranum-bpmn-modeler") {
+    if (viewType === container.resolve("BpmnModelerViewType")) {
         webview.html = bpmnEditorUi(webview, getContext().extensionUri);
-    } else if (viewType === "miranum-dmn-modeler") {
+    } else if (viewType === container.resolve("DmnModelerViewType")) {
         webview.html = dmnModelerHtml(webview, getContext().extensionUri);
     } else {
         throw new Error(`Unsupported file extension: ${viewType}`);
@@ -285,7 +285,7 @@ function disposeEditor(editorId: string, panel: WebviewPanel) {
 function updateActiveEditorCounter(counter: number) {
     commands.executeCommand(
         "setContext",
-        container.resolve("FormBuilderCounter"),
+        container.resolve("BpmnModelerCounter"),
         counter,
     );
 }
