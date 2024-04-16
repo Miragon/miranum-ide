@@ -76,12 +76,12 @@
     "commands": [
       {
         "command": "miranum-modeler.toggleTextEditor",
-        "title": "Miranum: Toggle Standard Text Editor",
+        "title": "Miranum Modeler: Toggle Standard Text Editor",
         "icon": "$(notebook-mimetype)"
       },
       {
         "command": "miranum-modeler.openLoggingConsole",
-        "title": "Miranum: Display Logging Information",
+        "title": "Miranum Modeler: Display Logging Information",
         "icon": "$(callstack-view-session)"
       }
     ],

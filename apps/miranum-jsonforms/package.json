@@ -48,9 +48,9 @@
     "contributes": {
         "customEditors": [
             {
-                "viewType": "jsonforms-builder",
-                "id": "jsonforms-builder",
-                "displayName": "Miranum Json Forms",
+                "viewType": "miranum-jsonforms.formBuilder",
+                "id": "miranum-jsonforms.formBuilder",
+                "displayName": "Miranum: JsonForms Editor",
                 "selector": [
                     {
                         "filenamePattern": "*.form.json"
@@ -61,68 +61,82 @@
         ],
         "commands": [
             {
-                "command": "jsonforms-renderer.togglePreview",
-                "title": "Miranum: Toggle Preview",
+                "command": "miranum-jsonforms.togglePreview",
+                "title": "Miranum JsonForm: Toggle Preview",
                 "icon": "$(notebook-render-output)"
             },
             {
-                "command": "jsonforms-builder.toggleTextEditor",
-                "title": "Miranum: Toggle Standard Text Editor",
+                "command": "miranum-jsonforms.toggleTextEditor",
+                "title": "Miranum JsonForm: Toggle Standard Text Editor",
                 "icon": "$(notebook-mimetype)"
             },
             {
-                "command": "jsonforms-builder.toggleLogger",
-                "title": "Miranum: Toggle Logging Information",
+                "command": "miranum-jsonforms.openLoggingConsole",
+                "title": "Miranum JsonForm: Display Logging Information",
                 "icon": "$(callstack-view-session)"
+            },
+            {
+              "command": "miranum-jsonforms.splitFormFile",
+              "title": "Miranum JsonForm: Split JsonForm file into schema and ui schema",
+              "icon": "$(file-text)"
             }
         ],
+        "configuration": {
+          "title": "MiranumJsonFormsEditor",
+          "properties": {
+            "miranumIDE.jsonforms.renderer": {
+              "type": "string",
+              "default": "vuetify",
+              "enum": [
+                "vuetify",
+                "vanilla"
+              ],
+              "markdownDescription": "Choose which renderer is used for the preview."
+            }
+          }
+        },
         "keybindings": [
             {
-                "command": "jsonforms-renderer.togglePreview",
+                "command": "miranum-jsonforms.togglePreview",
                 "key": "ctrl+shift+p",
-                "when": "jsonforms-builder.openCustomEditors > 0"
+                "when": "miranum-jsonforms.formBuilderCounter > 0"
             },
             {
-                "command": "jsonforms-builder.toggleTextEditor",
+                "command": "miranum-jsonforms.toggleTextEditor",
                 "key": "ctrl+shift+t",
-                "when": "jsonforms-builder.openCustomEditors > 0"
+                "when": "miranum-jsonforms.formBuilderCounter > 0"
             },
             {
-                "command": "jsonforms-builder.toggleLogger",
+                "command": "miranum-jsonforms.openLoggingConsole",
                 "key": "ctrl+shift+l",
-                "when": "jsonforms-builder.openCustomEditors > 0"
+                "when": "miranum-jsonforms.formBuilderCounter > 0"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
-                    "command": "jsonforms-renderer.togglePreview",
-                    "when": "jsonforms-builder.openCustomEditors > 0"
+                    "command": "miranum-jsonforms.togglePreview",
+                    "when": "miranum-jsonforms.formBuilderCounter > 0"
                 },
                 {
-                    "command": "jsonforms-builder.toggleTextEditor",
-                    "when": "jsonforms-builder.openCustomEditors > 0"
+                    "command": "miranum-jsonforms.toggleTextEditor",
+                    "when": "miranum-jsonforms.formBuilderCounter > 0"
                 },
                 {
-                    "command": "jsonforms-builder.toggleLogger",
-                    "when": "jsonforms-builder.openCustomEditors > 0"
+                    "command": "miranum-jsonforms.openLoggingConsole",
+                    "when": "miranum-jsonforms.formBuilderCounter > 0"
                 }
             ],
             "editor/title": [
                 {
-                    "command": "jsonforms-renderer.togglePreview",
+                    "command": "miranum-jsonforms.togglePreview",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
                 },
                 {
-                    "command": "jsonforms-builder.toggleTextEditor",
+                    "command": "miranum-jsonforms.toggleTextEditor",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
-                },
-                {
-                    "command": "jsonforms-builder.toggleLogger",
-                    "group": "navigation",
-                    "when": "activeWebviewPanelId == 'jsonforms-builder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
                 }
             ]
         }

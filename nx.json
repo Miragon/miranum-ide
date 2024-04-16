@@ -31,7 +31,18 @@
     "libsDir": "libs"
   },
   "defaultProject": "miranum-cli",
-  "plugins": [],
+  "plugins": [
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "previewTargetName": "preview",
+        "testTargetName": "test",
+        "serveTargetName": "serve",
+        "serveStaticTargetName": "serve-static"
+      }
+    }
+  ],
   "generators": {
     "@nx/web:application": {
       "style": "css",

@@ -2,8 +2,8 @@
     "schema": {
         "type": "object",
         "properties": {
-            "mytext": {
-                "type": "number"
+            "bar": {
+                "type": "string"
             }
         }
     },
@@ -12,7 +12,7 @@
         "elements": [
             {
                 "type": "Control",
-                "scope": "#/properties/mytext"
+                "scope": "#/properties/bar"
             }
         ]
     }

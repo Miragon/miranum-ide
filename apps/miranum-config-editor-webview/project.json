@@ -12,7 +12,7 @@
       "options": {
         "watch": true,
         "outputPath": "dist/apps/miranum-config-editor/miranum-config-editor-webview",
-        "configFile": "apps/miranum-config-editor-webview/vite.config.ts",
+        "configFile": "apps/miranum-config-editor-webview/vite.config.mts",
         "emptyOutDir": false
       },
       "configurations": {

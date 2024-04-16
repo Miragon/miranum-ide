@@ -39,9 +39,6 @@
       ],
       "@miranum-ide/vscode/shared/miranum-jsonforms": [
         "libs/vscode/shared/miranum-jsonforms/src/index.ts"
-      ],
-      "@miranum-ide/vscode/shared/miranum-modeler": [
-        "libs/vscode/shared/miranum-modeler/src/index.ts"
       ]
     }
   },

@@ -1,16 +1,16 @@
 /**
  * This module contains everything related to the vscode API.
  */
-import { JsonSchema, UISchemaElement } from "@jsonforms/core";
-import { WebviewApi } from "vscode-webview";
+import type { JsonSchema, UISchemaElement } from "@jsonforms/core";
+import type { WebviewApi } from "vscode-webview";
 
 import jsonSchema from "../assets/schema.json";
 import jsonUiSchema from "../assets/uischema.json";
 import jsonData from "../assets/data.json";
 import {
-    ConfigEditorData,
+    type ConfigEditorData,
     MessageType,
-    VscMessage,
+    type VscMessage,
 } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 export interface VscState {

@@ -86,17 +86,17 @@
           },
           {
             "glob": ".vscodeignore",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           },
           {
             "glob": "README.md",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           },
           {
             "glob": "CHANGELOG.md",
-            "input": ".",
+            "input": "apps/miranum-config-editor",
             "output": "/"
           }
         ]
@@ -128,7 +128,8 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/miranum-config-editor/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverageReporters": ["clover"]
       },
       "configurations": {
         "ci": {

@@ -1,6 +1,0 @@
-@import "./styles.css";
-
-.schemaTool {
-    @apply vsc-editor-fg
-    py-5
-}

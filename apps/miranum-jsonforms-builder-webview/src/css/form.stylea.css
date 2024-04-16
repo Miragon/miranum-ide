@@ -1,0 +1,302 @@
+@import "./styles.css";
+
+.styleA {
+    @apply bg-transparent;
+}
+
+.styleA label,
+.styleA label.label,
+.styleA label.label-element {
+    @apply vsc-editor-fg vsc-font-size tracking-wide
+    transition-colors;
+}
+
+.styleA label,
+.styleA label.label {
+    @apply pb-4;
+}
+
+.styleA label.label-element {
+    @apply mt-2
+    block pb-2
+    text-base;
+}
+
+.styleA .control:focus-within label,
+.styleA .control:focus-within label.label {
+    @apply vsc-inputOpt-active-fg;
+}
+
+/*
+    //extra
+    button
+    submit
+    image
+    reset
+    hidden
+*/
+
+.styleA input:not([type]),
+.styleA,
+input:where(
+        [type="text"],
+        [type="number"],
+        [type="email"],
+        [type="password"],
+        [type="url"],
+        [type="tel"],
+        [type="search"],
+        [type="xxx"],
+        [type="xxx"]
+    ),
+.styleA,
+input:where(
+        [type="date"],
+        [type="datetime-local"],
+        [type="month"],
+        [type="time"],
+        [type="week"]
+    ),
+.styleA input:where([type="file"], [type="range"], [type="color"]),
+.styleA select,
+.styleA textarea,
+.styleA .tagInput {
+    @apply vsc-input-bg vsc-input-fg
+    focus:vsc-inputOpt-active-fg
+    focus:vsc-inputOpt-active-bg
+
+    vsc-input-border
+    focus:vsc-inputOpt-active-border
+    block
+    w-full appearance-none
+
+    rounded-sm
+
+    border
+    bg-opacity-50
+    py-0.5
+
+    px-2 text-base
+    leading-6
+    outline-none
+
+    transition-colors  disabled:cursor-not-allowed;
+}
+
+.styleA select {
+    appearance: auto;
+    @apply p-0.5;
+}
+
+.styleA input:where([type="file"]) {
+    @apply m-0 p-0;
+}
+
+.styleA input:where([type="checkbox"], [type="radio"]) {
+    @apply m-2 ml-0 p-2 pl-0;
+}
+
+.styleA input:where([type="range"]) {
+    appearance: auto;
+    @apply p-0;
+}
+
+.styleA input:where([type="color"]) {
+    min-height: 40px;
+}
+
+.styleA textarea {
+    min-height: 10em;
+    @apply leading-normal;
+}
+
+.styleA .horizontal-layout,
+.styleA.horizontal-layout {
+    @apply flex w-full flex-row;
+}
+
+.styleA .horizontal-layout .horizontal-layout-item,
+.styleA.horizontal-layout .horizontal-layout-item {
+    @apply w-full;
+}
+
+.styleA.vertical-layout, /** root **/
+.styleA .vertical-layout {
+    @apply flex flex-col;
+}
+
+.styleA .horizontal-layout,
+.styleA.horizontal-layout,
+.styleA .vertical-layout,
+.styleA.vertical-layout /** root **/
+{
+    @apply gap-2;
+}
+
+/**
+*
+* Array List
+*
+*/
+.styleA fieldset.group,
+fieldset.styleA.group {
+    @apply border border-gray-300
+    p-2;
+}
+
+.styleA fieldset.group > legend,
+fieldset.styleA.group > legend {
+    @apply w-full
+    px-2;
+    color: var(--vscode-textLink-foreground);
+}
+
+.styleA fieldset.group .group-item,
+fieldset.styleA.group .group-item {
+    @apply vsc-editor-fg;
+}
+
+.styleA .control .description,
+.styleA .control .error {
+    @apply vsc-font-size-desc block h-2;
+}
+
+.styleA .control .description {
+    @apply vsc-editor-fg;
+}
+
+.styleA .control .error {
+    @apply vsc-editor-error-fg;
+}
+
+/**
+*
+* Array List
+*
+*/
+.styleA fieldset.array-list {
+    @apply flex flex-col
+    gap-2
+
+    border border-gray-300 p-2;
+}
+
+.styleA fieldset.array-list legend {
+    @apply flex
+    w-full flex-row-reverse
+    justify-between
+    px-2;
+}
+
+.styleA fieldset.array-list legend label {
+    @apply text-xs font-bold uppercase tracking-wide text-gray-400;
+}
+
+.styleA fieldset.array-list legend button {
+    @apply m-0 rounded-full
+    bg-gray-300
+
+    px-2
+    hover:bg-green-500;
+}
+
+.styleA fieldset.array-list .array-list-no-data {
+    /*@apply */
+}
+
+.styleA fieldset.array-list .array-list-item-wrapper {
+    @apply border
+    border-gray-300 p-0;
+}
+
+.styleA fieldset.array-list .array-list-item {
+    @apply p-0;
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar {
+    @apply flex items-center gap-1;
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar .array-list-item-label {
+    min-height: 22px;
+    @apply flex-grow
+    pl-2
+    text-black;
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar button {
+    line-height: unset;
+    @apply block
+    h-6 w-6
+
+    cursor-pointer
+
+    rounded-full
+    bg-transparent
+
+    text-xs
+    hover:bg-gray-400;
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar button.array-list-item-move-up {
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar button.array-list-item-move-down {
+}
+
+.styleA fieldset.array-list .array-list-item-toolbar button.array-list-item-delete {
+    @apply hover:bg-red-500;
+}
+
+.styleA fieldset.array-list .array-list-item-content {
+    @apply px-2;
+}
+
+.styleA .tabs {
+    padding: 4px;
+
+    @apply vsc-tab-border my-2
+    flex
+    rounded-lg
+    vsc-input-bg;
+}
+
+.styleA .tabs div {
+    margin-right: 5px;
+}
+
+.styleA .tabs button {
+    min-width: 100px;
+    @apply vsc-tab-fg vsc-tab-bg
+    vsc-tab-border rounded-lg border-solid border-2
+
+    border-transparent
+
+    py-1 px-2
+
+    transition-colors
+
+    hover:bg-gray-400
+
+    hover:bg-opacity-10
+    hover:text-gray-800
+    focus:outline-none;
+}
+
+.styleA .tabs button.selected {
+    @apply vsc-tab-active-fg
+    vsc-tab-active-border;
+}
+
+.styleA .tabs button:disabled {
+    @apply opacity-50
+    hover:bg-opacity-0;
+}
+
+article header {
+    color: var(--vscode-textLink-foreground);
+}
+
+article footer button {
+    @apply vsc-button;
+}

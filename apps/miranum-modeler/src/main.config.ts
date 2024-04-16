@@ -99,7 +99,7 @@ function configBpmnModeler(): void {
 
     // In Adapter
     container.register(VsCodeArtifactWatcherAdapter, VsCodeArtifactWatcherAdapter);
-    container.register(VsCodeBpmnEditorAdapter, VsCodeBpmnEditorAdapter); // ! ModelerAdapter is dependent on WebviewAdapter and ArtifactWatcherAdapter
+    container.register(VsCodeBpmnEditorAdapter, VsCodeBpmnEditorAdapter);
 }
 
 function configDmnModeler(): void {
