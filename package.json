@@ -16,7 +16,7 @@
     "@mdi/font": "^7.0.96",
     "@mdi/js": "^7.2.96",
     "@nx/cypress": "18.2.4",
-    "@nx/esbuild": "18.2.4",
+    "@nx/esbuild": "18.3.2",
     "@nx/eslint": "18.2.4",
     "@nx/eslint-plugin": "18.2.4",
     "@nx/jest": "18.2.4",
