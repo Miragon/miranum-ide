@@ -137,6 +137,10 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     @apply rounded bg-white shadow;
 }
 
+.mr-5 {
+    margin-right: 1.25rem;
+}
+
 .formbuilder nav {
     box-shadow: 0 8px 8px -8px rgb(30, 30, 30, 30%);
     z-index: 9;
