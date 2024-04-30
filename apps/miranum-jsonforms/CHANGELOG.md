@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2024-04-30
+
+### Fixed
+
+* Overlapping buttons in Horizontal Layout (#565)
+
 ## [0.5.9] - 2024-04-16
 
 ### Added
@@ -49,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Correction of tabs placement in preview (#59)
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10-vscode...HEAD
+[0.5.10]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.10-vscode
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
