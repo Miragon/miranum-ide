@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Overlapping buttons in Horizontal Layout (#565)
+* Overlapping buttons in Horizontal Layout (#583)
 
 ## [0.5.9] - 2024-04-16
 
