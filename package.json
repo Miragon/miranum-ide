@@ -130,7 +130,7 @@
     "tslib": "^2.6.2",
     "tsyringe": "^4.8.0",
     "uuid": "^9.0.1",
-    "vue": "^3.4.21",
+    "vue": "^3.4.26",
     "vue-json-pretty": "^2.4.0",
     "vuetify": "^3.5.9",
     "zeebe-bpmn-moddle": "^1.1.0"
