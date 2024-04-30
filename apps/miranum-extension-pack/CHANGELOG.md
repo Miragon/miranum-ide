@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2024-04-30
+
+### Fixed
+
+* **\[Miranum Jsonforms\]** Overlapping buttons in Horizontal Layout (#583)
+
 ## [0.5.9] - 2024-04-16
 
 ### Added
@@ -95,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **\[Miranum Console\]** Use a single webview when the user triggers the available commands (#125)
 
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10-vscode...HEAD
+[0.5.10]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.10-vscode
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
 [0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
 [0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode
