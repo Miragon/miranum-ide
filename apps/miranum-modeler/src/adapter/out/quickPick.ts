@@ -5,9 +5,9 @@ import { GetExecutionPlatformVersionOutPort } from "../../application/ports/out"
 
 @singleton()
 export class VsCodeQuickPickAdapter implements GetExecutionPlatformVersionOutPort {
-    async getExecutionPlatformVersion() {
-        const result = await window.showQuickPick(["Camunda 7", "Camunda 8"], {
-            placeHolder: "Select the execution platform version",
+    async getExecutionPlatformVersion(placeHolder: string, items: string[]) {
+        const result = await window.showQuickPick(items, {
+            placeHolder,
             onDidSelectItem: (item) => item,
         });
 
