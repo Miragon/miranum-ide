@@ -53,6 +53,8 @@ export interface DocumentOutPort extends EditorComponent {
      * @throws {Error} if editor is not set
      */
     write(content: string): Promise<boolean>;
+
+    save(): Promise<boolean>;
 }
 
 export interface CreateFileOutPort {

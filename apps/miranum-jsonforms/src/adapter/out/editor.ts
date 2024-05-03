@@ -179,8 +179,10 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         return getActiveEditor().document.uri.path;
     }
 
-    write(content: string): Promise<boolean> {
-        if (getActiveEditor().document.getText() === content) {
+    async write(content: string): Promise<boolean> {
+        const json = JSON.stringify(JSON.parse(content), null, 2);
+
+        if (getActiveEditor().document.getText() === json) {
             throw new NoChangesToApplyError(getActiveEditor().id);
         }
 
@@ -189,12 +191,16 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         edit.replace(
             getActiveEditor().document.uri,
             new Range(0, 0, getActiveEditor().document.lineCount, 0),
-            content,
+            json,
         );
 
         console.debug("write");
 
-        return Promise.resolve(workspace.applyEdit(edit));
+        return workspace.applyEdit(edit);
+    }
+
+    async save(): Promise<boolean> {
+        return getActiveEditor().document.save();
     }
 }
 

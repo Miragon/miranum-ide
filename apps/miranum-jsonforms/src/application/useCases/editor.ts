@@ -37,6 +37,14 @@ export class DisplayFormBuilderUseCase implements DisplayFormBuilderInPort {
         }
 
         try {
+            let jsonForm = this.documentOutPort.getContent();
+
+            if (!jsonForm) {
+                jsonForm = EMPTY_JSON_FORM;
+                await this.documentOutPort.write(jsonForm);
+                await this.documentOutPort.save();
+            }
+
             return await this.formBuilderUiOutPort.display(
                 editorId,
                 this.documentOutPort.getContent(),
@@ -104,8 +112,12 @@ export class DisplayFormPreviewUseCase implements DisplayFormPreviewInPort {
 
     async display(): Promise<boolean> {
         try {
-            const jsonForm = this.documentOutPort.getContent();
             const renderer = this.formPreviewSettingsOutPort.getRenderer();
+            let jsonForm = this.documentOutPort.getContent();
+
+            if (!jsonForm) {
+                jsonForm = EMPTY_JSON_FORM;
+            }
 
             return await this.formPreviewUiOutPort.display(jsonForm, renderer);
         } catch (error) {
@@ -149,3 +161,14 @@ export class SetSettingUseCase implements SetSettingInPort {
         }
     }
 }
+
+const EMPTY_JSON_FORM = `{
+    "schema": {
+        "type": "object",
+        "properties": {}
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": []
+    }
+}`;
