@@ -68,12 +68,13 @@ window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
 
     vscode.postMessage(new GetBpmnFileCommand());
-    vscode.postMessage(new GetFormKeysCommand());
-    vscode.postMessage(new GetElementTemplatesCommand());
-    vscode.postMessage(new GetBpmnModelerSettingCommand());
 
     const bpmnFileQuery = await bpmnFileResolver.wait();
     await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
+
+    vscode.postMessage(new GetFormKeysCommand());
+    vscode.postMessage(new GetElementTemplatesCommand());
+    vscode.postMessage(new GetBpmnModelerSettingCommand());
 
     const [formKeysQuery, elementTemplatesQuery, settingQuery] = await Promise.all([
         formKeysResolver.wait(),
