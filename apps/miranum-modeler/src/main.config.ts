@@ -38,6 +38,9 @@ import {
 
 export function config(): void {
     // Primitives
+    container.register("BpmnModelerCounter", {
+        useValue: "miranum-modeler.openCustomEditors",
+    });
     container.register("ToggleTextEditorCommand", {
         useValue: "miranum-modeler.toggleTextEditor",
     });
@@ -101,9 +104,6 @@ export function config(): void {
 function configBpmnModeler(): void {
     // Primitives
     container.register("BpmnModelerViewType", { useValue: "miranum-modeler.bpmn" });
-    container.register("BpmnModelerCounter", {
-        useValue: "miranum-modeler.openCustomEditors",
-    });
     container.register("C7ExecutionPlatformVersion", { useValue: "7.20.0" });
     container.register("C8ExecutionPlatformVersion", { useValue: "8.4.0" });
 

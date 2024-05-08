@@ -285,9 +285,6 @@ function disposeEditor(editorId: string, panel: WebviewPanel) {
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand(
-        "setContext",
-        container.resolve("BpmnModelerCounter"),
-        counter,
-    );
+    const command = container.resolve("BpmnModelerCounter");
+    commands.executeCommand("setContext", command, counter);
 }

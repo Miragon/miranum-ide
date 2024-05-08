@@ -296,7 +296,8 @@ function getPreview(): WebviewPanel {
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand("setContext", `miranum-modeler.openCustomEditors`, counter);
+    const command = container.resolve("FormEditorCounter");
+    commands.executeCommand("setContext", command, counter);
 }
 
 function disposeEditor(editorId: string, panel: WebviewPanel) {
