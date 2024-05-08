@@ -1,5 +1,3 @@
-import { singleton } from "tsyringe";
-
 import { VsCodeLogger, VsCodeTextEditor } from "@miranum-ide/vscode/miranum-vscode";
 
 import {
@@ -10,7 +8,6 @@ import {
 } from "../../application/ports/out";
 import { window } from "vscode";
 
-@singleton()
 export class VsCodeDisplayMessageAdapter implements DisplayMessageOutPort {
     info(message: string): void {
         window.showInformationMessage(message);
@@ -21,7 +18,6 @@ export class VsCodeDisplayMessageAdapter implements DisplayMessageOutPort {
     }
 }
 
-@singleton()
 export class VsCodeTextEditorAdapter implements TextEditorOutPort {
     private readonly textEditor = new VsCodeTextEditor();
 
@@ -30,7 +26,6 @@ export class VsCodeTextEditorAdapter implements TextEditorOutPort {
     }
 }
 
-@singleton()
 export class VsCodeLoggerAdapter
     implements OpenLoggingConsoleOutPort, LogMessageOutPort
 {

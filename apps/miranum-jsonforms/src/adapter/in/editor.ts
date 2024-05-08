@@ -19,7 +19,7 @@ import {
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
 import {
-    DisplayFormBuilderInPort,
+    DisplayFormEditorInPort,
     DisplayFormPreviewInPort,
     DisplayMessageInPort,
     GetDocumentInPort,
@@ -51,70 +51,99 @@ export class VsCodeFormPreviewAdapter {
         private readonly displayFormPreviewInPort: DisplayFormPreviewInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
-    ) {
-        this.create();
-    }
+    ) {}
 
-    toggle(): boolean {
+    async toggle(): Promise<boolean> {
         try {
             if (this.panel?.visible) {
                 this.panel.dispose();
             } else {
-                this.create();
+                await this.create();
             }
         } catch (error) {
             if ((error as Error).message === "Webview is disposed") {
-                this.create();
+                await this.create();
             }
         }
         return true;
     }
 
-    private create() {
-        this.panel = createPreview(this.viewType);
+    async create() {
+        if (this.panel) {
+            this.logMessageInPort.info("(Preview) The preview is already open.");
+            return;
+        }
 
-        this.subscribeToMessageEvent();
-        this.subscribeToSettingChangeEvent();
+        try {
+            this.panel = createPreview(this.viewType);
 
-        this.panel.onDidDispose(() => {
-            this.disposables.forEach((disposable) => disposable.dispose());
-        });
+            this.subscribeToMessageEvent();
+            this.subscribeToSettingChangeEvent();
+
+            this.panel.onDidDispose(() => {
+                this.disposables.forEach((disposable) => disposable.dispose());
+                this.panel = undefined;
+            });
+
+            await Promise.all([
+                this.setSettingInPort.setSetting(),
+                this.displayFormPreviewInPort.display(),
+            ]);
+        } catch (error) {
+            this.logMessageInPort.error(error as Error);
+        }
     }
 
     private subscribeToMessageEvent() {
         this.panel?.webview.onDidReceiveMessage(async (message: Command) => {
-            console.debug(
-                `[${new Date(Date.now()).toJSON()}] (Preview) Message received -> ${message.type}`,
-            );
-            switch (message.type) {
-                case "GetJsonFormCommand": {
-                    this.displayFormPreviewInPort.display();
-                    break;
+            try {
+                console.debug(
+                    `[${new Date(Date.now()).toJSON()}] (Preview) Message received -> ${message.type}`,
+                );
+                switch (message.type) {
+                    case "GetJsonFormCommand": {
+                        await this.displayFormPreviewInPort.display();
+                        break;
+                    }
+                    case "GetSettingCommand": {
+                        await this.setSettingInPort.setSetting();
+                        break;
+                    }
+                    case "LogInfoCommand": {
+                        this.logMessageInPort.info(
+                            `(Preview) ${(message as LogInfoCommand).message}`,
+                        );
+                        break;
+                    }
+                    case "LogErrorCommand": {
+                        this.logMessageInPort.error(
+                            new Error(
+                                `(Preview) ${(message as LogErrorCommand).message}`,
+                            ),
+                        );
+                        break;
+                    }
                 }
-                case "LogInfoCommand": {
-                    this.logMessageInPort.info((message as LogInfoCommand).message);
-                    break;
-                }
-                case "LogErrorCommand": {
-                    this.logMessageInPort.error(
-                        new Error((message as LogErrorCommand).message),
-                    );
-                    break;
-                }
+                console.debug(
+                    `[${new Date(Date.now()).toJSON()}] (Preview) Message processed -> ${
+                        message.type
+                    }`,
+                );
+            } catch (error) {
+                this.logMessageInPort.error(error as Error);
             }
-            console.debug(
-                `[${new Date(Date.now()).toJSON()}] (Preview) Message processed -> ${
-                    message.type
-                }`,
-            );
         });
     }
 
     private subscribeToSettingChangeEvent() {
         workspace.onDidChangeConfiguration(
-            (event) => {
-                if (event.affectsConfiguration("miranumIDE.jsonforms.renderer")) {
-                    this.setSettingInPort.setSetting();
+            async (event) => {
+                try {
+                    if (event.affectsConfiguration("miranumIDE.jsonforms.renderer")) {
+                        await this.setSettingInPort.setSetting();
+                    }
+                } catch (error) {
+                    this.logMessageInPort.error(error as Error);
                 }
             },
             null,
@@ -124,18 +153,18 @@ export class VsCodeFormPreviewAdapter {
 }
 
 @singleton()
-export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
+export class VsCodeFormEditorAdapter implements CustomTextEditorProvider {
     private readonly extension = "form.json";
 
     private isChangeDocumentEventBlocked = false;
 
     constructor(
-        @inject("FormBuilderViewType")
+        @inject("FormEditorViewType")
         private readonly viewType: string,
-        @inject("DisplayFormBuilderInPort")
-        protected readonly displayFormBuilderInPort: DisplayFormBuilderInPort,
+        @inject("DisplayFormEditorInPort")
+        protected readonly displayFormEditorInPort: DisplayFormEditorInPort,
         @inject("DisplayFormPreviewInPort")
-        protected readonly displayFormPreviewInPort: DisplayFormPreviewInPort,
+        private readonly displayFormPreviewInPort: DisplayFormPreviewInPort,
         @inject("SyncDocumentInPort")
         private readonly syncDocumentInPort: SyncDocumentInPort,
         @inject("GetDocumentInPort")
@@ -144,13 +173,14 @@ export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
         private readonly displayMessageInPort: DisplayMessageInPort,
         @inject("LogMessageInPort")
         private readonly logMessageInPort: LogMessageInPort,
+        private readonly formPreviewAdapter: VsCodeFormPreviewAdapter,
     ) {
-        const formBuilder = window.registerCustomEditorProvider(
-            container.resolve("FormBuilderViewType"),
+        const formEditor = window.registerCustomEditorProvider(
+            container.resolve("FormEditorViewType"),
             this,
         );
 
-        getContext().subscriptions.push(formBuilder);
+        getContext().subscriptions.push(formEditor);
     }
 
     async resolveCustomTextEditor(
@@ -161,7 +191,7 @@ export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
         try {
             const editorId = document.uri.path;
             createEditor(this.viewType, editorId, webviewPanel, document);
-            this.displayFormPreviewInPort.display();
+            await this.formPreviewAdapter.create();
 
             // Subscribe to events
             this.subscribeToMessageEvent();
@@ -169,67 +199,86 @@ export class VsCodeFormBuilderAdapter implements CustomTextEditorProvider {
             this.subscribeToTabChangeEvent();
             this.subscribeToDisposeEvent();
         } catch (error) {
-            this.displayMessageInPort.error((error as Error).message);
-            this.logMessageInPort.error(error as Error);
+            const e = error as Error;
+            this.displayMessageInPort.error(e.message);
+            this.logMessageInPort.error(e);
         }
     }
 
     protected subscribeToMessageEvent() {
         subscribeToMessageEvent(async (message: Command, editorId: string) => {
-            console.debug(
-                `[${new Date(Date.now()).toJSON()}] (Builder) Message received -> ${message.type}`,
-            );
-            switch (message.type) {
-                case "GetJsonFormCommand": {
-                    this.displayFormBuilderInPort.display(editorId);
-                    break;
+            try {
+                console.debug(
+                    `[${new Date(Date.now()).toJSON()}] (Editor) Message received -> ${message.type}`,
+                );
+                switch (message.type) {
+                    case "GetJsonFormCommand": {
+                        await this.displayFormEditorInPort.display(editorId);
+                        break;
+                    }
+                    case "SyncDocumentCommand": {
+                        this.isChangeDocumentEventBlocked = true;
+                        console.debug("(Editor) SyncDocumentCommand -> blocked");
+                        const json = JSON.stringify(
+                            JSON.parse((message as SyncDocumentCommand).content),
+                            null,
+                            4,
+                        );
+                        await this.syncDocumentInPort.sync(editorId, json);
+                        break;
+                    }
+                    case "LogInfoCommand": {
+                        this.logMessageInPort.info(
+                            `(Editor) ${(message as LogInfoCommand).message}`,
+                        );
+                        break;
+                    }
+                    case "LogErrorCommand": {
+                        this.logMessageInPort.error(
+                            new Error(
+                                `(Editor) ${(message as LogErrorCommand).message}`,
+                            ),
+                        );
+                        break;
+                    }
                 }
-                case "SyncDocumentCommand": {
-                    this.isChangeDocumentEventBlocked = true;
-                    console.debug("(Builder) SyncDocumentCommand -> blocked");
-                    const json = JSON.stringify(
-                        JSON.parse((message as SyncDocumentCommand).content),
-                        null,
-                        4,
-                    );
-                    await this.syncDocumentInPort.sync(editorId, json);
-                    this.isChangeDocumentEventBlocked = false;
-                    console.debug("(Builder) SyncDocumentCommand -> released");
-                    break;
-                }
-                case "LogInfoCommand": {
-                    this.logMessageInPort.info((message as LogInfoCommand).message);
-                    break;
-                }
-                case "LogErrorCommand": {
-                    this.logMessageInPort.error(
-                        new Error((message as LogErrorCommand).message),
-                    );
-                    break;
-                }
+                console.debug(
+                    `[${new Date(Date.now()).toJSON()}] (Editor) Message processed -> ${
+                        message.type
+                    }`,
+                );
+            } catch (error) {
+                this.logMessageInPort.error(error as Error);
             }
-            console.debug(
-                `[${new Date(Date.now()).toJSON()}] (Builder) Message processed -> ${
-                    message.type
-                }`,
-            );
         });
     }
 
     protected subscribeToDocumentChangeEvent() {
-        subscribeToDocumentChangeEvent((event: TextDocumentChangeEvent) => {
+        subscribeToDocumentChangeEvent(async (event: TextDocumentChangeEvent) => {
             const documentPath = this.getDocumentUseCase.getPath();
-            console.debug("(Builder) OnDidChangeTextDocument -> trigger");
-            this.displayFormPreviewInPort.display();
-            if (
-                event.contentChanges.length !== 0 &&
-                documentPath.substring(documentPath.indexOf(".") + 1) ===
-                    this.extension &&
-                documentPath === event.document.uri.path &&
-                !this.isChangeDocumentEventBlocked
-            ) {
-                console.debug("(Builder) OnDidChangeTextDocument -> send");
-                this.displayFormBuilderInPort.display(event.document.uri.path);
+            console.debug("(Editor) OnDidChangeTextDocument -> trigger");
+            try {
+                if (
+                    event.contentChanges.length !== 0 &&
+                    event.document.uri.path === documentPath &&
+                    documentPath.substring(documentPath.indexOf(".") + 1) ===
+                        this.extension
+                ) {
+                    if (!this.isChangeDocumentEventBlocked) {
+                        console.debug("(Editor) OnDidChangeTextDocument -> send");
+                        await this.displayFormEditorInPort.display(
+                            event.document.uri.path,
+                        );
+                    }
+
+                    await this.displayFormPreviewInPort.display();
+                }
+
+                this.isChangeDocumentEventBlocked = false;
+                console.debug("(Editor) SyncDocumentCommand -> released");
+            } catch (error) {
+                this.logMessageInPort.error(new Error((error as Error).message));
+                return;
             }
         });
     }

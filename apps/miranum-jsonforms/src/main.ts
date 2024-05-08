@@ -6,7 +6,7 @@ import { setContext } from "@miranum-ide/vscode/miranum-vscode";
 import { config } from "./main.config";
 import { container } from "tsyringe";
 import {
-    VsCodeFormBuilderAdapter,
+    VsCodeFormEditorAdapter,
     VsCodeOpenLoggingConsoleCommand,
     VsCodeSplitFormFileCommand,
     VsCodeToggleFormPreviewCommand,
@@ -27,5 +27,5 @@ export function activate(context: ExtensionContext) {
     container.resolve(VsCodeOpenLoggingConsoleCommand);
 
     // 4. Start the application
-    container.resolve(VsCodeFormBuilderAdapter);
+    container.resolve(VsCodeFormEditorAdapter);
 }

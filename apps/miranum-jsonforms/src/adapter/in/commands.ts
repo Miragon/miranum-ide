@@ -50,8 +50,8 @@ export class VsCodeToggleFormPreviewCommand {
         );
     }
 
-    toggle() {
-        this.formPreviewAdapter.toggle();
+    async toggle() {
+        await this.formPreviewAdapter.toggle();
     }
 }
 
@@ -73,8 +73,8 @@ export class VsCodeToggleTextEditorCommand {
         );
     }
 
-    toggle() {
-        this.toggleTextEditorInPort.toggle();
+    async toggle() {
+        await this.toggleTextEditorInPort.toggle();
     }
 }
 

@@ -1,4 +1,4 @@
-export interface DisplayFormBuilderInPort {
+export interface DisplayFormEditorInPort {
     display(editorId: string): Promise<boolean>;
 }
 

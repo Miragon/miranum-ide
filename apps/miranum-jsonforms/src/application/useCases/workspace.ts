@@ -1,14 +1,9 @@
-import { inject, singleton } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 import { SplitFileInPort } from "../ports/in";
-import {
-    CreateFileOutPort,
-    DisplayMessageOutPort,
-    DocumentOutPort,
-    LogMessageOutPort,
-} from "../ports/out";
+import { CreateFileOutPort, DisplayMessageOutPort, DocumentOutPort } from "../ports/out";
 
-@singleton()
+@injectable()
 export class SplitJsonFormUseCase implements SplitFileInPort {
     constructor(
         @inject("DocumentOutPort")
@@ -17,8 +12,6 @@ export class SplitJsonFormUseCase implements SplitFileInPort {
         private readonly createFileOutPort: CreateFileOutPort,
         @inject("DisplayMessageOutPort")
         protected readonly displayMessageOutPort: DisplayMessageOutPort,
-        @inject("LogMessageOutPort")
-        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async split(): Promise<boolean> {
@@ -30,32 +23,15 @@ export class SplitJsonFormUseCase implements SplitFileInPort {
             fileName = new Date(Date.now()).toJSON();
         }
 
-        try {
-            const jsonFormContent = JSON.parse(this.documentOutPort.getContent());
-            const schema = JSON.stringify(jsonFormContent.schema, null, 4);
-            const uischema = JSON.stringify(jsonFormContent.uischema, null, 4);
+        const jsonFormContent = JSON.parse(this.documentOutPort.getContent());
+        const schema = JSON.stringify(jsonFormContent.schema, null, 4);
+        const uischema = JSON.stringify(jsonFormContent.uischema, null, 4);
 
-            await Promise.all([
-                this.createFileOutPort.write(schema, `${dir}/${fileName}.schema.json`),
-                this.createFileOutPort.write(
-                    uischema,
-                    `${dir}/${fileName}.uischema.json`,
-                ),
-            ]);
+        await Promise.all([
+            this.createFileOutPort.write(schema, `${dir}/${fileName}.schema.json`),
+            this.createFileOutPort.write(uischema, `${dir}/${fileName}.uischema.json`),
+        ]);
 
-            return true;
-        } catch (error) {
-            this.handleError(error as Error);
-            return false;
-        }
-    }
-
-    private handleError(error: Error) {
-        this.logMessageOutPort.error(error as Error);
-        this.displayMessageOutPort.error(
-            `A problem occurred while trying to split the JsonForm file. ${
-                (error as Error).message ?? error
-            }`,
-        );
+        return true;
     }
 }

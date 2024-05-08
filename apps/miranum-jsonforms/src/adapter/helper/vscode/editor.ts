@@ -7,7 +7,7 @@ import { getNonce } from "@miranum-ide/vscode/miranum-vscode";
 const formBuilderProjectPath = "miranum-jsonforms-builder-webview";
 const formPreviewProjectPath = "miranum-jsonforms-preview-webview";
 
-export function formBuilderUi(webview: Webview, extensionUri: Uri): string {
+export function formEditorUi(webview: Webview, extensionUri: Uri): string {
     const baseUri = Uri.joinPath(extensionUri, formBuilderProjectPath);
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));

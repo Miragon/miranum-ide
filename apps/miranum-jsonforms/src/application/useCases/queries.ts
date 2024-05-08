@@ -1,4 +1,4 @@
-import { inject, singleton } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 import {
     DisplayMessageInPort,
@@ -15,7 +15,7 @@ import {
     TextEditorOutPort,
 } from "../ports/out";
 
-@singleton()
+@injectable()
 export class GetDocumentUseCase implements GetDocumentInPort {
     constructor(
         @inject("DocumentOutPort")
@@ -27,7 +27,7 @@ export class GetDocumentUseCase implements GetDocumentInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
     constructor(
         @inject("GetDocumentInPort")
@@ -42,7 +42,7 @@ export class ToggleTextEditorUseCase implements ToggleTextEditorInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
     constructor(
         @inject("OpenLoggingConsoleOutPort")
@@ -54,7 +54,7 @@ export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class DisplayMessageUseCase implements DisplayMessageInPort {
     constructor(
         @inject("DisplayMessageOutPort")
@@ -70,7 +70,7 @@ export class DisplayMessageUseCase implements DisplayMessageInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class LogMessageUseCase implements LogMessageInPort {
     constructor(
         @inject("LogMessageOutPort")
