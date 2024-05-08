@@ -1,5 +1,4 @@
 import { FileType, Uri, workspace } from "vscode";
-import { singleton } from "tsyringe";
 import {
     BpmnModelerSettingsOutPort,
     FileSystemOutPort,
@@ -9,7 +8,6 @@ import { FileNotFound, NoWorkspaceFolderFoundError } from "../../application/err
 
 const fs = workspace.fs;
 
-@singleton()
 export class VsCodeWorkspaceAdapter implements WorkspaceOutPort {
     getWorkspaceFolderForDocument(document: string): string {
         const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(document));
@@ -32,7 +30,6 @@ export class VsCodeWorkspaceAdapter implements WorkspaceOutPort {
     }
 }
 
-@singleton()
 export class VsCodeReadAdapter implements FileSystemOutPort {
     async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
         const dir = await fs.readDirectory(Uri.file(path));
@@ -71,7 +68,6 @@ export class VsCodeReadAdapter implements FileSystemOutPort {
     }
 }
 
-@singleton()
 export class VsCodeBpmnModelerSettingsAdapter implements BpmnModelerSettingsOutPort {
     getAlignToOrigin(): boolean {
         const setting = workspace

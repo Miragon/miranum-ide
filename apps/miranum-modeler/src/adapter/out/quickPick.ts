@@ -1,9 +1,7 @@
 import { window } from "vscode";
-import { singleton } from "tsyringe";
 
 import { GetExecutionPlatformVersionOutPort } from "../../application/ports/out";
 
-@singleton()
 export class VsCodeQuickPickAdapter implements GetExecutionPlatformVersionOutPort {
     async getExecutionPlatformVersion(placeHolder: string, items: string[]) {
         const result = await window.showQuickPick(items, {

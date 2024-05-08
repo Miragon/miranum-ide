@@ -1,12 +1,4 @@
-import { container } from "tsyringe";
-
-import {
-    VsCodeArtifactWatcherAdapter,
-    VsCodeBpmnEditorAdapter,
-    VsCodeDmnEditorAdapter,
-    VsCodeOpenLoggingConsoleCommand,
-    VsCodeToggleTextEditorCommand,
-} from "./adapter/in";
+import { container, Lifecycle } from "tsyringe";
 import {
     DisplayBpmnModelerUseCase,
     DisplayDmnModelerUseCase,
@@ -54,27 +46,53 @@ export function config(): void {
     });
 
     // Out Adapter
-    container.register("WorkspaceOutPort", VsCodeWorkspaceAdapter);
-    container.register("DocumentOutPort", VsCodeDocumentAdapter);
-    container.register("FileSystemOutPort", VsCodeReadAdapter);
-    container.register("DisplayMessageOutPort", VsCodeDisplayMessageAdapter);
-    container.register("TextEditorOutPort", VsCodeTextEditorAdapter);
-    container.register("OpenLoggingConsoleOutPort", VsCodeLoggerAdapter);
-    container.register("LogMessageOutPort", VsCodeLoggerAdapter);
+    container.register("WorkspaceOutPort", VsCodeWorkspaceAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("DocumentOutPort", VsCodeDocumentAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("FileSystemOutPort", VsCodeReadAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("DisplayMessageOutPort", VsCodeDisplayMessageAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("TextEditorOutPort", VsCodeTextEditorAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("OpenLoggingConsoleOutPort", VsCodeLoggerAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("LogMessageOutPort", VsCodeLoggerAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     // Use Cases
-    container.register("GetMiranumConfigInPort", GetMiranumConfigUseCase);
-    container.register("GetWorkspaceItemInPort", GetWorkspaceItemUseCase);
-    container.register("GetDocumentInPort", GetDocumentUseCase);
-    container.register("SyncDocumentInPort", SyncDocumentUseCase);
-    container.register("DisplayMessageInPort", DisplayMessageUseCase);
-    container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase);
-    container.register("OpenLoggingConsoleInPort", OpenLoggingConsoleUseCase);
-    container.register("LogMessageInPort", LogMessageUseCase);
-
-    // In Adapter
-    container.register(VsCodeToggleTextEditorCommand, VsCodeToggleTextEditorCommand);
-    container.register(VsCodeOpenLoggingConsoleCommand, VsCodeOpenLoggingConsoleCommand);
+    container.register("GetMiranumConfigInPort", GetMiranumConfigUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("GetWorkspaceItemInPort", GetWorkspaceItemUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("GetDocumentInPort", GetDocumentUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SyncDocumentInPort", SyncDocumentUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("DisplayMessageInPort", DisplayMessageUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("OpenLoggingConsoleInPort", OpenLoggingConsoleUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("LogMessageInPort", LogMessageUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     configBpmnModeler();
     configDmnModeler();
@@ -90,19 +108,29 @@ function configBpmnModeler(): void {
     container.register("C8ExecutionPlatformVersion", { useValue: "8.4.0" });
 
     // Out Adapter
-    container.register("BpmnUiOutPort", VsCodeBpmnWebviewAdapter);
-    container.register("BpmnModelerSettingsOutPort", VsCodeBpmnModelerSettingsAdapter);
-    container.register("GetExecutionPlatformVersionOutPort", VsCodeQuickPickAdapter);
+    container.register("BpmnUiOutPort", VsCodeBpmnWebviewAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("BpmnModelerSettingsOutPort", VsCodeBpmnModelerSettingsAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("GetExecutionPlatformVersionOutPort", VsCodeQuickPickAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     // Use Cases
-    container.register("DisplayBpmnModelerInPort", DisplayBpmnModelerUseCase);
-    container.register("SetFormKeysInPort", SetFormKeysUseCase);
-    container.register("SetElementTemplatesInPort", SetElementTemplatesUseCase);
-    container.register("SetBpmnModelerSettingsInPort", SetBpmnModelerSettingsUseCase);
-
-    // In Adapter
-    container.register(VsCodeArtifactWatcherAdapter, VsCodeArtifactWatcherAdapter);
-    container.register(VsCodeBpmnEditorAdapter, VsCodeBpmnEditorAdapter);
+    container.register("DisplayBpmnModelerInPort", DisplayBpmnModelerUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SetFormKeysInPort", SetFormKeysUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SetElementTemplatesInPort", SetElementTemplatesUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SetBpmnModelerSettingsInPort", SetBpmnModelerSettingsUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
 }
 
 function configDmnModeler(): void {
@@ -110,11 +138,12 @@ function configDmnModeler(): void {
     container.register("DmnModelerViewType", { useValue: "miranum-modeler.dmn" });
 
     // Out Adapter
-    container.register("DmnUiOutPort", VsCodeDmnWebviewAdapter);
+    container.register("DmnUiOutPort", VsCodeDmnWebviewAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     // Use Cases
-    container.register("DisplayDmnModelerInPort", DisplayDmnModelerUseCase);
-
-    // In Adapter
-    container.register(VsCodeDmnEditorAdapter, VsCodeDmnEditorAdapter); // ! ModelerAdapter is dependent on WebviewAdapter
+    container.register("DisplayDmnModelerInPort", DisplayDmnModelerUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
 }

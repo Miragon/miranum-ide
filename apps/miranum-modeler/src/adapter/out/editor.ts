@@ -9,9 +9,9 @@ import {
     workspace,
     WorkspaceEdit,
 } from "vscode";
-import { container, singleton } from "tsyringe";
+import { container } from "tsyringe";
 
-import { getContext, NoChangesToApplyError } from "@miranum-ide/vscode/miranum-vscode";
+import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 import {
     BpmnFileQuery,
     BpmnModelerSettingQuery,
@@ -152,7 +152,6 @@ export function subscribeToTabChangeEvent() {
     });
 }
 
-@singleton()
 export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -188,7 +187,6 @@ export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     }
 }
 
-@singleton()
 export class VsCodeDmnWebviewAdapter implements DmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -200,7 +198,6 @@ export class VsCodeDmnWebviewAdapter implements DmnUiOutPort {
     }
 }
 
-@singleton()
 export class VsCodeDocumentAdapter implements DocumentOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -216,7 +213,8 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
 
     async write(content: string): Promise<boolean> {
         if (getActiveEditor().document.getText() === content) {
-            throw new NoChangesToApplyError(getActiveEditor().id);
+            // throw new NoChangesToApplyError(getActiveEditor().id);
+            return false;
         }
 
         const edit = new WorkspaceEdit();

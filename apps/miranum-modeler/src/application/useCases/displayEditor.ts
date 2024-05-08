@@ -1,4 +1,4 @@
-import { inject, singleton } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
@@ -26,7 +26,7 @@ import {
     NoWorkspaceFolderFoundError,
 } from "../errors";
 
-@singleton()
+@injectable()
 export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("C7ExecutionPlatformVersion")
@@ -159,7 +159,7 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("DocumentOutPort")
@@ -301,7 +301,7 @@ abstract class GetArtifact {
     }
 }
 
-@singleton()
+@injectable()
 export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort {
     protected readonly type = "form";
 
@@ -396,7 +396,7 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
     }
 }
 
-@singleton()
+@injectable()
 export class SetElementTemplatesUseCase
     extends GetArtifact
     implements SetArtifactInPort
@@ -473,7 +473,7 @@ export class SetElementTemplatesUseCase
     }
 }
 
-@singleton()
+@injectable()
 export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
     constructor(
         @inject("BpmnUiOutPort")
