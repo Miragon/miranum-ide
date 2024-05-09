@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2024-05-09
+
+### Added
+
+* **\[Miranum Modeler\]** Ask for the execution platform when a new diagram is created (#589)
+
+### Fixed
+
+* **\[Miranum Modeler\]** Flatten the element templates if given in an array (#589)
+* **\[Miranum Modeler\]** Minor bug fixes (#589)
+* **\[Miranum Jsonforms\]** Minor bug fixes (#589)
+ 
 ## [0.5.10] - 2024-04-30
 
 ### Fixed
@@ -101,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **\[Miranum Console\]** Use a single webview when the user triggers the available commands (#125)
 
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11-vscode...HEAD
+[0.5.11]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10...release/v0.5.11-vscode
 [0.5.10]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.10-vscode
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
 [0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
