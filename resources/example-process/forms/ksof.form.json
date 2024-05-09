@@ -1,0 +1,33 @@
+{
+  "schema": {
+    "type": "object",
+    "properties": {
+      "test": {
+        "type": "string"
+      },
+      "myText": {
+        "type": "string"
+      },
+      "control1": {
+        "type": "string"
+      }
+    }
+  },
+  "uischema": {
+    "type": "VerticalLayout",
+    "elements": [
+      {
+        "type": "Control",
+        "scope": "#/properties/myText"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/control1"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/test"
+      }
+    ]
+  }
+}
