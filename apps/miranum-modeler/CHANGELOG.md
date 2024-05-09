@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2024-05-09
+
+### Added
+
+* Ask for the execution platform when a new diagram is created (#589)
+
+### Fixed
+
+* Flatten the element templates if given in an array (#589)
+* Minor bug fixes (#589)
+
 ## [0.5.9] - 2024-04-16
 
 ### Fixed
@@ -80,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11-vscode...HEAD
+[0.5.11]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.11-vscode
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
 [0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
 [0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode

@@ -9,9 +9,9 @@ import {
     workspace,
     WorkspaceEdit,
 } from "vscode";
-import { container, singleton } from "tsyringe";
+import { container } from "tsyringe";
 
-import { getContext, NoChangesToApplyError } from "@miranum-ide/vscode/miranum-vscode";
+import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 import {
     BpmnFileQuery,
     BpmnModelerSettingQuery,
@@ -152,7 +152,6 @@ export function subscribeToTabChangeEvent() {
     });
 }
 
-@singleton()
 export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -188,7 +187,6 @@ export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     }
 }
 
-@singleton()
 export class VsCodeDmnWebviewAdapter implements DmnUiOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -200,7 +198,6 @@ export class VsCodeDmnWebviewAdapter implements DmnUiOutPort {
     }
 }
 
-@singleton()
 export class VsCodeDocumentAdapter implements DocumentOutPort {
     getId(): string {
         return getActiveEditor().id;
@@ -214,9 +211,10 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         return getActiveEditor().document.uri.path;
     }
 
-    write(content: string): Promise<boolean> {
+    async write(content: string): Promise<boolean> {
         if (getActiveEditor().document.getText() === content) {
-            throw new NoChangesToApplyError(getActiveEditor().id);
+            // throw new NoChangesToApplyError(getActiveEditor().id);
+            return false;
         }
 
         const edit = new WorkspaceEdit();
@@ -229,7 +227,11 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
 
         console.debug("write");
 
-        return Promise.resolve(workspace.applyEdit(edit));
+        return workspace.applyEdit(edit);
+    }
+
+    async save(): Promise<boolean> {
+        return getActiveEditor().document.save();
     }
 }
 
@@ -283,9 +285,6 @@ function disposeEditor(editorId: string, panel: WebviewPanel) {
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand(
-        "setContext",
-        container.resolve("BpmnModelerCounter"),
-        counter,
-    );
+    const command = container.resolve("BpmnModelerCounter");
+    commands.executeCommand("setContext", command, counter);
 }

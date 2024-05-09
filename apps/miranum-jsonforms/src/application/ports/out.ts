@@ -6,7 +6,7 @@ interface EditorComponent {
     getId(): string;
 }
 
-export interface FormBuilderUiOutPort extends EditorComponent {
+export interface FormEditorUiOutPort extends EditorComponent {
     /**
      * @param editorId
      * @param jsonForm
@@ -19,11 +19,10 @@ export interface FormBuilderUiOutPort extends EditorComponent {
 export interface FormPreviewUiOutPort extends EditorComponent {
     /**
      * @param jsonForm
-     * @param renderer
      * @returns true if the message was sent successfully, false otherwise
      * @throws {Error} if the editorId does not match the active editor
      */
-    display(jsonForm: string, renderer: string): Promise<boolean>;
+    display(jsonForm: string): Promise<boolean>;
 
     setSetting(renderer: string): Promise<boolean>;
 }
@@ -53,6 +52,8 @@ export interface DocumentOutPort extends EditorComponent {
      * @throws {Error} if editor is not set
      */
     write(content: string): Promise<boolean>;
+
+    save(): Promise<boolean>;
 }
 
 export interface CreateFileOutPort {

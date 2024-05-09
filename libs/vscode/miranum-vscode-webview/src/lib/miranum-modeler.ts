@@ -36,7 +36,7 @@ export class ElementTemplatesQuery extends Query {
 
     constructor(elementTemplates: string[]) {
         super("ElementTemplatesQuery");
-        this.elementTemplates = elementTemplates.map((it) => JSON.parse(it));
+        this.elementTemplates = elementTemplates.map((it) => JSON.parse(it)).flat();
     }
 }
 

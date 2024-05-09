@@ -1,17 +1,17 @@
-import { container } from "tsyringe";
+import { container, Lifecycle } from "tsyringe";
 
 import {
     VsCodeDisplayMessageAdapter,
     VsCodeDocumentAdapter,
     VsCodeFileSystemAdapter,
-    VsCodeFormBuilderWebviewAdapter,
+    VsCodeFormEditorWebviewAdapter,
     VsCodeFormPreviewSettingsAdapter,
     VsCodeFormPreviewWebviewAdapter,
     VsCodeLoggerAdapter,
     VsCodeTextEditorAdapter,
 } from "./adapter/out";
 import {
-    DisplayFormBuilderUseCase,
+    DisplayFormEditorUseCase,
     DisplayFormPreviewUseCase,
     DisplayMessageUseCase,
     GetDocumentUseCase,
@@ -22,14 +22,6 @@ import {
     SyncDocumentUseCase,
     ToggleTextEditorUseCase,
 } from "./application/useCases";
-import {
-    VsCodeFormBuilderAdapter,
-    VsCodeFormPreviewAdapter,
-    VsCodeOpenLoggingConsoleCommand,
-    VsCodeSplitFormFileCommand,
-    VsCodeToggleFormPreviewCommand,
-    VsCodeToggleTextEditorCommand,
-} from "./adapter/in";
 
 export function config() {
     // Primitives
@@ -49,10 +41,10 @@ export function config() {
 
     // In Adapter
     configFormPreview();
-    configFormBuilder();
+    configFormEditor();
 }
 
-function configFormBuilder() {
+function configFormEditor() {
     // Primitives
     container.register("SplitFormFileCommand", {
         useValue: "miranum-jsonforms.splitFormFile",
@@ -60,31 +52,43 @@ function configFormBuilder() {
     container.register("ToggleTextEditorCommand", {
         useValue: "miranum-jsonforms.toggleTextEditor",
     });
-    container.register("FormBuilderViewType", {
-        useValue: "miranum-jsonforms.formBuilder",
+    container.register("FormEditorViewType", {
+        useValue: "miranum-jsonforms.formEditor",
     });
-    container.register("FormBuilderCounter", {
-        useValue: "miranum-jsonforms.formBuilderCounter",
+    container.register("FormEditorCounter", {
+        useValue: "miranum-jsonforms.formEditorCounter",
     });
 
     // Out-Adapter
-    container.register("DocumentOutPort", VsCodeDocumentAdapter);
-    container.register("FormBuilderUiOutPort", VsCodeFormBuilderWebviewAdapter);
-    container.register("CreateFileOutPort", VsCodeFileSystemAdapter);
+    container.register("DocumentOutPort", VsCodeDocumentAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("FormEditorUiOutPort", VsCodeFormEditorWebviewAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("CreateFileOutPort", VsCodeFileSystemAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("TextEditorOutPort", VsCodeTextEditorAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     // UseCases
-    container.register("TextEditorOutPort", VsCodeTextEditorAdapter);
-    container.register("GetDocumentInPort", GetDocumentUseCase);
-    container.register("SyncDocumentInPort", SyncDocumentUseCase);
-    container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase);
-    container.register("DisplayFormBuilderInPort", DisplayFormBuilderUseCase);
-    container.register("SplitFileInPort", SplitJsonFormUseCase);
-
-    // In-Adapter
-    container.register(VsCodeSplitFormFileCommand, VsCodeSplitFormFileCommand);
-    container.register(VsCodeToggleTextEditorCommand, VsCodeToggleTextEditorCommand);
-    container.register(VsCodeOpenLoggingConsoleCommand, VsCodeOpenLoggingConsoleCommand);
-    container.register(VsCodeFormBuilderAdapter, VsCodeFormBuilderAdapter);
+    container.register("GetDocumentInPort", GetDocumentUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SyncDocumentInPort", SyncDocumentUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("ToggleTextEditorInPort", ToggleTextEditorUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("DisplayFormEditorInPort", DisplayFormEditorUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SplitFileInPort", SplitJsonFormUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
 }
 
 function configFormPreview() {
@@ -97,14 +101,18 @@ function configFormPreview() {
     });
 
     // Out-Adapter
-    container.register("FormPreviewUiOutPort", VsCodeFormPreviewWebviewAdapter);
-    container.register("FormPreviewSettingsOutPort", VsCodeFormPreviewSettingsAdapter);
+    container.register("FormPreviewUiOutPort", VsCodeFormPreviewWebviewAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("FormPreviewSettingsOutPort", VsCodeFormPreviewSettingsAdapter, {
+        lifecycle: Lifecycle.Singleton,
+    });
 
     // UseCases
-    container.register("DisplayFormPreviewInPort", DisplayFormPreviewUseCase);
-    container.register("SetSettingInPort", SetSettingUseCase);
-
-    // In-Adapter
-    container.register(VsCodeFormPreviewAdapter, VsCodeFormPreviewAdapter);
-    container.register(VsCodeToggleFormPreviewCommand, VsCodeToggleFormPreviewCommand);
+    container.register("DisplayFormPreviewInPort", DisplayFormPreviewUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("SetSettingInPort", SetSettingUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
 }

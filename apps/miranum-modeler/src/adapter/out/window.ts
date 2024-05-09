@@ -6,7 +6,6 @@ import {
     window,
     workspace,
 } from "vscode";
-import { singleton } from "tsyringe";
 
 import {
     DisplayMessageOutPort,
@@ -16,7 +15,6 @@ import {
 } from "../../application/ports/out";
 import { getContext } from "@miranum-ide/vscode/miranum-vscode";
 
-@singleton()
 export class VsCodeDisplayMessageAdapter implements DisplayMessageOutPort {
     info(message: string): void {
         window.showInformationMessage(message);
@@ -27,7 +25,6 @@ export class VsCodeDisplayMessageAdapter implements DisplayMessageOutPort {
     }
 }
 
-@singleton()
 export class VsCodeTextEditorAdapter implements TextEditorOutPort {
     private isOpen = false;
 
@@ -100,7 +97,6 @@ export class VsCodeTextEditorAdapter implements TextEditorOutPort {
     }
 }
 
-@singleton()
 export class VsCodeLoggerAdapter
     implements OpenLoggingConsoleOutPort, LogMessageOutPort
 {

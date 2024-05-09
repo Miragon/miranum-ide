@@ -1,151 +1,105 @@
 import {
-    DisplayFormBuilderInPort,
+    DisplayFormEditorInPort,
     DisplayFormPreviewInPort,
     SetSettingInPort,
     SyncDocumentInPort,
 } from "../ports/in";
-import { inject, singleton } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 import {
-    DisplayMessageOutPort,
     DocumentOutPort,
-    FormBuilderUiOutPort,
+    FormEditorUiOutPort,
     FormPreviewSettingsOutPort,
     FormPreviewUiOutPort,
-    LogMessageOutPort,
 } from "../ports/out";
-import { NoChangesToApplyError } from "@miranum-ide/vscode/miranum-vscode";
 
-@singleton()
-export class DisplayFormBuilderUseCase implements DisplayFormBuilderInPort {
+@injectable()
+export class DisplayFormEditorUseCase implements DisplayFormEditorInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("FormBuilderUiOutPort")
-        private readonly formBuilderUiOutPort: FormBuilderUiOutPort,
-        @inject("DisplayMessageOutPort")
-        protected readonly displayMessageOutPort: DisplayMessageOutPort,
-        @inject("LogMessageOutPort")
-        private readonly logMessageOutPort: LogMessageOutPort,
+        @inject("FormEditorUiOutPort")
+        private readonly formEditorUiOutPort: FormEditorUiOutPort,
     ) {}
 
     async display(editorId: string): Promise<boolean> {
-        if (editorId !== this.formBuilderUiOutPort.getId()) {
-            return this.handleError(
-                new Error("The `editorID` does not match the active editor."),
-            );
+        if (editorId !== this.formEditorUiOutPort.getId()) {
+            throw new Error("(Editor) The `editorID` does not match the active editor.");
         }
 
-        try {
-            return await this.formBuilderUiOutPort.display(
-                editorId,
-                this.documentOutPort.getContent(),
-            );
-        } catch (error) {
-            return this.handleError(error as Error);
-        }
-    }
+        let jsonForm = this.documentOutPort.getContent();
 
-    private handleError(error: Error): boolean {
-        this.logMessageOutPort.error(error as Error);
-        this.displayMessageOutPort.error(
-            `A problem occurred while trying to display the JsonForm Builder.\n${
-                (error as Error).message ?? error
-            }`,
+        if (!jsonForm) {
+            jsonForm = EMPTY_JSON_FORM;
+            await this.documentOutPort.write(jsonForm);
+            await this.documentOutPort.save();
+        }
+
+        return this.formEditorUiOutPort.display(
+            editorId,
+            this.documentOutPort.getContent(),
         );
-        return false;
     }
 }
 
-@singleton()
+@injectable()
 export class SyncDocumentUseCase implements SyncDocumentInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("DisplayMessageOutPort")
-        private readonly displayMessageOutPort: DisplayMessageOutPort,
-        @inject("LogMessageOutPort")
-        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async sync(editorId: string, content: string): Promise<boolean> {
         if (editorId !== this.documentOutPort.getId()) {
-            throw new Error("Editor ID does not match the active editor.");
+            throw new Error("(Editor) Editor ID does not match the active editor.");
         }
 
-        try {
-            return await this.documentOutPort.write(content);
-        } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            if (!(error instanceof NoChangesToApplyError)) {
-                this.displayMessageOutPort.error(
-                    `A problem occurred while trying to write to the document. ${(error as Error).message}`,
-                );
-            }
-            return false;
-        }
+        return this.documentOutPort.write(content);
     }
 }
 
-@singleton()
+@injectable()
 export class DisplayFormPreviewUseCase implements DisplayFormPreviewInPort {
     constructor(
         @inject("DocumentOutPort")
         private readonly documentOutPort: DocumentOutPort,
-        @inject("FormPreviewSettingsOutPort")
-        private readonly formPreviewSettingsOutPort: FormPreviewSettingsOutPort,
         @inject("FormPreviewUiOutPort")
         private readonly formPreviewUiOutPort: FormPreviewUiOutPort,
-        @inject("DisplayMessageOutPort")
-        protected readonly displayMessageOutPort: DisplayMessageOutPort,
-        @inject("LogMessageOutPort")
-        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async display(): Promise<boolean> {
-        try {
-            const jsonForm = this.documentOutPort.getContent();
-            const renderer = this.formPreviewSettingsOutPort.getRenderer();
+        let jsonForm = this.documentOutPort.getContent();
 
-            return await this.formPreviewUiOutPort.display(jsonForm, renderer);
-        } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            this.displayMessageOutPort.error(
-                `A problem occurred while trying to display the JsonForm Preview.\n${
-                    (error as Error).message ?? error
-                }`,
-            );
-            return false;
+        if (!jsonForm) {
+            jsonForm = EMPTY_JSON_FORM;
         }
+
+        return this.formPreviewUiOutPort.display(jsonForm);
     }
 }
 
-@singleton()
+@injectable()
 export class SetSettingUseCase implements SetSettingInPort {
     constructor(
         @inject("FormPreviewSettingsOutPort")
         private readonly formPreviewSettingsOutPort: FormPreviewSettingsOutPort,
         @inject("FormPreviewUiOutPort")
         private readonly formPreviewUiOutPort: FormPreviewUiOutPort,
-        @inject("DisplayMessageOutPort")
-        protected readonly displayMessageOutPort: DisplayMessageOutPort,
-        @inject("LogMessageOutPort")
-        private readonly logMessageOutPort: LogMessageOutPort,
     ) {}
 
     async setSetting(): Promise<boolean> {
-        try {
-            const renderer = this.formPreviewSettingsOutPort.getRenderer();
-
-            return await this.formPreviewUiOutPort.setSetting(renderer);
-        } catch (error) {
-            this.logMessageOutPort.error(error as Error);
-            this.displayMessageOutPort.error(
-                `A problem occurred while trying to set the renderer.\n${
-                    (error as Error).message ?? error
-                }`,
-            );
-            return false;
-        }
+        const renderer = this.formPreviewSettingsOutPort.getRenderer();
+        return this.formPreviewUiOutPort.setSetting(renderer);
     }
 }
+
+const EMPTY_JSON_FORM = `{
+    "schema": {
+        "type": "object",
+        "properties": {}
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": []
+    }
+}`;

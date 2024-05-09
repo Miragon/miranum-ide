@@ -128,7 +128,7 @@ export class GetWorkspaceItemUseCase implements GetWorkspaceItemInPort {
             case "element-template":
                 return {
                     type: "element-template",
-                    path: "element-templates",
+                    path: ".camunda/element-templates",
                     extension: ".json",
                 };
             default: {

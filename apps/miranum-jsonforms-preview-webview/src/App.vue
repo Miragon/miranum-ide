@@ -18,6 +18,7 @@ import {
     Command,
     createResolver,
     GetJsonFormCommand,
+    GetSettingCommand,
     JsonFormQuery,
     LogErrorCommand,
     Query,
@@ -29,7 +30,7 @@ import { minimalSchema, minimalUiSchema, personSchema, personUiSchema } from "./
 
 let defaultSchema: JsonSchema = minimalSchema;
 let defaultUiSchema: UISchemaElement = minimalUiSchema;
-let defaultRenderer: JsonFormsRendererRegistryEntry[] = [];
+let defaultRenderer: JsonFormsRendererRegistryEntry[] = [...vuetifyRenderers];
 
 if (import.meta.env.MODE === "development") {
     defaultSchema = personSchema;
@@ -40,11 +41,13 @@ if (import.meta.env.MODE === "development") {
 const vscode = getVsCodeApi();
 
 const jsonFormResolver = createResolver<JsonFormQuery>();
+const settingResolver = createResolver<SettingQuery>();
 
-const previewSetting = ref<string>();
+const key = ref(0);
 const previewSchema = ref<JsonSchema>(defaultSchema);
 const previewUiSchema = ref<UISchemaElement>(defaultUiSchema);
 const renderers = ref<JsonFormsRendererRegistryEntry[]>(defaultRenderer);
+const rendererStyle = ref<string>("");
 
 const previewData = ref<any>({});
 
@@ -62,9 +65,14 @@ onBeforeMount(async () => {
     }
 
     vscode.postMessage(new GetJsonFormCommand());
+    vscode.postMessage(new GetSettingCommand());
+
     const jsonFormQuery = await jsonFormResolver.wait();
+    const settingQuery = await settingResolver.wait();
     loading = false;
-    updateRenderer(jsonFormQuery?.schema, jsonFormQuery?.uischema);
+
+    updateSchema(jsonFormQuery?.schema, jsonFormQuery?.uischema);
+    updateRenderer(settingQuery?.renderer);
 });
 
 onUnmounted(() => {
@@ -89,8 +97,12 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
         case queryOrCommand.type === "SettingQuery": {
             const settingQuery = queryOrCommand as SettingQuery;
             try {
-                previewSetting.value = settingQuery.renderer;
-                renderers.value = getRenderers(settingQuery.renderer);
+                if (loading) {
+                    settingResolver.done(settingQuery);
+                    return;
+                }
+
+                updateRenderer(settingQuery.renderer);
             } catch (error) {
                 vscode.postMessage(new LogErrorCommand((error as Error).message));
             }
@@ -99,26 +111,32 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     }
 }
 
-function getRenderers(id?: RendererOption): JsonFormsRendererRegistryEntry[] {
-    switch (id) {
-        case "vuetify":
-            return [...vuetifyRenderers];
-        case "vanilla":
-            return [...vanillaRenderers, ...boplusVueVanillaRenderers];
-        default:
-            throw new Error("Unknown renderer id: " + id);
-    }
-}
+const debouncedUpdate = debounce(updateSchema, 100);
 
-const debouncedUpdate = debounce(updateRenderer, 100);
-
-function updateRenderer(schema?: JsonSchema, uischema?: UISchemaElement): void {
+function updateSchema(schema?: JsonSchema, uischema?: UISchemaElement): void {
     if (schema) {
         previewSchema.value = schema;
     }
     if (uischema) {
         previewUiSchema.value = uischema;
     }
+    key.value++;
+}
+
+function updateRenderer(id?: RendererOption) {
+    switch (id) {
+        case "vuetify":
+            renderers.value = [...vuetifyRenderers];
+            rendererStyle.value = "";
+            break;
+        case "vanilla":
+            renderers.value = [...vanillaRenderers, ...boplusVueVanillaRenderers];
+            rendererStyle.value = "styleA";
+            break;
+        default:
+            throw new Error("Unknown renderer id: " + id);
+    }
+    key.value++;
 }
 
 function onUpdate(jsonForm: any) {
@@ -130,17 +148,9 @@ function onUpdate(jsonForm: any) {
 <template>
     <div class="flex flex-col">
         <div class="card p-4" style="min-height: 106px">
-            <div v-if="previewSetting === 'vanilla'" class="styleA">
+            <div :class="rendererStyle">
                 <JsonForms
-                    :data="previewData"
-                    :renderers="renderers"
-                    :schema="previewSchema"
-                    :uischema="previewUiSchema"
-                    @change="onUpdate"
-                />
-            </div>
-            <div v-else>
-                <JsonForms
+                    :key="key"
                     :data="previewData"
                     :renderers="renderers"
                     :schema="previewSchema"

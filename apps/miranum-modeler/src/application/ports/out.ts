@@ -85,6 +85,8 @@ export interface DocumentOutPort extends EditorComponent {
      * @throws {Error} if editor is not set
      */
     write(content: string): Promise<boolean>;
+
+    save(): Promise<boolean>;
 }
 
 export interface WorkspaceOutPort {
@@ -113,7 +115,10 @@ export interface BpmnModelerSettingsOutPort {
 }
 
 export interface GetExecutionPlatformVersionOutPort {
-    getExecutionPlatformVersion(): Promise<ExecutionPlatformVersion>;
+    getExecutionPlatformVersion(
+        placeHolder: string,
+        items: string[],
+    ): Promise<ExecutionPlatformVersion>;
 }
 
 /**

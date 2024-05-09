@@ -9,13 +9,12 @@ import {
     workspace,
     WorkspaceEdit,
 } from "vscode";
-import { container, singleton } from "tsyringe";
+import { container } from "tsyringe";
 
 import {
     clearDisposables,
     getContext,
     getDisposables,
-    NoChangesToApplyError,
 } from "@miranum-ide/vscode/miranum-vscode";
 import {
     Command,
@@ -24,10 +23,10 @@ import {
     SettingQuery,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
-import { formBuilderUi, formPreviewUi } from "../helper/vscode";
+import { formEditorUi, formPreviewUi } from "../helper/vscode";
 import {
     DocumentOutPort,
-    FormBuilderUiOutPort,
+    FormEditorUiOutPort,
     FormPreviewUiOutPort,
 } from "../../application/ports/out";
 
@@ -44,17 +43,21 @@ let counterActiveEditor = 0;
 export function createEditor(
     viewType: string,
     editorId: string,
-    formBuilderPanel: WebviewPanel,
+    formEditorPanel: WebviewPanel,
     document: TextDocument,
 ): WebviewPanel {
-    const panel = createWebview(viewType, formBuilderPanel);
-    activeEditor = {
-        id: editorId,
-        ui: panel,
-        document,
-    };
-    updateActiveEditorCounter(++counterActiveEditor);
-    return panel;
+    try {
+        const panel = createWebview(viewType, formEditorPanel);
+        activeEditor = {
+            id: editorId,
+            ui: panel,
+            document,
+        };
+        updateActiveEditorCounter(++counterActiveEditor);
+        return panel;
+    } catch (error) {
+        throw new Error(`(Editor) ${(error as Error).message}`);
+    }
 }
 
 /**
@@ -64,23 +67,27 @@ export function createEditor(
  * @throws {Error} If the given editor id does not match the active editor.
  */
 export function createPreview(viewType: string): WebviewPanel {
-    preview = createWebview(
-        viewType,
-        window.createWebviewPanel(viewType, "Preview", {
-            viewColumn: ViewColumn.Beside,
-            preserveFocus: true,
-        }),
-    );
+    try {
+        preview = createWebview(
+            viewType,
+            window.createWebviewPanel(viewType, "Preview", {
+                viewColumn: ViewColumn.Beside,
+                preserveFocus: true,
+            }),
+        );
 
-    return getPreview();
+        return getPreview();
+    } catch (error) {
+        throw new Error(`(Preview) ${(error as Error).message}`);
+    }
 }
 
 function createWebview(viewType: string, webviewPanel: WebviewPanel): WebviewPanel {
     const webview = webviewPanel.webview;
     webview.options = { enableScripts: true };
 
-    if (viewType === container.resolve("FormBuilderViewType")) {
-        webview.html = formBuilderUi(webview, getContext().extensionUri);
+    if (viewType === container.resolve("FormEditorViewType")) {
+        webview.html = formEditorUi(webview, getContext().extensionUri);
     } else if (viewType === container.resolve("FormPreviewViewType")) {
         webview.html = formPreviewUi(webview, getContext().extensionUri);
     } else {
@@ -149,8 +156,7 @@ export function subscribeToTabChangeEvent(updatePreview: () => void) {
     });
 }
 
-@singleton()
-export class VsCodeFormBuilderWebviewAdapter implements FormBuilderUiOutPort {
+export class VsCodeFormEditorWebviewAdapter implements FormEditorUiOutPort {
     getId(): string {
         return getActiveEditor().id;
     }
@@ -158,11 +164,15 @@ export class VsCodeFormBuilderWebviewAdapter implements FormBuilderUiOutPort {
     async display(editorId: string, jsonForm: string): Promise<boolean> {
         const jsonFormQuery = new JsonFormQuery(jsonForm);
 
-        if (await postMessage(editorId, getActiveEditor().ui, jsonFormQuery)) {
-            return true;
-        } else {
-            throw new Error("Failed to send schema and uischema to the webview.");
+        try {
+            if (await postMessage(editorId, getActiveEditor().ui, jsonFormQuery)) {
+                return true;
+            }
+        } catch (error) {
+            throw new Error(`(Editor) ${(error as Error).message}`);
         }
+
+        throw new Error("(Editor) Failed to send schema and uischema to the webview.");
     }
 }
 
@@ -179,9 +189,12 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         return getActiveEditor().document.uri.path;
     }
 
-    write(content: string): Promise<boolean> {
-        if (getActiveEditor().document.getText() === content) {
-            throw new NoChangesToApplyError(getActiveEditor().id);
+    async write(content: string): Promise<boolean> {
+        const json = JSON.stringify(JSON.parse(content), null, 2);
+
+        if (getActiveEditor().document.getText() === json) {
+            // throw new NoChangesToApplyError(getActiveEditor().id);
+            return false;
         }
 
         const edit = new WorkspaceEdit();
@@ -189,39 +202,36 @@ export class VsCodeDocumentAdapter implements DocumentOutPort {
         edit.replace(
             getActiveEditor().document.uri,
             new Range(0, 0, getActiveEditor().document.lineCount, 0),
-            content,
+            json,
         );
 
         console.debug("write");
 
-        return Promise.resolve(workspace.applyEdit(edit));
+        return workspace.applyEdit(edit);
+    }
+
+    async save(): Promise<boolean> {
+        return getActiveEditor().document.save();
     }
 }
 
-@singleton()
 export class VsCodeFormPreviewWebviewAdapter implements FormPreviewUiOutPort {
     getId(): string {
         return getActiveEditor().id;
     }
 
-    async display(jsonForm: string, renderer: string): Promise<boolean> {
+    async display(jsonForm: string): Promise<boolean> {
         const jsonFormQuery = new JsonFormQuery(jsonForm);
-        const settingQuery = new SettingQuery(renderer);
 
-        const [jsonFormSuccess, rendererSuccess] = await Promise.all([
-            postMessage(this.getId(), getPreview(), jsonFormQuery),
-            postMessage(this.getId(), getPreview(), settingQuery),
-        ]);
-
-        if (jsonFormSuccess && rendererSuccess) {
-            return true;
-        } else {
-            if (!jsonFormSuccess) {
-                throw new Error("Failed to send schema and uischema to the webview.");
-            } else {
-                throw new Error("Failed to send renderer to the webview.");
+        try {
+            if (await postMessage(this.getId(), getPreview(), jsonFormQuery)) {
+                return true;
             }
+        } catch (error) {
+            throw new Error(`(Preview) ${(error as Error).message}`);
         }
+
+        throw new Error("(Preview) Failed to send schema and uischema to the webview.");
     }
 
     async setSetting(renderer: string): Promise<boolean> {
@@ -230,7 +240,9 @@ export class VsCodeFormPreviewWebviewAdapter implements FormPreviewUiOutPort {
         if (await postMessage(this.getId(), getPreview(), settingQuery)) {
             return true;
         } else {
-            throw new Error("Failed to send renderer to the webview.");
+            throw new Error(
+                "(Preview) Failed to send renderer settings to the webview.",
+            );
         }
     }
 }
@@ -259,7 +271,7 @@ async function postMessage(
     if (!webviewPanel.options.retainContextWhenHidden) {
         // If `retainContextWhenHidden` is not set, messages can only be sent to visible webviews.
         if (!webviewPanel.visible) {
-            throw new Error("The active editor is hidden.");
+            throw new Error("The webview is hidden.");
         }
     }
     if (await webviewPanel.webview.postMessage(message)) {
@@ -284,7 +296,8 @@ function getPreview(): WebviewPanel {
 }
 
 function updateActiveEditorCounter(counter: number) {
-    commands.executeCommand("setContext", `miranum-modeler.openCustomEditors`, counter);
+    const command = container.resolve("FormEditorCounter");
+    commands.executeCommand("setContext", command, counter);
 }
 
 function disposeEditor(editorId: string, panel: WebviewPanel) {

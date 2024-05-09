@@ -107,7 +107,7 @@
         {
           "command": "miranum-modeler.toggleTextEditor",
           "group": "navigation",
-          "when": "activeWebviewPanelId == 'miranum-bpmn-modeler' || activeWebviewPanelId == 'miranum-dmn-modeler'"
+          "when": "activeWebviewPanelId == 'miranum-modeler.bpmn' || activeWebviewPanelId == 'miranum-modeler.dmn'"
         }
       ]
     },

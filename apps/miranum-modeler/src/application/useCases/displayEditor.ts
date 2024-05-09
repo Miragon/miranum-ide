@@ -1,4 +1,4 @@
-import { inject, singleton } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
@@ -26,7 +26,7 @@ import {
     NoWorkspaceFolderFoundError,
 } from "../errors";
 
-@singleton()
+@injectable()
 export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("C7ExecutionPlatformVersion")
@@ -57,8 +57,20 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
 
             if (bpmnFile === "") {
                 // If a new and empty BPMN file is created, the C7 Modeler will be displayed.
-                bpmnFile = EMPTY_C7_BPMN_DIAGRAM;
-                this.documentOutPort.write(bpmnFile);
+                const ep =
+                    await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion(
+                        "Select the engine.",
+                        ["Camunda 7", "Camunda 8"],
+                    );
+
+                if (ep === "c7") {
+                    bpmnFile = EMPTY_C7_BPMN_DIAGRAM;
+                } else if (ep === "c8") {
+                    bpmnFile = EMPTY_C8_BPMN_DIAGRAM;
+                }
+
+                await this.documentOutPort.write(bpmnFile);
+                await this.documentOutPort.save();
             }
 
             try {
@@ -73,7 +85,10 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
                     return false;
                 } else if (msg === "The execution platform could not be detected.") {
                     const ep =
-                        await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion();
+                        await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion(
+                            "Select the execution platform.",
+                            ["Camunda 7", "Camunda 8"],
+                        );
 
                     const newBpmnFile =
                         ep === "c7"
@@ -144,7 +159,7 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
     }
 }
 
-@singleton()
+@injectable()
 export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
     constructor(
         @inject("DocumentOutPort")
@@ -169,7 +184,8 @@ export class DisplayDmnModelerUseCase implements DisplayModelerInPort {
 
             if (dmnFile === "") {
                 dmnFile = EMPTY_DMN_DIAGRAM;
-                this.documentOutPort.write(dmnFile);
+                await this.documentOutPort.write(dmnFile);
+                await this.documentOutPort.save();
             }
 
             return await this.dmnUiOutPort.displayDmnFile(editorId, dmnFile);
@@ -285,7 +301,7 @@ abstract class GetArtifact {
     }
 }
 
-@singleton()
+@injectable()
 export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort {
     protected readonly type = "form";
 
@@ -380,7 +396,7 @@ export class SetFormKeysUseCase extends GetArtifact implements SetArtifactInPort
     }
 }
 
-@singleton()
+@injectable()
 export class SetElementTemplatesUseCase
     extends GetArtifact
     implements SetArtifactInPort
@@ -447,9 +463,7 @@ export class SetElementTemplatesUseCase
         extension?: string,
     ): Promise<string[]> {
         return Promise.all(
-            artifacts.map(async (artifact) => {
-                return this.fileSystemOutPort.readFile(artifact);
-            }),
+            artifacts.map(async (artifact) => this.fileSystemOutPort.readFile(artifact)),
         );
     }
 
@@ -459,7 +473,7 @@ export class SetElementTemplatesUseCase
     }
 }
 
-@singleton()
+@injectable()
 export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
     constructor(
         @inject("BpmnUiOutPort")
@@ -526,6 +540,22 @@ const EMPTY_C7_BPMN_DIAGRAM = `
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0gjrx3e">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="159" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+`;
+
+const EMPTY_C8_BPMN_DIAGRAM = `
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1ksue5u" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.22.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+  <bpmn:process id="Process_0vf1lkj" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0vf1lkj">
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
         <dc:Bounds x="179" y="159" width="36" height="36" />
       </bpmndi:BPMNShape>

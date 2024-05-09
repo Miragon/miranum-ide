@@ -89,6 +89,7 @@ export class VsCodeLogger {
     constructor(id: string) {
         this.prefix = `[${id}] `;
         this.logger = window.createOutputChannel(id, { log: true });
+        this.logger.clear();
     }
 
     open() {

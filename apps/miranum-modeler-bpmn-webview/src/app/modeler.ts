@@ -40,10 +40,10 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
     switch (engine) {
         case "c7": {
             bpmnModeler.modeler = new BpmnModeler7({
-                container: "#js-canvas",
                 keyboard: {
                     bindTo: window,
                 },
+                container: "#js-canvas",
                 propertiesPanel: {
                     parent: "#js-properties-panel",
                 },
@@ -63,17 +63,17 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
         }
         case "c8": {
             bpmnModeler.modeler = new BpmnModeler8({
-                container: "#js-canvas",
                 keyboard: {
                     bindTo: window,
+                },
+                container: "#js-canvas",
+                propertiesPanel: {
+                    parent: "#js-properties-panel",
                 },
                 alignToOrigin: {
                     alignOnSave: false,
                     offset: 150,
                     tolerance: 50,
-                },
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
                 },
                 additionalModules: [...commonModules],
             });

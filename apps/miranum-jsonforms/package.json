@@ -48,8 +48,8 @@
     "contributes": {
         "customEditors": [
             {
-                "viewType": "miranum-jsonforms.formBuilder",
-                "id": "miranum-jsonforms.formBuilder",
+                "viewType": "miranum-jsonforms.formEditor",
+                "id": "miranum-jsonforms.formEditor",
                 "displayName": "Miranum: JsonForms Editor",
                 "selector": [
                     {
@@ -99,44 +99,48 @@
             {
                 "command": "miranum-jsonforms.togglePreview",
                 "key": "ctrl+shift+p",
-                "when": "miranum-jsonforms.formBuilderCounter > 0"
+                "when": "miranum-jsonforms.formEditorCounter > 0"
             },
             {
                 "command": "miranum-jsonforms.toggleTextEditor",
                 "key": "ctrl+shift+t",
-                "when": "miranum-jsonforms.formBuilderCounter > 0"
+                "when": "miranum-jsonforms.formEditorCounter > 0"
             },
             {
                 "command": "miranum-jsonforms.openLoggingConsole",
                 "key": "ctrl+shift+l",
-                "when": "miranum-jsonforms.formBuilderCounter > 0"
+                "when": "miranum-jsonforms.formEditorCounter > 0"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
                     "command": "miranum-jsonforms.togglePreview",
-                    "when": "miranum-jsonforms.formBuilderCounter > 0"
+                    "when": "miranum-jsonforms.formEditorCounter > 0"
                 },
                 {
                     "command": "miranum-jsonforms.toggleTextEditor",
-                    "when": "miranum-jsonforms.formBuilderCounter > 0"
+                    "when": "miranum-jsonforms.formEditorCounter > 0"
                 },
                 {
                     "command": "miranum-jsonforms.openLoggingConsole",
-                    "when": "miranum-jsonforms.formBuilderCounter > 0"
+                    "when": "miranum-jsonforms.formEditorCounter > 0"
+                },
+                {
+                    "command": "miranum-jsonforms.splitFormFile",
+                    "when": "miranum-jsonforms.formEditorCounter > 0"
                 }
             ],
             "editor/title": [
                 {
                     "command": "miranum-jsonforms.togglePreview",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
                 },
                 {
                     "command": "miranum-jsonforms.toggleTextEditor",
                     "group": "navigation",
-                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formBuilder'"
+                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
                 }
             ]
         }
