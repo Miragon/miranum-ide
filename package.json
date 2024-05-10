@@ -29,7 +29,7 @@
     "@nx/webpack": "18.3.4",
     "@nx/workspace": "18.3.4",
     "@openapitools/openapi-generator-cli": "^2.7.0",
-    "@testing-library/react": "^14.2.1",
+    "@testing-library/react": "^15.0.7",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.14.198",
     "@types/node": "18.x",
