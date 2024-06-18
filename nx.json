@@ -2,12 +2,20 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true,
-      "inputs": ["production", "^production"]
+      "inputs": [
+        "production",
+        "^production"
+      ]
     },
     "test": {
-      "inputs": ["default", "^default"],
+      "inputs": [
+        "default",
+        "^default"
+      ],
       "cache": true
     },
     "lint": {
@@ -18,12 +26,20 @@
     },
     "@nx/vite:test": {
       "cache": true,
-      "inputs": ["default", "^production"]
+      "inputs": [
+        "default",
+        "^production"
+      ]
     },
     "@nx/vite:build": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
     }
   },
   "workspaceLayout": {
@@ -74,7 +90,10 @@
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "sharedGlobals": [],
     "production": [
       "default",
@@ -82,6 +101,5 @@
       "!{projectRoot}/tsconfig.spec.json"
     ]
   },
-  "defaultBase": "main",
-  "nxCloudAccessToken": "MzBjMTliODYtZjI5MC00ZmU4LTlhODUtNjc1OTYxZWMzMjM2fHJlYWQtd3JpdGU="
+  "defaultBase": "main"
 }
