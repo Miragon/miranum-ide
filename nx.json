@@ -82,5 +82,6 @@
       "!{projectRoot}/tsconfig.spec.json"
     ]
   },
-  "defaultBase": "main"
+  "defaultBase": "main",
+  "nxCloudAccessToken": "MzBjMTliODYtZjI5MC00ZmU4LTlhODUtNjc1OTYxZWMzMjM2fHJlYWQtd3JpdGU="
 }

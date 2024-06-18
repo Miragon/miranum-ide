@@ -41,7 +41,7 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
         case "c7": {
             bpmnModeler.modeler = new BpmnModeler7({
                 keyboard: {
-                    bindTo: window,
+                    bindTo: document,
                 },
                 container: "#js-canvas",
                 propertiesPanel: {
@@ -64,7 +64,7 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
         case "c8": {
             bpmnModeler.modeler = new BpmnModeler8({
                 keyboard: {
-                    bindTo: window,
+                    bindTo: document,
                 },
                 container: "#js-canvas",
                 propertiesPanel: {
