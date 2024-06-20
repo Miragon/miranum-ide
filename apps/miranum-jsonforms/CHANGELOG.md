@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.12] - 2024-06-20
+
+### Fixed
+
+* Add global theme (#616)
+* Fix toggle text editor bug (#616)
+
 ## [0.5.11] - 2024-05-09
 
 ### Fixed
@@ -62,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Correction of tabs placement in preview (#59)
 
 [unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11-vscode...HEAD
+
 [0.5.11]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10...release/v0.5.11-vscode
+
 [0.5.10]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.10-vscode
+
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
