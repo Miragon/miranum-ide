@@ -10,6 +10,7 @@ import { vuetifyRenderers } from "@jsonforms/vue-vuetify";
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
 import { JsonForms } from "@jsonforms/vue";
 import { boplusVueVanillaRenderers } from "@backoffice-plus/formbuilder";
+import { useTheme } from "vuetify";
 
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
@@ -48,13 +49,13 @@ const previewSchema = ref<JsonSchema>(defaultSchema);
 const previewUiSchema = ref<UISchemaElement>(defaultUiSchema);
 const renderers = ref<JsonFormsRendererRegistryEntry[]>(defaultRenderer);
 const rendererStyle = ref<string>("");
-
 const previewData = ref<any>({});
-
 const displayData = ref<any | undefined>(undefined);
 const displayErrors = ref<any | undefined>(undefined);
 
 let loading = true;
+// eslint-disable-next-line react-hooks/rules-of-hooks
+const theme = useTheme();
 let jsonComponentTheme = ref<"light" | "dark">("light");
 
 onBeforeMount(async () => {
@@ -62,6 +63,10 @@ onBeforeMount(async () => {
 
     if (document.body.className.includes("vscode-dark")) {
         jsonComponentTheme.value = "dark";
+        theme.global.name.value = "dark";
+    } else {
+        jsonComponentTheme.value = "light";
+        theme.global.name.value = "light";
     }
 
     vscode.postMessage(new GetJsonFormCommand());
@@ -91,7 +96,7 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
                 return;
             }
 
-            await debouncedUpdate(jsonFormQuery.schema, jsonFormQuery.uischema);
+            debouncedUpdate(jsonFormQuery.schema, jsonFormQuery.uischema);
             break;
         }
         case queryOrCommand.type === "SettingQuery": {

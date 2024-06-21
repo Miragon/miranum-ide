@@ -60,7 +60,7 @@ export class VsCodeTextEditor {
         const tab = this.getTab(documentPath);
 
         if (tab) {
-            return window.tabGroups.close(tab);
+            return !window.tabGroups.close(tab);
         } else {
             return false;
         }

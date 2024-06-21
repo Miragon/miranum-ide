@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.12] - 2024-06-20
+
+### Fixed
+
+* Add copy + paste functionality (#616)
+* Fix toggle text editor bug (#616)
+
 ## [0.5.11] - 2024-05-09
 
 ### Added
@@ -89,15 +96,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Unresolved breakpoints when debugging (#227)
 
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.12-vscode...HEAD
 
+[0.5.12]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11...release/v0.5.12-vscode
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11-vscode...HEAD
 [0.5.11]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.11-vscode
+
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
+
 [0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
+
 [0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode
+
 [0.5.6]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.5...release/v0.5.6
+
 [0.5.5]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.4...release/v0.5.5
+
 [0.5.4]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.3...release/v0.5.4
+
 [0.5.3]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.3...release/v0.5.3
+
 [0.4.3]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.2...release/v0.4.3
