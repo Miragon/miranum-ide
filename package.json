@@ -72,7 +72,7 @@
     "jest-serializer-vue": "^3.1.0",
     "jest-transform-stub": "^2.0.0",
     "jsdom": "~24.1.0",
-    "nx": "19.3.0",
+    "nx": "19.3.1",
     "nx-cloud": "19.0.0",
     "postcss": "8.4.38",
     "prettier": "^3.3.2",
