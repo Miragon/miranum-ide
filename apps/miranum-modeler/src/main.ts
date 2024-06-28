@@ -7,6 +7,7 @@ import { setContext } from "@miranum-ide/vscode/miranum-vscode";
 import { config } from "./main.config";
 import {
     VsCodeBpmnEditorAdapter,
+    VsCodeDiagramAsSvgCommand,
     VsCodeDmnEditorAdapter,
     VsCodeOpenLoggingConsoleCommand,
     VsCodeToggleTextEditorCommand,
@@ -23,6 +24,7 @@ export function activate(context: ExtensionContext) {
     // otherwise tsyringe won't create the instance
     container.resolve(VsCodeToggleTextEditorCommand);
     container.resolve(VsCodeOpenLoggingConsoleCommand);
+    container.resolve(VsCodeDiagramAsSvgCommand);
 
     // 4. Start the application
     container.resolve(VsCodeBpmnEditorAdapter);

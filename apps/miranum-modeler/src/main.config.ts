@@ -3,6 +3,7 @@ import {
     DisplayBpmnModelerUseCase,
     DisplayDmnModelerUseCase,
     DisplayMessageUseCase,
+    GetDiagramAsSvgUseCase,
     GetDocumentUseCase,
     GetMiranumConfigUseCase,
     GetWorkspaceItemUseCase,
@@ -26,6 +27,7 @@ import {
     VsCodeTextEditorAdapter,
     VsCodeWorkspaceAdapter,
 } from "./adapter/out";
+import { GetDiagramAsSvgInPort } from "./application/ports/in";
 
 /**
  * The configuration of the adapter and use cases has to follow the following pattern:
@@ -106,6 +108,12 @@ function configBpmnModeler(): void {
     container.register("BpmnModelerViewType", { useValue: "miranum-modeler.bpmn" });
     container.register("C7ExecutionPlatformVersion", { useValue: "7.20.0" });
     container.register("C8ExecutionPlatformVersion", { useValue: "8.4.0" });
+    container.register("CopyDiagramAsSvgCommand", {
+        useValue: "miranum-modeler.copyDiagramAsSvg",
+    });
+    container.register("SaveDiagramAsSvgCommand", {
+        useValue: "miranum-modeler.saveDiagramAsSvgCommand",
+    });
 
     // Out Adapter
     container.register("BpmnUiOutPort", VsCodeBpmnWebviewAdapter, {
@@ -129,6 +137,9 @@ function configBpmnModeler(): void {
         lifecycle: Lifecycle.Singleton,
     });
     container.register("SetBpmnModelerSettingsInPort", SetBpmnModelerSettingsUseCase, {
+        lifecycle: Lifecycle.Singleton,
+    });
+    container.register("GetDiagramAsSvgInPort", GetDiagramAsSvgUseCase, {
         lifecycle: Lifecycle.Singleton,
     });
 }

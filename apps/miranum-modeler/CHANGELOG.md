@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13] - 2024-06-28
+
+### Added
+
+* Add copy diagram to clipboard command
+* Add save diagram as svg command
+
 ## [0.5.12] - 2024-06-20
 
 ### Fixed

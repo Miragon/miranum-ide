@@ -83,6 +83,14 @@
         "command": "miranum-modeler.openLoggingConsole",
         "title": "Miranum Modeler: Display Logging Information",
         "icon": "$(callstack-view-session)"
+      },
+      {
+        "command": "miranum-modeler.copyDiagramAsSvg",
+        "title": "Miranum Modeler: Copy Diagram as SVG"
+      },
+      {
+        "command": "miranum-modeler.saveDiagramAsSvgCommand",
+        "title": "Miranum Modeler: Save Diagram as SVG"
       }
     ],
     "keybindings": [
@@ -100,6 +108,14 @@
         },
         {
           "command": "miranum-modeler.openLoggingConsole",
+          "when": "miranum-modeler.openCustomEditors > 0"
+        },
+        {
+          "command": "miranum-modeler.copyDiagramAsSvg",
+          "when": "miranum-modeler.openCustomEditors > 0"
+        },
+        {
+          "command": "miranum-modeler.saveDiagramAsSvgCommand",
           "when": "miranum-modeler.openCustomEditors > 0"
         }
       ],

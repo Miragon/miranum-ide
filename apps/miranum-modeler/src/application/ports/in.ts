@@ -47,6 +47,10 @@ export interface GetDocumentInPort {
     getPath(): string;
 }
 
+export interface GetDiagramAsSvgInPort {
+    getSvg(): Promise<boolean>;
+}
+
 /**
  * Display a message to the user in the UI.
  */
