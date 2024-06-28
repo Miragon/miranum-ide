@@ -11,8 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Add copy diagram to clipboard command
-* Add save diagram as svg command
+* Add commands to copy or save diagram as SVG (#622)
 
 ## [0.5.12] - 2024-06-20
 
@@ -103,7 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Unresolved breakpoints when debugging (#227)
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.12-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13-vscode...HEAD
+
+[0.5.13]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.12...release/v0.5.13-vscode
 
 [0.5.12]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11...release/v0.5.12-vscode
 
