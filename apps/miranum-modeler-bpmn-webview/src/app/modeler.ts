@@ -156,6 +156,15 @@ export async function exportDiagram(): Promise<string> {
 }
 
 /**
+ * Get the SVG content of the current diagram.
+ */
+export async function getDiagramAsSVG(): Promise<string> {
+    const m = getModeler();
+    const result = await m.saveSVG();
+    return result.svg;
+}
+
+/**
  * Set the element templates to the modeler.
  * @param templates
  * @throws NoModelerError if the modeler is not initialized

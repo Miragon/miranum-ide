@@ -62,6 +62,14 @@ export class GetBpmnFileCommand extends Command {
     }
 }
 
+export class GetDiagramAsSVGCommand extends Command {
+    svg?: string;
+
+    constructor() {
+        super("GetDiagramAsSVGCommand");
+    }
+}
+
 export class GetDmnFileCommand extends Command {
     constructor() {
         super("GetDmnFileCommand");

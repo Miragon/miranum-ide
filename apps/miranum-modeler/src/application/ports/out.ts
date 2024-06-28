@@ -51,6 +51,12 @@ export interface BpmnUiOutPort extends EditorComponent {
      * @throws {Error} if the editorId does not match the active editor
      */
     setSettings(editorId: string, setting: BpmnModelerSetting): Promise<boolean>;
+
+    /**
+     * Get the BPMN diagram as SVG.
+     * @param editorId
+     */
+    getDiagramAsSVG(editorId: string): Promise<boolean>;
 }
 
 export interface DmnUiOutPort extends EditorComponent {

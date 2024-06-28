@@ -2,12 +2,14 @@ import { inject, singleton } from "tsyringe";
 
 import {
     DisplayMessageInPort,
+    GetDiagramAsSvgInPort,
     GetDocumentInPort,
     LogMessageInPort,
     OpenLoggingConsoleInPort,
     ToggleTextEditorInPort,
 } from "../ports/in";
 import {
+    BpmnUiOutPort,
     DisplayMessageOutPort,
     DocumentOutPort,
     LogMessageOutPort,
@@ -83,5 +85,17 @@ export class OpenLoggingConsoleUseCase implements OpenLoggingConsoleInPort {
 
     open() {
         this.openLoggingConsoleOutPort.open();
+    }
+}
+
+@singleton()
+export class GetDiagramAsSvgUseCase implements GetDiagramAsSvgInPort {
+    constructor(
+        @inject("BpmnUiOutPort")
+        private readonly bpmnUiOutPort: BpmnUiOutPort,
+    ) {}
+
+    getSvg(): Promise<boolean> {
+        return this.bpmnUiOutPort.getDiagramAsSVG(this.bpmnUiOutPort.getId());
     }
 }

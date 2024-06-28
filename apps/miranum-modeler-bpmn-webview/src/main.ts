@@ -19,6 +19,7 @@ import {
     FormKeysQuery,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
+    GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
     GetFormKeysCommand,
     LogErrorCommand,
@@ -31,6 +32,7 @@ import {
     alignElementsToOrigin,
     createModeler,
     exportDiagram,
+    getDiagramAsSVG,
     getVsCodeApi,
     loadDiagram,
     newDiagram,
@@ -241,6 +243,11 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
                     }
                 }
                 break;
+            }
+            case queryOrCommand.type === "GetDiagramAsSVGCommand": {
+                const command = message.data as GetDiagramAsSVGCommand;
+                command.svg = await getDiagramAsSVG();
+                vscode.postMessage(command);
             }
         }
     } catch (error: unknown) {

@@ -19,6 +19,7 @@ import {
     DmnFileQuery,
     ElementTemplatesQuery,
     FormKeysQuery,
+    GetDiagramAsSVGCommand,
     Query,
 } from "@miranum-ide/vscode/miranum-vscode-webview";
 
@@ -184,6 +185,11 @@ export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
             alignToOrigin: setting.alignToOrigin,
         });
         return postMessage(editorId, webviewSettingsQuery);
+    }
+
+    async getDiagramAsSVG(editorId: string): Promise<boolean> {
+        const getBpmnAsSVGCommand = new GetDiagramAsSVGCommand();
+        return postMessage(editorId, getBpmnAsSVGCommand);
     }
 }
 
