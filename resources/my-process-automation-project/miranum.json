@@ -24,7 +24,7 @@
     },
     {
       "type": "element-template",
-      "path": ".camunda/element-templates",
+      "path": "element-templates",
       "extension": ".json"
     },
     {
