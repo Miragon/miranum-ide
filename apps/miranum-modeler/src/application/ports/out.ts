@@ -32,7 +32,7 @@ export interface BpmnUiOutPort extends EditorComponent {
      * @returns true if the message was sent successfully, false otherwise
      * @throws {Error} if the editorId does not match the active editor
      */
-    setElementTemplates(editorId: string, elementTemplates: string[]): Promise<boolean>;
+    setElementTemplates(editorId: string, elementTemplates: any[]): Promise<boolean>;
 
     /**
      * Sends the form keys to the active webview.

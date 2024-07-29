@@ -169,7 +169,7 @@ export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
 
     async setElementTemplates(
         editorId: string,
-        elementTemplates: string[],
+        elementTemplates: any[],
     ): Promise<boolean> {
         const elementTemplatesQuery = new ElementTemplatesQuery(elementTemplates);
         return postMessage(editorId, elementTemplatesQuery);

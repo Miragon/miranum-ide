@@ -238,7 +238,7 @@ abstract class GetArtifact {
     protected abstract readArtifacts(
         artifacts: string[],
         extension?: string,
-    ): Promise<string[]>;
+    ): Promise<string[] | any[]>;
 
     private async getMiranumConfig(documentPath: string): Promise<string | undefined> {
         try {
@@ -437,11 +437,14 @@ export class SetElementTemplatesUseCase
                 .join("/");
 
             const artifacts = (await this.getArtifacts(documentDir))[0];
+            const elementTemplates = (await this.readArtifacts(artifacts)).flat();
+            const sortedElementTemplates =
+                this.sortElementTemplatesByName(elementTemplates);
 
             if (
                 await this.bpmnUiOutPort.setElementTemplates(
                     editorId,
-                    await this.readArtifacts(artifacts),
+                    sortedElementTemplates,
                 )
             ) {
                 this.logMessageOutPort.info(
@@ -458,13 +461,20 @@ export class SetElementTemplatesUseCase
         }
     }
 
-    protected async readArtifacts(
-        artifacts: string[],
-        extension?: string,
-    ): Promise<string[]> {
+    protected async readArtifacts(artifacts: string[]): Promise<any[]> {
         return Promise.all(
-            artifacts.map(async (artifact) => this.fileSystemOutPort.readFile(artifact)),
+            artifacts.map(async (artifact) =>
+                JSON.parse(await this.fileSystemOutPort.readFile(artifact)),
+            ),
         );
+    }
+
+    private sortElementTemplatesByName(elementTemplates: any[]): any[] {
+        return elementTemplates.sort((a, b) => {
+            const aName = a.name as string;
+            const bName = b.name as string;
+            return aName.localeCompare(bName);
+        });
     }
 
     private handleError(error: Error): boolean {
