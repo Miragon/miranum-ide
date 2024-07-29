@@ -1,0 +1,8 @@
+{
+  "name": "test",
+  "id": "test_5988c3f8-489b-4663-b0db-9e36470d9e61",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "properties": []
+}
