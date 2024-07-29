@@ -1,6 +1,6 @@
 {
     "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
-    "name": "Mail Task 1",
+    "name": "Mail Task 1 Super Super Looooooooooooooong Name",
     "id": "com.camunda.example.MailTask1",
     "appliesTo": ["bpmn:ServiceTask"],
     "properties": [
