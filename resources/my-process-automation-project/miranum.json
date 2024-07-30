@@ -24,7 +24,7 @@
     },
     {
       "type": "element-template",
-      "path": "my-templates",
+      "path": "element-templates",
       "extension": ".json"
     },
     {

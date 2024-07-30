@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13] - 2024-06-28
+
+### Added
+
+* **\[Miranum Modeler\]** Add commands to copy or save diagram as SVG (#645)
+* **\[Miranum Modeler\]** Sort element templates by name (#645)
+* **\[Miranum Modeler\]** Change width of `element-templates-chooser` (#645)
+
 ## [0.5.11] - 2024-05-09
 
 ### Added
@@ -18,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **\[Miranum Modeler\]** Flatten the element templates if given in an array (#589)
 * **\[Miranum Modeler\]** Minor bug fixes (#589)
 * **\[Miranum Jsonforms\]** Minor bug fixes (#589)
- 
+
 ## [0.5.10] - 2024-04-30
 
 ### Fixed
@@ -62,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **\[Miranum Modeler\]** Rename to Miranum: Camunda Modeler (#419)
 * Update dependencies and migrate to Nx Version 17 (#418)
- 
+
 ## [0.5.5]
 
 ### Added
@@ -82,14 +90,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * **\[Miranum Modeler\]** Alignment of elements leads to an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
- 
+
 ## [0.5.3] - 2023-08-01
 
 ### Added
 
 * **\[Miranum Modeler\]** Support for Camunda 8 properties (#302)
 * **\[Miranum Modeler\]** Support for create/append patter for Camunda 8 and Camunda 7 (#322)
- 
+
 ### Fixed
 
 * **\[Miranum Modeler\]** Unable to load element templates when given in an array
@@ -112,15 +120,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **\[Miranum Console\]** Use a single webview when the user triggers the available commands (#125)
 
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13-vscode...HEAD
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11-vscode...HEAD
+[0.5.13]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11...release/v0.5.13-vscode
+
 [0.5.11]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.10...release/v0.5.11-vscode
+
 [0.5.10]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.9...release/v0.5.10-vscode
+
 [0.5.9]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.8...release/v0.5.9-vscode
+
 [0.5.8]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.7...release/v0.5.8-vscode
+
 [0.5.7]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.6...release/v0.5.7-vscode
+
 [0.5.6]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.5...release/v0.5.6
+
 [0.5.5]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.4...release/v0.5.5
+
 [0.5.4]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.3...release/v0.5.4
+
 [0.5.3]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.3...release/v0.5.3
+
 [0.4.3]: https://github.com/Miragon/miranum-ide/compare/release/v0.4.2...0.4.3

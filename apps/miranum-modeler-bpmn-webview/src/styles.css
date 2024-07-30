@@ -127,3 +127,8 @@ img {
     max-width: 100%;
     height: auto;
 }
+
+.djs-popup.element-template-chooser {
+    max-width: 1000px;
+    width: fit-content !important;
+}

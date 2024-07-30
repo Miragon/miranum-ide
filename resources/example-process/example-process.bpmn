@@ -4,7 +4,7 @@
     <bpmn:startEvent id="Start_Form" name="Start" camunda:formKey="start-form-usertask">
       <bpmn:outgoing>Flow_1qhfavc</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Activity_1k3cs5s" camunda:modelerTemplate="com.camunda.example.MailTask1" camunda:class="com.mycompany.MailTaskImpl">
+    <bpmn:serviceTask id="Activity_1k3cs5s" camunda:class="com.mycompany.MailTaskImpl">
       <bpmn:extensionElements>
         <camunda:inputOutput>
           <camunda:inputParameter name="sender" />

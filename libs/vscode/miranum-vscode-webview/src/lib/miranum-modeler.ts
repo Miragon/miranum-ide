@@ -34,9 +34,9 @@ export class FormKeysQuery extends Query {
 export class ElementTemplatesQuery extends Query {
     public readonly elementTemplates: JSON[];
 
-    constructor(elementTemplates: string[]) {
+    constructor(elementTemplates: any[]) {
         super("ElementTemplatesQuery");
-        this.elementTemplates = elementTemplates.map((it) => JSON.parse(it)).flat();
+        this.elementTemplates = elementTemplates;
     }
 }
 

@@ -1,6 +1,6 @@
 {
   "$schema" : "https://unpkg.com/@camunda/element-templates-json-schema@0.1.0/resources/schema.json",
-  "name": "Mail Task 2",
+  "name": "aaMail Task 2",
   "id": "de.miragon.example.MailTask2",
   "appliesTo": [
     "bpmn:Task"
