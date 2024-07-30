@@ -114,5 +114,114 @@
         }
       }
     ]
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 1",
+    "id": "io.camunda.examples.EmailTask1",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 2",
+    "id": "io.camunda.examples.EmailTask2",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 3",
+    "id": "io.camunda.examples.EmailTask3",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 4",
+    "id": "io.camunda.examples.EmailTask4",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 5",
+    "id": "io.camunda.examples.EmailTask5",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 6",
+    "id": "io.camunda.examples.EmailTask6",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 7",
+    "id": "io.camunda.examples.EmailTask7",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 8",
+    "id": "io.camunda.examples.EmailTask8",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": []
+  },
+  {
+    "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+    "name": "Email Task 9",
+    "id": "io.camunda.examples.EmailTask9",
+    "description": "A Email sending task.",
+    "documentationRef": "https://github.com/bpmn-io/element-template-chooser",
+    "appliesTo": [
+      "bpmn:ServiceTask"
+    ],
+    "properties": [
+      {
+        "type": "Hidden",
+        "value": "${mailDelegate}",
+        "editable": false,
+        "binding": {
+          "type": "property",
+          "name": "camunda:delegateExpression"
+        }
+      }
+    ]
   }
 ]
