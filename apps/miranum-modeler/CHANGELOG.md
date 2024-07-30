@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Add commands to copy or save diagram as SVG (#622)
+* Add commands to copy or save diagram as SVG (#645)
+* Sort element templates by name (#645)
+* Change width of `element-templates-chooser` (#645)
 
 ## [0.5.12] - 2024-06-20
 
