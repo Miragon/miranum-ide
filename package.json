@@ -29,7 +29,7 @@
     "@nx/webpack": "19.5.3",
     "@nx/workspace": "19.5.3",
     "@openapitools/openapi-generator-cli": "^2.13.4",
-    "@testing-library/react": "15.0.6",
+    "@testing-library/react": "16.0.0",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.7",
     "@types/node": "18.x",
@@ -84,12 +84,12 @@
     "unplugin-vue-components": "^0.27.3",
     "vite": "^5.3.5",
     "vite-plugin-eslint": "^1.8.1",
-    "vite-plugin-static-copy": "^1.0.5",
+    "vite-plugin-static-copy": "^1.0.6",
     "vite-plugin-vuetify": "^2.0.3",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "1.6.0",
     "vue-template-compiler": "^2.7.16",
-    "vue-tsc": "2.0.7"
+    "vue-tsc": "2.0.29"
   },
   "dependencies": {
     "@backoffice-plus/formbuilder": "^0.0.50",
