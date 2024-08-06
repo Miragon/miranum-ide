@@ -54,7 +54,14 @@ For all further documentation, please refer to the [documentations doc](docs/REA
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-<!-- CONTRIBUTING -->
+## Engage with the Miranum-IDE team
+
+If you have any questions or need support, feel free to reach out to us via email ([info@miragon.io](mailto:info@miragon.io)).
+We are here to help you, especially if you are considering introducing Miranum-IDE in your organization.
+
+For inquiries and professional support, please contact us at: [info@miragon.io](mailto:info@miragon.io)
+
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Contributing
 
