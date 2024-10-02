@@ -53,6 +53,11 @@
             "glob": "komet.svg",
             "input": "{workspaceRoot}/images",
             "output": "/assets"
+          },
+          {
+            "glob": "reset.css",
+            "input": "apps/miranum-modeler/assets",
+            "output": "/assets"
           }
         ]
       },
