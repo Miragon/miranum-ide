@@ -9,23 +9,25 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Setup NodeJS 16
+      - name: Corepack enable
+        run: corepack enable
+      - name: Setup NodeJS 18
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
       - name: Install dependencies
-        run: npm install
+        run: yarn
       - name: Lint
-        run: npm run lint
+        run: yarn lint
       - name: Test
-        run: npm run test
+        run: yarn test
       - name: Build
-        run: npm run build
+        run: yarn build
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -36,16 +38,18 @@ jobs:
     needs:
       - build
     steps:
-      - name: Setup NodeJS 16
+      - name: Enable corepack
+        run: corepack enable
+      - name: Setup NodeJS 18
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v4
         with:
           name: dist
       - name: Install vsce
-        run: npm install -g @vscode/vsce@latest
+        run: yarn global add @vscode/vsce@latest
       - name: Build vsix miranum-extension-pack
         run: |
           cd apps/miranum-extension-pack
