@@ -24,9 +24,11 @@ import {
     SyncDocumentCommand,
     SyncDocumentInPort,
     SyncWebviewCommand,
-    SyncWebviewInPort
+    SyncWebviewInPort,
 } from "./portsIn";
+// prettier-ignore
 import { DocumentOutPort, ReaderOutPort, VsCodeConfigOutPort, WebviewOutPort } from "./portsOut";
+// prettier-ignore
 import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 /**

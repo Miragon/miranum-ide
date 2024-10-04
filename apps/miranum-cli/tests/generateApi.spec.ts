@@ -135,6 +135,7 @@ describe("generate file", () => {
                 myGenerations,
                 expectedFilePath,
             );
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             fs.rm(expectedFilePath, () => {});
         });
 
@@ -253,6 +254,7 @@ function checkArgsAndPath(program: Command, args: string[], path: string) {
 
 function checkExistence(path: string, expectation: boolean) {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         fs.open(path, "r", () => {});
         expect(expectation).toBe(true);
     } catch (e) {
@@ -281,5 +283,6 @@ function fileChecks(
 }
 
 function cleanUpDir() {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     fs.rm(dirPath, { recursive: true }, () => {});
 }

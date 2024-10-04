@@ -1,7 +1,7 @@
 export interface Artifact {
-    type: string,
-    project: string,
-    file: FileDetails
+    type: string;
+    project: string;
+    file: FileDetails;
 }
 
 export interface FileDetails {
@@ -13,7 +13,7 @@ export interface FileDetails {
 }
 
 export interface MiranumConfig {
-    projectVersion: string,
+    projectVersion: string;
     name: string;
     workspace: MiranumWorkspaceItem[];
     deployment: MiranumDeploymentPlugin[];
@@ -28,6 +28,7 @@ export interface MiranumWorkspaceItem {
 export interface MiranumDeploymentPlugin {
     plugin: string;
     targetEnvironments: MiranumDeploymentTarget[];
+
     deploy(target: string, artifact: Artifact): Promise<Artifact>;
 }
 
@@ -37,7 +38,13 @@ export interface MiranumGeneratorPlugin {
     template: string;
     basePath: string | undefined;
     defaultData: object;
-    generate(name: string, project: string, extension?: string, pathInProject?: string): Promise<Artifact>
+
+    generate(
+        name: string,
+        project: string,
+        extension?: string,
+        pathInProject?: string,
+    ): Promise<Artifact>;
 }
 
 export interface MiranumDeploymentTarget {

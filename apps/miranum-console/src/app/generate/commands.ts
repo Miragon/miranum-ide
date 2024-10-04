@@ -2,7 +2,11 @@ import * as vscode from "vscode";
 import { Uri } from "vscode";
 import { Artifact, MiranumCore } from "@miranum-ide/miranum-core";
 import { VscMessage } from "@miranum-ide/vscode/miranum-vscode-webview";
-import { ConsoleData, FileData, MessageType } from "@miranum-ide/vscode/shared/miranum-console";
+import {
+    ConsoleData,
+    FileData,
+    MessageType,
+} from "@miranum-ide/vscode/shared/miranum-console";
 import { Logger } from "@miranum-ide/vscode/miranum-vscode";
 import { saveFile, selectFiles } from "../shared/fs-helpers";
 import { showErrorMessage, showInfoMessage } from "../shared/message";

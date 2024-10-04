@@ -3,11 +3,16 @@ import {
     MiranumConfig,
     MiranumDeploymentPlugin,
     MiranumGeneratorPlugin,
-    MiranumWorkspaceItem
+    MiranumWorkspaceItem,
 } from "./types";
 import { availableGeneratorPlugins } from "./generate/plugins";
 
-export function createMiranumCore(projectVersion: string, projectName: string, workspace: MiranumWorkspaceItem[], deployment: MiranumDeploymentPlugin[]): MiranumCore {
+export function createMiranumCore(
+    projectVersion: string,
+    projectName: string,
+    workspace: MiranumWorkspaceItem[],
+    deployment: MiranumDeploymentPlugin[],
+): MiranumCore {
     return new MiranumCore({
         projectVersion: projectVersion,
         name: projectName,
@@ -29,7 +34,9 @@ export class MiranumCore {
 
     public async deploy(target: string, artifact: Artifact): Promise<Artifact> {
         if (!this.projectConfig) {
-            throw new Error("Config not available. Please initialize digiwfLib with a valid config");
+            throw new Error(
+                "Config not available. Please initialize digiwfLib with a valid config",
+            );
         }
 
         if (!checkIfSupportedType(artifact.type)) {
@@ -37,7 +44,9 @@ export class MiranumCore {
         }
 
         await Promise.all(
-            this.projectConfig.deployment.map(plugin => plugin.deploy(target, artifact)),
+            this.projectConfig.deployment.map((plugin) =>
+                plugin.deploy(target, artifact),
+            ),
         );
         return artifact;
     }
@@ -53,14 +62,21 @@ export class MiranumCore {
             { name: `${projectName}_start`, type: "form" },
             { name: `${projectName}_control`, type: "form" },
         ];
-        const generatedFiles = [];
+        const generatedFiles: Artifact[] = [];
         for (const file of filesToGenerate) {
-            generatedFiles.push(await this.initArtifact(file.name, file.type, projectName));
+            generatedFiles.push(
+                await this.initArtifact(file.name, file.type, projectName),
+            );
         }
         return generatedFiles;
     }
 
-    public async generateArtifact(artifactName: string, type: string, projectName: string, projectPath: string): Promise<Artifact> {
+    public async generateArtifact(
+        artifactName: string,
+        type: string,
+        projectName: string,
+        projectPath: string,
+    ): Promise<Artifact> {
         /** First, checks if we have a projectConfig, with a valid workspace for the type && if we are on "root-level" of the project
          *  if true: initialise an artifact with the artifact.pathInProject set as the projectConfig.workspace defines it,
          *  otherwise: initialise the artifact as a standalone artifact
@@ -71,7 +87,9 @@ export class MiranumCore {
         // if project root folder
         if (this.projectConfig && lastFolder === projectName) {
             // finds the first item
-            const miranumWorkspaceItem = this.projectConfig.workspace.find(ws => ws.type === type);
+            const miranumWorkspaceItem = this.projectConfig.workspace.find(
+                (ws) => ws.type === type,
+            );
             if (miranumWorkspaceItem) {
                 pathInProject = miranumWorkspaceItem.path;
             }
@@ -86,15 +104,20 @@ export class MiranumCore {
      * @param pathInProject if undefined, default/base path will be used => should only be undefined to generate a project
      * @private
      */
-    private async initArtifact(artifactName: string, type: string, project: string, pathInProject?: string): Promise<Artifact> {
+    private async initArtifact(
+        artifactName: string,
+        type: string,
+        project: string,
+        pathInProject?: string,
+    ): Promise<Artifact> {
         const generator = this.generatorPlugins.get(type);
         if (!generator) {
             throw new Error(`File type ${type} is not supported.`);
         }
 
-        let extension = undefined;
+        let extension = "";
         // eslint-disable-next-line array-callback-return
-        this.projectConfig?.workspace.find( workspace => {
+        this.projectConfig?.workspace.find((workspace) => {
             if (workspace.type === type) {
                 extension = workspace.extension;
             }
@@ -104,6 +127,7 @@ export class MiranumCore {
 }
 
 const supportedTypes = ["bpmn", "dmn", "form", "config"];
+
 /**
  * If the type is supported for deployment the function returns true
  * @param type type of the artifact that is to be deployed

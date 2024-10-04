@@ -6,7 +6,8 @@ import * as colors from "colors";
 const program = new Command();
 program
     .name("Miranum CLI")
-    .description(colors.green.bold(`
+    .description(
+        colors.green.bold(`
 ███╗   ███╗██╗██████╗  █████╗ ███╗   ██╗██╗   ██╗███╗   ███╗
 ████╗ ████║██║██╔══██╗██╔══██╗████╗  ██║██║   ██║████╗ ████║
 ██╔████╔██║██║██████╔╝███████║██╔██╗ ██║██║   ██║██╔████╔██║
@@ -20,7 +21,8 @@ program
 ██║██║  ██║██╔══╝
 ██║██████╔╝███████╗
 ╚═╝╚═════╝ ╚══════╝
-`))
+`),
+    )
     .version("0.0.1");
 
 program.addCommand(deployFile());

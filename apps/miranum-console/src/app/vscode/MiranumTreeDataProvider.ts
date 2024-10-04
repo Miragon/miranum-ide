@@ -20,7 +20,7 @@ export class MiranumTreeDataProvider implements TreeDataProvider<TreeItem> {
     private readonly workspace?: WorkspaceFolder;
 
     private _onDidChangeTreeData: vscode.EventEmitter<
-    FolderItem | undefined | null | void
+        FolderItem | undefined | null | void
     > = new vscode.EventEmitter<FolderItem | undefined | null | void>();
 
     readonly onDidChangeTreeData: vscode.Event<FolderItem | undefined | null | void> =

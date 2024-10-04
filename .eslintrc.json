@@ -65,7 +65,7 @@
         "plugin:@nx/typescript"
       ],
       "rules": {
-        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-explicit-any": "warn",
         "import/no-extraneous-dependencies": "off"
       }
     },

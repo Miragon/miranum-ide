@@ -54,7 +54,6 @@ const displayData = ref<any | undefined>(undefined);
 const displayErrors = ref<any | undefined>(undefined);
 
 let loading = true;
-// eslint-disable-next-line react-hooks/rules-of-hooks
 const theme = useTheme();
 let jsonComponentTheme = ref<"light" | "dark">("light");
 

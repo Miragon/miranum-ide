@@ -10,7 +10,9 @@
 import { Range, TextDocument, Uri, Webview, workspace, WorkspaceEdit } from "vscode";
 import { Buffer } from "node:buffer";
 
+// prettier-ignore
 import { DocumentOutPort, ReaderOutPort, VsCodeConfigOutPort, WebviewOutPort } from "../application/portsOut";
+// prettier-ignore
 import { ConfigEditorData, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 /**

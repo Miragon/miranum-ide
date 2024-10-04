@@ -8,6 +8,9 @@
 import { TextDocument, Uri, Webview, workspace } from "vscode";
 import { inject, injectable } from "tsyringe";
 
+// prettier-ignore
+import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
+
 import { EXTENSION_CONTEXT, setUpdateFrom, updateFrom, UpdateFrom } from "../common";
 import {
     InitWebviewCommand,
@@ -21,9 +24,8 @@ import {
     SyncDocumentCommand,
     SyncDocumentInPort,
     SyncWebviewCommand,
-    SyncWebviewInPort
+    SyncWebviewInPort,
 } from "../application/portsIn";
-import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";
 
 /**
  * @class WebviewAdapter
