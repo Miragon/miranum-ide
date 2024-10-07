@@ -1,18 +1,32 @@
 {
   "root": true,
-  "ignorePatterns": ["**/*"],
-  "plugins": ["@nx", "@typescript-eslint"],
+  "ignorePatterns": [
+    "**/*"
+  ],
+  "plugins": [
+    "@nx",
+    "@typescript-eslint",
+    "@stylistic"
+  ],
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx", "*.js", "*.jsx", "*.vue"],
+      "files": [
+        "*.ts",
+        "*.tsx",
+        "*.js",
+        "*.jsx",
+        "*.vue"
+      ],
       "parserOptions": {
-        "project": ["tsconfig.*?.json"]
+        "project": [
+          "tsconfig.*?.json"
+        ]
       },
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "airbnb-typescript",
-        "plugin:@nx/react"
+        "plugin:@stylistic/recommended-extends"
+        //"airbnb-typescript/base"
       ],
       "rules": {
         "@nx/enforce-module-boundaries": [
@@ -23,32 +37,88 @@
             "depConstraints": [
               {
                 "sourceTag": "*",
-                "onlyDependOnLibsWithTags": ["*"]
+                "onlyDependOnLibsWithTags": [
+                  "*"
+                ]
               }
             ]
           }
         ],
-        "@typescript-eslint/quotes": [
+        "@typescript-eslint/no-empty-function": [
+          "error",
+          {
+            "allow": [
+              "arrowFunctions"
+            ]
+          }
+        ],
+        "@stylistic/quotes": [
           "error",
           "double",
           {
             "allowTemplateLiterals": true
           }
         ],
-        "@typescript-eslint/indent": ["error", 4]
+        "@stylistic/lines-between-class-members": [
+          "error",
+          "always"
+        ],
+        "@stylistic/padded-blocks": [
+          "error",
+          {
+            "blocks": "never",
+            "classes": "never",
+            "switches": "never"
+          }
+        ],
+        "@stylistic/indent": "off",
+        "@stylistic/semi": [
+          "error",
+          "always"
+        ],
+        "@stylistic/operator-linebreak": "off",
+        "@stylistic/arrow-parens": [
+          "error",
+          "always"
+        ],
+        "@stylistic/member-delimiter-style": [
+          "error",
+          {
+            "multiline": {
+              "delimiter": "semi",
+              "requireLast": true
+            },
+            "singleline": {
+              "delimiter": "semi",
+              "requireLast": false
+            }
+          }
+        ],
+        "@stylistic/brace-style": "off",
+        "@stylistic/indent-binary-ops": "off"
       }
     },
     {
-      "files": ["*.ts", "*.tsx"],
-      "extends": ["plugin:@nx/typescript"],
+      "files": [
+        "*.ts",
+        "*.tsx"
+      ],
+      "extends": [
+        "plugin:@nx/typescript"
+      ],
       "rules": {
-        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-explicit-any": "warn",
         "import/no-extraneous-dependencies": "off"
       }
     },
     {
-      "files": ["*.js", "*.jsx"],
-      "extends": ["plugin:@nx/javascript"],
+      "files": [
+        "*.js",
+        "*.jsx"
+      ],
+      "extends": [
+        "plugin:@nx/javascript"
+      ],
       "rules": {}
     }
   ]

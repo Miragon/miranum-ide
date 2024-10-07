@@ -1,7 +1,6 @@
 import { Configuration, DeploymentAPIApi } from "./openapi";
 import { Artifact, MiranumDeploymentPlugin, MiranumDeploymentTarget } from "../../types";
 
-
 export class MiranumDeploymentPluginRest implements MiranumDeploymentPlugin {
     plugin: string;
 
@@ -12,8 +11,8 @@ export class MiranumDeploymentPluginRest implements MiranumDeploymentPlugin {
         this.targetEnvironments = targetEnvironments;
     }
 
-    async deploy(target : string, artifact : Artifact) : Promise<Artifact> {
-        const targetEnv = this.targetEnvironments.filter(env => env.name === target);
+    async deploy(target: string, artifact: Artifact): Promise<Artifact> {
+        const targetEnv = this.targetEnvironments.filter((env) => env.name === target);
         if (targetEnv.length === 0) {
             throw new Error(`No target configured for ${target}`);
         }
@@ -22,13 +21,16 @@ export class MiranumDeploymentPluginRest implements MiranumDeploymentPlugin {
             target: target,
             artifact: {
                 ...artifact,
-            }
+            },
         };
-        const response = await new DeploymentAPIApi(new Configuration({basePath: targetEnv[0].url})).deployArtifact(deployment);
+        const response = await new DeploymentAPIApi(
+            new Configuration({ basePath: targetEnv[0].url }),
+        ).deployArtifact(deployment);
         if (!response.data.success) {
-            throw new Error(`Failed deployment of artifact ${artifact.file.name} to environment ${target}`);
+            throw new Error(
+                `Failed deployment of artifact ${artifact.file.name} to environment ${target}`,
+            );
         }
         return artifact;
     }
-
 }

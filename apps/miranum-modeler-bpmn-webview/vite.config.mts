@@ -1,39 +1,13 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
-
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import path from "path";
+import viteTsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-bpmn-webview",
 
-    resolve: {
-        alias: [
-            {
-                find: "@miranum-ide/vscode/miranum-vscode-webview",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/vscode/miranum-vscode-webview/src",
-                ),
-            },
-            {
-                find: "@miranum-ide/vscode/shared/miranum-modeler",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/vscode/shared/miranum-modeler/src",
-                ),
-            },
-            {
-                find: "@miranum-ide/miranum-create-append-c7-element-templates",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/miranum-create-append-c7-element-templates/src",
-                ),
-            },
-        ],
-    },
-
     plugins: [
+        viteTsConfigPaths({ root: "../../" }),
         viteStaticCopy({
             targets: [
                 {
@@ -54,7 +28,7 @@ export default defineConfig({
         chunkSizeWarningLimit: 1200,
         rollupOptions: {
             output: {
-                // don"t hash the name of the output file (index.js)
+                // don't hash the name of the output file (index.js)
                 entryFileNames: `[name].js`,
                 assetFileNames: `[name].[ext]`,
             },

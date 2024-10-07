@@ -1,9 +1,9 @@
 import { getFile, getFiles } from "./fs";
 import { FileDetails } from "@miranum-ide/miranum-core";
-import {pathToProject} from "../../../tests/testHelpers";
+import { pathToProject } from "../../../tests/testHelpers";
 
 function checkFiles(files: FileDetails[], fileExtension: string) {
-    files.forEach(fileDetails => {
+    files.forEach((fileDetails) => {
         expect(fileDetails.name).not.toBeNull();
         expect(fileDetails.extension).toEqual(fileExtension);
         expect(fileDetails.content).not.toBeNull();
@@ -11,7 +11,7 @@ function checkFiles(files: FileDetails[], fileExtension: string) {
     });
 }
 
-describe("getFile",() => {
+describe("getFile", () => {
     it("should work", async () => {
         const fileDetails = await getFile(`${pathToProject}/my-process.bpmn`);
 
@@ -22,12 +22,11 @@ describe("getFile",() => {
     });
 
     it("should raise an error", async () => {
-        return getFile(pathToProject)
-            .catch(e => expect(e).not.toBeNull());
+        return getFile(pathToProject).catch((e) => expect(e).not.toBeNull());
     });
 });
 
-describe("getFiles",() => {
+describe("getFiles", () => {
     it("forms should work", async () => {
         const files = await getFiles(`${pathToProject}/forms`, ".form");
         checkFiles(files, ".form");
@@ -49,7 +48,6 @@ describe("getFiles",() => {
     });
 
     it("should raise an error", async () => {
-        return getFile(pathToProject)
-            .catch(e => expect(e).not.toBeNull());
+        return getFile(pathToProject).catch((e) => expect(e).not.toBeNull());
     });
 });

@@ -24,7 +24,7 @@ import {
     SyncDocumentCommand,
     SyncDocumentInPort,
     SyncWebviewCommand,
-    SyncWebviewInPort
+    SyncWebviewInPort,
 } from "./portsIn";
 import { DocumentOutPort, ReaderOutPort, VsCodeConfigOutPort, WebviewOutPort } from "./portsOut";
 import { ConfigEditorData, MessageType, VscMessage } from "@miranum-ide/vscode/shared/miranum-config-editor";

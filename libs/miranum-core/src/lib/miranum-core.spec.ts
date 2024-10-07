@@ -3,11 +3,11 @@ import { Artifact, MiranumWorkspaceItem } from "./types";
 
 const sampleTarget = "local";
 const workspace: MiranumWorkspaceItem[] = [
-    {type: "bpmn", path: "", extension: ".bpmn" },
-    {type: "dmn", path: "", extension: ".dmn" },
-    {type: "form", path: "forms", extension: ".form" },
-    {type: "element-template", path: "element-templates", extension: ".json" },
-    {type:"config", path: "configs", extension: ".config.json" }
+    { type: "bpmn", path: "", extension: ".bpmn" },
+    { type: "dmn", path: "", extension: ".dmn" },
+    { type: "form", path: "forms", extension: ".form" },
+    { type: "element-template", path: "element-templates", extension: ".json" },
+    { type: "config", path: "configs", extension: ".config.json" },
 ];
 const deploymentPlugin = [
     {
@@ -15,23 +15,28 @@ const deploymentPlugin = [
         targetEnvironments: [
             {
                 name: "local",
-                url: "http://localhost:8080"
+                url: "http://localhost:8080",
             },
             {
                 name: "dev",
-                url: "http://localhost:8080"
+                url: "http://localhost:8080",
             },
             {
                 name: "test",
-                url: "http://localhost:8080"
-            }
+                url: "http://localhost:8080",
+            },
         ],
-        async deploy(target : string, artifact : Artifact) : Promise<Artifact> {
+        async deploy(target: string, artifact: Artifact): Promise<Artifact> {
             return artifact;
-        }
-    }
+        },
+    },
 ];
-const miranumCore: MiranumCore = createMiranumCore("1.0.0", "my-project", workspace, deploymentPlugin);
+const miranumCore: MiranumCore = createMiranumCore(
+    "1.0.0",
+    "my-project",
+    workspace,
+    deploymentPlugin,
+);
 
 describe("deploy", () => {
     it("should work", async () => {
@@ -42,9 +47,9 @@ describe("deploy", () => {
                 name: "example.bpmn",
                 extension: ".bpmn",
                 content: "...",
-                size: 500
-            }
-        }
+                size: 500,
+            },
+        };
 
         const deployment = await miranumCore.deploy(sampleTarget, exampleArtifact);
 
@@ -59,11 +64,12 @@ describe("deploy", () => {
                 name: "example.bpmn",
                 extension: ".bpmn",
                 content: "...",
-                size: 500
-            }
-        }
-        await miranumCore.deploy(sampleTarget, exampleArtifact)
-            .catch(e => expect(e).not.toBeNull());
+                size: 500,
+            },
+        };
+        await miranumCore
+            .deploy(sampleTarget, exampleArtifact)
+            .catch((e) => expect(e).not.toBeNull());
     });
 });
 
@@ -76,26 +82,45 @@ describe("generate", () => {
     }
 
     const filesToGenerate: FileHelper[] = [
-        {name: "my-process", type: "bpmn", extension: ".bpmn", dir: ""},
-        {name: "my-decision-table", type: "dmn", extension: ".dmn", dir: ""},
-        {name: "my-form", type: "form", extension: ".form", dir: "forms"},
-        {name: "my-config", type: "config", extension: ".config.json", dir: "configs"},
-        {name: "my-element-template", type: "element-template", extension: ".json", dir: "element-templates"},
+        { name: "my-process", type: "bpmn", extension: ".bpmn", dir: "" },
+        { name: "my-decision-table", type: "dmn", extension: ".dmn", dir: "" },
+        { name: "my-form", type: "form", extension: ".form", dir: "forms" },
+        { name: "my-config", type: "config", extension: ".config.json", dir: "configs" },
+        {
+            name: "my-element-template",
+            type: "element-template",
+            extension: ".json",
+            dir: "element-templates",
+        },
     ];
 
     for (const file of filesToGenerate) {
         it(`generate ${file.type} on top-level`, async () => {
-            const artifact = await miranumCore.generateArtifact(file.name, file.type, "my-project", "imaginary/path/my-project");
-            //name, type, and extension are tested in plugisn.spec.ts
+            const artifact = await miranumCore.generateArtifact(
+                file.name,
+                file.type,
+                "my-project",
+                "imaginary/path/my-project",
+            );
+            // name, type, and extension are tested in plugisn.spec.ts
             expect(artifact.project).toEqual("my-project");
-            expect(artifact.file.pathInProject).toEqual(`${file.dir}/${file.name}${file.extension}`);
+            expect(artifact.file.pathInProject).toEqual(
+                `${file.dir}/${file.name}${file.extension}`,
+            );
         });
 
         it(`generate ${file.type} in subfolder`, async () => {
-            const artifact = await miranumCore.generateArtifact(file.name, file.type, "my-project", "imaginary/path/my-project/subfolder");
-            //name, type, and extension are tested in plugisn.spec.ts
+            const artifact = await miranumCore.generateArtifact(
+                file.name,
+                file.type,
+                "my-project",
+                "imaginary/path/my-project/subfolder",
+            );
+            // name, type, and extension are tested in plugisn.spec.ts
             expect(artifact.project).toEqual("my-project");
-            expect(artifact.file.pathInProject).toEqual(`/${file.name}${file.extension}`);
+            expect(artifact.file.pathInProject).toEqual(
+                `/${file.name}${file.extension}`,
+            );
         });
     }
 });

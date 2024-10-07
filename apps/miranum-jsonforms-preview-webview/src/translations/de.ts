@@ -12,7 +12,7 @@ export const formBuilder = {
     "options.placeholder.label": "Platzhalter",
     "options.placeholder.description":
         "ACHTUNG: Platzhalter können derzeit noch nicht übersetzt werden",
-    "pattern.description": 'zB: "[abc]+"',
+    "pattern.description": `zB: "[abc]+"`,
     "oneOf.const.label": "Name",
     "oneOf.title.label": "Title",
 };

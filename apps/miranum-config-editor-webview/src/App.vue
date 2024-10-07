@@ -24,7 +24,6 @@ import { createResolver } from "./composables/utils";
 //
 declare const process: { env: { NODE_ENV: string } };
 
-// eslint-disable-next-line react-hooks/rules-of-hooks
 const theme = useTheme();
 const renderers = [...vuetifyRenderers];
 

@@ -4,6 +4,7 @@
 
 body,
 html {
+    background-color: #fff;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     height: 100%;
@@ -89,43 +90,6 @@ a:link {
 .properties-panel-parent > .djs-properties-panel {
     padding-bottom: 70px;
     min-height: 100%;
-}
-
-/* reset css */
-html {
-    box-sizing: border-box;
-    font-size: 13px;
-    background-color: #fff;
-}
-
-*,
-*:before,
-*:after {
-    box-sizing: inherit;
-}
-
-body,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-ol,
-ul {
-    margin: 0;
-    padding: 0;
-    font-weight: normal;
-}
-
-body {
-    color: black;
-}
-
-img {
-    max-width: 100%;
-    height: auto;
 }
 
 .djs-popup.element-template-chooser {

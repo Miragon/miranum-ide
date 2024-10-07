@@ -19,7 +19,7 @@ export default defineConfig({
     build: {
         rollupOptions: {
             output: {
-                // don"t hash the name of the output file (index.js)
+                // don't hash the name of the output file (index.js)
                 entryFileNames: `[name].js`,
             },
         },

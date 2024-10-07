@@ -1,31 +1,13 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import path from "path";
+import viteTsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-dmn-webview",
 
-    resolve: {
-        alias: [
-            {
-                find: "@miranum-ide/vscode/miranum-vscode-webview",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/vscode/miranum-vscode-webview/src",
-                ),
-            },
-            {
-                find: "@miranum-ide/vscode/shared/miranum-modeler",
-                replacement: path.resolve(
-                    __dirname,
-                    "../../libs/vscode/shared/miranum-modeler/src",
-                ),
-            },
-        ],
-    },
-
     plugins: [
+        viteTsConfigPaths({ root: "../../" }),
         viteStaticCopy({
             targets: [
                 {

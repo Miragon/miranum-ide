@@ -15,7 +15,12 @@
         "*.js",
         "*.jsx"
       ],
-      "rules": {}
+      "rules": {
+        "@stylistic/jsx-indent-props": [
+          "error",
+          4
+        ]
+      }
     },
     {
       "files": [

@@ -12,7 +12,7 @@
       "defaultConfiguration": "development",
       "options": {
         "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "configFile": "apps/miranum-console-webview/vite.config.ts",
+        "configFile": "apps/miranum-console-webview/vite.config.mts",
         "deleteOutputPath": false,
         "watch": {}
       },
@@ -33,7 +33,7 @@
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "configFile": "apps/miranum-console-webview/vite.config.ts",
+        "configFile": "apps/miranum-console-webview/vite.config.mts",
         "minify": true,
         "deleteOutputPath": false
       },

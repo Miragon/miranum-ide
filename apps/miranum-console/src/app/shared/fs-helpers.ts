@@ -82,7 +82,7 @@ export async function getArtifact(
     const file = path.fsPath.substring(path.fsPath.lastIndexOf("/") + 1).split(".");
 
     return {
-        //type = extension => .json has to be renamed
+        // type = extension => .json has to be renamed
         type: file[1],
         project: projectName ?? "",
         file: {
@@ -103,7 +103,7 @@ export async function getArtifacts(
         for (const file of files) {
             const filePath = vscode.Uri.file(path.fsPath + "/" + file[0]);
             if (file[1] !== 1) {
-                //going through sub-folders
+                // going through sub-folders
                 artifacts.push(...(await getArtifacts(filePath, projectName)));
             } else {
                 artifacts.push(await getArtifact(filePath, projectName));

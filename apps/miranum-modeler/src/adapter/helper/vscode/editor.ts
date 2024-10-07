@@ -11,6 +11,9 @@ export function bpmnEditorUi(webview: Webview, extensionUri: Uri): string {
     const baseUri = Uri.joinPath(extensionUri, bpmnModelerWebviewProjectPath);
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
+    const styleResetUri = webview.asWebviewUri(
+        Uri.joinPath(extensionUri, "assets", "reset.css"),
+    );
     const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
     const fontUri = webview.asWebviewUri(Uri.joinPath(baseUri, "css", "bpmn.css"));
 
@@ -22,6 +25,7 @@ export function bpmnEditorUi(webview: Webview, extensionUri: Uri): string {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${styleResetUri}" rel="stylesheet">
                 <link href="${styleUri}" rel="stylesheet">
                 <link href="${fontUri}" rel="stylesheet">
                 <title>Miranum: BPMN Modeler</title>
@@ -41,6 +45,9 @@ export function dmnModelerHtml(webview: Webview, extensionUri: Uri): string {
     const baseUri = Uri.joinPath(extensionUri, dmnModelerWebviewProjectPath);
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
+    const styleResetUri = webview.asWebviewUri(
+        Uri.joinPath(extensionUri, "assets", "reset.css"),
+    );
     const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
     const frontUri = webview.asWebviewUri(Uri.joinPath(baseUri, "css", "dmn.css"));
 
@@ -53,6 +60,7 @@ export function dmnModelerHtml(webview: Webview, extensionUri: Uri): string {
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+                <link href="${styleResetUri}" rel="stylesheet">
                 <link href="${styleUri}" rel="stylesheet" type="text/css" />
                 <link href="${frontUri}" rel="stylesheet" type="text/css" />
 

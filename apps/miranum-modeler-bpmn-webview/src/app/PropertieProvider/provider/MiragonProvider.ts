@@ -36,9 +36,10 @@ export default function MiragonProvider(
          * @return {Object[]} modified groups
          */
         return function (groups: any) {
-            //checks whether form files where loaded and either uses default property-panel, or Miranum's custom panel
+            // checks whether form files where loaded and either uses default properties-panel
+            // or Miranum's custom panel
             if (getFormKeys().length > 0) {
-                //(window.forms.length > 0) {
+                // (window.forms.length > 0) {
                 // Add own "form" group to StartEvent, and remove old Form property
                 if (is(element, "bpmn:StartEvent")) {
                     groups.push(createStartFormGroup(element, translate));
