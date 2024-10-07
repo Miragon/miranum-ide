@@ -25,7 +25,8 @@
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended"
+        "plugin:@stylistic/recommended-extends"
+        //"airbnb-typescript/base"
       ],
       "rules": {
         "@nx/enforce-module-boundaries": [
@@ -43,17 +44,61 @@
             ]
           }
         ],
-        "@typescript-eslint/quotes": [
+        "@typescript-eslint/no-empty-function": [
+          "error",
+          {
+            "allow": [
+              "arrowFunctions"
+            ]
+          }
+        ],
+        "@stylistic/quotes": [
           "error",
           "double",
           {
             "allowTemplateLiterals": true
           }
         ],
-        "@typescript-eslint/indent": [
+        "@stylistic/lines-between-class-members": [
+          "error",
+          "always"
+        ],
+        "@stylistic/padded-blocks": [
+          "error",
+          {
+            "blocks": "never",
+            "classes": "never",
+            "switches": "never"
+          }
+        ],
+        "@stylistic/indent": [
           "error",
           4
-        ]
+        ],
+        "@stylistic/semi": [
+          "error",
+          "always"
+        ],
+        "@stylistic/operator-linebreak": "off",
+        "@stylistic/arrow-parens": [
+          "error",
+          "always"
+        ],
+        "@stylistic/member-delimiter-style": [
+          "error",
+          {
+            "multiline": {
+              "delimiter": "semi",
+              "requireLast": true
+            },
+            "singleline": {
+              "delimiter": "semi",
+              "requireLast": false
+            }
+          }
+        ],
+        "@stylistic/brace-style": "off",
+        "@stylistic/indent-binary-ops": "off"
       }
     },
     {
@@ -65,7 +110,7 @@
         "plugin:@nx/typescript"
       ],
       "rules": {
-        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-explicit-any": "warn",
         "import/no-extraneous-dependencies": "off"
       }
     },
