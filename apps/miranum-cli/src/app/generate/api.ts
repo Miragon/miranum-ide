@@ -25,15 +25,19 @@ export function generateFile(): Command {
     return new Command()
         .command("generate-file")
         .description("generates a process artifact")
-        .requiredOption("-t, --type <type>", "specify the file type that is to be generated")
+        .requiredOption(
+            "-t, --type <type>",
+            "specify the file type that is to be generated",
+        )
         .requiredOption("-n, --name <name>", "specify the name")
         .requiredOption("-p, --path <filepath>", "specify the targeted path")
         .action((options) => {
-            mapProcessConfigToDigiwfLib(options.path).then(digiwfLib => {
+            mapProcessConfigToDigiwfLib(options.path).then((digiwfLib) => {
                 const generate = new ProjectGenerator(digiwfLib);
-                generate.generateFile(options.name, options.type, options.path)
+                generate
+                    .generateFile(options.name, options.type, options.path)
                     .then(() => console.log(`Successfully created file ${options.name}`))
-                    .catch(err => {
+                    .catch((err) => {
                         console.log(`File ${options.name} could not be created`);
                         console.log(err);
                     });
@@ -68,9 +72,12 @@ export function generateProject(): Command {
         .option("-p, --path <filepath>", "specify the targeted path")
         .action((options) => {
             const generate = new ProjectGenerator(new MiranumCore());
-            generate.generateProject(options.name, `${options.path}/${options.name}`)
-                .then(() => console.log(`Successfully generated project ${options.name}`))
-                .catch(err => {
+            generate
+                .generateProject(options.name, `${options.path}/${options.name}`)
+                .then(() =>
+                    console.log(`Successfully generated project ${options.name}`),
+                )
+                .catch((err) => {
                     console.log(`Project ${options.name} could not be created`);
                     console.log(err);
                 });
