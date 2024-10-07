@@ -14,8 +14,8 @@ export default function (element: any) {
     ];
 }
 
-//camunda:formKey = Embedded or External Task Forms
-//camunda:formRef = Camunda Forms
+// camunda:formKey = Embedded or External Task Forms
+// camunda:formRef = Camunda Forms
 function Form(props: any) {
     const { element, id } = props;
     const modeling = useService("modeling");
@@ -32,7 +32,7 @@ function Form(props: any) {
         });
     };
 
-    //fetch forms (from window variable) and fill Forms with it
+    // fetch forms (from window variable) and fill Forms with it
     const [forms, setForms] = useState<string[]>([]);
     useEffect(() => {
         setForms(getFormKeys()); // window.forms);

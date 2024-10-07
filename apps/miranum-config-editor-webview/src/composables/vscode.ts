@@ -106,7 +106,7 @@ export class VsCodeMock implements VsCode {
             case MessageType.syncDocument: {
                 console.log(
                     "[Log] Send data to the backend...",
-                    JSON.parse(payload?.data ?? '{ "data": "No data"}"'),
+                    JSON.parse(payload?.data ?? `{ "data": "No data"}"`),
                 );
                 break;
             }

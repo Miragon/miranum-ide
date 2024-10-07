@@ -38,7 +38,6 @@ export function App() {
         <ThemeProvider theme={theme}>
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
-                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {view === "generateFile" && (
                     <GenerateInput
                         currentPath={currentPath}

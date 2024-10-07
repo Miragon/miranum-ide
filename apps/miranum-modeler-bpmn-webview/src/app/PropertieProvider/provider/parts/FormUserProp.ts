@@ -19,19 +19,19 @@ export default function (element: any) {
 
 function Form(props: any) {
     const { element, id } = props;
-    //injections
+    // injections
     const modeling = useService("modeling");
     const bpmnFactory = useService("bpmnFactory");
     const translate = useService("translate");
     const debounce = useService("debounceInput");
 
-    //currently hard-coded binding
-    //needed for InputParameter - setValue/getValue
+    // currently hard-coded binding
+    // needed for InputParameter - setValue/getValue
     const binding = {
         type: "camunda:inputParameter",
         name: "app_task_schema_key",
     };
-    //both are currently only used for getValue(), if a input has already been allocated
+    // both are currently only used for getValue(), if a input has already been allocated
     const inputOutput = findExtension(getBusinessObject(element), "camunda:InputOutput");
     const inputParameter = inputOutput && findInputParameter(inputOutput, binding);
 
@@ -55,7 +55,7 @@ function Form(props: any) {
         }
     };
 
-    //fetch forms (from window variable) and fill Forms with it
+    // fetch forms (from window variable) and fill Forms with it
     const [forms, setForms] = useState<string[]>([]);
     useEffect(() => {
         setForms(getFormKeys()); // window.forms);
@@ -82,7 +82,7 @@ function Form(props: any) {
     });
 }
 
-//add or change
+// add or change
 function addInputParameter(
     element: any,
     property: any,
@@ -91,13 +91,13 @@ function addInputParameter(
 ) {
     const { binding, value } = property;
 
-    const businessObject = getBusinessObject(element); //alternativ: element.businessObject
+    const businessObject = getBusinessObject(element); // alternative: element.businessObject
     let extensionElements = businessObject.get("extensionElements");
-    let inputOutput = findExtension(businessObject, "camunda:InputOutput"); //already as a global variable
+    let inputOutput = findExtension(businessObject, "camunda:InputOutput"); // already as a global variable
     let updatedBusinessObject, update;
 
-    //goes through all possibilities and sets updateBusinessObject & update accordingly
-    //case: nothing exists
+    // goes through all possibilities and sets updateBusinessObject & update accordingly
+    // case: nothing exists
     if (!extensionElements) {
         updatedBusinessObject = businessObject;
         extensionElements = createExtensionElements(businessObject, bpmnFactory);
@@ -105,13 +105,13 @@ function addInputParameter(
         extensionElements.values.push(inputOutput);
         update = { extensionElements };
 
-        //case: Input has existed, but has been deleted again
+        // case: Input has existed, but has been deleted again
     } else if (!inputOutput) {
         updatedBusinessObject = extensionElements;
         inputOutput = createInputOutput(binding, value, bpmnFactory, extensionElements);
         update = { values: extensionElements.get("values").concat(inputOutput) };
 
-        //case: input exists, but key is already used => overwrite
+        // case: input exists, but key is already used => overwrite
     } else if (findInputParameter(inputOutput, binding)) {
         removeInputParameter(element, binding, modeling);
 
@@ -119,7 +119,7 @@ function addInputParameter(
         inputOutput = createInputOutput(binding, value, bpmnFactory, extensionElements);
         update = { values: extensionElements.get("values").concat(inputOutput) };
 
-        //case: input exists, and key isn't allocated yet
+        // case: input exists, and key isn't allocated yet
     } else {
         updatedBusinessObject = inputOutput;
 
@@ -131,7 +131,7 @@ function addInputParameter(
                 .concat(inputParameter),
         };
     }
-    //write into xml
+    // write into xml
     modeling.updateModdleProperties(element, updatedBusinessObject, update);
 }
 
@@ -143,7 +143,7 @@ function removeInputParameter(element: any, binding: any, modeling: any) {
 
     const inputParameter = findInputParameter(inputOutput, binding);
 
-    //delete External Task paragraph from xml
+    // delete External Task paragraph from xml
     modeling.updateModdleProperties(element, inputOutput, {
         inputParameters: without(inputParameters, inputParameter),
     });

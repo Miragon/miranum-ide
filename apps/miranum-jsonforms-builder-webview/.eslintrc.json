@@ -7,7 +7,9 @@
     "@vue/eslint-config-prettier/skip-formatting"
   ],
   "ignorePatterns": [
-    "!**/*"
+    "!**/*",
+    "tailwind.config.js",
+    "postcss.config.js"
   ],
   "parser": "vue-eslint-parser",
   "parserOptions": {

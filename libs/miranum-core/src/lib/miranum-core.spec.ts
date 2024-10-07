@@ -102,7 +102,7 @@ describe("generate", () => {
                 "my-project",
                 "imaginary/path/my-project",
             );
-            //name, type, and extension are tested in plugisn.spec.ts
+            // name, type, and extension are tested in plugisn.spec.ts
             expect(artifact.project).toEqual("my-project");
             expect(artifact.file.pathInProject).toEqual(
                 `${file.dir}/${file.name}${file.extension}`,
@@ -116,7 +116,7 @@ describe("generate", () => {
                 "my-project",
                 "imaginary/path/my-project/subfolder",
             );
-            //name, type, and extension are tested in plugisn.spec.ts
+            // name, type, and extension are tested in plugisn.spec.ts
             expect(artifact.project).toEqual("my-project");
             expect(artifact.file.pathInProject).toEqual(
                 `/${file.name}${file.extension}`,

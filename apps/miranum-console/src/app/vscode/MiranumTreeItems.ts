@@ -12,16 +12,12 @@ export class FolderItem extends TreeItem {
     /**
      * @override
      */
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    public readonly label: string;
+    public override readonly label: string;
 
     /**
      * @override
      */
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    public readonly collapsibleState: TreeItemCollapsibleState;
+    public override readonly collapsibleState: TreeItemCollapsibleState;
 
     /**
      * The URI of the directory or file.

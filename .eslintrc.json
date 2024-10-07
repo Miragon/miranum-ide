@@ -71,10 +71,7 @@
             "switches": "never"
           }
         ],
-        "@stylistic/indent": [
-          "error",
-          4
-        ],
+        "@stylistic/indent": "off",
         "@stylistic/semi": [
           "error",
           "always"
