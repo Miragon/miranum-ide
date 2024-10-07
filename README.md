@@ -28,31 +28,13 @@
 
 Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your
 process application in one place.
-Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
+Visit our Marketplace page [here](https://marketplace.visualstudio.com/publishers/miragon-gmbh).
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+## Use-Cases
 
-### Built With
-
-* [Typescript]()
-* [VS Code API]()
-* [Vue 2]()
-* [React]()
-* [Nx]()
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-## Getting started
-
-For an explanation on how to get started, please refer to the [quickstart doc](quickstart.md).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-## Documentation
-
-For all further documentation, please refer to the [documentations doc](docs/README.md).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
+- **Process Modeling**: Creating and editing BPMN and DMN diagrams specifically for **Camunda**.
+- **Form Modeling**: Create and edit forms based on [JSON Forms](https://jsonforms.io/).
+- **Process Deployment**: Deploy your process application to the [Miranum Platform](https://github.com/miragon/miranum?tab=readme-ov-file).
 
 ## Engage with the Miranum-IDE team
 
@@ -68,11 +50,13 @@ For inquiries and professional support, please contact us at: [info@miragon.io](
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
 contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and
-create a pull request. You can also simply open an issue with the tag "enhancement".
+If you have a suggestion that would make this better, please open an issue with the tag `enhancement`, fork the repo and
+create a pull request.
+You can also open an issue with the tag `enhancement`.
 Please use semantic commit messages as described
 in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).  
-Don't forget to give the project a star! Thanks again!
+Remember to give the project a star!
+Thanks again!
 
 1. Open an issue with the tag "enhancement"
 2. Fork the Project
@@ -83,12 +67,9 @@ Don't forget to give the project a star! Thanks again!
 
 More about this in the [Code of Conduct](https://miranum.com/docs/components/contributing/) file.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 ## License
 
 Distributed under the [Apache License Version 2.0](LICENSE).
-
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
