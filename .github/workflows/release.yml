@@ -34,12 +34,12 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Corepack enable
-        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Corepack enable
+        run: corepack enable
       - name: Install dependencies
         run: yarn
       - name: Lint
@@ -126,22 +126,25 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-cli
-      - name: Enable corepack
-        run: corepack enable
-      - name: Setup .yarnrc.yml
-        run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
+      - name: PREP / Setup .yarnrc.yml
+        run: |
+          corepack enable
+          yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-      - name: Publish
-        run: yarn npm publish --access public
+      - name: RELEASE / Publish
+        run: |
+          corepack enable
+          yarn npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
@@ -153,22 +156,26 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-core
-      - name: Enable corepack
-        run: corepack enable
-      - name: Setup .yarnrc.yml
-        run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
+      - name: PREP / Setup .yarnrc.yml
+        run: |
+          corepack enable
+          yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-      - name: Publish
-        run: yarn npm publish --access public
+      - name: RELEASE / Publish
+        run: |
+          corepack enable
+          yarn --version
+          yarn npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
@@ -180,22 +187,25 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-create-append-c7-element-templates
-      - name: Enable corepack
-        run: corepack enable
-      - name: Setup .yarnrc.yml
-        run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
+      - name: PREP / Setup .yarnrc.yml
+        run: |
+          corepack enable
+          yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-      - name: Publish
-        run: yarn npm publish --access public
+      - name: RELEASE / Publish
+        run: |
+          corepack enable
+          yarn npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
@@ -207,20 +217,19 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-extension-pack
-      - name: Enable corepack
-        run: corepack enable
-      - name: Prepare
-        run: yarn && yarn add @vscode/vsce@latest
-      - name: Publish extension
-        run: yarn vsce publish --yarn
+      - name: RELEASE / Publish extension
+        run: vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -232,22 +241,19 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-config-editor
-      - name: Enable corepack
-        run: corepack enable
-      - name: Prepare
-        run: yarn && yarn add @vscode/vsce@latest
-      - name: Build vsix
-        run: yarn vsce package --out miranum-config-editor.vsix --yarn
-      - name: Publish extension
-        run: yarn vsce publish --yarn
+      - name: RELEASE / Publish extension
+        run: vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -259,22 +265,19 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-console
-      - name: Enable corepack
-        run: corepack enable
-      - name: Prepare
-        run: yarn && yarn add @vscode/vsce@latest
-      - name: Build vsix
-        run: yarn vsce package --out miranum-console.vsix --yarn
-      - name: Publish extension
-        run: yarn vsce publish --yarn
+      - name: RELEASE / Publish extension
+        run: vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -286,22 +289,19 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-jsonforms
-      - name: Enable corepack
-        run: corepack enable
-      - name: Prepare
-        run: yarn && yarn add @vscode/vsce@latest
-      - name: Build vsix
-        run: yarn vsce package --out miranum-jsonforms.vsix --yarn
-      - name: Publish extension
-        run: yarn vsce publish --yarn
+      - name: RELEASE / Publish extension
+        run: vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -313,21 +313,18 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 20
+      - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - name: PREP / Install vsce
+        run: npm install -g @vscode/vsce@latest
+      - name: PREP / Download build artifact
+        uses: actions/download-artifact@v4
         with:
           name: miranum-modeler
-      - name: Enable corepack
-        run: corepack enable
-      - name: Prepare
-        run: yarn && yarn add @vscode/vsce@latest
-      - name: Build vsix
-        run: yarn vsce package --out miranum-modeler.vsix --yarn
-      - name: Publish extension
-        run: yarn vsce publish --yarn
+      - name: RELEASE / Publish extension
+        run: vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
