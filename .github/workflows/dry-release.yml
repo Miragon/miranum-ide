@@ -48,7 +48,7 @@ jobs:
       - name: Build vsix miranum-extension-pack
         run: |
           cd apps/miranum-extension-pack
-          vsce package --out miranum-extension-pack.vsix --yarn
+          vsce package --out miranum-extension-pack.vsix
       - name: Build vsix miranum-config-editor
         run: |
           cd apps/miranum-config-editor
