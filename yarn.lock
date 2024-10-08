@@ -5080,12 +5080,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.x":
-  version: 18.19.54
-  resolution: "@types/node@npm:18.19.54"
+"@types/node@npm:20.x":
+  version: 20.16.11
+  resolution: "@types/node@npm:20.16.11"
   dependencies:
-    undici-types: "npm:~5.26.4"
-  checksum: 10c0/ea3e2530bb887d4d9c5eb58f0dd16b2af37e4323da2970f3b513403f45db1e0d54ba39b3de838ba7b2d40d38329aeed0bda4a0a39922d006c68aca5ee22e6e46
+    undici-types: "npm:~6.19.2"
+  checksum: 10c0/bba43f447c3c80548513954dae174e18132e9149d572c09df4a282772960d33e229d05680fb5364997c03489c22fe377d1dbcd018a3d4ff1cfbcfcdaa594a9c3
   languageName: node
   linkType: hard
 
@@ -14311,7 +14311,7 @@ __metadata:
     "@testing-library/react": "npm:16.0.1"
     "@types/jest": "npm:^29.5.13"
     "@types/lodash": "npm:^4.17.9"
-    "@types/node": "npm:18.x"
+    "@types/node": "npm:20.x"
     "@types/react": "npm:18.3.10"
     "@types/react-dom": "npm:18.3.0"
     "@types/uuid": "npm:^10.0.0"
@@ -18619,13 +18619,6 @@ __metadata:
     has-symbols: "npm:^1.0.3"
     which-boxed-primitive: "npm:^1.0.2"
   checksum: 10c0/81ca2e81134167cc8f75fa79fbcc8a94379d6c61de67090986a2273850989dd3bae8440c163121b77434b68263e34787a675cbdcb34bb2f764c6b9c843a11b66
-  languageName: node
-  linkType: hard
-
-"undici-types@npm:~5.26.4":
-  version: 5.26.5
-  resolution: "undici-types@npm:5.26.5"
-  checksum: 10c0/bb673d7876c2d411b6eb6c560e0c571eef4a01c1c19925175d16e3a30c4c428181fb8d7ae802a261f283e4166a0ac435e2f505743aa9e45d893f9a3df017b501
   languageName: node
   linkType: hard
 
