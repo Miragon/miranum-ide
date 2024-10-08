@@ -97,3 +97,10 @@ a:link {
     max-width: 1000px;
     width: fit-content !important;
 }
+
+/* see issue https://github.com/microsoft/vscode/issues/213045 */
+@supports selector(::-webkit-scrollbar) {
+    html {
+        scrollbar-color: unset;
+    }
+}
