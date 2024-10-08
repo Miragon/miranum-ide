@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-10-08
+
 ### Fixed
 
-* Fix the styling of the element templates chooser (#645)
+* Fix the styling of the scrollbar (#645)
 
 ### Changed
 
@@ -112,7 +114,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Unresolved breakpoints when debugging (#227)
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.0-vscode...HEAD
+
+[0.6.0]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13...release/v0.6.0-vscode
 
 [0.5.13]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.12...release/v0.5.13-vscode
 
