@@ -218,9 +218,9 @@ jobs:
         with:
           name: miranum-extension-pack
       - name: Prepare
-        run: yarn && yarn global add @vscode/vsce@latest
+        run: yarn && yarn add @vscode/vsce@latest
       - name: Publish extension
-        run: vsce publish
+        run: yarn vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -241,11 +241,11 @@ jobs:
         with:
           name: miranum-config-editor
       - name: Prepare
-        run: yarn && yarn global add @vscode/vsce@latest
+        run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
-        run: vsce package --out miranum-config-editor.vsix
+        run: yarn vsce package --out miranum-config-editor.vsix --yarn
       - name: Publish extension
-        run: vsce publish
+        run: yarn vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -266,11 +266,11 @@ jobs:
         with:
           name: miranum-console
       - name: Prepare
-        run: yarn && yarn global add @vscode/vsce@latest
+        run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
-        run: vsce package --out miranum-console.vsix
+        run: yarn vsce package --out miranum-console.vsix --yarn
       - name: Publish extension
-        run: vsce publish
+        run: yarn vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -291,11 +291,11 @@ jobs:
         with:
           name: miranum-jsonforms
       - name: Prepare
-        run: yarn && yarn global add @vscode/vsce@latest
+        run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
-        run: vsce package --out miranum-jsonforms.vsix
+        run: yarn vsce package --out miranum-jsonforms.vsix --yarn
       - name: Publish extension
-        run: vsce publish
+        run: yarn vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -316,10 +316,10 @@ jobs:
         with:
           name: miranum-modeler
       - name: Prepare
-        run: yarn && yarn global add @vscode/vsce@latest
+        run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
-        run: vsce package --out miranum-modeler.vsix
+        run: yarn vsce package --out miranum-modeler.vsix --yarn
       - name: Publish extension
-        run: vsce publish
+        run: yarn vsce publish --yarn
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
