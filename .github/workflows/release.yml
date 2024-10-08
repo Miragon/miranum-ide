@@ -38,6 +38,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Setup yarn
         run: |
           corepack enable
@@ -133,6 +135,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Download build artifact
         uses: actions/download-artifact@v4
         with:
@@ -163,6 +166,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Download build artifact
         uses: actions/download-artifact@v4
         with:
@@ -193,6 +197,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Download build artifact
         uses: actions/download-artifact@v4
         with:
@@ -223,6 +228,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: PREP / Download build artifact
@@ -251,6 +257,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: PREP / Download build artifact
@@ -279,6 +286,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: PREP / Download build artifact
@@ -307,6 +315,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: PREP / Download build artifact
@@ -335,6 +344,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - name: PREP / Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: PREP / Download build artifact
