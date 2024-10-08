@@ -11,15 +11,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Corepack enable
         run: corepack enable
-      - name: Setup NodeJS 18
+      - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+          node-version: '20'
       - name: Install dependencies
         run: yarn
       - name: Lint
@@ -40,16 +35,16 @@ jobs:
     steps:
       - name: Enable corepack
         run: corepack enable
-      - name: Setup NodeJS 18
+      - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v4
         with:
           name: dist
       - name: Install vsce
-        run: yarn global add @vscode/vsce@latest
+        run: npm install -g @vscode/vsce@latest
       - name: Build vsix miranum-extension-pack
         run: |
           cd apps/miranum-extension-pack
@@ -57,19 +52,19 @@ jobs:
       - name: Build vsix miranum-config-editor
         run: |
           cd apps/miranum-config-editor
-          vsce package --no-dependencies --out miranum-config-editor.vsix
+          vsce package --no-dependencies --out miranum-config-editor.vsix --yarn
       - name: Build vsix miranum-console
         run: |
           cd apps/miranum-console
-          vsce package --no-dependencies --out miranum-console.vsix
+          vsce package --no-dependencies --out miranum-console.vsix --yarn
       - name: Build vsix miranum-jsonforms
         run: |
           cd apps/miranum-jsonforms
-          vsce package --no-dependencies --out miranum-jsonforms.vsix
+          vsce package --no-dependencies --out miranum-jsonforms.vsix --yarn
       - name: Build vsix miranum-modeler
         run: |
           cd apps/miranum-modeler
-          vsce package --no-dependencies --out miranum-modeler.vsix
+          vsce package --no-dependencies --out miranum-modeler.vsix --yarn
       - name: Collect vsix
         run: |
           mkdir vsix-packages

@@ -4,6 +4,7 @@
 
 body,
 html {
+    color: #1f1f1f;
     background-color: #fff;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
@@ -95,4 +96,11 @@ a:link {
 .djs-popup.element-template-chooser {
     max-width: 1000px;
     width: fit-content !important;
+}
+
+/* see issue https://github.com/microsoft/vscode/issues/213045 */
+@supports selector(::-webkit-scrollbar) {
+    html {
+        scrollbar-color: unset;
+    }
 }
