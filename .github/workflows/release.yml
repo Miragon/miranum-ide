@@ -126,8 +126,6 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -136,6 +134,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-cli
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -153,8 +153,6 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -163,6 +161,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-core
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -180,8 +180,6 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -190,6 +188,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-create-append-c7-element-templates
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -207,8 +207,6 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -217,6 +215,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-extension-pack
+      - name: Enable corepack
+        run: corepack enable
       - name: Prepare
         run: yarn && yarn add @vscode/vsce@latest
       - name: Publish extension
@@ -240,6 +240,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-config-editor
+      - name: Enable corepack
+        run: corepack enable
       - name: Prepare
         run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
@@ -265,6 +267,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-console
+      - name: Enable corepack
+        run: corepack enable
       - name: Prepare
         run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
@@ -290,6 +294,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-jsonforms
+      - name: Enable corepack
+        run: corepack enable
       - name: Prepare
         run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
@@ -315,6 +321,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: miranum-modeler
+      - name: Enable corepack
+        run: corepack enable
       - name: Prepare
         run: yarn && yarn add @vscode/vsce@latest
       - name: Build vsix
