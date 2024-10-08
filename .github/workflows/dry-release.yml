@@ -33,16 +33,17 @@ jobs:
     needs:
       - build
     steps:
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
       - uses: actions/download-artifact@v4
         with:
           name: dist
-      - name: Enable corepack
-        run: corepack enable
       - name: Install vsce
         run: npm install -g @vscode/vsce@latest
       - name: Build vsix miranum-extension-pack

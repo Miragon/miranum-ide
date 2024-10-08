@@ -34,16 +34,14 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
           cache: 'yarn'
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: PREP / Install dependencies
         run: yarn
       - name: PREP / Lint
@@ -130,6 +128,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -140,10 +140,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-cli
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: PREP / Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -161,6 +157,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -171,10 +169,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-core
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: PREP / Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -192,6 +186,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -202,10 +198,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-create-append-c7-element-templates
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: PREP / Setup .yarnrc.yml
         run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
         env:
@@ -252,6 +244,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -264,10 +258,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-config-editor
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: RELEASE / Publish extension
         run: vsce publish --yarn
         env:
@@ -281,6 +271,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -293,10 +285,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-console
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: RELEASE / Publish extension
         run: vsce publish --yarn
         env:
@@ -310,6 +298,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -322,10 +312,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-jsonforms
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: RELEASE / Publish extension
         run: vsce publish --yarn
         env:
@@ -339,6 +325,8 @@ jobs:
       - build
       - create-release
     steps:
+      - name: PREP / Setup yarn
+        run: corepack enable
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
@@ -351,10 +339,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: miranum-modeler
-      - name: PREP / Setup yarn
-        run: |
-          corepack enable
-          yarn set version stable
       - name: RELEASE / Publish extension
         run: vsce publish --yarn
         env:
