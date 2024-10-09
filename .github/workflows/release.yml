@@ -357,7 +357,7 @@ jobs:
       - publish-miranum-extension-pack
       - publish-miranum-jsonforms
       - publish-miranum-modeler
-    uses: ./github/workflows/workflow-github-release.yml
+    uses: ./.github/workflows/workflow-github-release.yml
     with:
       release-version: ${{ github.event.inputs.release-tag }}
     secrets: inherit
