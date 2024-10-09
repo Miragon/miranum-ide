@@ -29,7 +29,6 @@ on:
         default: true
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -70,50 +69,57 @@ jobs:
         run: yarn build
 
       # miranum-cli
-      - name: RELEASE / miranum-cli
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-cli
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-cli
           path: dist/apps/miranum-cli
 
       # miranum-core
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-core
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-core
           path: dist/libs/miranum-core
 
       # miranum-create-append-c7-element-templates
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-create-append-c7-element-templates
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-create-append-c7-element-templates
           path: dist/libs/miranum-create-append-c7-element-templates
 
       # miranum-extension-pack
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-extension-pack
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-extension-pack
           path: dist/apps/miranum-extension-pack
 
       # miranum-config-editor
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-config-editor
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-config-editor
           path: dist/apps/miranum-config-editor
 
       # miranum-console
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-console
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-console
           path: dist/apps/miranum-console
 
       # miranum-jsonforms
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-jsonforms
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-jsonforms
           path: dist/apps/miranum-jsonforms
 
       # miranum-modeler
-      - uses: actions/upload-artifact@v4
+      - name: GIT / Upload miranum-modeler
+        uses: actions/upload-artifact@v4
         with:
           name: miranum-modeler
           path: dist/apps/miranum-modeler
