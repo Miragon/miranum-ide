@@ -56,19 +56,19 @@ jobs:
 
       - name: Build vsix miranum-config-editor
         working-directory: apps/miranum-config-editor
-        run: vsce package --no-dependencies --out miranum-config-editor.vsix --yarn
+        run: vsce package --out miranum-config-editor.vsix --yarn --no-dependencies
 
       - name: Build vsix miranum-console
         working-directory: apps/miranum-console
-        run: vsce package --no-dependencies --out miranum-console.vsix --yarn
+        run: vsce package --out miranum-console.vsix --yarn --no-dependencies
 
       - name: Build vsix miranum-jsonforms
         working-directory: apps/miranum-jsonforms
-        run: vsce package --no-dependencies --out miranum-jsonforms.vsix --yarn
+        run: vsce package --out miranum-jsonforms.vsix --yarn --no-dependencies
 
       - name: Build vsix miranum-modeler
         working-directory: apps/miranum-modeler
-        run: vsce package --no-dependencies --out miranum-modeler.vsix --yarn
+        run: vsce package --out miranum-modeler.vsix --yarn --no-dependencies
 
       - name: Collect vsix
         run: |
