@@ -38,11 +38,27 @@ jobs:
       - name: PREP / Setup yarn
         run: corepack enable
 
+      # - name: Disable global yarn cache
+      #   run: yarn config set enableGlobalCache false
+
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+
+      # - name: Get yarn cache directory path
+      #   id: yarn-cache-dir-path
+      #   run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      # - uses: actions/cache@v4
+      #   id: yarn-cache
+      #   with:
+      #     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+      #     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-yarn-
 
       - name: PREP / Install dependencies
         run: yarn
@@ -132,6 +148,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
 
       - name: PREP / Setup .yarnrc.yml
         run: |
@@ -141,9 +158,7 @@ jobs:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
       - name: RELEASE / Publish
-        run: |
-          yarn
-          yarn npm publish --access public
+        run: yarn npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
