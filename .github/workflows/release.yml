@@ -38,23 +38,14 @@ jobs:
       - name: PREP / Setup yarn
         run: corepack enable
 
+      # - name: Disable global yarn cache
+      #   run: yarn config set enableGlobalCache false
+
       - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-
-      # - name: PREP / Set Yarn Cache Directory
-      #   id: yarn-cache-dir-path
-      #   run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-      # - name: PREP / Restore Yarn Cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-      #     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-yarn-
 
       - name: PREP / Install dependencies
         run: yarn
@@ -136,21 +127,14 @@ jobs:
         with:
           name: miranum-cli
 
-      - name: PREP / Setup yarn
-        run: corepack enable
-
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: PREP / Setup .yarnrc.yml
-        run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
       - name: RELEASE / Publish
-        run: yarn npm publish --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
@@ -171,11 +155,6 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-
-      # - name: PREP / Setup .yarnrc.yml
-      #   run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
       - name: RELEASE / Publish
         run: npm publish --access public
@@ -199,11 +178,6 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-
-      # - name: PREP / Setup .yarnrc.yml
-      #   run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
       - name: RELEASE / Publish
         run: npm publish --access public
@@ -232,7 +206,7 @@ jobs:
         run: npm install -g @vscode/vsce@latest
 
       - name: RELEASE / Publish extension
-        run: vsce publish --yarn
+        run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -261,7 +235,7 @@ jobs:
         run: npm install -g @vscode/vsce@latest
 
       - name: RELEASE / Publish extension
-        run: vsce publish --yarn
+        run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -290,7 +264,7 @@ jobs:
         run: npm install -g @vscode/vsce@latest
 
       - name: RELEASE / Publish extension
-        run: vsce publish --yarn
+        run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -319,7 +293,7 @@ jobs:
         run: npm install -g @vscode/vsce@latest
 
       - name: RELEASE / Publish extension
-        run: vsce publish --yarn
+        run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
@@ -348,7 +322,7 @@ jobs:
         run: npm install -g @vscode/vsce@latest
 
       - name: RELEASE / Publish extension
-        run: vsce publish --yarn
+        run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
