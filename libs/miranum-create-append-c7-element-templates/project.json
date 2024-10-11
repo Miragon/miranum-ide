@@ -1,57 +1,51 @@
 {
-  "name": "miranum-create-append-c7-element-templates",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/miranum-create-append-c7-element-templates/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
-      "options": {
-        "outputPath": "dist/libs/miranum-create-append-c7-element-templates",
-        "tsConfig": "libs/miranum-create-append-c7-element-templates/tsconfig.lib.json",
-        "packageJson": "libs/miranum-create-append-c7-element-templates/package.json",
-        "main": "libs/miranum-create-append-c7-element-templates/src/index.ts",
-        "assets": [
-          "libs/miranum-create-append-c7-element-templates/*.md",
-          "resources/",
-          {
-            "glob": "LICENSE",
-            "input": "./",
-            "output": "/"
-          }
-        ]
-      }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/miranum-create-append-c7-element-templates/**/*.ts"
-        ]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
-      "options": {
-        "jestConfig": "libs/miranum-create-append-c7-element-templates/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
+    "name": "miranum-create-append-c7-element-templates",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/miranum-create-append-c7-element-templates/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/miranum-create-append-c7-element-templates",
+                "tsConfig": "libs/miranum-create-append-c7-element-templates/tsconfig.lib.json",
+                "packageJson": "libs/miranum-create-append-c7-element-templates/package.json",
+                "main": "libs/miranum-create-append-c7-element-templates/src/index.ts",
+                "assets": [
+                    "libs/miranum-create-append-c7-element-templates/*.md",
+                    "resources/",
+                    {
+                        "glob": "LICENSE",
+                        "input": "./",
+                        "output": "/"
+                    }
+                ]
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "libs/miranum-create-append-c7-element-templates/**/*.ts"
+                ]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/miranum-create-append-c7-element-templates/jest.config.ts",
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "codeCoverage": true
+                }
+            }
         }
-      }
     }
-  },
-  "tags": []
 }
