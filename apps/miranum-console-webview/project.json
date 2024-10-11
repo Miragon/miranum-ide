@@ -1,118 +1,108 @@
 {
-  "name": "miranum-console-webview",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "/src",
-  "projectType": "application",
-  "targets": {
-    "observe": {
-      "executor": "@nx/vite:build",
-      "outputs": [
-        "{options.outputPath}"
-      ],
-      "defaultConfiguration": "development",
-      "options": {
-        "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "configFile": "apps/miranum-console-webview/vite.config.mts",
-        "deleteOutputPath": false,
-        "watch": {}
-      },
-      "configurations": {
-        "development": {
-          "extractLicenses": false,
-          "optimization": false,
-          "sourceMap": false,
-          "vendorChunk": true
-        }
-      }
-    },
-    "build": {
-      "executor": "@nx/vite:build",
-      "outputs": [
-        "{options.outputPath}"
-      ],
-      "defaultConfiguration": "production",
-      "options": {
-        "outputPath": "dist/apps/miranum-console/miranum-console-webview",
-        "configFile": "apps/miranum-console-webview/vite.config.mts",
-        "minify": true,
-        "deleteOutputPath": false
-      },
-      "configurations": {
-        "development": {
-          "extractLicenses": false,
-          "optimization": false,
-          "sourceMap": false,
-          "vendorChunk": true
-        },
-        "production": {
-          "fileReplacements": [
-            {
-              "replace": "apps/miranum-console-webview/src/environments/environment.ts",
-              "with": "apps/miranum-console-webview/src/environments/environment.prod.ts"
+    "name": "miranum-console-webview",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "observe": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "development",
+            "options": {
+                "outputPath": "dist/apps/miranum-console/miranum-console-webview",
+                "configFile": "apps/miranum-console-webview/vite.config.mts",
+                "deleteOutputPath": false,
+                "watch": {}
+            },
+            "configurations": {
+                "development": {
+                    "extractLicenses": false,
+                    "optimization": false,
+                    "sourceMap": false,
+                    "vendorChunk": true
+                }
             }
-          ],
-          "optimization": true,
-          "outputHashing": "none",
-          "sourceMap": false,
-          "namedChunks": false,
-          "extractLicenses": true,
-          "vendorChunk": true
-        }
-      }
-    },
-    "serve": {
-      "executor": "@nx/vite:dev-server",
-      "defaultConfiguration": "development",
-      "options": {
-        "buildTarget": "miranum-console-webview:build",
-        "hmr": true
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "miranum-console-webview:build:development"
         },
-        "production": {
-          "buildTarget": "miranum-console-webview:build:production",
-          "hmr": false
-        }
-      }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"
-        ]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
-      "options": {
-        "jestConfig": "apps/miranum-console-webview/jest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "preview": {
-      "executor": "@nx/vite:preview-server",
-      "defaultConfiguration": "development",
-      "options": {
-        "buildTarget": "miranum-console-webview:build"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "miranum-console-webview:build:development"
+        "build": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "outputPath": "dist/apps/miranum-console/miranum-console-webview",
+                "configFile": "apps/miranum-console-webview/vite.config.mts",
+                "minify": true,
+                "deleteOutputPath": false
+            },
+            "configurations": {
+                "development": {
+                    "extractLicenses": false,
+                    "optimization": false,
+                    "sourceMap": false,
+                    "vendorChunk": true
+                },
+                "production": {
+                    "fileReplacements": [
+                        {
+                            "replace": "apps/miranum-console-webview/src/environments/environment.ts",
+                            "with": "apps/miranum-console-webview/src/environments/environment.prod.ts"
+                        }
+                    ],
+                    "optimization": true,
+                    "outputHashing": "none",
+                    "sourceMap": false,
+                    "namedChunks": false,
+                    "extractLicenses": true,
+                    "vendorChunk": true
+                }
+            }
         },
-        "production": {
-          "buildTarget": "miranum-console-webview:build:production"
+        "serve": {
+            "executor": "@nx/vite:dev-server",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "miranum-console-webview:build",
+                "hmr": true
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "miranum-console-webview:build:development"
+                },
+                "production": {
+                    "buildTarget": "miranum-console-webview:build:production",
+                    "hmr": false
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["apps/miranum-console-webview/**/*.{ts,tsx,js,jsx}"]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "apps/miranum-console-webview/jest.config.ts",
+                "passWithNoTests": true
+            }
+        },
+        "preview": {
+            "executor": "@nx/vite:preview-server",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "miranum-console-webview:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "miranum-console-webview:build:development"
+                },
+                "production": {
+                    "buildTarget": "miranum-console-webview:build:production"
+                }
+            }
         }
-      }
     }
-  },
-  "tags": []
 }

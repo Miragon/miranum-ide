@@ -1,51 +1,43 @@
 {
-  "name": "miranum-core",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/miranum-core/src",
-  "projectType": "library",
-  "targets": {
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/miranum-core/**/*.ts"
-        ]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/miranum-core"
-      ],
-      "options": {
-        "jestConfig": "libs/miranum-core/jest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
-      "options": {
-        "outputPath": "dist/libs/miranum-core",
-        "tsConfig": "libs/miranum-core/tsconfig.lib.json",
-        "packageJson": "libs/miranum-core/package.json",
-        "main": "libs/miranum-core/src/index.ts",
-        "assets": [
-          "libs/miranum-core/*.md",
-          "resources/",
-          {
-            "glob": "LICENSE",
-            "input": "./",
-            "output": "/"
-          }
-        ]
-      }
+    "name": "miranum-core",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/miranum-core/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["libs/miranum-core/**/*.ts"]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/libs/miranum-core"],
+            "options": {
+                "jestConfig": "libs/miranum-core/jest.config.ts",
+                "passWithNoTests": true
+            }
+        },
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/miranum-core",
+                "tsConfig": "libs/miranum-core/tsconfig.lib.json",
+                "packageJson": "libs/miranum-core/package.json",
+                "main": "libs/miranum-core/src/index.ts",
+                "assets": [
+                    "libs/miranum-core/*.md",
+                    "resources/",
+                    {
+                        "glob": "LICENSE",
+                        "input": "./",
+                        "output": "/"
+                    }
+                ]
+            }
+        }
     }
-  },
-  "tags": []
 }

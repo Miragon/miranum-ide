@@ -124,19 +124,12 @@ jobs:
         with:
           name: miranum-cli
 
-      - name: PREP / Setup yarn
-        run: corepack enable
-
       - name: PREP / Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      # - name: PREP / Setup .yarnrc.yml
-      #   run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
       - name: RELEASE / Publish
         run: npm publish --access public
         env:
@@ -160,11 +153,6 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      # - name: PREP / Setup .yarnrc.yml
-      #   run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-
       - name: RELEASE / Publish
         run: npm publish --access public
         env:
@@ -187,11 +175,6 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-
-      # - name: PREP / Setup .yarnrc.yml
-      #   run: yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
       - name: RELEASE / Publish
         run: npm publish --access public

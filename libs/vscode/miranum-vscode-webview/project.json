@@ -1,20 +1,16 @@
 {
-  "name": "vscode-miranum-vscode-webview",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/vscode/miranum-vscode-webview/src",
-  "projectType": "library",
-  "targets": {
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/vscode/miranum-vscode-webview/**/*.ts"
-        ]
-      }
+    "name": "vscode-miranum-vscode-webview",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/vscode/miranum-vscode-webview/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["libs/vscode/miranum-vscode-webview/**/*.ts"]
+            }
+        }
     }
-  },
-  "tags": []
 }
