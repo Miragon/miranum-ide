@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] -  2024-10-08
+
+### Fixed
+
+* **\[Miranum Modeler\]** Fix the styling of the scrollbar (#695)
+
+### Changed
+
+* Migrate to yarn (#695)
+* Update dependencies (#695)
+
 ## [0.5.13] - 2024-06-28
 
 ### Added
@@ -41,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* **\[Miranum Modeler\]** Detect the correct execution platform (#563)
+* **\[Miranum Modeler\]** Detects the correct execution platform (#563)
 
 ## [0.5.8] - 2024-03-28
 
@@ -120,7 +131,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **\[Miranum Console\]** Use a single webview when the user triggers the available commands (#125)
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.0-vscode...HEAD
+
+[0.6.0]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13...release/v0.6.0-vscode
 
 [0.5.13]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.11...release/v0.5.13-vscode
 
