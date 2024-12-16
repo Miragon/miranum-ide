@@ -2,6 +2,7 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import viteTsConfigPaths from "vite-tsconfig-paths";
+import { resolve } from "path";
 
 export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-bpmn-webview",
@@ -11,11 +12,11 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
-                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/css/**",
+                    src: "node_modules/camunda-bpmn-js/dist/assets/bpmn-font/css/**",
                     dest: "css/",
                 },
                 {
-                    src: "../../node_modules/camunda-bpmn-js/dist/assets/bpmn-font/font/**",
+                    src: "node_modules/camunda-bpmn-js/dist/assets/bpmn-font/font/**",
                     dest: "font/",
                 },
             ],
@@ -26,6 +27,10 @@ export default defineConfig({
         target: "es2021",
         commonjsOptions: { transformMixedEsModules: true },
         chunkSizeWarningLimit: 1200,
+        lib: {
+            entry: resolve(__dirname, "src/main.ts"),
+            name: "miranum-modeler-bpmn-webview",
+        },
         rollupOptions: {
             output: {
                 // don't hash the name of the output file (index.js)
