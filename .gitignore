@@ -16,6 +16,7 @@ node_modules
 *.launch
 .settings/
 *.sublime-workspace
+/dev
 
 # IDE - VSCode
 .vscode/*
@@ -44,3 +45,5 @@ resources/my-generations
 .nx/
 
 **/vite.config.mts.timestamp-*
+
+vite.config.*.timestamp*
