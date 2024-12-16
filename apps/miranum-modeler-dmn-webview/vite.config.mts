@@ -12,11 +12,11 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
-                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/css/**",
+                    src: "node_modules/dmn-js/dist/assets/dmn-font/css/**",
                     dest: "css/",
                 },
                 {
-                    src: "../../node_modules/dmn-js/dist/assets/dmn-font/font/**",
+                    src: "node_modules/dmn-js/dist/assets/dmn-font/font/**",
                     dest: "font/",
                 },
             ],
