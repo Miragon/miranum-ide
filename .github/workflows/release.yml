@@ -84,20 +84,6 @@ jobs:
           name: miranum-extension-pack
           path: dist/apps/miranum-extension-pack
 
-      # miranum-config-editor
-      - name: GIT / Upload miranum-config-editor
-        uses: actions/upload-artifact@v4
-        with:
-          name: miranum-config-editor
-          path: dist/apps/miranum-config-editor
-
-      # miranum-console
-      - name: GIT / Upload miranum-console
-        uses: actions/upload-artifact@v4
-        with:
-          name: miranum-console
-          path: dist/apps/miranum-console
-
       # miranum-jsonforms
       - name: GIT / Upload miranum-jsonforms
         uses: actions/upload-artifact@v4
@@ -207,64 +193,6 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
 
-  # miranum-config-editor
-  publish-miranum-config-editor:
-    if: github.event.inputs.miranum-vscode-plugins == 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: GIT / Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: miranum-config-editor
-
-      - name: PREP / Setup yarn
-        run: corepack enable
-
-      - name: PREP / Setup NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: PREP / Install vsce
-        run: npm install -g @vscode/vsce@latest
-
-      - name: RELEASE / Publish extension
-        run: vsce publish --yarn --no-dependencies
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
-
-  # miranum-console
-  publish-miranum-console:
-    if: github.event.inputs.miranum-vscode-plugins == 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: GIT / Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: miranum-console
-
-      - name: PREP / Setup yarn
-        run: corepack enable
-
-      - name: PREP / Setup NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: PREP / Install vsce
-        run: npm install -g @vscode/vsce@latest
-
-      - name: RELEASE / Publish extension
-        run: vsce publish --yarn --no-dependencies
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
-
   # miranum-jsonforms
   publish-miranum-jsonforms:
     if: github.event.inputs.miranum-vscode-plugins == 'true'
@@ -327,8 +255,6 @@ jobs:
     if: github.event.inputs.release-tag
     needs:
       - publish-miranum-cli
-      - publish-miranum-config-editor
-      - publish-miranum-console
       - publish-miranum-core
       - publish-miranum-create-append-c7-element-templates
       - publish-miranum-extension-pack
