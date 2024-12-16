@@ -35,7 +35,6 @@
 
 Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your 
 process application in one place.
-To help you get started with **Miranum IDE**, we have created some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
 ## Contributing
 
