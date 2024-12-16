@@ -34,8 +34,6 @@
   },
   "icon": "miranum_logo.png",
   "extensionPack": [
-    "miragon-gmbh.miranum-config-editor",
-    "miragon-gmbh.miranum-console",
     "miragon-gmbh.miranum-json-forms",
     "miragon-gmbh.vs-code-bpmn-modeler"
   ],
