@@ -44,6 +44,12 @@
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
+        },
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
         }
     ],
     "generators": {
@@ -82,7 +88,8 @@
         "production": [
             "default",
             "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
-            "!{projectRoot}/tsconfig.spec.json"
+            "!{projectRoot}/tsconfig.spec.json",
+            "!{projectRoot}/eslint.config.cjs"
         ]
     },
     "defaultBase": "main",
