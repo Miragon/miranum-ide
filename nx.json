@@ -1,108 +1,98 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "cli": {
-    "packageManager": "yarn"
-  },
-  "targetDefaults": {
-    "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "cache": true,
-      "inputs": [
-        "production",
-        "^production"
-      ]
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "cli": {
+        "packageManager": "yarn"
     },
-    "test": {
-      "inputs": [
-        "default",
-        "^default"
-      ],
-      "cache": true
+    "targetDefaults": {
+        "build": {
+            "dependsOn": ["^build"],
+            "cache": true,
+            "inputs": ["production", "^production"]
+        },
+        "test": {
+            "inputs": ["default", "^default"],
+            "cache": true
+        },
+        "lint": {
+            "cache": true
+        },
+        "e2e": {
+            "cache": true
+        },
+        "@nx/vite:test": {
+            "cache": true,
+            "inputs": ["default", "^production"]
+        },
+        "@nx/vite:build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        }
     },
-    "lint": {
-      "cache": true
+    "workspaceLayout": {
+        "appsDir": "apps",
+        "libsDir": "libs"
     },
-    "e2e": {
-      "cache": true
-    },
-    "@nx/vite:test": {
-      "cache": true,
-      "inputs": [
-        "default",
-        "^production"
-      ]
-    },
-    "@nx/vite:build": {
-      "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ]
-    }
-  },
-  "workspaceLayout": {
-    "appsDir": "apps",
-    "libsDir": "libs"
-  },
-  "defaultProject": "miranum-cli",
-  "plugins": [
-    {
-      "plugin": "@nx/vite/plugin",
-      "options": {
-        "buildTargetName": "build",
-        "previewTargetName": "preview",
-        "testTargetName": "test",
-        "serveTargetName": "serve",
-        "serveStaticTargetName": "serve-static"
-      }
-    }
-  ],
-  "generators": {
-    "@nx/web:application": {
-      "style": "css",
-      "linter": "eslint",
-      "unitTestRunner": "vitest",
-      "e2eTestRunner": "none",
-      "bundler": "vite"
-    },
-    "@nx/web:library": {
-      "style": "css",
-      "linter": "eslint",
-      "unitTestRunner": "vitest"
-    },
-    "@nx/react": {
-      "application": {
-        "style": "css",
-        "unitTestRunner": "jest",
-        "linter": "eslint",
-        "babel": true
-      },
-      "component": {
-        "style": "css"
-      },
-      "library": {
-        "style": "css",
-        "unitTestRunner": "jest",
-        "linter": "eslint"
-      }
-    }
-  },
-  "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
+    "defaultProject": "miranum-cli",
+    "plugins": [
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build",
+                "previewTargetName": "preview",
+                "testTargetName": "test",
+                "serveTargetName": "serve",
+                "serveStaticTargetName": "serve-static"
+            }
+        },
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
+        }
     ],
-    "sharedGlobals": [],
-    "production": [
-      "default",
-      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
-      "!{projectRoot}/tsconfig.spec.json"
-    ]
-  },
-  "defaultBase": "main"
+    "generators": {
+        "@nx/web:application": {
+            "style": "css",
+            "linter": "eslint",
+            "unitTestRunner": "vitest",
+            "e2eTestRunner": "none",
+            "bundler": "vite"
+        },
+        "@nx/web:library": {
+            "style": "css",
+            "linter": "eslint",
+            "unitTestRunner": "vitest"
+        },
+        "@nx/react": {
+            "application": {
+                "style": "css",
+                "unitTestRunner": "jest",
+                "linter": "eslint",
+                "babel": true
+            },
+            "component": {
+                "style": "css"
+            },
+            "library": {
+                "style": "css",
+                "unitTestRunner": "jest",
+                "linter": "eslint"
+            }
+        }
+    },
+    "namedInputs": {
+        "default": ["{projectRoot}/**/*", "sharedGlobals"],
+        "sharedGlobals": [],
+        "production": [
+            "default",
+            "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+            "!{projectRoot}/tsconfig.spec.json",
+            "!{projectRoot}/eslint.config.cjs",
+            "!{projectRoot}/src/test-setup.[jt]s"
+        ]
+    },
+    "defaultBase": "main",
+    "useLegacyCache": false
 }

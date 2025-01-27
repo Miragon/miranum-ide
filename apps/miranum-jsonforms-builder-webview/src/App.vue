@@ -123,11 +123,11 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
 
         <FormBuilder
             :key="key"
-            :jsonForms="jsonForms"
-            :jsonFormsRenderers="jsonFormsRenderers"
-            :schemaReadOnly="schemaReadOnly"
+            :json-forms="jsonForms"
+            :json-forms-renderers="jsonFormsRenderers"
+            :schema-read-only="schemaReadOnly"
             :tools="tools"
-            @schemaUpdated="debouncedSendChanges"
+            @schema-updated="debouncedSendChanges"
         />
     </div>
 </template>

@@ -45,3 +45,7 @@ resources/my-generations
 .nx/
 
 **/vite.config.mts.timestamp-*
+
+vite.config.*.timestamp*
+
+vitest.config.*.timestamp*

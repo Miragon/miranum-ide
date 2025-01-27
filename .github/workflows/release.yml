@@ -22,8 +22,13 @@ on:
         type: boolean
         required: true
         default: true
-      miranum-vscode-plugins:
-        description: 'Release all vscode plugins?'
+      miranum-jsonforms:
+        description: 'Release miranum-jsonforms?'
+        type: boolean
+        required: true
+        default: true
+      miranum-modeler:
+        description: 'Release miranum-modeler?'
         type: boolean
         required: true
         default: true
