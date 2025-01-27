@@ -89,9 +89,10 @@
             "default",
             "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
             "!{projectRoot}/tsconfig.spec.json",
-            "!{projectRoot}/eslint.config.cjs"
+            "!{projectRoot}/eslint.config.cjs",
+            "!{projectRoot}/src/test-setup.[jt]s"
         ]
     },
     "defaultBase": "main",
-    "useLegacyCache": true
+    "useLegacyCache": false
 }

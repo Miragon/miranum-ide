@@ -1,58 +1,70 @@
 {
-    "name": "miranum-modeler-dmn-webview",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "projectType": "application",
-    "sourceRoot": "apps/miranum-modeler-dmn-webview/src",
-    "tags": [],
-    "targets": {
-        "observe": {
-            "executor": "@nx/vite:build",
-            "outputs": ["{options.outputPath}"],
-            "defaultConfiguration": "development",
-            "options": {
-                "watch": true,
-                "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
-                "configFile": "apps/miranum-modeler-dmn-webview/vite.config.mts",
-                "emptyOutDir": false
-            },
-            "configurations": {
-                "development": {
-                    "extractLicenses": false,
-                    "optimization": false,
-                    "sourceMap": false,
-                    "vendorChunk": true
-                }
-            }
-        },
-        "build": {
-            "executor": "@nx/vite:build",
-            "outputs": ["{options.outputPath}"],
-            "defaultConfiguration": "production",
-            "options": {
-                "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
-                "configFile": "apps/miranum-modeler-dmn-webview/vite.config.mts"
-            },
-            "configurations": {
-                "production": {
-                    "mode": "production"
-                }
-            }
-        },
-        "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-            "options": {
-                "jestConfig": "apps/miranum-modeler-dmn-webview/jest.config.ts",
-                "passWithNoTests": true,
-                "coverageReporters": ["clover"]
-            }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": ["apps/miranum-modeler-dmn-webview/**/*.ts"]
-            }
+  "name": "miranum-modeler-dmn-webview",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/miranum-modeler-dmn-webview/src",
+  "tags": [],
+  "targets": {
+    "observe": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts",
+        "emptyOutDir": false
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": false,
+          "vendorChunk": true
         }
+      }
+    },
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/miranum-modeler/miranum-modeler-dmn-webview",
+        "configFile": "apps/miranum-modeler-dmn-webview/vite.config.ts"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/miranum-modeler-dmn-webview/jest.config.ts",
+        "passWithNoTests": true,
+        "coverageReporters": [
+          "clover"
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/miranum-modeler-dmn-webview/**/*.ts"
+        ]
+      }
     }
+  }
 }
