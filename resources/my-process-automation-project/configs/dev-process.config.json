@@ -1,0 +1,11 @@
+{
+  "key": "LM-MarkdownTest",
+  "statusDokument": "",
+  "statusConfig": [],
+  "configs": [
+    {
+      "key": "S3Service",
+      "value": "My S3 Service"
+    }
+  ]
+}

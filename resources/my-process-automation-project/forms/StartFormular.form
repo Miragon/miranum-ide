@@ -1,0 +1,181 @@
+{
+  "key": "start_lm_markdown_form",
+  "schema": {
+    "type": "object",
+    "x-display": "stepper",
+    "allOf": [
+      {
+        "title": "Abschnitt",
+        "description": "",
+        "type": "object",
+        "x-options": {
+          "sectionsTitlesClasses": [
+            "d-none"
+          ]
+        },
+        "allOf": [
+          {
+            "containerType": "group",
+            "title": "Group",
+            "description": "",
+            "x-options": {
+              "childrenClass": "pl-0"
+            },
+            "properties": {
+              "Markdown_Field": {
+                "fieldType": "markdown",
+                "title": "Markdown",
+                "type": "string",
+                "x-display": "markdown",
+                "key": "Markdown_Field",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 12,
+                    "messages": {}
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                },
+                "x-rules": []
+              },
+              "S3Service": {
+                "fieldType": "text",
+                "title": "S3 Config",
+                "type": "string",
+                "key": "S3Service",
+                "readOnly": true,
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 12,
+                    "messages": {}
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                },
+                "x-rules": []
+              }
+            },
+            "key": "f393458d-db10-41ec-96e6-40e6a905093f"
+          }
+        ],
+        "key": "cc1d2542-daf4-4c9e-bd68-612ea617b0de"
+      },
+      {
+        "key": "sectionKey1",
+        "title": "Erster Abschnitt",
+        "type": "object",
+        "x-options": {
+          "sectionsTitlesClasses": [
+            "d-none"
+          ]
+        },
+        "allOf": [
+          {
+            "key": "feldgruppe1",
+            "title": "Erste Gruppe",
+            "type": "object",
+            "x-options": {
+              "childrenClass": "pr-5 pl-0"
+            },
+            "properties": {
+              "stringProp1": {
+                "fieldType": "text",
+                "title": "Ich bin ein Text",
+                "type": "string",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 6
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                }
+              },
+              "numberProp1": {
+                "fieldType": "integer",
+                "type": "integer",
+                "title": "Ich bin eine Ganzzahl",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 6
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                }
+              },
+              "textarea1": {
+                "fieldType": "textarea",
+                "type": "string",
+                "x-display": "textarea",
+                "title": "Ich bin eine Textarea",
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                }
+              },
+              "booleanprop": {
+                "fieldType": "boolean",
+                "type": "boolean",
+                "title": "Ich bin eine Checkbox",
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                }
+              },
+              "dateprop": {
+                "fieldType": "date",
+                "type": "string",
+                "format": "date",
+                "title": "Ich bin ein Date",
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                }
+              }
+            }
+          },
+          {
+            "containerType": "group",
+            "title": "Group",
+            "description": "",
+            "x-options": {
+              "childrenClass": "pl-0"
+            },
+            "properties": {
+              "FORMFIELD_number": {
+                "fieldType": "number",
+                "title": "Floating Number",
+                "type": "number",
+                "key": "FORMFIELD_number",
+                "x-options": {
+                  "fieldColProps": {
+                    "cols": 12,
+                    "sm": 12,
+                    "messages": {}
+                  }
+                },
+                "x-props": {
+                  "outlined": true,
+                  "dense": true
+                },
+                "x-rules": []
+              }
+            },
+            "key": "a62e6d4e-8eff-4116-973a-8e4af82231ad"
+          }
+        ]
+      }
+    ]
+  }
+}

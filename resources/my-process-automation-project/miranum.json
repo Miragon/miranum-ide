@@ -1,0 +1,59 @@
+{
+  "projectVersion": "1.0.0",
+  "name": "my-process-automation-project",
+  "workspace": [
+    {
+      "type": "bpmn",
+      "path": "",
+      "extension": ".bpmn"
+    },
+    {
+      "type": "dmn",
+      "path": "",
+      "extension": ".dmn"
+    },
+    {
+      "type": "form",
+      "path": "forms",
+      "extension": ".form"
+    },
+    {
+      "type": "form",
+      "path": "my-other-forms",
+      "extension": ".json"
+    },
+    {
+      "type": "element-template",
+      "path": "element-templates",
+      "extension": ".json"
+    },
+    {
+      "type": "config",
+      "path": "configs",
+      "extension": ".config.json"
+    }
+  ],
+  "deployment": [
+    {
+      "plugin": "rest",
+      "targetEnvironments": [
+        {
+          "name": "local",
+          "url": "http://localhost:8090"
+        },
+        {
+          "name": "dev",
+          "url": "http://localhost:8090"
+        },
+        {
+          "name": "test",
+          "url": "http://localhost:8092"
+        },
+        {
+          "name": "prod",
+          "url": "http://localhost:8090"
+        }
+      ]
+    }
+  ]
+}
