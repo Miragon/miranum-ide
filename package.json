@@ -22,7 +22,7 @@
         "@nx/vite": "20.3.3",
         "@nx/vue": "20.3.3",
         "@nx/web": "20.3.3",
-        "@nx/webpack": "20.3.3",
+        "@nx/webpack": "20.4.0",
         "@nx/workspace": "20.3.3",
         "@openapitools/openapi-generator-cli": "^2.15.3",
         "@stylistic/eslint-plugin": "^2.12.1",
