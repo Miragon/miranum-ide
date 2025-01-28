@@ -5925,15 +5925,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vueuse/core@npm:^12.0.0":
-  version: 12.0.0
-  resolution: "@vueuse/core@npm:12.0.0"
+"@vueuse/core@npm:^12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/core@npm:12.5.0"
   dependencies:
     "@types/web-bluetooth": "npm:^0.0.20"
-    "@vueuse/metadata": "npm:12.0.0"
-    "@vueuse/shared": "npm:12.0.0"
+    "@vueuse/metadata": "npm:12.5.0"
+    "@vueuse/shared": "npm:12.5.0"
     vue: "npm:^3.5.13"
-  checksum: 10c0/416a5d2725069ace3901a77168ff24e0f9aea535b04174edf506bedd97c8f6a14d23105c80e1f58ed3b690c9931fc9089b1e5960e769e6a3e886fa8b9d320cbb
+  checksum: 10c0/4608b24b752856ef6c1873868fb15d23bf63b0325eeab01fa74037b648fb946b8a517930cab042a1ddda7fa681eecb28a549b85606d2aa5497f3e5df7d0d6263
   languageName: node
   linkType: hard
 
@@ -5944,10 +5944,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vueuse/metadata@npm:12.0.0":
-  version: 12.0.0
-  resolution: "@vueuse/metadata@npm:12.0.0"
-  checksum: 10c0/f67a256fef7961883e9921d2369be334015a4a0193987c3082b9b6386e31ed2d90de555b8d9aca63c5dda6cb3cf8df5d9b7842db77488c1ba638437befffca08
+"@vueuse/metadata@npm:12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/metadata@npm:12.5.0"
+  checksum: 10c0/86062751930d110e50d0dd72653518f6ec07f828c4f94d78b0ab3c5a66abc3baaa8451551bd16a0d7beb9988ce5704a301421c545a590ab38865419fb9a2031b
   languageName: node
   linkType: hard
 
@@ -5960,12 +5960,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vueuse/shared@npm:12.0.0":
-  version: 12.0.0
-  resolution: "@vueuse/shared@npm:12.0.0"
+"@vueuse/shared@npm:12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/shared@npm:12.5.0"
   dependencies:
     vue: "npm:^3.5.13"
-  checksum: 10c0/7900edc00f636b9cc5fcf96e13ff9e7ec8f4f7efc0960964227cc31a26b3b45123d613a201c6b5d331534b72908b5e754ae2cba4169c5a145255987d3ad7da78
+  checksum: 10c0/c64e148b05c404c5e930d7e768a1bc23741e9f6219b2d4e898e76e4cddb6e68f5595723286e0a7aa6696055fe5ee9066558e7db80f5fa10c59714cbc76f99439
   languageName: node
   linkType: hard
 
@@ -13590,7 +13590,7 @@ __metadata:
     "@vue/language-server": "npm:2.1.10"
     "@vue/test-utils": "npm:^2.4.6"
     "@vue/vue3-jest": "npm:^29.2.6"
-    "@vueuse/core": "npm:^12.0.0"
+    "@vueuse/core": "npm:^12.5.0"
     autoprefixer: "npm:^10.4.20"
     axios: "npm:^1.7.9"
     babel-jest: "npm:^29.7.0"
