@@ -5,7 +5,6 @@ import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/Base
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
-
 import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
 import {
     BpmnModelerSetting,
@@ -22,11 +21,27 @@ type MiranumModeler = {
 
 const DEFAULT_SETTINGS: BpmnModelerSetting = {
     alignToOrigin: false,
+    darkTheme: false,
 };
 
 const bpmnModeler: MiranumModeler = {
     modeler: undefined,
     settings: DEFAULT_SETTINGS,
+};
+
+const modelerOptions = {
+    // keyboard: {
+    //     bindTo: document,
+    // },
+    container: "#js-canvas",
+    propertiesPanel: {
+        parent: "#js-properties-panel",
+    },
+    alignToOrigin: {
+        alignOnSave: false,
+        offset: 150,
+        tolerance: 50,
+    },
 };
 
 /**
@@ -40,41 +55,24 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
     switch (engine) {
         case "c7": {
             bpmnModeler.modeler = new BpmnModeler7({
-                keyboard: {
-                    bindTo: document,
-                },
-                container: "#js-canvas",
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
+                ...modelerOptions,
+                // bpmnRenderer: {
+                //     defaultFillColor: "#22242a",
+                //     defaultStrokeColor: "#fff",
+                // },
                 additionalModules: [
                     ...commonModules,
                     ExtendElementTemplates,
                     CreateAppendElementTemplatesModule,
                     miragonProviderModule,
+                    // DarkTheme,
                 ],
             });
             break;
         }
         case "c8": {
             bpmnModeler.modeler = new BpmnModeler8({
-                keyboard: {
-                    bindTo: document,
-                },
-                container: "#js-canvas",
-                propertiesPanel: {
-                    parent: "#js-properties-panel",
-                },
-                alignToOrigin: {
-                    alignOnSave: false,
-                    offset: 150,
-                    tolerance: 50,
-                },
+                ...modelerOptions,
                 additionalModules: [...commonModules],
             });
             break;
@@ -158,7 +156,7 @@ export async function exportDiagram(): Promise<string> {
 /**
  * Get the SVG content of the current diagram.
  */
-export async function getDiagramAsSVG(): Promise<string> {
+export async function getDiagramSvg(): Promise<string> {
     const m = getModeler();
     const result = await m.saveSVG();
     return result.svg;
@@ -178,7 +176,7 @@ export function setElementTemplates(templates: JSON[] | undefined) {
 }
 
 /**
- * Set the form keys to the modeler.
+ * Set the form keys of the modeler.
  * @param formKeys
  * @throws NoModelerError if the modeler is not initialized
  */
@@ -205,6 +203,24 @@ export function setSettings(settings: Partial<BpmnModelerSetting> | undefined) {
     }
 
     bpmnModeler.settings = { ...bpmnModeler.settings, ...settings };
+    setTheme();
+}
+
+export function setTheme() {
+    const theme = document.querySelector<HTMLLinkElement>("#theme-link");
+    if (!theme) {
+        console.error("Theme link element not found.");
+        return;
+    }
+
+    const href = theme.href;
+    const css = href.split("/").pop();
+
+    if (bpmnModeler.settings.darkTheme && css === "lightTheme.css") {
+        theme.href = href.replace(/lightTheme\.css$/, "darkTheme.css");
+    } else if (!bpmnModeler.settings.darkTheme && css === "darkTheme.css") {
+        theme.href = href.replace(/darkTheme\.css$/, "lightTheme.css");
+    }
 }
 
 /**

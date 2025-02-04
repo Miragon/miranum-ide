@@ -42,6 +42,7 @@ export class ElementTemplatesQuery extends Query {
 
 export interface BpmnModelerSetting {
     readonly alignToOrigin: boolean;
+    readonly darkTheme: boolean;
 }
 
 export class BpmnModelerSettingQuery extends Query {

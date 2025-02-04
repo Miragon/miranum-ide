@@ -1,8 +1,6 @@
 import { RelativePattern, workspace } from "vscode";
 import { inject, singleton } from "tsyringe";
-
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
-
 import { addToDisposals } from "../out";
 import {
     GetDocumentInPort,
@@ -14,7 +12,7 @@ import {
 import {
     NoWorkspaceFolderFoundError,
     UnableToCreateWatcherError,
-} from "../../application/errors";
+} from "../../application/domain/errors";
 
 @singleton()
 export class VsCodeArtifactWatcherAdapter {

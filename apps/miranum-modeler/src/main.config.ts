@@ -14,7 +14,7 @@ import {
     SetFormKeysUseCase,
     SyncDocumentUseCase,
     ToggleTextEditorUseCase,
-} from "./application/useCases";
+} from "./application/services";
 import {
     VsCodeBpmnModelerSettingsAdapter,
     VsCodeBpmnWebviewAdapter,
@@ -27,7 +27,6 @@ import {
     VsCodeTextEditorAdapter,
     VsCodeWorkspaceAdapter,
 } from "./adapter/out";
-import { GetDiagramAsSvgInPort } from "./application/ports/in";
 
 /**
  * The configuration of the adapter and use cases has to follow the following pattern:

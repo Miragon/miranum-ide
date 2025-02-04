@@ -1,0 +1,44 @@
+:root {
+    /** Base colors */
+    --dt-dark-a0: #000000;
+    --dt-light-a0: #ffffff;
+
+    /** Dark theme primary colors */
+    --dt-primary-a0: #ff6a00;
+    --dt-primary-a0-invert: #0888d2;
+    --dt-primary-a0-opacity-30: hsla(25, 100%, 50%, 30%);
+    --dt-primary-a10: #ff7c2c;
+    --dt-primary-a20: #ff8e48;
+    --dt-primary-a20-opacity-15: hsla(23, 100%, 64%, 15%);
+    --dt-primary-a30: #ff9e62;
+    --dt-primary-a30-invert: #005e98;
+    --dt-primary-a40: #ffaf7c;
+    --dt-primary-a40-opacity-15: hsla(23, 100%, 74%, 15%);
+    --dt-primary-a50: #ffbf95;
+    --dt-primary-a50-invert: #003e67;
+
+    /** Dark theme surface colors */
+    --dt-surface-a0: #121212;
+    --dt-surface-a10: #282828;
+    --dt-surface-a20: #3f3f3f;
+    --dt-surface-a30: #575757;
+    --dt-surface-a40: #717171;
+    --dt-surface-a50: #8b8b8b;
+    --dt-surface-a60: #bfbfbf;
+    --dt-surface-a70: #F2F2F2;
+
+    /** Dark theme tonal surface colors */
+    --dt-surface-tonal-a0: #281b14;
+    --dt-surface-tonal-a10: #3d3029;
+    --dt-surface-tonal-a20: #534640;
+    --dt-surface-tonal-a30: #695e58;
+    --dt-surface-tonal-a40: #807772;
+    --dt-surface-tonal-a50: #99908c;
+
+    --dt-color-red-a10: #E65C57;
+    --dt-color-red-a10-invert: #15999e;
+    --dt-color-red-a10-invert-opacity-60: hsla(182, 77%, 35%, 60%);
+    --dt-color-red-a20: hsl(360, 100%, 92%);
+
+    --dt-color-blue-a50: hsl(205, 100%, 50%);
+}

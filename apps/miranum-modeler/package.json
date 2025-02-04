@@ -134,6 +134,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Align the diagram to the origin when opening a new diagram. Click [here](https://github.com/bpmn-io/align-to-origin) to see the behaviour when enabled."
+        },
+        "miranumIDE.modeler.darkTheme": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental Dark Theme for BPMN Modeler only! Please inform us about bugs in this [issue](https://github.com/Miragon/miranum-ide/issues/700)."
         }
       }
     }

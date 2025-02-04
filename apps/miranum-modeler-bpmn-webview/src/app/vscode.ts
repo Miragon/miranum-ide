@@ -20,6 +20,7 @@ type StateType = unknown;
 type MessageType = Command | Query;
 
 export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
+    console.log(process.env.NODE_ENV);
     if (process.env.NODE_ENV === "development") {
         return new MockedVsCodeApi();
     } else {
@@ -35,24 +36,33 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
     override postMessage(message: MessageType): void {
         switch (true) {
             case message.type === "GetBpmnFileCommand": {
+                console.debug("[DEBUG] GetBpmnFileCommand", message);
                 dispatchEvent(new BpmnFileQuery("", "c7"));
                 break;
             }
             case message.type === "GetFormKeysCommand": {
+                console.debug("[DEBUG] GetFormKeysCommand", message);
                 dispatchEvent(new FormKeysQuery(["formKey1", "formKey2"]));
                 break;
             }
             case message.type === "GetElementTemplatesCommand": {
-                dispatchEvent(new ElementTemplatesQuery([elementTemplate]));
+                console.debug("[DEBUG] GetElementTemplatesCommand", message);
+                dispatchEvent(new ElementTemplatesQuery([JSON.parse(elementTemplate)]));
                 break;
             }
             case message.type === "GetBpmnModelerSettingCommand": {
-                dispatchEvent(new BpmnModelerSettingQuery({ alignToOrigin: true }));
+                console.debug("[DEBUG] GetBpmnModelerSettingCommand", message);
+                dispatchEvent(
+                    new BpmnModelerSettingQuery({
+                        alignToOrigin: true,
+                        darkTheme: false,
+                    }),
+                );
                 break;
             }
             case message.type === "SyncDocumentCommand": {
                 console.debug(
-                    "[Debug] postMessage() SyncDocumentCommand",
+                    "[DEBUG] SyncDocumentCommand",
                     (message as SyncDocumentCommand).content,
                 );
                 break;
