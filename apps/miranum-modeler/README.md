@@ -30,16 +30,25 @@
     </p>
 </div>
 
+## New Feature
+
+* Dark Theme (Experimental Feature)
+  > Settings > Miranum IDE › Modeler: Dark Theme
+
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-> Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide) is a collection of *VS Code Plugins*
+>
+Note: [Miranum IDE](https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-ide)
+is a collection of *VS Code Plugins*
 > that allows you to edit, manage and access all artifacts for your
 > process application in one place.  
 > **Miranum Modeler** is one component of *Miranum IDE*.
 
-**Miranum Modeler** allows you to model BPMN 2.0 diagrams that can be used with Camunda Platform 7 and 8.
+**Miranum Modeler** allows you to model BPMN 2.0 diagrams that can be used with Camunda
+Platform 7 and 8.
 In addition, you can create and edit DMN 1.3 decision tables.
-To help you get started with **Miranum IDE**, we have created some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
+To help you get started with **Miranum IDE**, we have created
+some [quick start guides](https://www.miranum.io/docs/guides/quick-start/miranum-ide/miranum-ide-quickstart).
 
 > ❗️To start the modeler create or open a `.bpmn` or `.dmn` file.❗
 
@@ -47,7 +56,8 @@ To help you get started with **Miranum IDE**, we have created some [quick start 
 
 ## Features
 
-* Create and edit BPMN processes for Camunda Platform 7 and 8 and enhance them with technical attributes.
+* Create and edit BPMN processes for Camunda Platform 7 and 8 and enhance them with
+  technical attributes.
 * Create and edit decision tables.
 * Use the Create/Append-Menu for a better modeling experience.
 * Use the text editor for changes directly in the XML file.
@@ -55,31 +65,48 @@ To help you get started with **Miranum IDE**, we have created some [quick start 
 
 ## Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
+Contributions are what make the open-source community such an amazing place to learn,
+inspire, and create.
 Any contributions you make are **greatly appreciated**.
 
-To learn more about the frameworks we use and how you can get involved, click [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
-Furthermore, please have a look at our [Code of Conduct](https://miranum.com/docs/components/contributing/).
+To learn more about the frameworks we use and how you can get involved,
+click [here](https://github.com/Miragon/miranum-ide/blob/main/README.md).  
+Furthermore, please have a look at
+our [Code of Conduct](https://miranum.com/docs/components/contributing/).
 
 ### License
 
-Distributed under the [Apache License Version 2.0](https://github.com/Miragon/miranum-ide/blob/main/LICENSE).
+Distributed under
+the [Apache License Version 2.0](https://github.com/Miragon/miranum-ide/blob/main/LICENSE).
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [contributors-shield]: https://img.shields.io/github/contributors/Miragon/miranum-ide.svg?style=for-the-badge
+
 [contributors-url]: https://github.com/Miragon/miranum-ide/graphs/contributors
+
 [forks-shield]: https://img.shields.io/github/forks/Miragon/miranum-ide.svg?style=for-the-badge
+
 [forks-url]: https://github.com/Miragon/miranum-ide/network/members
+
 [stars-shield]: https://img.shields.io/github/stars/Miragon/miranum-ide.svg?style=for-the-badge
+
 [stars-url]: https://github.com/Miragon/miranum-ide/stargazers
+
 [issues-shield]: https://img.shields.io/github/issues/Miragon/miranum-ide.svg?style=for-the-badge
+
 [issues-url]: https://github.com/Miragon/miranum-ide/issues
+
 [license-shield]: https://img.shields.io/github/license/Miragon/miranum-ide.svg?style=for-the-badge
+
 [license-url]: https://github.com/Miragon/miranum-ide/blob/main/LICENSE
 
 [version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.vs-code-bpmn-modeler
+
 [version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.vs-code-bpmn-modeler
+
 [installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.vs-code-bpmn-modeler
+
 [installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.vs-code-bpmn-modeler

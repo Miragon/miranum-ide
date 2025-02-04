@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Dark Theme for bpmn modeler (experimental) (#772)
+
 ## [0.6.0] - 2024-10-08
 
 ### Fixed
@@ -86,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Alignment of elements leads to an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
+* Alignment of elements leads to
+  an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
 
 ## [0.5.3] - 2023-08-01
 
