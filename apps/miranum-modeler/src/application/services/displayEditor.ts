@@ -1,7 +1,5 @@
 import { inject, injectable } from "tsyringe";
-
 import { MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
-
 import {
     DisplayModelerInPort,
     GetMiranumConfigInPort,
@@ -19,12 +17,12 @@ import {
     GetExecutionPlatformVersionOutPort,
     LogMessageOutPort,
 } from "../ports/out";
-import { SettingBuilder } from "../model";
+import { SettingBuilder } from "../domain/model";
 import {
     FileNotFound,
     NoMiranumWorkspaceItemError,
     NoWorkspaceFolderFoundError,
-} from "../errors";
+} from "../domain/errors";
 
 @injectable()
 export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
@@ -56,7 +54,6 @@ export class DisplayBpmnModelerUseCase implements DisplayModelerInPort {
             let bpmnFile = this.documentOutPort.getContent();
 
             if (bpmnFile === "") {
-                // If a new and empty BPMN file is created, the C7 Modeler will be displayed.
                 const ep =
                     await this.getExecutionPlatformVersionOutPort.getExecutionPlatformVersion(
                         "Select the engine.",
@@ -498,6 +495,7 @@ export class SetBpmnModelerSettingsUseCase implements SetModelerSettingInPort {
         try {
             const settings = new SettingBuilder()
                 .alignToOrigin(this.bpmnModelerSettingsOutPort.getAlignToOrigin())
+                .darkTheme(this.bpmnModelerSettingsOutPort.getDarkTheme())
                 .buildBpmnModeler();
 
             if (await this.bpmnUiOutPort.setSettings(editorId, settings)) {

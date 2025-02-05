@@ -2,6 +2,7 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
+import { resolve } from "path";
 
 export default defineConfig({
     root: __dirname,
@@ -30,10 +31,15 @@ export default defineConfig({
         outDir: "../../dist/apps/miranum-modeler/miranum-modeler-bpmn-webview",
         emptyOutDir: true,
         rollupOptions: {
+            input: {
+                index: resolve(__dirname, "src/main.ts"),
+                lightTheme: resolve(__dirname, "src/styles/light-theme/index.css"),
+                darkTheme: resolve(__dirname, "src/styles/dark-theme/index.css"),
+            },
             output: {
                 // don't hash the name of the output file (index.js)
                 entryFileNames: `[name].js`,
-                assetFileNames: `[name].[ext]`,
+                assetFileNames: "[name].[ext]",
             },
         },
     },

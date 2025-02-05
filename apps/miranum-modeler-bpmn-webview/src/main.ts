@@ -1,16 +1,11 @@
 // bpmn.js
 import { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 // css
-import "./styles.css";
-import "camunda-bpmn-js/dist/assets/camunda-platform-modeler.css";
-import "camunda-bpmn-js/dist/assets/camunda-cloud-modeler.css";
-import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
-import "@bpmn-io/element-template-chooser/dist/element-template-chooser.css";
+import "./styles/default.css";
 
 import {
     asyncDebounce,
     BpmnFileQuery,
-    BpmnModelerSetting,
     BpmnModelerSettingQuery,
     Command,
     createResolver,
@@ -32,12 +27,11 @@ import {
     alignElementsToOrigin,
     createModeler,
     exportDiagram,
-    getDiagramAsSVG,
+    getDiagramSvg,
     getVsCodeApi,
     loadDiagram,
     newDiagram,
     onCommandStackChanged,
-    onElementTemplatesErrors,
     setElementTemplates,
     setForms,
     setSettings,
@@ -51,13 +45,12 @@ const vscode = getVsCodeApi();
  * @param bpmn
  * @throws NoModelerError if the modeler is not available
  */
-const debouncedUpdateXML = asyncDebounce(openXML, 100);
+const debouncedUpdateXML = asyncDebounce(openXml, 100);
 
 // create resolver to wait for the response from the backend
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
-const formKeysResolver = createResolver<FormKeysQuery>();
-const elementTemplatesResolver = createResolver<ElementTemplatesQuery>();
-const settingResolver = createResolver<BpmnModelerSettingQuery>();
+
+let modelerIsInitialized = false;
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -73,22 +66,13 @@ window.onload = async function () {
 
     const bpmnFileQuery = await bpmnFileResolver.wait();
     await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
+    modelerIsInitialized = true;
+
+    console.debug("[DEBUG] Modeler is initialized...");
 
     vscode.postMessage(new GetFormKeysCommand());
     vscode.postMessage(new GetElementTemplatesCommand());
     vscode.postMessage(new GetBpmnModelerSettingCommand());
-
-    const [formKeysQuery, elementTemplatesQuery, settingQuery] = await Promise.all([
-        formKeysResolver.wait(),
-        elementTemplatesResolver.wait(),
-        settingResolver.wait(),
-    ]);
-
-    await initializeArtifacts(
-        formKeysQuery?.formKeys,
-        elementTemplatesQuery?.elementTemplates,
-        settingQuery?.setting,
-    );
 };
 
 async function initializeModeler(
@@ -102,53 +86,17 @@ async function initializeModeler(
 
     try {
         createModeler(engine);
-        onCommandStackChanged(sendChanges);
-        await openXML(bpmn);
-    } catch (error: unknown) {
+        onCommandStackChanged(sendXmlChanges);
+        await openXml(bpmn);
+    } catch (error: any) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));
         } else if (error instanceof UnsupportedEngineError) {
             vscode.postMessage(new LogErrorCommand(error.message));
         } else {
-            const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
-        }
-    }
-}
-
-/**
- * Set the initial data after the webview was loaded.
- * @param formKeys
- * @param elementTemplates
- * @param setting
- */
-async function initializeArtifacts(
-    formKeys: string[] | undefined,
-    elementTemplates: JSON[] | undefined,
-    setting: BpmnModelerSetting | undefined,
-) {
-    try {
-        setElementTemplates(elementTemplates);
-        onElementTemplatesErrors((errors) =>
             vscode.postMessage(
-                new LogErrorCommand(
-                    `Failed to load element templates with following errors: ${formatErrors(
-                        errors,
-                    )}`,
-                ),
-            ),
-        );
-
-        setForms(formKeys);
-        setSettings(setting);
-    } catch (error: unknown) {
-        if (error instanceof NoModelerError) {
-            vscode.postMessage(new LogErrorCommand(error.message));
-        } else if (error instanceof UnsupportedEngineError) {
-            vscode.postMessage(new LogErrorCommand(error.message));
-        } else {
-            const message = error instanceof Error ? error.message : `${error}`;
-            vscode.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
+                new LogErrorCommand(`Unable to open XML\n${error.message}`),
+            );
         }
     }
 }
@@ -158,7 +106,7 @@ async function initializeArtifacts(
  * @param bpmn
  * @throws NoModelerError if the modeler is not available
  */
-async function openXML(bpmn?: string) {
+async function openXml(bpmn?: string) {
     let result: ImportXMLResult;
     if (!bpmn) {
         result = await newDiagram();
@@ -175,7 +123,7 @@ async function openXML(bpmn?: string) {
 /**
  * Send the changed XML content to the backend to update the .bpmn file.
  */
-async function sendChanges() {
+async function sendXmlChanges() {
     const bpmn = await exportDiagram();
     vscode.postMessage(new SyncDocumentCommand(bpmn));
     alignElementsToOrigin();
@@ -186,76 +134,59 @@ async function sendChanges() {
  */
 async function onReceiveMessage(message: MessageEvent<Query | Command>) {
     const queryOrCommand = message.data;
+    const errorPreFix = "Error receiving message" + queryOrCommand.type;
 
-    try {
-        switch (true) {
-            case queryOrCommand.type === "BpmnFileQuery": {
-                try {
-                    const bpmnFileQuery = message.data as BpmnFileQuery;
+    switch (true) {
+        case queryOrCommand.type === "BpmnFileQuery": {
+            try {
+                const bpmnFileQuery = message.data as BpmnFileQuery;
+                if (modelerIsInitialized) {
                     await debouncedUpdateXML(bpmnFileQuery.content);
-                } catch (error: unknown) {
-                    if (error instanceof NoModelerError) {
-                        bpmnFileResolver.done(message.data as BpmnFileQuery);
-                    } else {
-                        throw error;
-                    }
+                } else {
+                    bpmnFileResolver.done(bpmnFileQuery);
                 }
-                break;
+            } catch (error: any) {
+                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
             }
-            case queryOrCommand.type === "FormKeysQuery": {
-                try {
-                    const formKeys = (message.data as FormKeysQuery).formKeys;
-                    setForms(formKeys);
-                } catch (error: unknown) {
-                    if (error instanceof NoModelerError) {
-                        formKeysResolver.done(message.data as FormKeysQuery);
-                    } else {
-                        throw error;
-                    }
-                }
-                break;
+            break;
+        }
+        case queryOrCommand.type === "FormKeysQuery": {
+            try {
+                const formKeys = (message.data as FormKeysQuery).formKeys;
+                setForms(formKeys);
+            } catch (error: any) {
+                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
             }
-            case queryOrCommand.type === "ElementTemplatesQuery": {
-                try {
-                    const elementTemplates = (message.data as ElementTemplatesQuery)
-                        .elementTemplates;
-                    setElementTemplates(elementTemplates);
-                } catch (error: unknown) {
-                    if (error instanceof NoModelerError) {
-                        elementTemplatesResolver.done(
-                            message.data as ElementTemplatesQuery,
-                        );
-                    } else {
-                        throw error;
-                    }
-                }
-                break;
+            break;
+        }
+        case queryOrCommand.type === "ElementTemplatesQuery": {
+            try {
+                const elementTemplates = (message.data as ElementTemplatesQuery)
+                    .elementTemplates;
+                setElementTemplates(elementTemplates);
+            } catch (error: any) {
+                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
             }
-            case queryOrCommand.type === "BpmnModelerSettingQuery": {
-                try {
-                    const setting = (message.data as BpmnModelerSettingQuery).setting;
-                    setSettings(setting);
-                } catch (error: unknown) {
-                    if (error instanceof NoModelerError) {
-                        settingResolver.done(message.data as BpmnModelerSettingQuery);
-                    } else {
-                        throw error;
-                    }
-                }
-                break;
+            break;
+        }
+        case queryOrCommand.type === "BpmnModelerSettingQuery": {
+            try {
+                const setting = (message.data as BpmnModelerSettingQuery).setting;
+                setSettings(setting);
+            } catch (error: any) {
+                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
             }
-            case queryOrCommand.type === "GetDiagramAsSVGCommand": {
+            break;
+        }
+        case queryOrCommand.type === "GetDiagramAsSVGCommand": {
+            try {
                 const command = message.data as GetDiagramAsSVGCommand;
-                command.svg = await getDiagramAsSVG();
+                command.svg = await getDiagramSvg();
+                // Send the SVG back to vscode
                 vscode.postMessage(command);
+            } catch (error: any) {
+                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
             }
         }
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : `${error}`;
-        vscode.postMessage(
-            new LogErrorCommand(
-                `Something went wrong when receiving the message ${errorMessage}`,
-            ),
-        );
     }
 }

@@ -1,4 +1,4 @@
-import { BpmnModelerSetting } from "../model";
+import { BpmnModelerSetting } from "../domain/model";
 
 type ExecutionPlatformVersion = "c7" | "c8";
 
@@ -118,6 +118,8 @@ export interface FileSystemOutPort {
 
 export interface BpmnModelerSettingsOutPort {
     getAlignToOrigin(): boolean;
+
+    getDarkTheme(): boolean;
 }
 
 export interface GetExecutionPlatformVersionOutPort {

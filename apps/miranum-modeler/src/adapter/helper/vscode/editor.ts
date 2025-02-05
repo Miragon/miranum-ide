@@ -1,5 +1,7 @@
 import { Uri, Webview } from "vscode";
 import { getNonce } from "@miranum-ide/vscode/miranum-vscode";
+import { BpmnModelerSettingsOutPort } from "../../../application/ports/out";
+import { VsCodeBpmnModelerSettingsAdapter } from "../../out";
 
 /**
  * The name of the directory where the necessary files for the webview are located after build.
@@ -11,11 +13,11 @@ export function bpmnEditorUi(webview: Webview, extensionUri: Uri): string {
     const baseUri = Uri.joinPath(extensionUri, bpmnModelerWebviewProjectPath);
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
-    const styleResetUri = webview.asWebviewUri(
-        Uri.joinPath(extensionUri, "assets", "reset.css"),
-    );
     const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
     const fontUri = webview.asWebviewUri(Uri.joinPath(baseUri, "css", "bpmn.css"));
+    const themeUri = checkForDarkThemeSetting()
+        ? webview.asWebviewUri(Uri.joinPath(baseUri, "darkTheme.css"))
+        : webview.asWebviewUri(Uri.joinPath(baseUri, "lightTheme.css"));
 
     const nonce = getNonce();
 
@@ -23,11 +25,11 @@ export function bpmnEditorUi(webview: Webview, extensionUri: Uri): string {
         <!DOCTYPE html>
         <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${styleResetUri}" rel="stylesheet">
-                <link href="${styleUri}" rel="stylesheet">
-                <link href="${fontUri}" rel="stylesheet">
+                <meta charset="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <link href="${styleUri}" rel="stylesheet"/>
+                <link href="${themeUri}" rel="stylesheet" id="theme-link"/>
+                <link href="${fontUri}" rel="stylesheet"/>
                 <title>Miranum: BPMN Modeler</title>
             </head>
             <body>
@@ -75,4 +77,10 @@ export function dmnModelerHtml(webview: Webview, extensionUri: Uri): string {
             </body>
             </html>
         `;
+}
+
+function checkForDarkThemeSetting(): boolean {
+    const darkThemeSetting: BpmnModelerSettingsOutPort =
+        new VsCodeBpmnModelerSettingsAdapter();
+    return darkThemeSetting.getDarkTheme();
 }

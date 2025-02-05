@@ -29,7 +29,7 @@ import {
     DmnUiOutPort,
     DocumentOutPort,
 } from "../../application/ports/out";
-import { BpmnModelerSetting } from "../../application/model";
+import { BpmnModelerSetting } from "../../application/domain/model";
 
 type ActiveEditor = {
     id: string;
@@ -183,6 +183,7 @@ export class VsCodeBpmnWebviewAdapter implements BpmnUiOutPort {
     async setSettings(editorId: string, setting: BpmnModelerSetting): Promise<boolean> {
         const webviewSettingsQuery = new BpmnModelerSettingQuery({
             alignToOrigin: setting.alignToOrigin,
+            darkTheme: setting.darkTheme,
         });
         return postMessage(editorId, webviewSettingsQuery);
     }

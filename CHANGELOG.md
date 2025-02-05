@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.0] -  2024-10-08
+### Added
+
+* **\[Miranum Modeler\]** Dark Theme for bpmn modeler (experimental) (#772)
+
+## [0.6.0] - 2024-10-08
 
 ### Fixed
 
@@ -30,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* **\[Miranum Modeler\]** Ask for the execution platform when a new diagram is created (#589)
+* **\[Miranum Modeler\]** Ask for the execution platform when a new diagram is created (
+  #589)
 
 ### Fixed
 
@@ -48,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* **\[Miranum Jsonforms\]** Command to split the `.form.json` file into `.schema.json` and `.uischema.json` files (#564)
+* **\[Miranum Jsonforms\]** Command to split the `.form.json` file into `.schema.json`
+  and `.uischema.json` files (#564)
 
 ### Fixed
 
@@ -63,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * **\[Miranum Modeler\]** Apply a hexagonal architecture to the modeler (#521)
-* **\[Miranum Forms\]** Deprecate the `DigiWf Formbuilder` and remove from the extension pack
+* **\[Miranum Forms\]** Deprecate the `DigiWf Formbuilder` and remove from the extension
+  pack
 
 ## [0.5.7] - 2024-01-10
 
@@ -86,7 +93,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* **\[Miranum Modeler\]** Configuration to enable the alignment of the diagram at the origin (#395)
+* **\[Miranum Modeler\]** Configuration to enable the alignment of the diagram at the
+  origin (#395)
 
 ### Changed
 
@@ -100,14 +108,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* **\[Miranum Modeler\]** Alignment of elements leads to an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
+* **\[Miranum Modeler\]** Alignment of elements leads to
+  an [endless loop](https://github.com/bpmn-io/align-to-origin/issues/2) (#394)
 
 ## [0.5.3] - 2023-08-01
 
 ### Added
 
 * **\[Miranum Modeler\]** Support for Camunda 8 properties (#302)
-* **\[Miranum Modeler\]** Support for create/append patter for Camunda 8 and Camunda 7 (#322)
+* **\[Miranum Modeler\]** Support for create/append patter for Camunda 8 and Camunda 7 (
+  #322)
 
 ### Fixed
 
@@ -129,7 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* **\[Miranum Console\]** Use a single webview when the user triggers the available commands (#125)
+* **\[Miranum Console\]** Use a single webview when the user triggers the available
+  commands (#125)
 
 [unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.0-vscode...HEAD
 

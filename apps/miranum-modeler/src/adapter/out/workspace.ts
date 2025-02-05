@@ -4,7 +4,10 @@ import {
     FileSystemOutPort,
     WorkspaceOutPort,
 } from "../../application/ports/out";
-import { FileNotFound, NoWorkspaceFolderFoundError } from "../../application/errors";
+import {
+    FileNotFound,
+    NoWorkspaceFolderFoundError,
+} from "../../application/domain/errors";
 
 const fs = workspace.fs;
 
@@ -73,6 +76,18 @@ export class VsCodeBpmnModelerSettingsAdapter implements BpmnModelerSettingsOutP
         const setting = workspace
             .getConfiguration("miranumIDE.modeler")
             .get<boolean>("alignToOrigin");
+
+        if (!setting) {
+            return false;
+        }
+
+        return setting;
+    }
+
+    getDarkTheme(): boolean {
+        const setting = workspace
+            .getConfiguration("miranumIDE.modeler")
+            .get<boolean>("darkTheme");
 
         if (!setting) {
             return false;

@@ -2,7 +2,10 @@ import { GetMiranumConfigInPort, GetWorkspaceItemInPort } from "../ports/in";
 import { MiranumConfig, MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 import { inject, singleton } from "tsyringe";
 import { FileSystemOutPort, WorkspaceOutPort } from "../ports/out";
-import { NoMiranumConfigFoundError, NoMiranumWorkspaceItemError } from "../errors";
+import {
+    NoMiranumConfigFoundError,
+    NoMiranumWorkspaceItemError,
+} from "../domain/errors";
 
 @singleton()
 export class GetMiranumConfigUseCase implements GetMiranumConfigInPort {

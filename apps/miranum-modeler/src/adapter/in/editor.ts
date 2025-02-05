@@ -179,7 +179,10 @@ export class VsCodeBpmnEditorAdapter
 
     private subscribeToSettingChangeEvent() {
         subscribeToSettingChangeEvent((event, editorId) => {
-            if (event.affectsConfiguration("miranumIDE.modeler.alignToOrigin")) {
+            if (
+                event.affectsConfiguration("miranumIDE.modeler.alignToOrigin") ||
+                event.affectsConfiguration("miranumIDE.modeler.darkTheme")
+            ) {
                 this.setBpmnModelerSettingsInPort.set(editorId);
             }
         });
