@@ -264,9 +264,6 @@ jobs:
   create-release:
     if: github.event.inputs.release-tag
     needs:
-      - publish-miranum-cli
-      - publish-miranum-core
-      - publish-miranum-create-append-c7-element-templates
       - publish-miranum-extension-pack
       - publish-miranum-jsonforms
       - publish-miranum-modeler
