@@ -7076,15 +7076,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-token-simulation@npm:^0.36.1":
-  version: 0.36.1
-  resolution: "bpmn-js-token-simulation@npm:0.36.1"
+"bpmn-js-token-simulation@npm:^0.36.2":
+  version: 0.36.2
+  resolution: "bpmn-js-token-simulation@npm:0.36.2"
   dependencies:
     inherits-browser: "npm:^0.1.0"
     min-dash: "npm:^4.2.2"
     min-dom: "npm:^4.2.1"
     randomcolor: "npm:^0.6.2"
-  checksum: 10c0/b8858b6cf171a579bc9488b0d5989a091f91c68e15f2ff27f1d54dd0d88814522f2ed3276fc5fa589c50343bc1e7ca64b126f8e1ba12d578593e0fcbb33567b8
+  checksum: 10c0/aacb27a55c4dca828c7cb8bd65301bf27e062f602c3a3e7a90df709af03ce9cef0d6f0b73ef76e0cb8f488c02ab3a77cfd4fa9036afc01b2fa661e7cfc4273ac
   languageName: node
   linkType: hard
 
@@ -13542,7 +13542,7 @@ __metadata:
     axios: "npm:^1.7.9"
     babel-jest: "npm:^29.7.0"
     bpmn-js-properties-panel: "npm:^5.31.1"
-    bpmn-js-token-simulation: "npm:^0.36.1"
+    bpmn-js-token-simulation: "npm:^0.36.2"
     camunda-bpmn-js: "npm:^5.4.2"
     camunda-dmn-moddle: "npm:^1.3.0"
     colors: "npm:^1.4.0"
