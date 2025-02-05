@@ -10109,6 +10109,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-glob@npm:^3.3.3":
+  version: 3.3.3
+  resolution: "fast-glob@npm:3.3.3"
+  dependencies:
+    "@nodelib/fs.stat": "npm:^2.0.2"
+    "@nodelib/fs.walk": "npm:^1.2.3"
+    glob-parent: "npm:^5.1.2"
+    merge2: "npm:^1.3.0"
+    micromatch: "npm:^4.0.8"
+  checksum: 10c0/f6aaa141d0d3384cf73cbcdfc52f475ed293f6d5b65bfc5def368b09163a9f7e5ec2b3014d80f733c405f58e470ee0cc451c2937685045cddcdeaa24199c43fe
+  languageName: node
+  linkType: hard
+
 "fast-json-stable-stringify@npm:2.x, fast-json-stable-stringify@npm:^2.0.0, fast-json-stable-stringify@npm:^2.1.0":
   version: 2.1.0
   resolution: "fast-json-stable-stringify@npm:2.1.0"
@@ -13075,7 +13088,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:^0.30.12, magic-string@npm:^0.30.15, magic-string@npm:^0.30.17":
+"magic-string@npm:^0.30.12, magic-string@npm:^0.30.17":
   version: 0.30.17
   resolution: "magic-string@npm:0.30.17"
   dependencies:
@@ -13582,7 +13595,7 @@ __metadata:
     tsyringe: "npm:^4.8.0"
     typescript: "npm:^5.7.3"
     typescript-eslint: "npm:^8.21.0"
-    unplugin-vue-components: "npm:^0.28.0"
+    unplugin-vue-components: "npm:^28.0.0"
     uuid: "npm:^11.0.3"
     vite: "npm:^6.0.11"
     vite-plugin-eslint: "npm:^1.8.1"
@@ -17911,20 +17924,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unplugin-vue-components@npm:^0.28.0":
-  version: 0.28.0
-  resolution: "unplugin-vue-components@npm:0.28.0"
+"unplugin-vue-components@npm:^28.0.0":
+  version: 28.0.0
+  resolution: "unplugin-vue-components@npm:28.0.0"
   dependencies:
     "@antfu/utils": "npm:^0.7.10"
     "@rollup/pluginutils": "npm:^5.1.4"
     chokidar: "npm:^3.6.0"
     debug: "npm:^4.4.0"
-    fast-glob: "npm:^3.3.2"
+    fast-glob: "npm:^3.3.3"
     local-pkg: "npm:^0.5.1"
-    magic-string: "npm:^0.30.15"
+    magic-string: "npm:^0.30.17"
     minimatch: "npm:^9.0.5"
     mlly: "npm:^1.7.3"
-    unplugin: "npm:^2.1.0"
+    unplugin: "npm:^2.1.2"
   peerDependencies:
     "@babel/parser": ^7.15.8
     "@nuxt/kit": ^3.2.2
@@ -17934,17 +17947,17 @@ __metadata:
       optional: true
     "@nuxt/kit":
       optional: true
-  checksum: 10c0/071feef71e31c4a5f8d65f80f5c014804e7721ca98ec0e27cd29f225460fc0a3a0dbd2a2f6f4218e2f96697880b31627865869a39bd8a3e3174ce96c7e6b7ef2
+  checksum: 10c0/f3904eec9d497253abeb18c81eb0c230797c386802621043883fffa30c9d4dbaf82dbe70ce570cf6ce750dbc1dacdb440c9f22f3eb86bff373c25b29064bfeca
   languageName: node
   linkType: hard
 
-"unplugin@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "unplugin@npm:2.1.0"
+"unplugin@npm:^2.1.2":
+  version: 2.1.2
+  resolution: "unplugin@npm:2.1.2"
   dependencies:
     acorn: "npm:^8.14.0"
     webpack-virtual-modules: "npm:^0.6.2"
-  checksum: 10c0/f41d4ee1ccc3d8478afdfb4d5f52ddd34bcd3157ebe5ac804b9c5d0afe1e3d6fad5ef44f7bbf030e8a1c671e145fcc8547be46e21d080bd9729f6e97d86f9fd3
+  checksum: 10c0/ae24ee275de96a700df416c3241f910ac964011c2e23dc726feb768fe10fc40bef3dbe2d0d8d267ed988c6c3393c3a9782d5b7b30df4a27e8dab244d86b4d4be
   languageName: node
   linkType: hard
 
