@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-02-05
+
 ### Added
 
 * Dark Theme for bpmn modeler (experimental) (#772)
@@ -119,7 +121,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Unresolved breakpoints when debugging (#227)
 
-[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.0-vscode...HEAD
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.1-vscode...HEAD
+
+[0.6.1]: https://github.com/Miragon/miranum-ide/compare/release/v0.6.0...release/v0.6.1-vscode
 
 [0.6.0]: https://github.com/Miragon/miranum-ide/compare/release/v0.5.13...release/v0.6.0-vscode
 
