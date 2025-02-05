@@ -11,17 +11,17 @@ on:
         description: 'Release miranum-cli app?'
         type: boolean
         required: true
-        default: true
+        default: false
       miranum-core:
         description: 'Release miranum-core?'
         type: boolean
         required: true
-        default: true
+        default: false
       miranum-create-append-c7-element-templates:
         description: 'Release miranum-create-append-c7-element-templates'
         type: boolean
         required: true
-        default: true
+        default: false
       miranum-extension-pack:
         description: 'Release miranum-extension-pack?'
         type: boolean
