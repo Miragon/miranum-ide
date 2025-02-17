@@ -5,9 +5,7 @@
   "scripts": {
     "build": "npx nx run-many --target build --all --prod && node tools/scripts/set-version.js && npm run doc",
     "test": "npx nx run-many --target test --all --parallel --coverage --coverageReporters=clover",
-    "lint": "npx nx run-many --target lint --all  --parallel",
-    "doc": "npx nx run-many --target generateDocs --parallel",
-    "generate-api": "openapi-generator-cli generate -i http://localhost:8090/v3/api-docs -g typescript-axios -o libs/miranum-core/src/lib/deployment/rest/openapi --additional-properties=supportsES6=true,withInterfaces=true"
+    "lint": "npx nx run-many --target lint --all  --parallel"
   },
   "private": true,
   "devDependencies": {
