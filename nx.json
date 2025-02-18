@@ -38,7 +38,7 @@
         "appsDir": "apps",
         "libsDir": "libs"
     },
-    "defaultProject": "miranum-cli",
+    "defaultProject": "miranum-modeler",
     "plugins": [
         {
             "plugin": "@nx/vite/plugin",

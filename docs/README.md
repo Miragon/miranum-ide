@@ -19,20 +19,6 @@ deployment.
 
 <hr>
 
-### project-structure: 
-
-    .
-    ├── miranum-cli
-    |     ├── src ... (contains the cli-tool)
-    |     └── tests ... (contains the cli-e2e-tests)
-    ├── miranum-console
-    |     └── src ... (contains the vs-code extension)
-    └── miranum-console-webview
-          └── src ... (contains webviews)
-
-
 ## Used Software:
-
-Templateengine: [Squirrely](https://squirrelly.js.org/)
 
 BPMN-Modeler foundation: [bpmn-js](https://bpmn.io/toolkit/bpmn-js/)

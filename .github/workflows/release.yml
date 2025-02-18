@@ -7,16 +7,6 @@ on:
         description: 'Release Tag'
         required: true
         default: 'release/XXX'
-      miranum-cli:
-        description: 'Release miranum-cli app?'
-        type: boolean
-        required: true
-        default: false
-      miranum-core:
-        description: 'Release miranum-core?'
-        type: boolean
-        required: true
-        default: false
       miranum-create-append-c7-element-templates:
         description: 'Release miranum-create-append-c7-element-templates'
         type: boolean
@@ -66,20 +56,6 @@ jobs:
       - name: BUILD / Build
         run: yarn build
 
-      # miranum-cli
-      - name: GIT / Upload miranum-cli
-        uses: actions/upload-artifact@v4
-        with:
-          name: miranum-cli
-          path: dist/apps/miranum-cli
-
-      # miranum-core
-      - name: GIT / Upload miranum-core
-        uses: actions/upload-artifact@v4
-        with:
-          name: miranum-core
-          path: dist/libs/miranum-core
-
       # miranum-create-append-c7-element-templates
       - name: GIT / Upload miranum-create-append-c7-element-templates
         uses: actions/upload-artifact@v4
@@ -107,52 +83,6 @@ jobs:
         with:
           name: miranum-modeler
           path: dist/apps/miranum-modeler
-
-  # miranum-cli
-  publish-miranum-cli:
-    if: github.event.inputs.miranum-cli == 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: GIT / Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: miranum-cli
-
-      - name: PREP / Setup NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: RELEASE / Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
-
-  # miranum-core
-  publish-miranum-core:
-    if: github.event.inputs.miranum-core == 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: GIT / Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: miranum-core
-
-      - name: PREP / Setup NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: RELEASE / Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
 
   # miranum-create-append-c7-element-templates
   publish-miranum-create-append-c7-element-templates:

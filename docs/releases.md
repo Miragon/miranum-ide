@@ -41,7 +41,7 @@ flowchart LR
 
 ## Create a new release
 
-Before you release a new version make sure to edit the projects version in its `package.json` and `pom.xml`.
+Before you release a new version make sure to edit the projects version in its `package.json`.
 Furthermore, check the if the `CHANGELOGs` where updated.
 
 Go to the [actions section in github](https://github.com/Miragon/miranum-ide/actions/workflows/release.yml) and trigger the `release.yml` action manually.
