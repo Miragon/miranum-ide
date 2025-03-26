@@ -1,167 +1,179 @@
 {
-    "name": "miranum-modeler",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "apps/miranum-modeler/src",
-    "projectType": "application",
-    "tags": [],
-    "implicitDependencies": [
-        "miranum-modeler-bpmn-webview",
-        "miranum-modeler-dmn-webview"
-    ],
-    "targets": {
-        "observe-all": {
-            "executor": "nx:run-commands",
-            "parallel": true,
-            "options": {
-                "commands": [
-                    {
-                        "command": "npx nx observe miranum-modeler",
-                        "prefix": "miranum-modeler",
-                        "color": "blue"
-                    },
-                    {
-                        "command": "npx nx observe miranum-modeler-bpmn-webview",
-                        "prefix": "miranum-modeler-bpmn-webview",
-                        "color": "green"
-                    },
-                    {
-                        "command": "npx nx observe miranum-modeler-dmn-webview",
-                        "prefix": "miranum-modeler-dmn-webview",
-                        "color": "yellow"
-                    }
-                ]
-            }
-        },
-        "observe": {
-            "executor": "@nx/webpack:webpack",
-            "outputs": ["{options.outputPath}"],
-            "defaultConfiguration": "development",
-            "options": {
-                "watch": true,
-                "target": "node",
-                "compiler": "tsc",
-                "outputPath": "dist/apps/miranum-modeler",
-                "deleteOutputPath": false,
-                "main": "apps/miranum-modeler/src/main.ts",
-                "tsConfig": "apps/miranum-modeler/tsconfig.app.json",
-                "generatePackageJson": true,
-                "webpackConfig": "apps/miranum-modeler/webpack.config.js",
-                "babelUpwardRootMode": true,
-                "assets": [
-                    {
-                        "glob": "komet.svg",
-                        "input": "{workspaceRoot}/images",
-                        "output": "/assets"
-                    },
-                    {
-                        "glob": "reset.css",
-                        "input": "apps/miranum-modeler/assets",
-                        "output": "/assets"
-                    }
-                ]
-            },
-            "configurations": {
-                "development": {
-                    "extractLicenses": false,
-                    "optimization": false,
-                    "sourceMap": true
-                }
-            }
-        },
-        "build": {
-            "executor": "@nx/webpack:webpack",
-            "outputs": ["{options.outputPath}"],
-            "defaultConfiguration": "production",
-            "options": {
-                "target": "node",
-                "compiler": "tsc",
-                "outputPath": "dist/apps/miranum-modeler",
-                "deleteOutputPath": false,
-                "main": "apps/miranum-modeler/src/main.ts",
-                "tsConfig": "apps/miranum-modeler/tsconfig.app.json",
-                "generatePackageJson": true,
-                "webpackConfig": "apps/miranum-modeler/webpack.config.js",
-                "babelUpwardRootMode": true,
-                "assets": [
-                    {
-                        "glob": "komet.svg",
-                        "input": "{workspaceRoot}/images",
-                        "output": "/assets"
-                    },
-                    {
-                        "glob": "miranum_logo.png",
-                        "input": "{workspaceRoot}/images",
-                        "output": "/assets"
-                    },
-                    {
-                        "glob": "LICENSE",
-                        "input": "{workspaceRoot}",
-                        "output": "/"
-                    },
-                    {
-                        "glob": ".vscodeignore",
-                        "input": "apps/miranum-modeler",
-                        "output": "/"
-                    },
-                    {
-                        "glob": "README.md",
-                        "input": "apps/miranum-modeler",
-                        "output": "/"
-                    },
-                    {
-                        "glob": "CHANGELOG.md",
-                        "input": "apps/miranum-modeler",
-                        "output": "/"
-                    }
-                ]
-            },
-            "configurations": {
-                "production": {
-                    "optimization": true,
-                    "extractLicenses": true,
-                    "inspect": false,
-                    "sourceMap": false,
-                    "fileReplacements": [
-                        {
-                            "replace": "apps/miranum-modeler/src/environments/environment.ts",
-                            "with": "apps/miranum-modeler/src/environments/environment.prod.ts"
-                        }
-                    ]
-                }
-            }
-        },
-        "serve": {
-            "executor": "@nx/node:node",
-            "options": {
-                "buildTarget": "miranum-modeler:build"
-            },
-            "configurations": {
-                "production": {
-                    "buildTarget": "miranum-modeler:build:production"
-                }
-            }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": ["apps/miranum-modeler/**/*.ts"]
-            }
-        },
-        "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-            "options": {
-                "jestConfig": "apps/miranum-modeler/jest.config.ts",
-                "passWithNoTests": true,
-                "coverageReporters": ["clover"]
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "codeCoverage": true
-                }
-            }
+  "name": "miranum-modeler",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/miranum-modeler/src",
+  "projectType": "application",
+  "tags": [],
+  "implicitDependencies": [
+    "miranum-modeler-bpmn-webview",
+    "miranum-modeler-dmn-webview"
+  ],
+  "targets": {
+    "observe-all": {
+      "executor": "nx:run-commands",
+      "parallel": true,
+      "options": {
+        "commands": [
+          {
+            "command": "npx nx observe miranum-modeler",
+            "prefix": "miranum-modeler",
+            "color": "blue"
+          },
+          {
+            "command": "npx nx observe miranum-modeler-bpmn-webview",
+            "prefix": "miranum-modeler-bpmn-webview",
+            "color": "green"
+          },
+          {
+            "command": "npx nx observe miranum-modeler-dmn-webview",
+            "prefix": "miranum-modeler-dmn-webview",
+            "color": "yellow"
+          }
+        ]
+      }
+    },
+    "observe": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "development",
+      "options": {
+        "watch": true,
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/miranum-modeler",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-modeler/src/main.ts",
+        "tsConfig": "apps/miranum-modeler/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-modeler/webpack.config.js",
+        "babelUpwardRootMode": true,
+        "assets": [
+          {
+            "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
+            "output": "/assets"
+          },
+          {
+            "glob": "reset.css",
+            "input": "apps/miranum-modeler/assets",
+            "output": "/assets"
+          }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true
         }
+      }
+    },
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/miranum-modeler",
+        "deleteOutputPath": false,
+        "main": "apps/miranum-modeler/src/main.ts",
+        "tsConfig": "apps/miranum-modeler/tsconfig.app.json",
+        "generatePackageJson": true,
+        "webpackConfig": "apps/miranum-modeler/webpack.config.js",
+        "babelUpwardRootMode": true,
+        "assets": [
+          {
+            "glob": "komet.svg",
+            "input": "{workspaceRoot}/images",
+            "output": "/assets"
+          },
+          {
+            "glob": "miragon-logo.png",
+            "input": "{workspaceRoot}/images",
+            "output": "/assets"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "{workspaceRoot}",
+            "output": "/"
+          },
+          {
+            "glob": ".vscodeignore",
+            "input": "apps/miranum-modeler",
+            "output": "/"
+          },
+          {
+            "glob": "README.md",
+            "input": "apps/miranum-modeler",
+            "output": "/"
+          },
+          {
+            "glob": "CHANGELOG.md",
+            "input": "apps/miranum-modeler",
+            "output": "/"
+          }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "sourceMap": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/miranum-modeler/src/environments/environment.ts",
+              "with": "apps/miranum-modeler/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/node:node",
+      "options": {
+        "buildTarget": "miranum-modeler:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "miranum-modeler:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/miranum-modeler/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/miranum-modeler/jest.config.ts",
+        "passWithNoTests": true,
+        "coverageReporters": [
+          "clover"
+        ]
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
     }
+  }
 }

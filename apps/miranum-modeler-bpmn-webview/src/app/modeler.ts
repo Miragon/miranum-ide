@@ -30,9 +30,6 @@ const bpmnModeler: MiranumModeler = {
 };
 
 const modelerOptions = {
-    // keyboard: {
-    //     bindTo: document,
-    // },
     container: "#js-canvas",
     propertiesPanel: {
         parent: "#js-properties-panel",
@@ -56,16 +53,11 @@ export function createModeler(engine: "c7" | "c8"): Modeler {
         case "c7": {
             bpmnModeler.modeler = new BpmnModeler7({
                 ...modelerOptions,
-                // bpmnRenderer: {
-                //     defaultFillColor: "#22242a",
-                //     defaultStrokeColor: "#fff",
-                // },
                 additionalModules: [
                     ...commonModules,
                     ExtendElementTemplates,
                     CreateAppendElementTemplatesModule,
                     miragonProviderModule,
-                    // DarkTheme,
                 ],
             });
             break;

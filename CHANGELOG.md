@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-03-26
+
+### Changed
+
+* Remove extension pack and change branding (#809)
+
 ## [0.6.1] - 2025-02-05
 
 ### Added
