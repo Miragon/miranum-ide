@@ -83,7 +83,7 @@
     "@backoffice-plus/formbuilder": "^0.0.50",
     "@bpmn-io/form-js": "^1.13.2",
     "@jsonforms/core": "3.3.0",
-    "@jsonforms/vue": "3.3.0",
+    "@jsonforms/vue": "3.5.1",
     "@jsonforms/vue-vanilla": "3.3.0",
     "@jsonforms/vue-vuetify": "3.3.0-preview.0",
     "@svgr/webpack": "^8.1.0",

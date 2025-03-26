@@ -3070,15 +3070,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jsonforms/vue@npm:3.3.0":
-  version: 3.3.0
-  resolution: "@jsonforms/vue@npm:3.3.0"
+"@jsonforms/vue@npm:3.5.1":
+  version: 3.5.1
+  resolution: "@jsonforms/vue@npm:3.5.1"
   dependencies:
     lodash: "npm:^4.17.21"
   peerDependencies:
-    "@jsonforms/core": 3.3.0
+    "@jsonforms/core": 3.5.1
     vue: ^3.2.26
-  checksum: 10c0/dcde68d68d29f87c62c431e5468e558e7ceefced4260dc89a009f9fdbcebc74d70a053ac7bbce90e88530f827f9ec04fd491a36632ea7146166a11cc0e1d02b1
+  checksum: 10c0/ee8254ebc62b3c268a1a4cc3a2d3e4c0142799fdccc5ae9fa645aa5306142e86427b07258fa301768073ab4442e1b93db619cc879dae3e3903d059e07b31609c
   languageName: node
   linkType: hard
 
@@ -13144,7 +13144,7 @@ __metadata:
     "@eslint/eslintrc": "npm:^3.2.0"
     "@eslint/js": "npm:~8.57.0"
     "@jsonforms/core": "npm:3.3.0"
-    "@jsonforms/vue": "npm:3.3.0"
+    "@jsonforms/vue": "npm:3.5.1"
     "@jsonforms/vue-vanilla": "npm:3.3.0"
     "@jsonforms/vue-vuetify": "npm:3.3.0-preview.0"
     "@nx/esbuild": "npm:^20.4.0"
