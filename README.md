@@ -12,12 +12,10 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miranum_logo.png" alt="Logo" height="180">
+        <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miragon-logo.png" alt="Logo" height="180">
     </a>
-    <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
+    <h3>Miragon VsCode Plugins</h3>
     <p>
-        <i>One IDE for everything!</i>
-        <br />
         <a href="https://github.com/Miragon/miranum-ide/issues">Report Bug</a>
         ·
         <a href="https://github.com/Miragon/miranum-ide/pulls">Request Feature</a>
@@ -26,31 +24,34 @@
 
 ## About The Project
 
-Miranum IDE is a collection of *VS Code Plugins* that allows you to edit, manage and access all artifacts for your
-process application in one place.
-Visit our Marketplace page [here](https://marketplace.visualstudio.com/publishers/miragon-gmbh).
+This is a collection of different vs code plugins.
 
 ## Use-Cases
 
-- **Process Modeling**: Creating and editing BPMN and DMN diagrams specifically for **Camunda**.
+- **Process Modeling**: Creating and editing BPMN and DMN diagrams specifically for *
+  *Camunda**.
 - **Form Modeling**: Create and edit forms based on [JSON Forms](https://jsonforms.io/).
-- **Process Deployment**: Deploy your process application to the [Miranum Platform](https://github.com/miragon/miranum?tab=readme-ov-file).
 
-## Engage with the Miranum-IDE team
+## Engage with the Miragon team
 
-If you have any questions or need support, feel free to reach out to us via email ([info@miragon.io](mailto:info@miragon.io)).
-We are here to help you, especially if you are considering introducing Miranum-IDE in your organization.
+If you have any questions or need support, feel free to reach out to us via
+email ([info@miragon.io](mailto:info@miragon.io)).
+We are here to help you, especially if you are considering introducing Miranum-IDE in
+your organization.
 
-For inquiries and professional support, please contact us at: [info@miragon.io](mailto:info@miragon.io)
+For inquiries and professional support, please contact us
+at: [info@miragon.io](mailto:info@miragon.io)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
+Contributions are what make the open source community such an amazing place to learn,
+inspire, and create. Any
 contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please open an issue with the tag `enhancement`, fork the repo and
+If you have a suggestion that would make this better, please open an issue with the tag
+`enhancement`, fork the repo and
 create a pull request.
 You can also open an issue with the tag `enhancement`.
 Please use semantic commit messages as described
@@ -65,7 +66,8 @@ Thanks again!
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
 6. Open a Pull Request
 
-More about this in the [Code of Conduct](https://miranum.com/docs/components/contributing/) file.
+More about this in
+the [Code of Conduct](https://miranum.com/docs/components/contributing/) file.
 
 ## License
 
