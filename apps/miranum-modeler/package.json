@@ -1,6 +1,6 @@
 {
   "name": "vs-code-bpmn-modeler",
-  "displayName": "Miranum: Camunda Modeler",
+  "displayName": "Camunda Modeler by Miragon",
   "description": "Create and edit BPMN 2.0 and DMN Diagrams for Camunda 7 and Camunda 8 with VS Code.",
   "license": "SEE LICENSE IN LICENSE",
   "version": "0.1.0",
@@ -32,7 +32,7 @@
   "engines": {
     "vscode": "^1.76.0"
   },
-  "icon": "assets/miranum_logo.png",
+  "icon": "assets/miragon-logo.png",
   "categories": [
     "Visualization",
     "Other"
@@ -43,6 +43,7 @@
     "bpmn.io",
     "Modeler",
     "Camunda",
+    "Camunda Modeler",
     "Automation",
     "business process",
     "decision table"
@@ -53,7 +54,7 @@
       {
         "id": "miranum-modeler.bpmn",
         "viewType": "miranum-modeler.bpmn",
-        "displayName": "Miranum: BPMN Modeler",
+        "displayName": "Miragon: Camunda Modeler (BPMN)",
         "selector": [
           {
             "filenamePattern": "*.bpmn"
@@ -64,7 +65,7 @@
       {
         "id": "miranum-modeler.dmn",
         "viewType": "miranum-modeler.dmn",
-        "displayName": "Miranum: DMN Modeler",
+        "displayName": "Miragon: Camunda Modeler (DMN)",
         "selector": [
           {
             "filenamePattern": "*.dmn"
@@ -76,21 +77,21 @@
     "commands": [
       {
         "command": "miranum-modeler.toggleTextEditor",
-        "title": "Miranum Modeler: Toggle Standard Text Editor",
+        "title": "Miragon Modeler: Toggle Standard Text Editor",
         "icon": "$(notebook-mimetype)"
       },
       {
         "command": "miranum-modeler.openLoggingConsole",
-        "title": "Miranum Modeler: Display Logging Information",
+        "title": "Miragon Modeler: Display Logging Information",
         "icon": "$(callstack-view-session)"
       },
       {
         "command": "miranum-modeler.copyDiagramAsSvg",
-        "title": "Miranum Modeler: Copy Diagram as SVG"
+        "title": "Miragon Modeler: Copy Diagram as SVG"
       },
       {
         "command": "miranum-modeler.saveDiagramAsSvgCommand",
-        "title": "Miranum Modeler: Save Diagram as SVG"
+        "title": "Miragon Modeler: Save Diagram as SVG"
       }
     ],
     "keybindings": [
@@ -128,14 +129,14 @@
       ]
     },
     "configuration": {
-      "title": "MiranumBpmnModeler",
+      "title": "MiragonCamundaModeler",
       "properties": {
-        "miranumIDE.modeler.alignToOrigin": {
+        "miragon.camundaModeler.alignToOrigin": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Align the diagram to the origin when opening a new diagram. Click [here](https://github.com/bpmn-io/align-to-origin) to see the behaviour when enabled."
         },
-        "miranumIDE.modeler.darkTheme": {
+        "miragon.camundaModeler.darkTheme": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Experimental Dark Theme for BPMN Modeler only! Please inform us about bugs in this [issue](https://github.com/Miragon/miranum-ide/issues/700)."

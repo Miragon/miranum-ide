@@ -27,28 +27,5 @@
       "path": "configs",
       "extension": ".config.json"
     }
-  ],
-  "deployment": [
-    {
-      "plugin": "rest",
-      "targetEnvironments": [
-        {
-          "name": "local",
-          "url": "http://localhost:8090"
-        },
-        {
-          "name": "dev",
-          "url": "http://localhost:8090"
-        },
-        {
-          "name": "test",
-          "url": "http://localhost:8090"
-        },
-        {
-          "name": "prod",
-          "url": "http://localhost:8090"
-        }
-      ]
-    }
   ]
 }

@@ -1,148 +1,148 @@
 {
-    "name": "miranum-json-forms",
-    "displayName": "Miranum JSON Forms",
-    "description": "Create and edit forms with an modern easy to use editor.",
-    "license": "SEE LICENSE IN LICENSE",
-    "version": "0.1.7",
-    "publisher": "miragon-gmbh",
-    "preview": true,
-    "homepage": "https://www.miranum.io/",
-    "galleryBanner": {
-        "color": "#F0F8FF",
-        "theme": "light"
+  "name": "miranum-json-forms",
+  "displayName": "JSONForms Editor by Miragon",
+  "description": "Create and edit forms with an modern easy to use editor.",
+  "license": "SEE LICENSE IN LICENSE",
+  "version": "0.1.7",
+  "publisher": "miragon-gmbh",
+  "preview": true,
+  "homepage": "https://www.miranum.io/",
+  "galleryBanner": {
+    "color": "#F0F8FF",
+    "theme": "light"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
+      "href": "https://twitter.com/miragon_io",
+      "description": "Our Twitter profile."
     },
-    "badges": [
-        {
-            "url": "https://img.shields.io/badge/Follow-@miragon__io-1DA1F2?style=social&logo=twitter&logoColor=1DA1F2",
-            "href": "https://twitter.com/miragon_io",
-            "description": "Our Twitter profile."
-        },
-        {
-            "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
-            "href": "https://www.linkedin.com/company/miragon-io",
-            "description": "Our LinkedIn profile."
-        }
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Miragon/miranum-json-forms.git"
-    },
-    "bugs": {
-        "url": "https://github.com/Miragon/miranum-json-forms/issues"
-    },
-    "engines": {
-        "vscode": "^1.76.0"
-    },
-    "icon": "assets/miranum_logo.png",
-    "categories": [
-        "Other",
-        "Visualization"
-    ],
-    "keywords": [
-        "JSON",
-        "JSON Forms",
-        "JSON Schema",
-        "Formbuilder"
-    ],
-    "main": "main.js",
-    "contributes": {
-        "customEditors": [
-            {
-                "viewType": "miranum-jsonforms.formEditor",
-                "id": "miranum-jsonforms.formEditor",
-                "displayName": "Miranum: JsonForms Editor",
-                "selector": [
-                    {
-                        "filenamePattern": "*.form.json"
-                    }
-                ],
-                "priority": "default"
-            }
-        ],
-        "commands": [
-            {
-                "command": "miranum-jsonforms.togglePreview",
-                "title": "Miranum JsonForm: Toggle Preview",
-                "icon": "$(notebook-render-output)"
-            },
-            {
-                "command": "miranum-jsonforms.toggleTextEditor",
-                "title": "Miranum JsonForm: Toggle Standard Text Editor",
-                "icon": "$(notebook-mimetype)"
-            },
-            {
-                "command": "miranum-jsonforms.openLoggingConsole",
-                "title": "Miranum JsonForm: Display Logging Information",
-                "icon": "$(callstack-view-session)"
-            },
-            {
-              "command": "miranum-jsonforms.splitFormFile",
-              "title": "Miranum JsonForm: Split JsonForm file into schema and ui schema",
-              "icon": "$(file-text)"
-            }
-        ],
-        "configuration": {
-          "title": "MiranumJsonFormsEditor",
-          "properties": {
-            "miranumIDE.jsonforms.renderer": {
-              "type": "string",
-              "default": "vuetify",
-              "enum": [
-                "vuetify",
-                "vanilla"
-              ],
-              "markdownDescription": "Choose which renderer is used for the preview."
-            }
-          }
-        },
-        "keybindings": [
-            {
-                "command": "miranum-jsonforms.togglePreview",
-                "key": "ctrl+shift+p",
-                "when": "miranum-jsonforms.formEditorCounter > 0"
-            },
-            {
-                "command": "miranum-jsonforms.toggleTextEditor",
-                "key": "ctrl+shift+t",
-                "when": "miranum-jsonforms.formEditorCounter > 0"
-            },
-            {
-                "command": "miranum-jsonforms.openLoggingConsole",
-                "key": "ctrl+shift+l",
-                "when": "miranum-jsonforms.formEditorCounter > 0"
-            }
-        ],
-        "menus": {
-            "commandPalette": [
-                {
-                    "command": "miranum-jsonforms.togglePreview",
-                    "when": "miranum-jsonforms.formEditorCounter > 0"
-                },
-                {
-                    "command": "miranum-jsonforms.toggleTextEditor",
-                    "when": "miranum-jsonforms.formEditorCounter > 0"
-                },
-                {
-                    "command": "miranum-jsonforms.openLoggingConsole",
-                    "when": "miranum-jsonforms.formEditorCounter > 0"
-                },
-                {
-                    "command": "miranum-jsonforms.splitFormFile",
-                    "when": "miranum-jsonforms.formEditorCounter > 0"
-                }
-            ],
-            "editor/title": [
-                {
-                    "command": "miranum-jsonforms.togglePreview",
-                    "group": "navigation",
-                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
-                },
-                {
-                    "command": "miranum-jsonforms.toggleTextEditor",
-                    "group": "navigation",
-                    "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
-                }
-            ]
-        }
+    {
+      "url": "https://img.shields.io/badge/Follow-miragon-blue?style=social&logo=linkedin&logoColor=blue&url=https://www.linkedin.com/company/miragon-io",
+      "href": "https://www.linkedin.com/company/miragon-io",
+      "description": "Our LinkedIn profile."
     }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miragon/miranum-json-forms.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Miragon/miranum-json-forms/issues"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "icon": "assets/miragon-logo.png",
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "JSON",
+    "JSON Forms",
+    "JSON Schema",
+    "Formbuilder"
+  ],
+  "main": "main.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "miranum-jsonforms.formEditor",
+        "id": "miranum-jsonforms.formEditor",
+        "displayName": "JSONForms Editor by Miragon",
+        "selector": [
+          {
+            "filenamePattern": "*.form.json"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "miranum-jsonforms.togglePreview",
+        "title": "Miragon JSONForms: Toggle Preview",
+        "icon": "$(notebook-render-output)"
+      },
+      {
+        "command": "miranum-jsonforms.toggleTextEditor",
+        "title": "Miragon JSONForms: Toggle Standard Text Editor",
+        "icon": "$(notebook-mimetype)"
+      },
+      {
+        "command": "miranum-jsonforms.openLoggingConsole",
+        "title": "Miragon JSONForms: Display Logging Information",
+        "icon": "$(callstack-view-session)"
+      },
+      {
+        "command": "miranum-jsonforms.splitFormFile",
+        "title": "Miragon JSONForms: Split JsonForm file into schema and ui schema",
+        "icon": "$(file-text)"
+      }
+    ],
+    "configuration": {
+      "title": "MiragonJsonFormsEditor",
+      "properties": {
+        "miragon.jsonforms.renderer": {
+          "type": "string",
+          "default": "vuetify",
+          "enum": [
+            "vuetify",
+            "vanilla"
+          ],
+          "markdownDescription": "Choose which renderer is used for the preview."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "miranum-jsonforms.togglePreview",
+        "key": "ctrl+shift+p",
+        "when": "miranum-jsonforms.formEditorCounter > 0"
+      },
+      {
+        "command": "miranum-jsonforms.toggleTextEditor",
+        "key": "ctrl+shift+t",
+        "when": "miranum-jsonforms.formEditorCounter > 0"
+      },
+      {
+        "command": "miranum-jsonforms.openLoggingConsole",
+        "key": "ctrl+shift+l",
+        "when": "miranum-jsonforms.formEditorCounter > 0"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "miranum-jsonforms.togglePreview",
+          "when": "miranum-jsonforms.formEditorCounter > 0"
+        },
+        {
+          "command": "miranum-jsonforms.toggleTextEditor",
+          "when": "miranum-jsonforms.formEditorCounter > 0"
+        },
+        {
+          "command": "miranum-jsonforms.openLoggingConsole",
+          "when": "miranum-jsonforms.formEditorCounter > 0"
+        },
+        {
+          "command": "miranum-jsonforms.splitFormFile",
+          "when": "miranum-jsonforms.formEditorCounter > 0"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "miranum-jsonforms.togglePreview",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
+        },
+        {
+          "command": "miranum-jsonforms.toggleTextEditor",
+          "group": "navigation",
+          "when": "activeWebviewPanelId == 'miranum-jsonforms.formEditor'"
+        }
+      ]
+    }
+  }
 }
