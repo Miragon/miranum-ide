@@ -70,13 +70,27 @@ a:link {
 }
 
 .content .canvas,
+.content .panel-resizer,
 .content .properties-panel-parent {
     display: none;
 }
 
 .content.with-diagram .canvas,
+.content.with-diagram .panel-resizer,
 .content.with-diagram .properties-panel-parent {
     display: block;
+}
+
+.panel-resizer {
+    width: 4px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background-color: #ccc;
+    transition: background-color 0.15s ease;
+}
+
+.panel-resizer:hover {
+    background-color: #999;
 }
 
 .properties-panel-parent {

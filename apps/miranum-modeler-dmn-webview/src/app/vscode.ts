@@ -5,7 +5,7 @@ import {
     VsCodeApi,
     VsCodeImpl,
     VsCodeMock,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+} from "@miranum-ide/miranum-vscode-webview";
 
 declare const process: { env: { NODE_ENV: string } };
 

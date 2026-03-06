@@ -1,5 +1,9 @@
 {
   "name": "vs-code-bpmn-modeler",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch"
+  },
   "displayName": "Camunda Modeler by Miragon",
   "description": "Create and edit BPMN 2.0 and DMN Diagrams for Camunda 7 and Camunda 8 with VS Code.",
   "license": "SEE LICENSE IN LICENSE",

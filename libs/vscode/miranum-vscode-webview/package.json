@@ -1,5 +1,5 @@
 {
-  "name": "@miranum-ide/miranum-core",
+  "name": "@miranum-ide/miranum-vscode-webview",
   "version": "0.0.1",
   "private": true,
   "scripts": {

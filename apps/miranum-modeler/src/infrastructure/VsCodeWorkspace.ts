@@ -1,0 +1,99 @@
+import { FileType, Uri, workspace } from "vscode";
+
+import { FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
+
+const fs = workspace.fs;
+
+/**
+ * VS Code workspace and filesystem helpers.
+ *
+ * Combines workspace-folder discovery (formerly `VsCodeWorkspaceAdapter`) and
+ * filesystem access (formerly `VsCodeReadAdapter`) into a single infrastructure
+ * class used by {@link ArtifactService}.
+ */
+export class VsCodeWorkspace {
+    /**
+     * Returns the workspace folder path for the given document.
+     *
+     * @param document Absolute path to the document file.
+     * @returns The workspace folder path.
+     * @throws {NoWorkspaceFolderFoundError} If the document is not inside any workspace folder.
+     */
+    getWorkspaceFolderForDocument(document: string): string {
+        const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(document));
+        if (!workspaceFolder) {
+            throw new NoWorkspaceFolderFoundError();
+        }
+        return workspaceFolder.uri.path;
+    }
+
+    /**
+     * Returns the paths of all workspace folders that contain a `miranum.json` file.
+     *
+     * @returns An array of workspace folder paths (may be empty).
+     */
+    async getWorkspaceFoldersWithMiranumConfig(): Promise<string[]> {
+        if (!workspace.workspaceFolders) {
+            return [];
+        }
+
+        const uris = await workspace.findFiles("**/miranum.json");
+
+        return uris
+            .map((uri) => workspace.getWorkspaceFolder(uri)?.uri.path)
+            .filter((folder): folder is string => !!folder);
+    }
+
+    /**
+     * Lists the direct children of a directory.
+     *
+     * @param path Absolute path to the directory.
+     * @returns An array of `[name, type]` tuples where type is `"file"` or `"directory"`.
+     *   Symbolic links and other types are excluded.
+     */
+    async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
+        const dir = await fs.readDirectory(Uri.file(path));
+        return dir.flatMap(([name, type]) => {
+            const t = this.parseFileType(type);
+            if (t !== "file" && t !== "directory") {
+                return [];
+            }
+            return [[name, t]];
+        });
+    }
+
+    /**
+     * Reads a file and returns its content as a UTF-8 string.
+     *
+     * @param path Absolute path to the file.
+     * @returns The file content as a string.
+     * @throws {FileNotFound} If the file does not exist or cannot be read.
+     */
+    async readFile(path: string): Promise<string> {
+        return fs.readFile(Uri.file(path)).then(
+            (buffer) => buffer.toString(),
+            (reason) => {
+                throw new FileNotFound(reason);
+            },
+        );
+    }
+
+    /**
+     * Maps a VS Code `FileType` enum value to a simplified string.
+     *
+     * @param type The VS Code FileType value.
+     * @returns `"file"`, `"directory"`, `"symbolicLink"`, or `"unknown"`.
+     */
+    private parseFileType(type: FileType): string {
+        switch (type) {
+            case FileType.File:
+                return "file";
+            case FileType.Directory:
+                return "directory";
+            case FileType.SymbolicLink:
+                return "symbolicLink";
+            default:
+                return "unknown";
+        }
+    }
+}

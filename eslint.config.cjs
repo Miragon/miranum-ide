@@ -1,6 +1,5 @@
 const { FlatCompat } = require("@eslint/eslintrc");
 const js = require("@eslint/js");
-const nxEslintPlugin = require("@nx/eslint-plugin");
 const typescriptEslintEslintPlugin = require("@typescript-eslint/eslint-plugin");
 const stylisticEslintPlugin = require("@stylistic/eslint-plugin");
 
@@ -15,7 +14,6 @@ module.exports = [
     },
     {
         plugins: {
-            "@nx": nxEslintPlugin,
             "@typescript-eslint": typescriptEslintEslintPlugin,
             "@stylistic": stylisticEslintPlugin,
         },
@@ -33,19 +31,6 @@ module.exports = [
             files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.vue"],
             rules: {
                 ...config.rules,
-                "@nx/enforce-module-boundaries": [
-                    "error",
-                    {
-                        enforceBuildableLibDependency: true,
-                        allow: [],
-                        depConstraints: [
-                            {
-                                sourceTag: "*",
-                                onlyDependOnLibsWithTags: ["*"],
-                            },
-                        ],
-                    },
-                ],
                 "@typescript-eslint/no-empty-function": [
                     "error",
                     {
@@ -96,7 +81,7 @@ module.exports = [
         })),
     ...compat
         .config({
-            extends: ["plugin:@nx/typescript"],
+            extends: ["plugin:@typescript-eslint/recommended"],
         })
         .map((config) => ({
             ...config,
@@ -109,7 +94,7 @@ module.exports = [
         })),
     ...compat
         .config({
-            extends: ["plugin:@nx/javascript"],
+            extends: ["eslint:recommended"],
         })
         .map((config) => ({
             ...config,

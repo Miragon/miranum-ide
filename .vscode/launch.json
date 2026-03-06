@@ -1,45 +1,23 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Run miranum-jsonforms",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-jsonforms"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-jsonforms/**/*.js"
-      ],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/dist/apps/miranum-jsonforms/**",
-        "!**/node_modules/**"
-      ],
-      "sourceMapPathOverrides": {
-        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
-        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-jsonforms/*"
-      }
-    },
-    {
-      "name": "Run miranum-modeler",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/dist/apps/miranum-modeler/**/*.js"
-      ],
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/dist/apps/miranum-modeler/**",
-        "!**/node_modules/**"
-      ],
-      "sourceMapPathOverrides": {
-        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
-        "webpack://?:*/*": "${workspaceFolder}/apps/miranum-modeler/*"
-      }
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run miranum-modeler",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
+            ],
+            "outFiles": ["${workspaceFolder}/dist/apps/miranum-modeler/**/*.js"],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/dist/apps/miranum-modeler/**",
+                "!**/node_modules/**"
+            ],
+            "sourceMapPathOverrides": {
+                "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                "webpack://?:*/*": "${workspaceFolder}/apps/miranum-modeler/*"
+            }
+        }
+    ]
 }
