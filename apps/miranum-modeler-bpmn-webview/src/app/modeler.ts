@@ -9,6 +9,7 @@ import {
     BpmnModelerSetting,
     NoModelerError,
 } from "@miranum-ide/miranum-vscode-webview";
+import { ViewportData } from "./vscode";
 
 const DEFAULT_SETTINGS: BpmnModelerSetting = {
     alignToOrigin: false,
@@ -232,6 +233,48 @@ export class BpmnModeler {
         if (this.settings.alignToOrigin) {
             this.getModeler().get<any>("alignToOrigin").align();
         }
+    }
+
+    /**
+     * Returns the current canvas viewbox (position and zoom level).
+     *
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    getViewport(): ViewportData {
+        const { x, y, width, height } = this.getModeler().get<any>("canvas").viewbox();
+        return { x, y, width, height };
+    }
+
+    /**
+     * Restores the canvas to a previously saved viewbox.
+     *
+     * @param viewport The viewbox to apply.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    setViewport(viewport: ViewportData): void {
+        this.getModeler().get<any>("canvas").viewbox(viewport);
+    }
+
+    /**
+     * Subscribes to canvas viewbox changes with a 100 ms debounce.
+     *
+     * The debounce prevents a flood of state writes while the user is actively
+     * panning or zooming; only the final position after the gesture is persisted.
+     *
+     * @param cb Callback invoked with the new {@link ViewportData} after each change.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    onViewportChanged(cb: (viewport: ViewportData) => void): void {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        this.getModeler()
+            .get<any>("eventBus")
+            .on("canvas.viewbox.changed", (event: any) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    const { x, y, width, height } = event.viewbox;
+                    cb({ x, y, width, height });
+                }, 100);
+            });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────

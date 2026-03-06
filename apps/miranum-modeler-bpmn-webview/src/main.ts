@@ -100,6 +100,26 @@ async function initializeModeler(
         // The grid layer is created during diagram.init (triggered by openXml),
         // so this is the earliest point at which the opacity can be applied.
         bpmnModeler.applyGridStyle();
+
+        // Restore the saved viewport if one exists (e.g. after a tab switch).
+        // Must run after openXml because the canvas does not exist before importXML.
+        try {
+            const saved = vscode.getState().viewport;
+            if (saved) {
+                bpmnModeler.setViewport(saved);
+            }
+        } catch {
+            // No state yet — first open, leave viewport at diagram-js default.
+        }
+
+        // Persist viewport changes so they survive the next tab switch.
+        bpmnModeler.onViewportChanged((viewport) => {
+            try {
+                vscode.updateState({ viewport });
+            } catch {
+                vscode.setState({ viewport });
+            }
+        });
     } catch (error: any) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));

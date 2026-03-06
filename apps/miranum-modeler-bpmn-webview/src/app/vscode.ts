@@ -16,7 +16,20 @@ import elementTemplate from "./__fixtures__/elementTemplate.json";
 
 declare const process: { env: { NODE_ENV: string } };
 
-type StateType = unknown;
+/** Canvas position and zoom level captured from diagram-js. */
+export interface ViewportData {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Shape of the data persisted via `vscode.setState` / `vscode.getState`. */
+export interface WebviewState {
+    viewport?: ViewportData;
+}
+
+type StateType = WebviewState;
 
 type MessageType = Command | Query;
 
@@ -41,8 +54,18 @@ export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
  * dispatching synthetic `MessageEvent`s in response to outbound commands.
  */
 class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
-    override updateState(): void {
-        throw new Error("Method not implemented.");
+    /**
+     * Merges `state` into the current mock state, initialising it when no
+     * state has been set yet (i.e. when {@link getState} would throw).
+     *
+     * @param state Partial state to merge.
+     */
+    override updateState(state: Partial<WebviewState>): void {
+        try {
+            this.setState({ ...this.getState(), ...state });
+        } catch {
+            this.setState(state as WebviewState);
+        }
     }
 
     /**
