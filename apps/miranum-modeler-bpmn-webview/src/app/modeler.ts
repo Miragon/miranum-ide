@@ -39,6 +39,8 @@ export class BpmnModeler {
     private modeler: Modeler | undefined = undefined;
 
     private settings: BpmnModelerSetting = { ...DEFAULT_SETTINGS };
+    /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
+    private isDark: boolean = false;
 
     /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
     private isDark: boolean = false;
