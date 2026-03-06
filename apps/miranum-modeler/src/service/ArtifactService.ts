@@ -5,7 +5,6 @@ import { Disposable, RelativePattern, workspace } from "vscode";
 import { MiranumConfig, MiranumWorkspaceItem } from "@miranum-ide/miranum-core";
 
 import {
-    DirectoryNotFound,
     FileNotFound,
     NoMiranumConfigFoundError,
     NoMiranumWorkspaceItemError,
@@ -126,17 +125,19 @@ export class ArtifactService {
             const defaultMessage = `Default workspace is used. You can save element templates in \`${root}/element-templates\` and forms in \`${root}/forms\``;
 
             if (error instanceof FileNotFound) {
-                this.vsUI.logInfo(
+                this.vsUI.showInfo(
                     `The \`miranum.json\` file is missing!\n${defaultMessage}.`,
                 );
             } else if (error instanceof SyntaxError) {
-                this.vsUI.logWarning(
+                this.vsUI.showInfo(
                     `The \`miranum.json\` file has incorrect JSON!\n${defaultMessage}.`,
                 );
             } else if (error instanceof NoMiranumWorkspaceItemError) {
-                this.vsUI.logWarning(`${(error as Error).message}!\n${defaultMessage}.`);
+                this.vsUI.showInfo(`${(error as Error).message}!\n${defaultMessage}.`);
             } else {
-                this.vsUI.logWarning(`${(error as Error).message}!\n${defaultMessage}.`);
+                this.vsUI.showInfo(
+                    `${(error as Error).message}!\n${defaultMessage}.`,
+                );
             }
             return this.getDefaultWorkspaceItem(type);
         }
@@ -244,7 +245,10 @@ export class ArtifactService {
                 : documentDir;
 
             const watcher = workspace.createFileSystemWatcher(
-                new RelativePattern(pathToWatch, `**/*${workspaceItem.extension}`),
+                new RelativePattern(
+                    pathToWatch,
+                    `**/*${workspaceItem.extension}`,
+                ),
             );
 
             watcher.onDidCreate(() => target.setElementTemplates(editorId));
@@ -267,22 +271,12 @@ export class ArtifactService {
      * @returns Absolute paths of all matching files.
      */
     async readDirectory(folder: string, extension: string): Promise<string[]> {
-        let entries: [string, "file" | "directory"][];
-        try {
-            entries = await this.vsWorkspace.readDirectory(folder);
-        } catch (error) {
-            if (error instanceof DirectoryNotFound) {
-                return [];
-            }
-            throw error;
-        }
+        const entries = await this.vsWorkspace.readDirectory(folder);
 
         const files: string[] = [];
         for (const [name, type] of entries) {
             if (type === "directory") {
-                files.push(
-                    ...(await this.readDirectory(`${folder}/${name}`, extension)),
-                );
+                files.push(...(await this.readDirectory(`${folder}/${name}`, extension)));
             } else if (type === "file" && name.endsWith(extension)) {
                 files.push(`${folder}/${name}`);
             }
@@ -308,7 +302,9 @@ export class ArtifactService {
             await this.vsWorkspace.readFile(miranumConfigPath),
         );
 
-        const workspaceItem = miranumConfig.workspace.find((item) => item.type === type);
+        const workspaceItem = miranumConfig.workspace.find(
+            (item) => item.type === type,
+        );
 
         if (!workspaceItem) {
             throw new NoMiranumWorkspaceItemError(type);
@@ -378,7 +374,10 @@ export class ArtifactService {
         }
 
         configs.push(
-            ...(await this.searchMiranumConfig(rootDir, posix.dirname(searchDir))),
+            ...(await this.searchMiranumConfig(
+                rootDir,
+                posix.dirname(searchDir),
+            )),
         );
 
         return configs;

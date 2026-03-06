@@ -26,13 +26,6 @@ export class FileNotFound extends Error {
     }
 }
 
-/** Thrown when a directory cannot be found at the given path. */
-export class DirectoryNotFound extends Error {
-    constructor(path: string) {
-        super(`Directory not found: ${path}`);
-    }
-}
-
 /** Thrown when a filesystem watcher cannot be created for a webview. */
 export class UnableToCreateWatcherError extends Error {
     constructor(webviewId?: string, reason?: string) {

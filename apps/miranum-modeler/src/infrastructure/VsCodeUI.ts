@@ -59,15 +59,6 @@ export class VsCodeUI {
     }
 
     /**
-     * Writes a warning message to the extension's output channel.
-     *
-     * @param message The message text to log.
-     */
-    logWarning(message: string): void {
-        this.logger.warn(message);
-    }
-
-    /**
      * Writes an error to the extension's output channel.
      *
      * @param error The error to log.

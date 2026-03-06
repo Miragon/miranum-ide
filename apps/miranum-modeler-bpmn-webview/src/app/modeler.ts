@@ -12,6 +12,7 @@ import {
 
 const DEFAULT_SETTINGS: BpmnModelerSetting = {
     alignToOrigin: false,
+    darkTheme: false,
 };
 
 const MODELER_OPTIONS = {
@@ -35,11 +36,7 @@ const MODELER_OPTIONS = {
  */
 export class BpmnModeler {
     private modeler: Modeler | undefined = undefined;
-
     private settings: BpmnModelerSetting = { ...DEFAULT_SETTINGS };
-
-    /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
-    private isDark: boolean = false;
 
     /**
      * Creates and mounts a new bpmn-js modeler for the given execution engine.
@@ -122,7 +119,7 @@ export class BpmnModeler {
         } catch (error: unknown) {
             if ((error as ImportXMLError).warnings) {
                 const importError = error as ImportXMLError;
-                throw new Error(`${importError.message} ${importError.warnings}`, { cause: error });
+                throw new Error(`${importError.message} ${importError.warnings}`);
             }
             throw error;
         }
@@ -170,7 +167,7 @@ export class BpmnModeler {
     }
 
     /**
-     * Applies a partial settings update.
+     * Applies a partial settings update and refreshes the active theme if needed.
      *
      * @param settings Partial settings object to merge, or `undefined` (no-op).
      * @throws {NoModelerError} If the modeler has not been created yet.
@@ -182,45 +179,7 @@ export class BpmnModeler {
         // Ensure the modeler exists before applying any settings.
         this.getModeler();
         this.settings = { ...this.settings, ...settings };
-    }
-
-    /**
-     * Reads the current VS Code theme from `document.body` class list, applies
-     * the matching theme stylesheet immediately, then installs a
-     * `MutationObserver` to react to live theme changes.
-     *
-     * VS Code injects `vscode-dark`, `vscode-light`, or
-     * `vscode-high-contrast` onto `<body>` in every webview.
-     */
-    public initTheme(): void {
-        const isDark =
-            document.body.classList.contains("vscode-dark") ||
-            document.body.classList.contains("vscode-high-contrast");
-        this.applyTheme(isDark);
-
-        new MutationObserver(() => {
-            const dark =
-                document.body.classList.contains("vscode-dark") ||
-                document.body.classList.contains("vscode-high-contrast");
-            this.applyTheme(dark);
-        }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    }
-
-    /**
-     * Dims the diagram-js-grid layer when in dark mode.
-     *
-     * Must be called **after** the first diagram has been loaded, because the
-     * grid `<g class="layer djs-grid">` element is created lazily by
-     * `diagram-js-grid` during the `diagram.init` event — it does not exist in
-     * the DOM before that point.  `initTheme()` runs too early to reach it, so
-     * `main.ts` must call this explicitly once `openXml` has resolved.
-     *
-     * Live theme switches (handled by the `MutationObserver` in
-     * `initTheme`) also call `applyGridFilter`, so those are covered
-     * automatically without needing to call this method again.
-     */
-    public applyGridStyle(): void {
-        this.applyGridFilter(this.isDark);
+        this.setTheme();
     }
 
     /**
@@ -237,15 +196,11 @@ export class BpmnModeler {
     // ─── Private helpers ──────────────────────────────────────────────────────
 
     /**
-     * Swaps the `#theme-link` stylesheet between `lightTheme.css` and
-     * `darkTheme.css`.  Compares the current href to avoid unnecessary DOM
-     * mutations, then applies the grid filter for the new theme kind.
-     *
-     * @param isDark `true` to apply the dark theme, `false` for the light theme.
+     * Switches the active theme CSS link between light and dark based on
+     * {@link settings.darkTheme}.  Compares the current href to avoid
+     * unnecessary DOM mutations.
      */
-    private applyTheme(isDark: boolean): void {
-        this.isDark = isDark;
-
+    private setTheme(): void {
         const theme = document.querySelector<HTMLLinkElement>("#theme-link");
         if (!theme) {
             console.error("Theme link element not found.");
@@ -255,36 +210,11 @@ export class BpmnModeler {
         const href = theme.href;
         const css = href.split("/").pop();
 
-        if (isDark && css === "lightTheme.css") {
+        if (this.settings.darkTheme && css === "lightTheme.css") {
             theme.href = href.replace(/lightTheme\.css$/, "darkTheme.css");
-        } else if (!isDark && css === "darkTheme.css") {
+        } else if (!this.settings.darkTheme && css === "darkTheme.css") {
             theme.href = href.replace(/darkTheme\.css$/, "lightTheme.css");
         }
-
-        // The grid may already exist when the theme changes at runtime (e.g.
-        // the user switches VS Code themes while a diagram is open).
-        this.applyGridFilter(isDark);
-    }
-
-    /**
-     * Sets the opacity of the `<g class="layer djs-grid">` SVG layer.
-     *
-     * diagram-js-grid hard-codes the dot colour to `#ccc`, which creates harsh
-     * contrast against dark backgrounds.  Reducing the layer opacity to 25 %
-     * makes the grid visible but unobtrusive.  Restores full opacity for light
-     * themes.
-     *
-     * This is a no-op when the grid layer is not yet in the DOM — the caller
-     * must retry after diagram initialisation via {@link applyGridStyle}.
-     *
-     * @param isDark `true` to dim the grid, `false` to restore full opacity.
-     */
-    private applyGridFilter(isDark: boolean): void {
-        const grid = document.querySelector<SVGGElement>(".djs-grid");
-        if (!grid) {
-            return;
-        }
-        grid.style.opacity = isDark ? "0.25" : "";
     }
 
     /**

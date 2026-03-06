@@ -61,8 +61,7 @@ export class CommandController {
      * @returns `true` if the text editor was opened, `false` if it was closed.
      */
     toggle(): Promise<boolean> {
-        const activeId = this.editorStore.getActiveEditorId();
-        const documentPath = this.vsDocument.getFilePath(activeId);
+        const documentPath = this.vsDocument.getFilePath();
         return this.vsUI.toggleTextEditor(documentPath);
     }
 
@@ -95,7 +94,7 @@ export class CommandController {
      */
     writeToFile(): void {
         this.requestSvg((svg) => {
-            const filePath = this.vsDocument.getFilePath(this.editorStore.getActiveEditorId()).replace(/\.bpmn$/, ".svg");
+            const filePath = this.vsDocument.getFilePath().replace(/\.bpmn$/, ".svg");
             workspace.fs.writeFile(
                 Uri.file(filePath),
                 Buffer.from(svg),

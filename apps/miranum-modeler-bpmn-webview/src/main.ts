@@ -64,7 +64,6 @@ let modelerIsInitialized = false;
 window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
     initResizer();
-    bpmnModeler.initTheme();
 
     vscode.postMessage(new GetBpmnFileCommand());
 
@@ -97,9 +96,6 @@ async function initializeModeler(
         bpmnModeler.create(engine);
         bpmnModeler.onCommandStackChanged(sendXmlChanges);
         await openXml(bpmn);
-        // The grid layer is created during diagram.init (triggered by openXml),
-        // so this is the earliest point at which the opacity can be applied.
-        bpmnModeler.applyGridStyle();
     } catch (error: any) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));
