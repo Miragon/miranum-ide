@@ -166,10 +166,7 @@ export class BpmnEditorController implements CustomTextEditorProvider {
      */
     private subscribeToSettingChangeEvent(editorId: string): void {
         this.editorStore.subscribeToSettingChangeEvent(editorId, (event, id) => {
-            if (
-                event.affectsConfiguration("miranumIDE.modeler.alignToOrigin") ||
-                event.affectsConfiguration("miranumIDE.modeler.darkTheme")
-            ) {
+            if (event.affectsConfiguration("miragon.camundaModeler.alignToOrigin")) {
                 this.bpmnService.setSettings(id);
             }
         });

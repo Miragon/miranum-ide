@@ -60,7 +60,9 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
             }
             case message.type === "GetElementTemplatesCommand": {
                 console.debug("[DEBUG] GetElementTemplatesCommand", message);
-                dispatchEvent(new ElementTemplatesQuery([elementTemplate as unknown as JSON]));
+                dispatchEvent(
+                    new ElementTemplatesQuery([elementTemplate as unknown as JSON]),
+                );
                 break;
             }
             case message.type === "GetBpmnModelerSettingCommand": {
@@ -68,7 +70,6 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 dispatchEvent(
                     new BpmnModelerSettingQuery({
                         alignToOrigin: true,
-                        darkTheme: false,
                     }),
                 );
                 break;

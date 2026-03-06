@@ -2,8 +2,6 @@ import { Uri, Webview } from "vscode";
 
 import { getNonce } from "@miranum-ide/miranum-vscode";
 
-import { VsCodeSettings } from "./VsCodeSettings";
-
 /** Output directory name for the BPMN webview build artefacts. */
 const BPMN_WEBVIEW_PATH = "miranum-modeler-bpmn-webview";
 /** Output directory name for the DMN webview build artefacts. */
@@ -13,8 +11,9 @@ const DMN_WEBVIEW_PATH = "miranum-modeler-dmn-webview";
  * Generates the HTML content for the BPMN modeler webview.
  *
  * Resolves all asset URIs relative to the extension's install directory and
- * injects them into the HTML template.  The dark/light theme stylesheet is
- * selected from the current VS Code settings.
+ * injects them into the HTML template.  The initial theme stylesheet is always
+ * `lightTheme.css`; the webview's own `initTheme()` call swaps it to the
+ * correct theme at runtime based on VS Code's body CSS classes.
  *
  * @param webview The VS Code Webview instance (used to convert local URIs).
  * @param extensionUri URI of the extension's install directory.
@@ -26,9 +25,7 @@ export function bpmnEditorUi(webview: Webview, extensionUri: Uri): string {
     const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
     const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
     const fontUri = webview.asWebviewUri(Uri.joinPath(baseUri, "css", "bpmn.css"));
-    const themeUri = new VsCodeSettings().getDarkTheme()
-        ? webview.asWebviewUri(Uri.joinPath(baseUri, "darkTheme.css"))
-        : webview.asWebviewUri(Uri.joinPath(baseUri, "lightTheme.css"));
+    const themeUri = webview.asWebviewUri(Uri.joinPath(baseUri, "lightTheme.css"));
 
     const nonce = getNonce();
 

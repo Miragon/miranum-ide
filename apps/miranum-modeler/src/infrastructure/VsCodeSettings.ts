@@ -11,20 +11,8 @@ export class VsCodeSettings {
     getAlignToOrigin(): boolean {
         return (
             workspace
-                .getConfiguration("miranumIDE.modeler")
+                .getConfiguration("miragon.camundaModeler")
                 .get<boolean>("alignToOrigin") ?? false
-        );
-    }
-
-    /**
-     * Reads the darkTheme setting from VS Code configuration.
-     * @returns `true` if the dark theme is enabled, `false` otherwise.
-     */
-    getDarkTheme(): boolean {
-        return (
-            workspace
-                .getConfiguration("miranumIDE.modeler")
-                .get<boolean>("darkTheme") ?? false
         );
     }
 
