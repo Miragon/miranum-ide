@@ -269,7 +269,6 @@ export class BpmnModelerService implements ArtifactChangeTarget {
         try {
             const settings = new SettingBuilder()
                 .alignToOrigin(this.vsSettings.getAlignToOrigin())
-                .darkTheme(this.vsSettings.getDarkTheme())
                 .buildBpmnModeler();
 
             if (
@@ -277,7 +276,6 @@ export class BpmnModelerService implements ArtifactChangeTarget {
                     editorId,
                     new BpmnModelerSettingQuery({
                         alignToOrigin: settings.alignToOrigin,
-                        darkTheme: settings.darkTheme,
                     }),
                 )
             ) {
