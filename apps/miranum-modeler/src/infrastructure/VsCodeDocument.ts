@@ -3,10 +3,16 @@ import { Range, workspace, WorkspaceEdit } from "vscode";
 import { EditorStore } from "./EditorStore";
 
 /**
- * Provides document read/write operations for the currently active editor.
+ * Provides document read/write operations for a specific editor identified by
+ * its document URI path.
  *
- * Delegates active-editor tracking to {@link EditorStore} so no module-level
- * global state leaks out of the infrastructure layer.
+ * All methods accept an explicit `editorId` so that operations are always
+ * routed to the correct document even when multiple editors are open
+ * side-by-side.  This avoids the split-view white-screen bug that occurred
+ * when every operation implicitly routed through the active editor.
+ *
+ * Delegates document lookup to {@link EditorStore} so no module-level global
+ * state leaks out of the infrastructure layer.
  */
 export class VsCodeDocument {
     /**
@@ -15,44 +21,36 @@ export class VsCodeDocument {
     constructor(private readonly editorStore: EditorStore) {}
 
     /**
-     * Returns the document URI path of the currently focused editor.
+     * Returns the full text content of the specified editor's document.
      *
-     * @throws {Error} If no editor is active.
+     * @param editorId Document URI path of the target editor.
+     * @throws {Error} If no editor with the given id is registered.
      */
-    getId(): string {
-        return this.editorStore.getActiveEditorId();
+    getContent(editorId: string): string {
+        return this.editorStore.getDocumentForEditor(editorId).getText();
     }
 
     /**
-     * Returns the full text content of the active editor's document.
+     * Returns the file system path of the specified editor's document.
      *
-     * @throws {Error} If no editor is active.
+     * @param editorId Document URI path of the target editor.
+     * @throws {Error} If no editor with the given id is registered.
      */
-    getContent(): string {
-        const id = this.editorStore.getActiveEditorId();
-        return this.editorStore.getDocumentForEditor(id).getText();
+    getFilePath(editorId: string): string {
+        return this.editorStore.getDocumentForEditor(editorId).uri.path;
     }
 
     /**
-     * Returns the file system path of the active editor's document.
+     * Replaces the entire content of the specified editor's document with the
+     * given string.
      *
-     * @throws {Error} If no editor is active.
-     */
-    getFilePath(): string {
-        const id = this.editorStore.getActiveEditorId();
-        return this.editorStore.getDocumentForEditor(id).uri.path;
-    }
-
-    /**
-     * Replaces the entire document content with the given string.
-     *
+     * @param editorId Document URI path of the target editor.
      * @param content New document content.
      * @returns `true` if the edit was applied, `false` if content was unchanged.
-     * @throws {Error} If no editor is active.
+     * @throws {Error} If no editor with the given id is registered.
      */
-    async write(content: string): Promise<boolean> {
-        const id = this.editorStore.getActiveEditorId();
-        const doc = this.editorStore.getDocumentForEditor(id);
+    async write(editorId: string, content: string): Promise<boolean> {
+        const doc = this.editorStore.getDocumentForEditor(editorId);
 
         if (doc.getText() === content) {
             return false;
@@ -65,12 +63,12 @@ export class VsCodeDocument {
     }
 
     /**
-     * Saves the active editor's document to disk.
+     * Saves the specified editor's document to disk.
      *
-     * @throws {Error} If no editor is active.
+     * @param editorId Document URI path of the target editor.
+     * @throws {Error} If no editor with the given id is registered.
      */
-    async save(): Promise<boolean> {
-        const id = this.editorStore.getActiveEditorId();
-        return this.editorStore.getDocumentForEditor(id).save();
+    async save(editorId: string): Promise<boolean> {
+        return this.editorStore.getDocumentForEditor(editorId).save();
     }
 }

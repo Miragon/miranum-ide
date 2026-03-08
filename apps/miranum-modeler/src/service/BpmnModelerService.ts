@@ -90,19 +90,13 @@ export class BpmnModelerService implements ArtifactChangeTarget {
      * @returns `true` on success, `false` on any failure.
      */
     async display(editorId: string): Promise<boolean> {
-        if (editorId !== this.editorStore.getActiveEditorId()) {
-            return this.handleError(
-                new Error("The `editorID` does not match the active editor."),
-            );
-        }
-
         const session = this.sessions.get(editorId);
         if (session?.isGuarded()) {
             return false;
         }
 
         try {
-            let bpmnFile = this.vsDocument.getContent();
+            let bpmnFile = this.vsDocument.getContent(editorId);
 
             if (bpmnFile === "") {
                 const ep = await this.vsSettings.getExecutionPlatformVersion(
@@ -112,8 +106,8 @@ export class BpmnModelerService implements ArtifactChangeTarget {
 
                 bpmnFile = ep === "c7" ? EMPTY_C7_BPMN_DIAGRAM : EMPTY_C8_BPMN_DIAGRAM;
 
-                await this.vsDocument.write(bpmnFile);
-                await this.vsDocument.save();
+                await this.vsDocument.write(editorId, bpmnFile);
+                await this.vsDocument.save(editorId);
             }
 
             try {
@@ -152,7 +146,7 @@ export class BpmnModelerService implements ArtifactChangeTarget {
                         editorId,
                         new BpmnFileQuery(newBpmnFile, ep),
                     );
-                    return this.vsDocument.write(newBpmnFile);
+                    return this.vsDocument.write(editorId, newBpmnFile);
                 } else {
                     return this.handleError(error as Error);
                 }
@@ -180,14 +174,10 @@ export class BpmnModelerService implements ArtifactChangeTarget {
      * @returns `true` if the document was changed, `false` if content was identical.
      */
     async sync(editorId: string, content: string): Promise<boolean> {
-        if (editorId !== this.vsDocument.getId()) {
-            throw new Error("Editor ID does not match the active editor.");
-        }
-
         const session = this.sessions.get(editorId);
         session?.acquireGuard();
         try {
-            return await this.vsDocument.write(content);
+            return await this.vsDocument.write(editorId, content);
         } catch (error) {
             return this.handleSyncError(error as Error);
         } finally {
@@ -205,14 +195,8 @@ export class BpmnModelerService implements ArtifactChangeTarget {
      * @returns `true` on success, `false` on any failure.
      */
     async setElementTemplates(editorId: string): Promise<boolean> {
-        if (editorId !== this.vsDocument.getId()) {
-            return this.handleError(
-                new Error("The `editorID` does not match the active editor."),
-            );
-        }
-
         try {
-            const documentDir = posix.dirname(this.vsDocument.getFilePath());
+            const documentDir = posix.dirname(this.vsDocument.getFilePath(editorId));
 
             const [artifacts] = await this.artifactSvc.getArtifactPaths(
                 documentDir,

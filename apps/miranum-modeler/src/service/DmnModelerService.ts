@@ -62,24 +62,18 @@ export class DmnModelerService {
      * @returns `true` on success, `false` on any failure.
      */
     async display(editorId: string): Promise<boolean> {
-        if (editorId !== this.editorStore.getActiveEditorId()) {
-            return this.handleError(
-                new Error("The `editorID` does not match the active editor."),
-            );
-        }
-
         const session = this.sessions.get(editorId);
         if (session?.isGuarded()) {
             return false;
         }
 
         try {
-            let dmnFile = this.vsDocument.getContent();
+            let dmnFile = this.vsDocument.getContent(editorId);
 
             if (dmnFile === "") {
                 dmnFile = EMPTY_DMN_DIAGRAM;
-                await this.vsDocument.write(dmnFile);
-                await this.vsDocument.save();
+                await this.vsDocument.write(editorId, dmnFile);
+                await this.vsDocument.save(editorId);
             }
 
             return await this.editorStore.postMessage(
@@ -111,14 +105,10 @@ export class DmnModelerService {
      * @returns `true` if the document was changed, `false` if content was identical.
      */
     async sync(editorId: string, content: string): Promise<boolean> {
-        if (editorId !== this.vsDocument.getId()) {
-            throw new Error("Editor ID does not match the active editor.");
-        }
-
         const session = this.sessions.get(editorId);
         session?.acquireGuard();
         try {
-            return await this.vsDocument.write(content);
+            return await this.vsDocument.write(editorId, content);
         } catch (error) {
             return this.handleSyncError(error as Error);
         } finally {
