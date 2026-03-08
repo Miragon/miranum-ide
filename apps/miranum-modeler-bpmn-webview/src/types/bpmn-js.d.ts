@@ -23,6 +23,10 @@ declare module "bpmn-js-create-append-anything" {
     export const CreateAppendElementTemplatesModule;
 }
 
+declare module "camunda-transaction-boundaries" {
+    export const TransactionBoundariesModule;
+}
+
 declare module "bpmn-js-native-copy-paste/lib/PasteUtil.js" {
     export function createReviver(moddle: any): (key: string, value: any) => any;
 }
