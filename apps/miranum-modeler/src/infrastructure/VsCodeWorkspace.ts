@@ -1,6 +1,6 @@
 import { FileType, Uri, workspace } from "vscode";
 
-import { FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
+import { DirectoryNotFound, FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
 
 const fs = workspace.fs;
 
@@ -52,7 +52,12 @@ export class VsCodeWorkspace {
      *   Symbolic links and other types are excluded.
      */
     async readDirectory(path: string): Promise<[string, "file" | "directory"][]> {
-        const dir = await fs.readDirectory(Uri.file(path));
+        let dir: [string, FileType][];
+        try {
+            dir = await fs.readDirectory(Uri.file(path));
+        } catch {
+            throw new DirectoryNotFound(path);
+        }
         return dir.flatMap(([name, type]) => {
             const t = this.parseFileType(type);
             if (t !== "file" && t !== "directory") {
