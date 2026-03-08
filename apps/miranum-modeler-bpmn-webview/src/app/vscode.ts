@@ -1,6 +1,7 @@
 import {
     BpmnFileQuery,
     BpmnModelerSettingQuery,
+    ClipboardQuery,
     Command,
     ElementTemplatesQuery,
     LogErrorCommand,
@@ -95,6 +96,15 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                         alignToOrigin: true,
                     }),
                 );
+                break;
+            }
+            case message.type === "GetClipboardCommand": {
+                console.debug("[DEBUG] GetClipboardCommand", message);
+                dispatchEvent(new ClipboardQuery(""));
+                break;
+            }
+            case message.type === "SetClipboardCommand": {
+                console.debug("[DEBUG] SetClipboardCommand", message);
                 break;
             }
             case message.type === "SyncDocumentCommand": {

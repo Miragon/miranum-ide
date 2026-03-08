@@ -1,4 +1,4 @@
-import { window } from "vscode";
+import { env, window } from "vscode";
 
 import { VsCodeLogger, VsCodeTextEditor } from "@miranum-ide/miranum-vscode";
 
@@ -40,6 +40,24 @@ export class VsCodeUI {
      */
     toggleTextEditor(documentPath: string): Promise<boolean> {
         return this.textEditor.toggle(documentPath);
+    }
+
+    /**
+     * Reads the current system clipboard text via the VS Code API.
+     *
+     * @returns The clipboard text content.
+     */
+    async readClipboard(): Promise<string> {
+        return env.clipboard.readText();
+    }
+
+    /**
+     * Writes the given text to the system clipboard via the VS Code API.
+     *
+     * @param text The text to write.
+     */
+    async writeClipboard(text: string): Promise<void> {
+        await env.clipboard.writeText(text);
     }
 
     /**

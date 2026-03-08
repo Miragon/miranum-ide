@@ -3,6 +3,7 @@ import { posix } from "path";
 import {
     BpmnFileQuery,
     BpmnModelerSettingQuery,
+    ClipboardQuery,
     ElementTemplatesQuery,
 } from "@miranum-ide/miranum-vscode-webview";
 
@@ -272,6 +273,48 @@ export class BpmnModelerService implements ArtifactChangeTarget {
         } catch (error) {
             this.vsUI.logError(error as Error);
             return false;
+        }
+    }
+
+    // ─── Clipboard ─────────────────────────────────────────────────────────
+
+    /**
+     * Reads the system clipboard and sends its text content to the webview.
+     *
+     * Used for cross-editor paste: the webview cannot read the clipboard
+     * directly because VS Code sandboxed iframes lack `clipboard-read`
+     * permission, so the extension host mediates the read.
+     *
+     * @param editorId Document URI path of the requesting editor.
+     * @returns `true` on success, `false` on any failure.
+     */
+    async readClipboard(editorId: string): Promise<boolean> {
+        try {
+            const text = await this.vsUI.readClipboard();
+            return await this.editorStore.postMessage(
+                editorId,
+                new ClipboardQuery(text),
+            );
+        } catch (error) {
+            this.vsUI.logError(error as Error);
+            return false;
+        }
+    }
+
+    /**
+     * Writes the given text to the system clipboard via the extension host.
+     *
+     * Used for cross-editor copy: the webview cannot write to the clipboard
+     * directly because VS Code sandboxed iframes lack `clipboard-write`
+     * permission, so the extension host mediates the write.
+     *
+     * @param text The serialised BPMN clip text to write.
+     */
+    async writeClipboard(text: string): Promise<void> {
+        try {
+            await this.vsUI.writeClipboard(text);
+        } catch (error) {
+            this.vsUI.logError(error as Error);
         }
     }
 

@@ -7,26 +7,24 @@ import {
     asyncDebounce,
     BpmnFileQuery,
     BpmnModelerSettingQuery,
+    ClipboardQuery,
     Command,
     createResolver,
     ElementTemplatesQuery,
     formatErrors,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
+    GetClipboardCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
     LogErrorCommand,
     LogInfoCommand,
     NoModelerError,
     Query,
+    SetClipboardCommand,
     SyncDocumentCommand,
 } from "@miranum-ide/miranum-vscode-webview";
-import {
-    BpmnModeler,
-    getVsCodeApi,
-    initResizer,
-    UnsupportedEngineError,
-} from "./app";
+import { BpmnModeler, getVsCodeApi, initResizer, UnsupportedEngineError } from "./app";
 
 const vscode = getVsCodeApi();
 
@@ -48,6 +46,7 @@ const debouncedUpdateXML = asyncDebounce(openXml, 100);
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
 let modelerIsInitialized = false;
+let clipboardResolver = createResolver<ClipboardQuery>();
 
 /**
  * Entry point executed once the webview DOM is fully loaded.
@@ -71,6 +70,20 @@ window.onload = async function () {
     const bpmnFileQuery = await bpmnFileResolver.wait();
     await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
     modelerIsInitialized = true;
+
+    // Only override clipboard in VS Code where navigator.clipboard is sandboxed.
+    // In development (plain browser) NativeCopyPaste handles clipboard natively.
+    if (process.env.NODE_ENV !== "development") {
+        bpmnModeler.installClipboardInterceptor(
+            async () => {
+                clipboardResolver = createResolver<ClipboardQuery>();
+                vscode.postMessage(new GetClipboardCommand());
+                const q = await clipboardResolver.wait();
+                return q?.text ?? "";
+            },
+            (text) => vscode.postMessage(new SetClipboardCommand(text)),
+        );
+    }
 
     console.debug("[DEBUG] Modeler is initialized...");
 
@@ -205,6 +218,10 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>): Promise
             } catch (error: any) {
                 vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
+            break;
+        }
+        case queryOrCommand.type === "ClipboardQuery": {
+            clipboardResolver.done(message.data as ClipboardQuery);
             break;
         }
         case queryOrCommand.type === "GetDiagramAsSVGCommand": {

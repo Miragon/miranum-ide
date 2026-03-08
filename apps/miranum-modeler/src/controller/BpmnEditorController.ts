@@ -8,7 +8,7 @@ import {
     window,
 } from "vscode";
 
-import { Command, SyncDocumentCommand } from "@miranum-ide/miranum-vscode-webview";
+import { Command, SetClipboardCommand, SyncDocumentCommand } from "@miranum-ide/miranum-vscode-webview";
 
 import { EditorStore } from "../infrastructure/EditorStore";
 import { VsCodeUI } from "../infrastructure/VsCodeUI";
@@ -121,6 +121,14 @@ export class BpmnEditorController implements CustomTextEditorProvider {
                         break;
                     case "GetBpmnModelerSettingCommand":
                         this.bpmnService.setSettings(id);
+                        break;
+                    case "GetClipboardCommand":
+                        this.bpmnService.readClipboard(id);
+                        break;
+                    case "SetClipboardCommand":
+                        this.bpmnService.writeClipboard(
+                            (message as SetClipboardCommand).text,
+                        );
                         break;
                     case "SyncDocumentCommand":
                         await this.bpmnService.sync(
