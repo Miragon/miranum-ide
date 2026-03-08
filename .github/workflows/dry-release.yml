@@ -54,10 +54,6 @@ jobs:
       - name: Install vsce
         run: npm install -g @vscode/vsce@latest
 
-      - name: Build vsix miranum-jsonforms
-        working-directory: apps/miranum-jsonforms
-        run: vsce package --out miranum-jsonforms.vsix --yarn --no-dependencies
-
       - name: Build vsix miranum-modeler
         working-directory: apps/miranum-modeler
         run: vsce package --out miranum-modeler.vsix --yarn --no-dependencies
