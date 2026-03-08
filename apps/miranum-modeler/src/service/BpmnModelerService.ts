@@ -229,7 +229,9 @@ export class BpmnModelerService implements ArtifactChangeTarget {
                     new ElementTemplatesQuery(sorted),
                 )
             ) {
-                this.vsUI.logInfo(`${artifacts.length} element templates are set.`);
+                if (artifacts.length > 0) {
+                    this.vsUI.logInfo(`${artifacts.length} element templates are set.`);
+                }
                 return true;
             } else {
                 return this.handleError(

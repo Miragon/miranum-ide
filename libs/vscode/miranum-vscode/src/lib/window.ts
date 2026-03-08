@@ -100,6 +100,10 @@ export class VsCodeLogger {
         this.logger.info(this.prefix + message);
     }
 
+    warn(message: string) {
+        this.logger.warn(this.prefix + message);
+    }
+
     error(error: Error) {
         this.logger.error(this.prefix, error);
     }
