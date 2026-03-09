@@ -1,0 +1,9 @@
+{
+  "name": "@bpmn-modeler/shared",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json",
+    "dev": "tsc -p tsconfig.lib.json --watch"
+  }
+}

@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Miranum IDE is a VS Code extension for BPMN/DMN process modeling, built with **Yarn 4 workspaces**. It provides:
-- **Camunda Modeler** (`miranum-modeler`): BPMN 2.0 and DMN diagram editor for Camunda 7 and 8
+- **Camunda Modeler** (`bpmn-modeler`): BPMN 2.0 and DMN diagram editor for Camunda 7 and 8
 
 ## Commands
 
@@ -32,10 +32,10 @@ corepack yarn lint
 
 # Target a single workspace directly
 corepack yarn workspace vs-code-bpmn-modeler build
-corepack yarn workspace miranum-modeler-bpmn-webview build
+corepack yarn workspace bpmn-webview build
 
 # Run a single test file (Jest)
-corepack yarn test --testPathPattern=apps/miranum-modeler/src/service/bpmnUtils.spec.ts
+corepack yarn test --testPathPattern=apps/bpmn-modeler/src/service/bpmnUtils.spec.ts
 ```
 
 ## Architecture
@@ -44,17 +44,16 @@ corepack yarn test --testPathPattern=apps/miranum-modeler/src/service/bpmnUtils.
 
 ```
 apps/
-  miranum-modeler/              # VS Code extension: BPMN/DMN editor (Node/Webpack)
-  miranum-modeler-bpmn-webview/ # Webview frontend for BPMN (Vite/browser)
-  miranum-modeler-dmn-webview/  # Webview frontend for DMN (Vite/browser)
+  bpmn-modeler/    # VS Code extension: BPMN/DMN editor (Node/Webpack)
+  bpmn-webview/    # Webview frontend for BPMN (Vite/browser)
+  dmn-webview/     # Webview frontend for DMN (Vite/browser)
 libs/
-  vscode/miranum-vscode/        # Shared VS Code helpers (Logger, editor utilities)
-  vscode/miranum-vscode-webview/ # Shared webview utilities and message types
+  shared/          # Shared webview utilities and message types
 ```
 
 ### Service Architecture (Flat, No DI Framework)
 
-The extension (`miranum-modeler`) uses a flat service architecture with plain constructor wiring:
+The extension (`bpmn-modeler`) uses a flat service architecture with plain constructor wiring:
 
 ```
 src/
@@ -91,21 +90,20 @@ Each open editor gets its own `ModelerSession` owned by the service:
 
 ### Webview Communication
 
-Webview apps communicate via `postMessage`. Message types: `libs/vscode/miranum-vscode-webview/src/lib/messages.ts`. Webviews built into `dist/apps/miranum-modeler/<webview-name>/` and copied into the extension output by `CopyWebpackPlugin`.
+Webview apps communicate via `postMessage`. Message types: `libs/shared/src/lib/messages.ts`. Webviews built into `dist/apps/bpmn-modeler/<webview-name>/` and copied into the extension output by `CopyWebpackPlugin`.
 
 ### Path Aliases (tsconfig.base.json)
 
-- `@miranum-ide/miranum-vscode` → `libs/vscode/miranum-vscode/src/index.ts`
-- `@miranum-ide/miranum-vscode-webview` → `libs/vscode/miranum-vscode-webview/src/index.ts`
+- `@bpmn-modeler/shared` → `libs/shared/src/index.ts`
 
 Resolved by `TsconfigPathsPlugin` (webpack) and `vite-tsconfig-paths` (Vite).
 
 ### Build System
 
-- **Extension host** (Node): Webpack + `ts-loader` — `apps/miranum-modeler/webpack.config.js`
-- **Webviews** (browser): Vite — `apps/miranum-modeler-{bpmn,dmn}-webview/vite.config.mts`
-- **Tests**: Jest + `ts-jest` — `apps/miranum-modeler/jest.config.ts`
-- Output: `dist/apps/miranum-modeler/`
+- **Extension host** (Node): Webpack + `ts-loader` — `apps/bpmn-modeler/webpack.config.js`
+- **Webviews** (browser): Vite — `apps/{bpmn,dmn}-webview/vite.config.mts`
+- **Tests**: Jest + `ts-jest` — `apps/bpmn-modeler/jest.config.ts`
+- Output: `dist/apps/bpmn-modeler/`
 
 ### Element Template Discovery
 

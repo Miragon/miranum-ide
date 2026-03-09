@@ -877,6 +877,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bpmn-modeler/shared@workspace:libs/shared":
+  version: 0.0.0-use.local
+  resolution: "@bpmn-modeler/shared@workspace:libs/shared"
+  languageName: unknown
+  linkType: soft
+
 "@camunda/element-templates-json-schema@npm:^0.21.0":
   version: 0.21.0
   resolution: "@camunda/element-templates-json-schema@npm:0.21.0"
@@ -1906,24 +1912,6 @@ __metadata:
   checksum: 10c0/1a17a60b16083cc5f7ce89d7b7d8aa87ce4099723e3e9e34e229ef2cd8a980e69d481ca8ee90ffedfec5119af1aed581642fb60ed0365e7e90634c81ea6b630f
   languageName: node
   linkType: hard
-
-"@miranum-ide/miranum-core@workspace:libs/miranum-core":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-core@workspace:libs/miranum-core"
-  languageName: unknown
-  linkType: soft
-
-"@miranum-ide/miranum-vscode-webview@workspace:libs/vscode/miranum-vscode-webview":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-vscode-webview@workspace:libs/vscode/miranum-vscode-webview"
-  languageName: unknown
-  linkType: soft
-
-"@miranum-ide/miranum-vscode@workspace:libs/vscode/miranum-vscode":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-vscode@workspace:libs/vscode/miranum-vscode"
-  languageName: unknown
-  linkType: soft
 
 "@napi-rs/wasm-runtime@npm:^0.2.11":
   version: 0.2.12
@@ -3708,6 +3696,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bpmn-webview@workspace:apps/bpmn-webview":
+  version: 0.0.0-use.local
+  resolution: "bpmn-webview@workspace:apps/bpmn-webview"
+  languageName: unknown
+  linkType: soft
+
 "bpmnlint-utils@npm:^1.1.1":
   version: 1.1.1
   resolution: "bpmnlint-utils@npm:1.1.1"
@@ -4740,6 +4734,12 @@ __metadata:
   checksum: 10c0/ac1d329ad3a16254d06aa8221b26c02300fe123649cd3244d957506460431ebc04ea624534b81f70df760a7b7dd4406d117cc9b2377f503b69b539ad32f0d608
   languageName: node
   linkType: hard
+
+"dmn-webview@workspace:apps/dmn-webview":
+  version: 0.0.0-use.local
+  resolution: "dmn-webview@workspace:apps/dmn-webview"
+  languageName: unknown
+  linkType: soft
 
 "doctrine@npm:^2.1.0":
   version: 2.1.0
@@ -7997,18 +7997,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"miranum-modeler-bpmn-webview@workspace:apps/miranum-modeler-bpmn-webview":
-  version: 0.0.0-use.local
-  resolution: "miranum-modeler-bpmn-webview@workspace:apps/miranum-modeler-bpmn-webview"
-  languageName: unknown
-  linkType: soft
-
-"miranum-modeler-dmn-webview@workspace:apps/miranum-modeler-dmn-webview":
-  version: 0.0.0-use.local
-  resolution: "miranum-modeler-dmn-webview@workspace:apps/miranum-modeler-dmn-webview"
-  languageName: unknown
-  linkType: soft
-
 "mitt@npm:^3.0.1":
   version: 3.0.1
   resolution: "mitt@npm:3.0.1"
@@ -10700,9 +10688,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vs-code-bpmn-modeler@workspace:apps/miranum-modeler":
+"vs-code-bpmn-modeler@workspace:apps/modeler-plugin":
   version: 0.0.0-use.local
-  resolution: "vs-code-bpmn-modeler@workspace:apps/miranum-modeler"
+  resolution: "vs-code-bpmn-modeler@workspace:apps/modeler-plugin"
   languageName: unknown
   linkType: soft
 

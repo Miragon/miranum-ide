@@ -2,21 +2,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run miranum-modeler",
+            "name": "Run modeler-plugin",
             "type": "extensionHost",
             "request": "launch",
             "args": [
                 "--disable-extensions",
-                "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/miranum-modeler"
+                "--extensionDevelopmentPath=${workspaceFolder}/dist/apps/modeler-plugin"
             ],
-            "outFiles": ["${workspaceFolder}/dist/apps/miranum-modeler/**/*.js"],
+            "outFiles": ["${workspaceFolder}/dist/apps/modeler-plugin/**/*.js"],
             "resolveSourceMapLocations": [
-                "${workspaceFolder}/dist/apps/miranum-modeler/**",
+                "${workspaceFolder}/dist/apps/modeler-plugin/**",
                 "!**/node_modules/**"
             ],
             "sourceMapPathOverrides": {
                 "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
-                "webpack://?:*/*": "${workspaceFolder}/apps/miranum-modeler/*"
+                "webpack://?:*/*": "${workspaceFolder}/apps/modeler-plugin/*"
             }
         }
     ]

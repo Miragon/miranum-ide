@@ -59,7 +59,7 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          PKG_PATH="./apps/miranum-modeler/package.json"
+          PKG_PATH="./apps/modeler-plugin/package.json"
           PKG_NAME=$(node -e "console.log(require('$PKG_PATH').name)")
           yarn workspace "$PKG_NAME" version "${{ inputs.release-type }}"
           yarn version apply --all
@@ -93,7 +93,7 @@ jobs:
         if: success() && inputs.dry-run == false
         run: |
           NEW_VERSION="${{ steps.version.outputs.version }}"
-          git add apps/miranum-modeler/package.json .yarn/releases .yarn/versions || true
+          git add apps/modeler-plugin/package.json
           git commit -m "chore(release): bump version to ${NEW_VERSION}"
           git push origin HEAD
           git tag -a "v${NEW_VERSION}" -m "release v${NEW_VERSION}"
