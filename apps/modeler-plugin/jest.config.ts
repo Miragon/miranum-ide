@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: "modeler-plugin",
     testEnvironment: "node",
@@ -11,8 +10,7 @@ export default {
         ],
     },
     moduleNameMapper: {
-        "^@modeler-plugin/shared$":
-            "<rootDir>/../../libs/shared/src/index.ts",
+        "^@modeler-plugin/shared$": "<rootDir>/../../libs/shared/src/index.ts",
     },
     moduleFileExtensions: ["ts", "js", "html"],
     coverageDirectory: "../../coverage/apps/modeler-plugin",
