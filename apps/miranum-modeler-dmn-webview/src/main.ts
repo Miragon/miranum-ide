@@ -22,7 +22,7 @@ import {
     NoModelerError,
     Query,
     SyncDocumentCommand,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+} from "@miranum-ide/miranum-vscode-webview";
 
 import {
     createModeler,

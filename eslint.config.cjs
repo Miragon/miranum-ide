@@ -1,6 +1,6 @@
 const { FlatCompat } = require("@eslint/eslintrc");
 const js = require("@eslint/js");
-const nxEslintPlugin = require("@nx/eslint-plugin");
+const globals = require("globals");
 const typescriptEslintEslintPlugin = require("@typescript-eslint/eslint-plugin");
 const stylisticEslintPlugin = require("@stylistic/eslint-plugin");
 
@@ -15,9 +15,18 @@ module.exports = [
     },
     {
         plugins: {
-            "@nx": nxEslintPlugin,
             "@typescript-eslint": typescriptEslintEslintPlugin,
             "@stylistic": stylisticEslintPlugin,
+        },
+    },
+    // Node.js globals for CommonJS config and build files
+    {
+        files: ["**/*.cjs", "**/webpack.config.js"],
+        languageOptions: {
+            sourceType: "commonjs",
+            globals: {
+                ...globals.node,
+            },
         },
     },
     ...compat
@@ -25,7 +34,6 @@ module.exports = [
             extends: [
                 "eslint:recommended",
                 "plugin:@typescript-eslint/recommended",
-                "plugin:@stylistic/recommended-extends",
             ],
         })
         .map((config) => ({
@@ -33,60 +41,19 @@ module.exports = [
             files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.vue"],
             rules: {
                 ...config.rules,
-                "@nx/enforce-module-boundaries": [
-                    "error",
-                    {
-                        enforceBuildableLibDependency: true,
-                        allow: [],
-                        depConstraints: [
-                            {
-                                sourceTag: "*",
-                                onlyDependOnLibsWithTags: ["*"],
-                            },
-                        ],
-                    },
-                ],
                 "@typescript-eslint/no-empty-function": [
                     "error",
                     {
                         allow: ["arrowFunctions"],
                     },
                 ],
-                "@stylistic/quotes": [
-                    "error",
-                    "double",
-                    {
-                        allowTemplateLiterals: true,
-                    },
-                ],
-                "@stylistic/lines-between-class-members": ["error", "always"],
-                "@stylistic/padded-blocks": [
+                "@typescript-eslint/no-unused-vars": [
                     "error",
                     {
-                        blocks: "never",
-                        classes: "never",
-                        switches: "never",
+                        argsIgnorePattern: "^_",
+                        varsIgnorePattern: "^_",
                     },
                 ],
-                "@stylistic/indent": "off",
-                "@stylistic/semi": ["error", "always"],
-                "@stylistic/operator-linebreak": "off",
-                "@stylistic/arrow-parens": ["error", "always"],
-                "@stylistic/member-delimiter-style": [
-                    "error",
-                    {
-                        multiline: {
-                            delimiter: "semi",
-                            requireLast: true,
-                        },
-                        singleline: {
-                            delimiter: "semi",
-                            requireLast: false,
-                        },
-                    },
-                ],
-                "@stylistic/brace-style": "off",
-                "@stylistic/indent-binary-ops": "off",
             },
             languageOptions: {
                 parserOptions: {
@@ -94,9 +61,50 @@ module.exports = [
                 },
             },
         })),
+    {
+        files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.vue"],
+        rules: {
+            ...stylisticEslintPlugin.configs["recommended"].rules,
+            "@stylistic/quotes": [
+                "error",
+                "double",
+                {
+                    allowTemplateLiterals: "always",
+                },
+            ],
+            "@stylistic/lines-between-class-members": ["error", "always"],
+            "@stylistic/padded-blocks": [
+                "error",
+                {
+                    blocks: "never",
+                    classes: "never",
+                    switches: "never",
+                },
+            ],
+            "@stylistic/indent": "off",
+            "@stylistic/semi": ["error", "always"],
+            "@stylistic/operator-linebreak": "off",
+            "@stylistic/arrow-parens": ["error", "always"],
+            "@stylistic/member-delimiter-style": [
+                "error",
+                {
+                    multiline: {
+                        delimiter: "semi",
+                        requireLast: true,
+                    },
+                    singleline: {
+                        delimiter: "semi",
+                        requireLast: false,
+                    },
+                },
+            ],
+            "@stylistic/brace-style": "off",
+            "@stylistic/indent-binary-ops": "off",
+        },
+    },
     ...compat
         .config({
-            extends: ["plugin:@nx/typescript"],
+            extends: ["plugin:@typescript-eslint/recommended"],
         })
         .map((config) => ({
             ...config,
@@ -109,7 +117,7 @@ module.exports = [
         })),
     ...compat
         .config({
-            extends: ["plugin:@nx/javascript"],
+            extends: ["eslint:recommended"],
         })
         .map((config) => ({
             ...config,
@@ -118,4 +126,11 @@ module.exports = [
                 ...config.rules,
             },
         })),
+    // Disable TS-specific rules that don't apply to CommonJS build/config files
+    {
+        files: ["**/*.cjs", "**/webpack.config.js"],
+        rules: {
+            "@typescript-eslint/no-require-imports": "off",
+        },
+    },
 ];

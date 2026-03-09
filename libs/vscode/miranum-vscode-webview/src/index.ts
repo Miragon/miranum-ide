@@ -4,4 +4,3 @@ export * from "./lib/asyncDebounce";
 export * from "./lib/utils";
 export * from "./lib/messages";
 export * from "./lib/miranum-modeler";
-export * from "./lib/miranum-jsonforms";

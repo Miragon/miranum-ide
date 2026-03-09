@@ -22,15 +22,6 @@ export class DmnFileQuery extends Query {
     }
 }
 
-export class FormKeysQuery extends Query {
-    public readonly formKeys: string[];
-
-    constructor(formKeys: string[]) {
-        super("FormKeysQuery");
-        this.formKeys = formKeys;
-    }
-}
-
 export class ElementTemplatesQuery extends Query {
     public readonly elementTemplates: JSON[];
 
@@ -42,7 +33,6 @@ export class ElementTemplatesQuery extends Query {
 
 export interface BpmnModelerSetting {
     readonly alignToOrigin: boolean;
-    readonly darkTheme: boolean;
 }
 
 export class BpmnModelerSettingQuery extends Query {
@@ -74,12 +64,6 @@ export class GetDiagramAsSVGCommand extends Command {
 export class GetDmnFileCommand extends Command {
     constructor() {
         super("GetDmnFileCommand");
-    }
-}
-
-export class GetFormKeysCommand extends Command {
-    constructor() {
-        super("GetFormKeysCommand");
     }
 }
 

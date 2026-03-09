@@ -5,31 +5,16 @@ import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/Base
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
-import { ExtendElementTemplates } from "@miranum-ide/miranum-create-append-c7-element-templates";
 import {
     BpmnModelerSetting,
     NoModelerError,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
-
-import miragonProviderModule from "./PropertieProvider/provider";
-import { setFormKeys } from "./formKeys";
-
-type MiranumModeler = {
-    modeler: Modeler | undefined;
-    settings: BpmnModelerSetting;
-};
+} from "@miranum-ide/miranum-vscode-webview";
 
 const DEFAULT_SETTINGS: BpmnModelerSetting = {
     alignToOrigin: false,
-    darkTheme: false,
 };
 
-const bpmnModeler: MiranumModeler = {
-    modeler: undefined,
-    settings: DEFAULT_SETTINGS,
-};
-
-const modelerOptions = {
+const MODELER_OPTIONS = {
     container: "#js-canvas",
     propertiesPanel: {
         parent: "#js-properties-panel",
@@ -42,203 +27,283 @@ const modelerOptions = {
 };
 
 /**
- * Create a new modeler instance.
- * @param engine
- * @throws UnsupportedEngineError if the engine is not supported
+ * Encapsulates the bpmn-js modeler instance and all operations on it.
+ *
+ * A single instance is created at application startup and shared via the
+ * module-level export in {@link index.ts}.  All methods throw
+ * {@link NoModelerError} if called before {@link create}.
  */
-export function createModeler(engine: "c7" | "c8"): Modeler {
-    const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+export class BpmnModeler {
+    private modeler: Modeler | undefined = undefined;
 
-    switch (engine) {
-        case "c7": {
-            bpmnModeler.modeler = new BpmnModeler7({
-                ...modelerOptions,
-                additionalModules: [
-                    ...commonModules,
-                    ExtendElementTemplates,
-                    CreateAppendElementTemplatesModule,
-                    miragonProviderModule,
-                ],
-            });
-            break;
-        }
-        case "c8": {
-            bpmnModeler.modeler = new BpmnModeler8({
-                ...modelerOptions,
-                additionalModules: [...commonModules],
-            });
-            break;
-        }
-        default: {
-            throw new UnsupportedEngineError(engine);
+    private settings: BpmnModelerSetting = { ...DEFAULT_SETTINGS };
+
+    /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
+    private isDark: boolean = false;
+
+    /**
+     * Creates and mounts a new bpmn-js modeler for the given execution engine.
+     *
+     * @param engine Camunda engine version — `"c7"` for Camunda Platform 7,
+     *   `"c8"` for Camunda Cloud 8.
+     * @throws {UnsupportedEngineError} If the engine string is not recognised.
+     */
+    create(engine: "c7" | "c8"): void {
+        const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+
+        switch (engine) {
+            case "c7": {
+                this.modeler = new BpmnModeler7({
+                    ...MODELER_OPTIONS,
+                    additionalModules: [
+                        ...commonModules,
+                        CreateAppendElementTemplatesModule,
+                    ],
+                });
+                break;
+            }
+            case "c8": {
+                this.modeler = new BpmnModeler8({
+                    ...MODELER_OPTIONS,
+                    additionalModules: [...commonModules],
+                });
+                break;
+            }
+            default: {
+                throw new UnsupportedEngineError(engine);
+            }
         }
     }
 
-    return bpmnModeler.modeler;
-}
+    /**
+     * Subscribes to the `elementTemplates.errors` event.
+     *
+     * @param cb Callback invoked with the array of template errors.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    onElementTemplatesErrors(cb: (errors: any) => void): void {
+        this.getModeler().on("elementTemplates.errors", (event: any) => {
+            const { errors } = event;
+            cb(errors);
+        });
+    }
 
-/**
- * Subscribe to the `elementTemplates.errors` event.
- * @param cb
- * @throws NoModelerError if the modeler is not initialized
- */
-export function onElementTemplatesErrors(cb: (errors: any) => void) {
-    getModeler().on("elementTemplates.errors", (event: any) => {
-        const { errors } = event;
-        cb(errors);
-    });
-}
+    /**
+     * Subscribes to the `commandStack.changed` event on the modeler's event bus.
+     *
+     * @param cb Callback invoked whenever the command stack changes.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    onCommandStackChanged(cb: () => void): void {
+        this.getModeler().get<any>("eventBus").on("commandStack.changed", cb);
+    }
 
-/**
- * Subscribe to the `commandStack.changed` event from the `eventBus`.
- * @param cb
- * @throws NoModelerError if the modeler is not initialized
- */
-export function onCommandStackChanged(cb: () => void) {
-    getModeler().get<any>("eventBus").on("commandStack.changed", cb);
-}
+    /**
+     * Creates a new, empty BPMN diagram in the modeler.
+     *
+     * @returns {@link ImportXMLResult} with any warnings produced during import.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    async newDiagram(): Promise<ImportXMLResult> {
+        return this.getModeler().createDiagram();
+    }
 
-/**
- * Create a new diagram.
- * @return ImportXMLResult with warnings if any
- * @throws NoModelerError if the modeler is not initialized
- */
-export async function newDiagram(): Promise<ImportXMLResult> {
-    return getModeler().createDiagram();
-}
-
-/**
- * Load the diagram from the given XML content.
- * @param bpmn
- * @return ImportXMLResult with warnings if any
- * @throws NoModelerError if the modeler is not initialized
- */
-export async function loadDiagram(bpmn: string): Promise<ImportXMLResult> {
-    try {
-        return await getModeler().importXML(bpmn);
-    } catch (error: unknown) {
-        if ((error as ImportXMLError).warnings) {
-            const importError: ImportXMLError = error as ImportXMLError;
-            const { message, warnings } = importError;
-            throw Error(`${message} ${warnings}`);
-        } else {
+    /**
+     * Loads the given BPMN XML into the modeler, replacing any current diagram.
+     *
+     * @param bpmn Raw BPMN 2.0 XML string.
+     * @returns {@link ImportXMLResult} with any warnings produced during import.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     * @throws {Error} If the XML cannot be parsed.
+     */
+    async loadDiagram(bpmn: string): Promise<ImportXMLResult> {
+        try {
+            return await this.getModeler().importXML(bpmn);
+        } catch (error: unknown) {
+            if ((error as ImportXMLError).warnings) {
+                const importError = error as ImportXMLError;
+                throw new Error(`${importError.message} ${importError.warnings}`, { cause: error });
+            }
             throw error;
         }
     }
-}
 
-/**
- * Get the XML content of the current diagram.
- * @return the XML content
- * @throws NoModelerError if the modeler is not initialized
- * @throws Error if something went wrong
- */
-export async function exportDiagram(): Promise<string> {
-    const m = getModeler();
-    const result: SaveXMLResult = await m.saveXML({ format: true });
-    if (result.xml) {
-        return result.xml;
-    } else if (result.error) {
-        throw result.error;
+    /**
+     * Serialises the current diagram to a BPMN 2.0 XML string.
+     *
+     * @returns Formatted XML string.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     * @throws {Error} If the diagram cannot be serialised.
+     */
+    async exportDiagram(): Promise<string> {
+        const result: SaveXMLResult = await this.getModeler().saveXML({ format: true });
+        if (result.xml) {
+            return result.xml;
+        } else if (result.error) {
+            throw result.error;
+        }
+        throw new Error("Failed to save changes made to the diagram!");
     }
 
-    throw Error("Failed to save changes made to the diagram!");
-}
-
-/**
- * Get the SVG content of the current diagram.
- */
-export async function getDiagramSvg(): Promise<string> {
-    const m = getModeler();
-    const result = await m.saveSVG();
-    return result.svg;
-}
-
-/**
- * Set the element templates to the modeler.
- * @param templates
- * @throws NoModelerError if the modeler is not initialized
- */
-export function setElementTemplates(templates: JSON[] | undefined) {
-    if (!templates) {
-        return;
+    /**
+     * Exports the current diagram as an SVG string.
+     *
+     * @returns SVG markup string.
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    async getDiagramSvg(): Promise<string> {
+        const result = await this.getModeler().saveSVG();
+        return result.svg;
     }
 
-    getModeler().get<any>("elementTemplatesLoader").setTemplates(templates);
-}
-
-/**
- * Set the form keys of the modeler.
- * @param formKeys
- * @throws NoModelerError if the modeler is not initialized
- */
-export function setForms(formKeys: string[] | undefined) {
-    if (!formKeys) {
-        return;
-    } else if (!bpmnModeler.modeler) {
-        throw new NoModelerError();
+    /**
+     * Pushes a new set of element templates to the modeler's template loader.
+     *
+     * @param templates Array of element template objects, or `undefined` (no-op).
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    setElementTemplates(templates: JSON[] | undefined): void {
+        if (!templates) {
+            return;
+        }
+        this.getModeler().get<any>("elementTemplatesLoader").setTemplates(templates);
     }
 
-    setFormKeys(formKeys);
-}
-
-/**
- * Set the settings to the modeler.
- * @param settings
- * @throws NoModelerError if the modeler is not initialized
- */
-export function setSettings(settings: Partial<BpmnModelerSetting> | undefined) {
-    if (!settings) {
-        return;
-    } else if (!bpmnModeler.modeler) {
-        throw new NoModelerError();
+    /**
+     * Applies a partial settings update.
+     *
+     * @param settings Partial settings object to merge, or `undefined` (no-op).
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    setSettings(settings: Partial<BpmnModelerSetting> | undefined): void {
+        if (!settings) {
+            return;
+        }
+        // Ensure the modeler exists before applying any settings.
+        this.getModeler();
+        this.settings = { ...this.settings, ...settings };
     }
 
-    bpmnModeler.settings = { ...bpmnModeler.settings, ...settings };
-    setTheme();
-}
+    /**
+     * Reads the current VS Code theme from `document.body` class list, applies
+     * the matching theme stylesheet immediately, then installs a
+     * `MutationObserver` to react to live theme changes.
+     *
+     * VS Code injects `vscode-dark`, `vscode-light`, or
+     * `vscode-high-contrast` onto `<body>` in every webview.
+     */
+    public initTheme(): void {
+        const isDark =
+            document.body.classList.contains("vscode-dark") ||
+            document.body.classList.contains("vscode-high-contrast");
+        this.applyTheme(isDark);
 
-export function setTheme() {
-    const theme = document.querySelector<HTMLLinkElement>("#theme-link");
-    if (!theme) {
-        console.error("Theme link element not found.");
-        return;
+        new MutationObserver(() => {
+            const dark =
+                document.body.classList.contains("vscode-dark") ||
+                document.body.classList.contains("vscode-high-contrast");
+            this.applyTheme(dark);
+        }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     }
 
-    const href = theme.href;
-    const css = href.split("/").pop();
+    /**
+     * Dims the diagram-js-grid layer when in dark mode.
+     *
+     * Must be called **after** the first diagram has been loaded, because the
+     * grid `<g class="layer djs-grid">` element is created lazily by
+     * `diagram-js-grid` during the `diagram.init` event — it does not exist in
+     * the DOM before that point.  `initTheme()` runs too early to reach it, so
+     * `main.ts` must call this explicitly once `openXml` has resolved.
+     *
+     * Live theme switches (handled by the `MutationObserver` in
+     * `initTheme`) also call `applyGridFilter`, so those are covered
+     * automatically without needing to call this method again.
+     */
+    public applyGridStyle(): void {
+        this.applyGridFilter(this.isDark);
+    }
 
-    if (bpmnModeler.settings.darkTheme && css === "lightTheme.css") {
-        theme.href = href.replace(/lightTheme\.css$/, "darkTheme.css");
-    } else if (!bpmnModeler.settings.darkTheme && css === "darkTheme.css") {
-        theme.href = href.replace(/darkTheme\.css$/, "lightTheme.css");
+    /**
+     * Triggers the align-to-origin plugin if the setting is enabled.
+     *
+     * @throws {NoModelerError} If the modeler has not been created yet.
+     */
+    alignElementsToOrigin(): void {
+        if (this.settings.alignToOrigin) {
+            this.getModeler().get<any>("alignToOrigin").align();
+        }
+    }
+
+    // ─── Private helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Swaps the `#theme-link` stylesheet between `lightTheme.css` and
+     * `darkTheme.css`.  Compares the current href to avoid unnecessary DOM
+     * mutations, then applies the grid filter for the new theme kind.
+     *
+     * @param isDark `true` to apply the dark theme, `false` for the light theme.
+     */
+    private applyTheme(isDark: boolean): void {
+        this.isDark = isDark;
+
+        const theme = document.querySelector<HTMLLinkElement>("#theme-link");
+        if (!theme) {
+            console.error("Theme link element not found.");
+            return;
+        }
+
+        const href = theme.href;
+        const css = href.split("/").pop();
+
+        if (isDark && css === "lightTheme.css") {
+            theme.href = href.replace(/lightTheme\.css$/, "darkTheme.css");
+        } else if (!isDark && css === "darkTheme.css") {
+            theme.href = href.replace(/darkTheme\.css$/, "lightTheme.css");
+        }
+
+        // The grid may already exist when the theme changes at runtime (e.g.
+        // the user switches VS Code themes while a diagram is open).
+        this.applyGridFilter(isDark);
+    }
+
+    /**
+     * Sets the opacity of the `<g class="layer djs-grid">` SVG layer.
+     *
+     * diagram-js-grid hard-codes the dot colour to `#ccc`, which creates harsh
+     * contrast against dark backgrounds.  Reducing the layer opacity to 25 %
+     * makes the grid visible but unobtrusive.  Restores full opacity for light
+     * themes.
+     *
+     * This is a no-op when the grid layer is not yet in the DOM — the caller
+     * must retry after diagram initialisation via {@link applyGridStyle}.
+     *
+     * @param isDark `true` to dim the grid, `false` to restore full opacity.
+     */
+    private applyGridFilter(isDark: boolean): void {
+        const grid = document.querySelector<SVGGElement>(".djs-grid");
+        if (!grid) {
+            return;
+        }
+        grid.style.opacity = isDark ? "0.25" : "";
+    }
+
+    /**
+     * Returns the modeler instance, throwing if it has not been created yet.
+     *
+     * @throws {NoModelerError} If {@link create} has not been called.
+     */
+    private getModeler(): Modeler {
+        if (!this.modeler) {
+            throw new NoModelerError();
+        }
+        return this.modeler;
     }
 }
 
-/**
- * Align the elements to the origin.
- * @throws NoModelerError if the modeler is not initialized
- */
-export function alignElementsToOrigin() {
-    if (bpmnModeler.settings.alignToOrigin) {
-        getModeler().get<any>("alignToOrigin").align();
-    }
-}
-
+/** Thrown by {@link BpmnModeler.create} when an unknown engine string is passed. */
 export class UnsupportedEngineError extends Error {
+    /** @param engine The unrecognised engine string. */
     constructor(engine: string) {
         super(`Unsupported engine: ${engine}`);
     }
-}
-
-/**
- * Get the modeler instance.
- * @throws NoModelerError if the modeler is not initialized
- */
-function getModeler(): Modeler {
-    if (!bpmnModeler.modeler) {
-        throw new NoModelerError();
-    }
-
-    return bpmnModeler.modeler;
 }

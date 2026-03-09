@@ -11,56 +11,60 @@ import {
     createResolver,
     ElementTemplatesQuery,
     formatErrors,
-    FormKeysQuery,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
-    GetFormKeysCommand,
     LogErrorCommand,
     LogInfoCommand,
     NoModelerError,
     Query,
     SyncDocumentCommand,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+} from "@miranum-ide/miranum-vscode-webview";
 import {
-    alignElementsToOrigin,
-    createModeler,
-    exportDiagram,
-    getDiagramSvg,
+    BpmnModeler,
     getVsCodeApi,
-    loadDiagram,
-    newDiagram,
-    onCommandStackChanged,
-    setElementTemplates,
-    setForms,
-    setSettings,
+    initResizer,
     UnsupportedEngineError,
 } from "./app";
 
 const vscode = getVsCodeApi();
 
 /**
+ * Singleton modeler instance shared across all message handlers.
+ * Created during {@link initializeModeler}; `undefined` until then.
+ */
+const bpmnModeler = new BpmnModeler();
+
+/**
  * Debounce the update of the XML content to avoid too many updates.
- * @param bpmn
- * @throws NoModelerError if the modeler is not available
+ *
+ * @param bpmn Latest BPMN XML string received from the backend.
+ * @throws {NoModelerError} If the modeler is not available.
  */
 const debouncedUpdateXML = asyncDebounce(openXml, 100);
 
-// create resolver to wait for the response from the backend
+// Create resolver to wait for the response from the backend.
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
 let modelerIsInitialized = false;
 
 /**
- * The Main function that gets executed after the webview is fully loaded.
- * This way we can ensure that when the backend sends a message, it is caught.
- * There are two reasons why a webview gets build:
- * 1. A new .bpmn file was opened
- * 2. User switched to another tab and now switched back
+ * Entry point executed once the webview DOM is fully loaded.
+ *
+ * Registers the message listener first so no backend messages are missed,
+ * then requests the BPMN file and waits for the reply before creating the
+ * modeler.  After the modeler is ready, secondary resources (element
+ * templates, settings) are requested.
+ *
+ * There are two reasons the webview is built:
+ * 1. A new `.bpmn` file was opened.
+ * 2. The user switched away and back to the tab.
  */
 window.onload = async function () {
     window.addEventListener("message", onReceiveMessage);
+    initResizer();
+    bpmnModeler.initTheme();
 
     vscode.postMessage(new GetBpmnFileCommand());
 
@@ -70,24 +74,32 @@ window.onload = async function () {
 
     console.debug("[DEBUG] Modeler is initialized...");
 
-    vscode.postMessage(new GetFormKeysCommand());
     vscode.postMessage(new GetElementTemplatesCommand());
     vscode.postMessage(new GetBpmnModelerSettingCommand());
 };
 
+/**
+ * Creates the modeler for the given engine and loads the initial diagram.
+ *
+ * @param bpmn Initial BPMN XML, or `undefined` to create a blank diagram.
+ * @param engine Execution platform identifier (`"c7"` or `"c8"`).
+ */
 async function initializeModeler(
     bpmn: string | undefined,
     engine: "c7" | "c8" | undefined,
-) {
+): Promise<void> {
     if (!engine) {
         vscode.postMessage(new LogErrorCommand("ExecutionPlatformVersion undefined!"));
         return;
     }
 
     try {
-        createModeler(engine);
-        onCommandStackChanged(sendXmlChanges);
+        bpmnModeler.create(engine);
+        bpmnModeler.onCommandStackChanged(sendXmlChanges);
         await openXml(bpmn);
+        // The grid layer is created during diagram.init (triggered by openXml),
+        // so this is the earliest point at which the opacity can be applied.
+        bpmnModeler.applyGridStyle();
     } catch (error: any) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));
@@ -102,16 +114,18 @@ async function initializeModeler(
 }
 
 /**
- * Open or update the modeler with the new XML content.
- * @param bpmn
- * @throws NoModelerError if the modeler is not available
+ * Loads or replaces the diagram in the modeler with the given BPMN XML.
+ * Creates a blank diagram when `bpmn` is `undefined` or empty.
+ *
+ * @param bpmn BPMN XML string, or `undefined` for a new blank diagram.
+ * @throws {NoModelerError} If the modeler is not available.
  */
-async function openXml(bpmn?: string) {
+async function openXml(bpmn?: string): Promise<void> {
     let result: ImportXMLResult;
     if (!bpmn) {
-        result = await newDiagram();
+        result = await bpmnModeler.newDiagram();
     } else {
-        result = await loadDiagram(bpmn);
+        result = await bpmnModeler.loadDiagram(bpmn);
     }
 
     if (result.warnings.length > 0) {
@@ -121,20 +135,24 @@ async function openXml(bpmn?: string) {
 }
 
 /**
- * Send the changed XML content to the backend to update the .bpmn file.
+ * Exports the current diagram XML and sends it to the backend to persist the
+ * changes, then triggers an align-to-origin pass if the setting is enabled.
  */
-async function sendXmlChanges() {
-    const bpmn = await exportDiagram();
+async function sendXmlChanges(): Promise<void> {
+    const bpmn = await bpmnModeler.exportDiagram();
     vscode.postMessage(new SyncDocumentCommand(bpmn));
-    alignElementsToOrigin();
+    bpmnModeler.alignElementsToOrigin();
 }
 
 /**
- * Listen to messages from the backend.
+ * Routes incoming messages from the VS Code extension host to the appropriate
+ * handler.
+ *
+ * @param message The raw `MessageEvent` from `window.addEventListener("message", …)`.
  */
-async function onReceiveMessage(message: MessageEvent<Query | Command>) {
+async function onReceiveMessage(message: MessageEvent<Query | Command>): Promise<void> {
     const queryOrCommand = message.data;
-    const errorPreFix = "Error receiving message" + queryOrCommand.type;
+    const errorPrefix = "Error receiving message: " + queryOrCommand.type + " — ";
 
     switch (true) {
         case queryOrCommand.type === "BpmnFileQuery": {
@@ -146,16 +164,7 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
                     bpmnFileResolver.done(bpmnFileQuery);
                 }
             } catch (error: any) {
-                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
-            }
-            break;
-        }
-        case queryOrCommand.type === "FormKeysQuery": {
-            try {
-                const formKeys = (message.data as FormKeysQuery).formKeys;
-                setForms(formKeys);
-            } catch (error: any) {
-                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
+                vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
             break;
         }
@@ -163,29 +172,29 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
             try {
                 const elementTemplates = (message.data as ElementTemplatesQuery)
                     .elementTemplates;
-                setElementTemplates(elementTemplates);
+                bpmnModeler.setElementTemplates(elementTemplates);
             } catch (error: any) {
-                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
+                vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
             break;
         }
         case queryOrCommand.type === "BpmnModelerSettingQuery": {
             try {
                 const setting = (message.data as BpmnModelerSettingQuery).setting;
-                setSettings(setting);
+                bpmnModeler.setSettings(setting);
             } catch (error: any) {
-                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
+                vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
             break;
         }
         case queryOrCommand.type === "GetDiagramAsSVGCommand": {
             try {
                 const command = message.data as GetDiagramAsSVGCommand;
-                command.svg = await getDiagramSvg();
-                // Send the SVG back to vscode
+                // Populate the SVG field and echo the command back to the host.
+                command.svg = await bpmnModeler.getDiagramSvg();
                 vscode.postMessage(command);
             } catch (error: any) {
-                vscode.postMessage(new LogErrorCommand(errorPreFix + error.message));
+                vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
         }
     }

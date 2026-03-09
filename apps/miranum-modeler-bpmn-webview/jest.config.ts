@@ -1,6 +1,5 @@
 module.exports = {
     displayName: "miranum-modeler-bpmn-webview",
-    preset: "../../jest.preset.js",
     transform: {
         "^.+.vue$": "@vue/vue3-jest",
         ".+.(css|styl|less|sass|scss|svg|png|jpg|ttf|woff|woff2)$":

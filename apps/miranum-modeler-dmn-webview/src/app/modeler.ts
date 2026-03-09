@@ -6,7 +6,7 @@ import {
 } from "dmn-js-properties-panel";
 import camundaModdleDescriptors from "camunda-dmn-moddle/resources/camunda.json";
 
-import { NoModelerError } from "@miranum-ide/vscode/miranum-vscode-webview";
+import { NoModelerError } from "@miranum-ide/miranum-vscode-webview";
 
 let modeler: DmnModeler | undefined;
 
@@ -94,7 +94,7 @@ export async function loadDiagram(dmn: string): Promise<DiagramWarning> {
             diagramWarning.warnings.forEach((warning) => {
                 errorMsg += `${warning.message}\n${warning.error.message}\n${warning.error.stack}\n`;
             });
-            throw new Error(errorMsg);
+            throw new Error(errorMsg, { cause: error });
         } else {
             throw error;
         }

@@ -72,16 +72,17 @@
     background-color: var(--canvas-fill-color) !important;
 }
 
-.layer-djs-grid {
-    filter: invert(58%) sepia(0%) saturate(1864%) hue-rotate(184deg) brightness(95%) contrast(87%) !important;
-}
-
 /**
  * BPMN shapes
  */
 .djs-element > .djs-visual {
     /* The color has to be inverted so it is the same as in the token simulation view. */
     filter: invert(1);
+}
+
+/* Grid */
+.layer-djs-grid {
+    opacity: 0.25;
 }
 
 .djs-direct-editing-parent {
@@ -108,7 +109,7 @@
 }
 
 .djs-search-icon {
-    filter: invert(22%) sepia(6%) saturate(30%) hue-rotate(332deg) brightness(91%) contrast(86%);
+    filter: invert(0.7);
 }
 
 /**

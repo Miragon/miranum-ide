@@ -51,7 +51,7 @@ export class VsCodeTextEditor {
             const textDocument = await workspace.openTextDocument(documentPath);
             await window.showTextDocument(textDocument, ViewColumn.Beside);
             return true;
-        } catch (error) {
+        } catch {
             return false;
         }
     }
@@ -98,6 +98,10 @@ export class VsCodeLogger {
 
     info(message: string) {
         this.logger.info(this.prefix + message);
+    }
+
+    warn(message: string) {
+        this.logger.warn(this.prefix + message);
     }
 
     error(error: Error) {

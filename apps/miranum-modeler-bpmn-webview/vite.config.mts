@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
+import tsconfigPaths from "vite-tsconfig-paths";
 import { resolve } from "path";
 
 export default defineConfig({
@@ -9,7 +9,7 @@ export default defineConfig({
     cacheDir: "../../node_modules/.vite/miranum-modeler-bpmn-webview",
 
     plugins: [
-        nxViteTsPaths(),
+        tsconfigPaths(),
         viteStaticCopy({
             targets: [
                 {

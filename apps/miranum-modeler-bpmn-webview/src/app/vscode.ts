@@ -3,7 +3,6 @@ import {
     BpmnModelerSettingQuery,
     Command,
     ElementTemplatesQuery,
-    FormKeysQuery,
     LogErrorCommand,
     LogInfoCommand,
     Query,
@@ -11,7 +10,9 @@ import {
     VsCodeApi,
     VsCodeImpl,
     VsCodeMock,
-} from "@miranum-ide/vscode/miranum-vscode-webview";
+} from "@miranum-ide/miranum-vscode-webview";
+
+import elementTemplate from "./__fixtures__/elementTemplate.json";
 
 declare const process: { env: { NODE_ENV: string } };
 
@@ -19,6 +20,13 @@ type StateType = unknown;
 
 type MessageType = Command | Query;
 
+/**
+ * Returns the appropriate VS Code API implementation.
+ *
+ * In `development` mode a {@link MockedVsCodeApi} is returned so the webview
+ * can be run standalone in a browser without a VS Code host.  In all other
+ * environments the real {@link VsCodeImpl} is used.
+ */
 export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
     console.log(process.env.NODE_ENV);
     if (process.env.NODE_ENV === "development") {
@@ -28,11 +36,21 @@ export function getVsCodeApi(): VsCodeApi<StateType, MessageType> {
     }
 }
 
+/**
+ * Development-only mock that simulates the VS Code extension host by
+ * dispatching synthetic `MessageEvent`s in response to outbound commands.
+ */
 class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
     override updateState(): void {
         throw new Error("Method not implemented.");
     }
 
+    /**
+     * Intercepts outbound messages and dispatches the corresponding inbound
+     * response so the webview can operate without a real VS Code host.
+     *
+     * @param message The outbound command sent by the webview.
+     */
     override postMessage(message: MessageType): void {
         switch (true) {
             case message.type === "GetBpmnFileCommand": {
@@ -40,14 +58,11 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 dispatchEvent(new BpmnFileQuery("", "c7"));
                 break;
             }
-            case message.type === "GetFormKeysCommand": {
-                console.debug("[DEBUG] GetFormKeysCommand", message);
-                dispatchEvent(new FormKeysQuery(["formKey1", "formKey2"]));
-                break;
-            }
             case message.type === "GetElementTemplatesCommand": {
                 console.debug("[DEBUG] GetElementTemplatesCommand", message);
-                dispatchEvent(new ElementTemplatesQuery([JSON.parse(elementTemplate)]));
+                dispatchEvent(
+                    new ElementTemplatesQuery([elementTemplate as unknown as JSON]),
+                );
                 break;
             }
             case message.type === "GetBpmnModelerSettingCommand": {
@@ -55,7 +70,6 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 dispatchEvent(
                     new BpmnModelerSettingQuery({
                         alignToOrigin: true,
-                        darkTheme: false,
                     }),
                 );
                 break;
@@ -91,177 +105,3 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
         }
     }
 }
-
-const elementTemplate = `
-{
-  "name": "Send E-Mail",
-  "id": "de.muenchen.digitalwf.templates.send-email",
-  "appliesTo": [
-    "bpmn:CallActivity"
-  ],
-  "properties": [
-    {
-      "label": "Template",
-      "type": "String",
-      "editable": false,
-      "value": "StreamingTemplateV02",
-      "binding": {
-        "type": "property",
-        "name": "calledElement"
-      }
-    },
-    {
-      "label": "Event Topic",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "app_topic_name",
-        "target": "app_topic_name"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Event Message",
-      "type": "String",
-      "editable": false,
-      "value": "genericEvent",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "app_message_name",
-        "target": "app_message_name"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Type Header",
-      "type": "String",
-      "editable": false,
-      "value": "sendMailFromEventBus",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "app_type_name",
-        "target": "app_type_name"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Receiver (CC)",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "receiversCc",
-        "target": "receiversCc"
-      },
-      "constraints": {
-        "notEmpty": false
-      }
-    },
-    {
-      "label": "Receiver (BCC)",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "receiversBcc",
-        "target": "receiversBcc"
-      },
-      "constraints": {
-        "notEmpty": false
-      }
-    },
-    {
-      "label": "Receiver",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "receivers",
-        "target": "receivers"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Subject",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "subject",
-        "target": "subject"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Body",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "body",
-        "target": "body"
-      },
-      "constraints": {
-        "notEmpty": true
-      }
-    },
-    {
-      "label": "Reply-To Address",
-      "type": "String",
-      "value": "",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "replyTo",
-        "target": "replyTo"
-      }
-    },
-    {
-      "label": "Attachment Paths (S3)",
-      "type": "String",
-      "value": "",
-      "description": "Array of presigned urls created with s3 integration",
-      "binding": {
-        "type": "camunda:in",
-        "expression": true,
-        "name": "attachments",
-        "target": "attachments"
-      },
-      "constraints": {
-        "notEmpty": false
-      }
-    },
-    {
-      "label": "Dispatch Status",
-      "value": "mailSentStatus",
-      "type": "String",
-      "binding": {
-        "type": "camunda:out",
-        "source": "mailSentStatus"
-      },
-      "constraints": {
-        "notEmpty": false
-      }
-    }
-  ]
-}
-`;
