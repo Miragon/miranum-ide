@@ -94,7 +94,7 @@ export async function loadDiagram(dmn: string): Promise<DiagramWarning> {
             diagramWarning.warnings.forEach((warning) => {
                 errorMsg += `${warning.message}\n${warning.error.message}\n${warning.error.stack}\n`;
             });
-            throw new Error(errorMsg);
+            throw new Error(errorMsg, { cause: error });
         } else {
             throw error;
         }

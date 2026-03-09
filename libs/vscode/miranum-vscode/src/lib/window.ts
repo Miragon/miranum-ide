@@ -51,7 +51,7 @@ export class VsCodeTextEditor {
             const textDocument = await workspace.openTextDocument(documentPath);
             await window.showTextDocument(textDocument, ViewColumn.Beside);
             return true;
-        } catch (error) {
+        } catch {
             return false;
         }
     }
