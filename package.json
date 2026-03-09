@@ -21,6 +21,7 @@
         "dev:dmn-webview": "corepack yarn workspace dmn-webview dev",
         "dev:plugin": "corepack yarn workspace vs-code-bpmn-modeler dev",
         "serve:bpmn-webview": "corepack yarn workspace bpmn-webview serve",
+        "serve:dmn-webview": "corepack yarn workspace dmn-webview serve",
         "test": "jest --coverage",
         "lint": "eslint ."
     },

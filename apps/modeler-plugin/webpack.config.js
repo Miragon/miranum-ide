@@ -90,7 +90,7 @@ module.exports = (env, argv) => {
                         // Copy the BPMN webview build artefacts into the extension output.
                         from: path.resolve(
                             __dirname,
-                            "../../dist/apps/modeler-plugin/bpmn-webview",
+                            "../../dist/webview-staging/bpmn-webview",
                         ),
                         to: "bpmn-webview",
                         noErrorOnMissing: true,
@@ -99,7 +99,7 @@ module.exports = (env, argv) => {
                         // Copy the DMN webview build artefacts into the extension output.
                         from: path.resolve(
                             __dirname,
-                            "../../dist/apps/modeler-plugin/dmn-webview",
+                            "../../dist/webview-staging/dmn-webview",
                         ),
                         to: "dmn-webview",
                         noErrorOnMissing: true,
@@ -108,5 +108,10 @@ module.exports = (env, argv) => {
             }),
         ],
         devtool: isProd ? false : "source-map",
+        watchOptions: {
+            // Prevent webpack from watching its own output, which would otherwise
+            // cause an infinite rebuild loop when CopyWebpackPlugin writes files.
+            ignored: path.resolve(__dirname, "../../dist/apps/modeler-plugin"),
+        },
     };
 };

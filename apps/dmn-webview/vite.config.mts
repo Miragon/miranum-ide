@@ -27,7 +27,7 @@ export default defineConfig({
         target: "es2021",
         commonjsOptions: { transformMixedEsModules: true },
         chunkSizeWarningLimit: 1200,
-        outDir: "../../dist/apps/modeler-plugin/dmn-webview",
+        outDir: "../../dist/webview-staging/dmn-webview",
         emptyOutDir: true,
         rollupOptions: {
             output: {
