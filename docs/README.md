@@ -1,24 +1,19 @@
-# Miranum
+# BPMN Modeler
 
 <hr>
 
-We from Miragon want to shape the future of process automation.
-Therefore, we created the Miranum-IDE, a process modeling IDE.
-Miranum enables process developers to easily develop bpmn diagrams.
-By providing a webservice that contains all necessary addons, we enable process developing in a way an IDE would support a programmer.
-Some functionalities it provides are:
-project creation / generation,
-deployment.
+The BPMN modeler is a VS Code extension for BPMN/DMN process modeling built on top
+of [bpmn-js](https://bpmn.io/toolkit/bpmn-js/).
+It provides a Camunda Modeler supporting Camunda 7 and Camunda 8 diagrams, including
+element template support.
 
-### For further information please check out the following:
+### Documentation
 
-- [Quickstart](quickstart.md)
 - [Development](development.md)
 - [Releases](releases.md)
 
-
 <hr>
 
-## Used Software:
+## Used Software
 
 BPMN-Modeler foundation: [bpmn-js](https://bpmn.io/toolkit/bpmn-js/)

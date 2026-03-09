@@ -1,5 +1,5 @@
 export default {
     projects: [
-        "<rootDir>/apps/miranum-modeler/jest.config.ts",
+        "<rootDir>/apps/modeler-plugin/jest.config.ts",
     ],
 };

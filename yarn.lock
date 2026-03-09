@@ -877,6 +877,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bpmn-modeler/shared@workspace:libs/shared":
+  version: 0.0.0-use.local
+  resolution: "@bpmn-modeler/shared@workspace:libs/shared"
+  languageName: unknown
+  linkType: soft
+
 "@camunda/element-templates-json-schema@npm:^0.21.0":
   version: 0.21.0
   resolution: "@camunda/element-templates-json-schema@npm:0.21.0"
@@ -1906,24 +1912,6 @@ __metadata:
   checksum: 10c0/1a17a60b16083cc5f7ce89d7b7d8aa87ce4099723e3e9e34e229ef2cd8a980e69d481ca8ee90ffedfec5119af1aed581642fb60ed0365e7e90634c81ea6b630f
   languageName: node
   linkType: hard
-
-"@miranum-ide/miranum-core@workspace:libs/miranum-core":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-core@workspace:libs/miranum-core"
-  languageName: unknown
-  linkType: soft
-
-"@miranum-ide/miranum-vscode-webview@workspace:libs/vscode/miranum-vscode-webview":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-vscode-webview@workspace:libs/vscode/miranum-vscode-webview"
-  languageName: unknown
-  linkType: soft
-
-"@miranum-ide/miranum-vscode@workspace:libs/vscode/miranum-vscode":
-  version: 0.0.0-use.local
-  resolution: "@miranum-ide/miranum-vscode@workspace:libs/vscode/miranum-vscode"
-  languageName: unknown
-  linkType: soft
 
 "@napi-rs/wasm-runtime@npm:^0.2.11":
   version: 0.2.12
@@ -3708,6 +3696,71 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bpmn-vscode-modeler@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "bpmn-vscode-modeler@workspace:."
+  dependencies:
+    "@bpmn-io/form-js": "npm:^1.20.1"
+    "@bpmn-io/properties-panel": "npm:^3.40.3"
+    "@eslint/eslintrc": "npm:^3.3.4"
+    "@eslint/js": "npm:^10.0.1"
+    "@stylistic/eslint-plugin": "npm:^5.10.0"
+    "@types/jest": "npm:^30.0.0"
+    "@types/lodash": "npm:^4.17.24"
+    "@types/node": "npm:24.x"
+    "@types/uuid": "npm:^10.0.0"
+    "@types/vscode": "npm:^1.76.0"
+    "@types/vscode-webview": "npm:^1.57.5"
+    "@typescript-eslint/eslint-plugin": "npm:^8.56.1"
+    "@typescript-eslint/parser": "npm:^8.56.1"
+    "@vitest/coverage-v8": "npm:4.0.18"
+    "@vitest/ui": "npm:4.0.18"
+    bpmn-js: "npm:^18.13.1"
+    bpmn-js-properties-panel: "npm:^5.53.0"
+    bpmn-js-token-simulation: "npm:^0.39.2"
+    camunda-bpmn-js: "npm:^5.24.2"
+    camunda-bpmn-js-behaviors: "npm:^1.14.1"
+    camunda-bpmn-moddle: "npm:^7.0.1"
+    camunda-dmn-moddle: "npm:^1.3.1"
+    camunda-transaction-boundaries: "npm:^1.1.2"
+    copy-webpack-plugin: "npm:^14.0.0"
+    diagram-js: "npm:^15.9.1"
+    dmn-js: "npm:^17.7.0"
+    dmn-js-properties-panel: "npm:^3.10.0"
+    eslint: "npm:^10.0.3"
+    eslint-config-prettier: "npm:^10.1.8"
+    eslint-plugin-import: "npm:^2.32.0"
+    eslint-plugin-prettier: "npm:^5.5.5"
+    jest: "npm:^30.2.0"
+    jest-environment-node: "npm:^30.2.0"
+    lodash: "npm:4.17.23"
+    min-dash: "npm:^5.0.0"
+    npm-run-all: "npm:^4.1.5"
+    prettier: "npm:^3.8.1"
+    ts-jest: "npm:^29.4.6"
+    ts-loader: "npm:^9.5.1"
+    ts-node: "npm:^10.9.2"
+    tsconfig-paths-webpack-plugin: "npm:^4.2.0"
+    tslib: "npm:^2.8.1"
+    typescript: "npm:^5.9.3"
+    typescript-eslint: "npm:^8.56.1"
+    uuid: "npm:^13.0.0"
+    vite: "npm:7.1.11"
+    vite-plugin-static-copy: "npm:3.1.2"
+    vite-tsconfig-paths: "npm:^6.1.1"
+    vitest: "npm:3.0.5"
+    webpack: "npm:^5.98.0"
+    webpack-cli: "npm:^6.0.1"
+    zeebe-bpmn-moddle: "npm:^1.12.0"
+  languageName: unknown
+  linkType: soft
+
+"bpmn-webview@workspace:apps/bpmn-webview":
+  version: 0.0.0-use.local
+  resolution: "bpmn-webview@workspace:apps/bpmn-webview"
+  languageName: unknown
+  linkType: soft
+
 "bpmnlint-utils@npm:^1.1.1":
   version: 1.1.1
   resolution: "bpmnlint-utils@npm:1.1.1"
@@ -4740,6 +4793,12 @@ __metadata:
   checksum: 10c0/ac1d329ad3a16254d06aa8221b26c02300fe123649cd3244d957506460431ebc04ea624534b81f70df760a7b7dd4406d117cc9b2377f503b69b539ad32f0d608
   languageName: node
   linkType: hard
+
+"dmn-webview@workspace:apps/dmn-webview":
+  version: 0.0.0-use.local
+  resolution: "dmn-webview@workspace:apps/dmn-webview"
+  languageName: unknown
+  linkType: soft
 
 "doctrine@npm:^2.1.0":
   version: 2.1.0
@@ -7938,77 +7997,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"miranum-ide@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "miranum-ide@workspace:."
-  dependencies:
-    "@bpmn-io/form-js": "npm:^1.20.1"
-    "@bpmn-io/properties-panel": "npm:^3.40.3"
-    "@eslint/eslintrc": "npm:^3.3.4"
-    "@eslint/js": "npm:^10.0.1"
-    "@stylistic/eslint-plugin": "npm:^5.10.0"
-    "@types/jest": "npm:^30.0.0"
-    "@types/lodash": "npm:^4.17.24"
-    "@types/node": "npm:24.x"
-    "@types/uuid": "npm:^10.0.0"
-    "@types/vscode": "npm:^1.76.0"
-    "@types/vscode-webview": "npm:^1.57.5"
-    "@typescript-eslint/eslint-plugin": "npm:^8.56.1"
-    "@typescript-eslint/parser": "npm:^8.56.1"
-    "@vitest/coverage-v8": "npm:4.0.18"
-    "@vitest/ui": "npm:4.0.18"
-    bpmn-js: "npm:^18.13.1"
-    bpmn-js-properties-panel: "npm:^5.53.0"
-    bpmn-js-token-simulation: "npm:^0.39.2"
-    camunda-bpmn-js: "npm:^5.24.2"
-    camunda-bpmn-js-behaviors: "npm:^1.14.1"
-    camunda-bpmn-moddle: "npm:^7.0.1"
-    camunda-dmn-moddle: "npm:^1.3.1"
-    camunda-transaction-boundaries: "npm:^1.1.2"
-    copy-webpack-plugin: "npm:^14.0.0"
-    diagram-js: "npm:^15.9.1"
-    dmn-js: "npm:^17.7.0"
-    dmn-js-properties-panel: "npm:^3.10.0"
-    eslint: "npm:^10.0.3"
-    eslint-config-prettier: "npm:^10.1.8"
-    eslint-plugin-import: "npm:^2.32.0"
-    eslint-plugin-prettier: "npm:^5.5.5"
-    jest: "npm:^30.2.0"
-    jest-environment-node: "npm:^30.2.0"
-    lodash: "npm:4.17.23"
-    min-dash: "npm:^5.0.0"
-    npm-run-all: "npm:^4.1.5"
-    prettier: "npm:^3.8.1"
-    ts-jest: "npm:^29.4.6"
-    ts-loader: "npm:^9.5.1"
-    ts-node: "npm:^10.9.2"
-    tsconfig-paths-webpack-plugin: "npm:^4.2.0"
-    tslib: "npm:^2.8.1"
-    typescript: "npm:^5.9.3"
-    typescript-eslint: "npm:^8.56.1"
-    uuid: "npm:^13.0.0"
-    vite: "npm:7.1.11"
-    vite-plugin-static-copy: "npm:3.1.2"
-    vite-tsconfig-paths: "npm:^6.1.1"
-    vitest: "npm:3.0.5"
-    webpack: "npm:^5.98.0"
-    webpack-cli: "npm:^6.0.1"
-    zeebe-bpmn-moddle: "npm:^1.12.0"
-  languageName: unknown
-  linkType: soft
-
-"miranum-modeler-bpmn-webview@workspace:apps/miranum-modeler-bpmn-webview":
-  version: 0.0.0-use.local
-  resolution: "miranum-modeler-bpmn-webview@workspace:apps/miranum-modeler-bpmn-webview"
-  languageName: unknown
-  linkType: soft
-
-"miranum-modeler-dmn-webview@workspace:apps/miranum-modeler-dmn-webview":
-  version: 0.0.0-use.local
-  resolution: "miranum-modeler-dmn-webview@workspace:apps/miranum-modeler-dmn-webview"
-  languageName: unknown
-  linkType: soft
-
 "mitt@npm:^3.0.1":
   version: 3.0.1
   resolution: "mitt@npm:3.0.1"
@@ -10700,9 +10688,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vs-code-bpmn-modeler@workspace:apps/miranum-modeler":
+"vs-code-bpmn-modeler@workspace:apps/modeler-plugin":
   version: 0.0.0-use.local
-  resolution: "vs-code-bpmn-modeler@workspace:apps/miranum-modeler"
+  resolution: "vs-code-bpmn-modeler@workspace:apps/modeler-plugin"
   languageName: unknown
   linkType: soft
 

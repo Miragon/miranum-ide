@@ -20,11 +20,7 @@
         "noFallthroughCasesInSwitch": true,
         "baseUrl": "./",
         "paths": {
-            "@miranum-ide/miranum-core": ["libs/miranum-core/src/index.ts"],
-            "@miranum-ide/miranum-vscode": ["libs/vscode/miranum-vscode/src/index.ts"],
-            "@miranum-ide/miranum-vscode-webview": [
-                "libs/vscode/miranum-vscode-webview/src/index.ts"
-            ]
+            "@bpmn-modeler/shared": ["libs/shared/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
