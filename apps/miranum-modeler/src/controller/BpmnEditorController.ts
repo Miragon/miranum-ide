@@ -8,7 +8,7 @@ import {
     window,
 } from "vscode";
 
-import { Command, SetClipboardCommand, SyncDocumentCommand } from "@miranum-ide/miranum-vscode-webview";
+import { Command, SetClipboardCommand, SyncDocumentCommand, } from "@miranum-ide/miranum-vscode-webview";
 
 import { EditorStore } from "../infrastructure/EditorStore";
 import { VsCodeUI } from "../infrastructure/VsCodeUI";
@@ -67,7 +67,12 @@ export class BpmnEditorController implements CustomTextEditorProvider {
     ): Promise<void> {
         try {
             const editorId = document.uri.path;
-            this.editorStore.createEditor(BPMN_VIEW_TYPE, editorId, webviewPanel, document);
+            this.editorStore.createEditor(
+                BPMN_VIEW_TYPE,
+                editorId,
+                webviewPanel,
+                document,
+            );
             this.bpmnService.registerSession(editorId);
 
             this.subscribeToMessageEvent(editorId);
@@ -176,6 +181,9 @@ export class BpmnEditorController implements CustomTextEditorProvider {
         this.editorStore.subscribeToSettingChangeEvent(editorId, (event, id) => {
             if (event.affectsConfiguration("miragon.camundaModeler.alignToOrigin")) {
                 this.bpmnService.setSettings(id);
+            }
+            if (event.affectsConfiguration("miragon.bpmnModeler.configFolder")) {
+                this.bpmnService.setElementTemplates(id);
             }
         });
     }

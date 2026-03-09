@@ -1,9 +1,12 @@
-import { window, workspace } from "vscode";
+import { StatusBarAlignment, StatusBarItem, window, workspace } from "vscode";
 
 import { UserCancelledError } from "../domain/errors";
 
 /** VS Code configuration and quick-pick helpers for the BPMN modeler. */
 export class VsCodeSettings {
+    /** Lazily created status bar item for element-template loading feedback. */
+    private templateStatusItem: StatusBarItem | undefined;
+
     /**
      * Reads the alignToOrigin setting from VS Code configuration.
      * @returns `true` if align-to-origin is enabled, `false` otherwise.
@@ -14,6 +17,19 @@ export class VsCodeSettings {
                 .getConfiguration("miragon.camundaModeler")
                 .get<boolean>("alignToOrigin") ?? false
         );
+    }
+
+    /**
+     * Reads the config folder name from VS Code configuration.
+     *
+     * Defaults to `.camunda` if the setting is not configured.
+     *
+     * @returns The config folder name (e.g. `.camunda`).
+     */
+    getConfigFolder(): string {
+        return workspace
+            .getConfiguration("miragon.bpmnModeler")
+            .get<string>("configFolder", ".camunda");
     }
 
     /**
@@ -42,5 +58,54 @@ export class VsCodeSettings {
         } else {
             throw new Error(`Unknown execution platform version: "${result}"`);
         }
+    }
+
+    /**
+     * Shows a spinning status bar item indicating that element templates are
+     * being discovered in the background.
+     *
+     * The item is created lazily on first use and reused across calls.
+     */
+    showElementTemplatesLoading(): void {
+        const item = this.getOrCreateTemplateStatusItem();
+        item.text = "$(loading~spin) Loading element templates…";
+        item.show();
+    }
+
+    /**
+     * Updates the status bar item to show the number of loaded element
+     * templates and hides it automatically after 3 seconds.
+     *
+     * @param count Number of element templates that were loaded.
+     */
+    showElementTemplatesReady(count: number): void {
+        const item = this.getOrCreateTemplateStatusItem();
+        item.text = `$(check) Element templates (${count})`;
+        item.show();
+        setTimeout(() => item.hide(), 3000);
+    }
+
+    /**
+     * Hides the element-templates status bar item.
+     *
+     * Called on error paths to ensure the loading indicator is not left visible.
+     */
+    hideElementTemplatesStatus(): void {
+        this.templateStatusItem?.hide();
+    }
+
+    /**
+     * Returns the existing status bar item or creates a new one on first use.
+     *
+     * @returns The (possibly newly created) status bar item.
+     */
+    private getOrCreateTemplateStatusItem(): StatusBarItem {
+        if (!this.templateStatusItem) {
+            this.templateStatusItem = window.createStatusBarItem(
+                StatusBarAlignment.Left,
+                100,
+            );
+        }
+        return this.templateStatusItem;
     }
 }

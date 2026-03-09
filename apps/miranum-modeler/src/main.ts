@@ -37,7 +37,7 @@ export function activate(context: ExtensionContext): void {
     const vsUI = new VsCodeUI();
 
     // 3. Services
-    const artifactSvc = new ArtifactService(vsWorkspace, vsUI);
+    const artifactSvc = new ArtifactService(vsWorkspace, vsSettings);
     const bpmnService = new BpmnModelerService(
         editorStore,
         vsDocument,

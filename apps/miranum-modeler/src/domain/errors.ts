@@ -5,20 +5,6 @@ export class NoWorkspaceFolderFoundError extends Error {
     }
 }
 
-/** Thrown when no `miranum.json` configuration file can be located. */
-export class NoMiranumConfigFoundError extends Error {
-    constructor() {
-        super("No miranum.json file found.");
-    }
-}
-
-/** Thrown when a `miranum.json` exists but has no entry for the requested type. */
-export class NoMiranumWorkspaceItemError extends Error {
-    constructor(type: string) {
-        super(`No configuration for type \`${type}\` found in \`miranum.json\`.`);
-    }
-}
-
 /** Thrown when a file cannot be found at the given path. */
 export class FileNotFound extends Error {
     constructor(path: string) {
@@ -30,13 +16,6 @@ export class FileNotFound extends Error {
 export class DirectoryNotFound extends Error {
     constructor(path: string) {
         super(`Directory not found: ${path}`);
-    }
-}
-
-/** Thrown when a filesystem watcher cannot be created for a webview. */
-export class UnableToCreateWatcherError extends Error {
-    constructor(webviewId?: string, reason?: string) {
-        super(`Unable to create watcher for webview ${webviewId}. ${reason}`);
     }
 }
 

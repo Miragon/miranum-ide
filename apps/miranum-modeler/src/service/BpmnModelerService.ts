@@ -196,13 +196,11 @@ export class BpmnModelerService implements ArtifactChangeTarget {
      * @returns `true` on success, `false` on any failure.
      */
     async setElementTemplates(editorId: string): Promise<boolean> {
+        this.vsSettings.showElementTemplatesLoading();
         try {
             const documentDir = posix.dirname(this.vsDocument.getFilePath(editorId));
 
-            const [artifacts] = await this.artifactSvc.getArtifactPaths(
-                documentDir,
-                "element-template",
-            );
+            const [artifacts] = await this.artifactSvc.getArtifactPaths(documentDir);
 
             const parsed = await Promise.all(
                 artifacts.map(async (a) => {
@@ -230,16 +228,19 @@ export class BpmnModelerService implements ArtifactChangeTarget {
                     new ElementTemplatesQuery(sorted),
                 )
             ) {
+                this.vsSettings.showElementTemplatesReady(sorted.length);
                 if (artifacts.length > 0) {
                     this.vsUI.logInfo(`${artifacts.length} element templates are set.`);
                 }
                 return true;
             } else {
+                this.vsSettings.hideElementTemplatesStatus();
                 return this.handleError(
                     new Error("Setting the `elementTemplates` failed."),
                 );
             }
         } catch (error) {
+            this.vsSettings.hideElementTemplatesStatus();
             return this.handleError(error as Error);
         }
     }

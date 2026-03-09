@@ -1,3 +1,5 @@
+import { posix } from "path";
+
 import { FileType, Uri, workspace } from "vscode";
 
 import { DirectoryNotFound, FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
@@ -28,20 +30,36 @@ export class VsCodeWorkspace {
     }
 
     /**
-     * Returns the paths of all workspace folders that contain a `miranum.json` file.
+     * Walks upward from `startDir` looking for a directory containing a `.git`
+     * entry, indicating the root of a git repository.
      *
-     * @returns An array of workspace folder paths (may be empty).
+     * Stops when the filesystem root is reached or a directory cannot be read.
+     *
+     * @param startDir Absolute path to the directory to start from.
+     * @returns The path of the directory that contains `.git`, or `undefined` if
+     *   no git root is found.
      */
-    async getWorkspaceFoldersWithMiranumConfig(): Promise<string[]> {
-        if (!workspace.workspaceFolders) {
-            return [];
+    async findGitRoot(startDir: string): Promise<string | undefined> {
+        let current = startDir;
+
+        while (true) {
+            try {
+                const entries = await this.readDirectory(current);
+                if (entries.some(([name]) => name === ".git")) {
+                    return current;
+                }
+            } catch {
+                // Cannot read directory — stop walking.
+                return undefined;
+            }
+
+            const parent = posix.dirname(current);
+            // Stop at filesystem root (dirname returns the same path).
+            if (parent === current) {
+                return undefined;
+            }
+            current = parent;
         }
-
-        const uris = await workspace.findFiles("**/miranum.json");
-
-        return uris
-            .map((uri) => workspace.getWorkspaceFolder(uri)?.uri.path)
-            .filter((folder): folder is string => !!folder);
     }
 
     /**

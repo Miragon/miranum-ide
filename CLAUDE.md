@@ -48,7 +48,6 @@ apps/
   miranum-modeler-bpmn-webview/ # Webview frontend for BPMN (Vite/browser)
   miranum-modeler-dmn-webview/  # Webview frontend for DMN (Vite/browser)
 libs/
-  miranum-core/                 # Shared domain types (Artifact, MiranumConfig, etc.)
   vscode/miranum-vscode/        # Shared VS Code helpers (Logger, editor utilities)
   vscode/miranum-vscode-webview/ # Shared webview utilities and message types
 ```
@@ -73,7 +72,7 @@ src/
   service/          # Business logic — owns per-editor ModelerSession maps
     BpmnModelerService.ts  # sync + display use cases; implements ArtifactChangeTarget
     DmnModelerService.ts
-    ArtifactService.ts     # miranum.json config + file watchers
+    ArtifactService.ts     # Convention-based element-template discovery + file watchers
     bpmnUtils.ts           # Shared BPMN helpers
   controller/       # VS Code event → service call
     BpmnEditorController.ts
@@ -96,7 +95,6 @@ Webview apps communicate via `postMessage`. Message types: `libs/vscode/miranum-
 
 ### Path Aliases (tsconfig.base.json)
 
-- `@miranum-ide/miranum-core` → `libs/miranum-core/src/index.ts`
 - `@miranum-ide/miranum-vscode` → `libs/vscode/miranum-vscode/src/index.ts`
 - `@miranum-ide/miranum-vscode-webview` → `libs/vscode/miranum-vscode-webview/src/index.ts`
 
@@ -109,6 +107,6 @@ Resolved by `TsconfigPathsPlugin` (webpack) and `vite-tsconfig-paths` (Vite).
 - **Tests**: Jest + `ts-jest` — `apps/miranum-modeler/jest.config.ts`
 - Output: `dist/apps/miranum-modeler/`
 
-### `miranum.json` Configuration
+### Element Template Discovery
 
-Projects can contain a `miranum.json` that declares workspace paths for artifacts (forms, element templates). `ArtifactService` reads this config and sets up file watchers. Default paths are used if absent.
+`ArtifactService` uses a convention-based approach: element templates are searched under `<configFolder>/element-templates/` at each directory level from the BPMN file up to the workspace root. The config folder name (default: `.camunda`) is read from the `miragon.bpmnModeler.configFolder` VS Code setting. No project-level config file is required.
