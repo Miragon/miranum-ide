@@ -4,11 +4,9 @@ import BpmnModeler8 from "camunda-bpmn-js/lib/camunda-cloud/Modeler";
 import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import ElementTemplateChooserModule from "@bpmn-io/element-template-chooser";
+import TransactionBoundariesModule from "camunda-transaction-boundaries";
 import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
-import {
-    BpmnModelerSetting,
-    NoModelerError,
-} from "@miranum-ide/miranum-vscode-webview";
+import { BpmnModelerSetting, NoModelerError } from "@miranum-ide/miranum-vscode-webview";
 import { createReviver } from "bpmn-js-native-copy-paste/lib/PasteUtil.js";
 import { ViewportData } from "./vscode";
 
@@ -51,7 +49,11 @@ export class BpmnModeler {
      * @throws {UnsupportedEngineError} If the engine string is not recognised.
      */
     create(engine: "c7" | "c8"): void {
-        const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+        const commonModules = [
+            TokenSimulationModule,
+            ElementTemplateChooserModule,
+            TransactionBoundariesModule,
+        ];
 
         switch (engine) {
             case "c7": {
@@ -120,11 +122,21 @@ export class BpmnModeler {
      */
     async loadDiagram(bpmn: string): Promise<ImportXMLResult> {
         try {
-            return await this.getModeler().importXML(bpmn);
+            return await this.getModeler()
+                .importXML(bpmn)
+                .then((result: ImportXMLResult) => {
+                    const transactionBoundaries: any = this.getModeler().get(
+                        "transactionBoundaries",
+                    );
+                    transactionBoundaries.show();
+                    return result;
+                });
         } catch (error: unknown) {
             if ((error as ImportXMLError).warnings) {
                 const importError = error as ImportXMLError;
-                throw new Error(`${importError.message} ${importError.warnings}`, { cause: error });
+                throw new Error(`${importError.message} ${importError.warnings}`, {
+                    cause: error,
+                });
             }
             throw error;
         }
