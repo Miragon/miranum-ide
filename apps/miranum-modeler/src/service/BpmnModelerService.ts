@@ -8,7 +8,7 @@ import {
 
 import { ModelerSession } from "../domain/session";
 import { SettingBuilder } from "../domain/model";
-import { ExecutionPlatformNotDetectedError, UserCancelledError, } from "../domain/errors";
+import { ExecutionPlatformNotDetectedError, UserCancelledError } from "../domain/errors";
 import { EditorStore } from "../infrastructure/EditorStore";
 import { VsCodeDocument } from "../infrastructure/VsCodeDocument";
 import { VsCodeSettings } from "../infrastructure/VsCodeSettings";

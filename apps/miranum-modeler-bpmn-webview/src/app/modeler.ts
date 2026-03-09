@@ -35,7 +35,9 @@ const MODELER_OPTIONS = {
  */
 export class BpmnModeler {
     private modeler: Modeler | undefined = undefined;
+
     private settings: BpmnModelerSetting = { ...DEFAULT_SETTINGS };
+
     /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
     private isDark: boolean = false;
 
@@ -120,7 +122,7 @@ export class BpmnModeler {
         } catch (error: unknown) {
             if ((error as ImportXMLError).warnings) {
                 const importError = error as ImportXMLError;
-                throw new Error(`${importError.message} ${importError.warnings}`);
+                throw new Error(`${importError.message} ${importError.warnings}`, { cause: error });
             }
             throw error;
         }
