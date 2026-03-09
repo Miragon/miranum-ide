@@ -7,26 +7,24 @@ import {
     asyncDebounce,
     BpmnFileQuery,
     BpmnModelerSettingQuery,
+    ClipboardQuery,
     Command,
     createResolver,
     ElementTemplatesQuery,
     formatErrors,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
+    GetClipboardCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
     LogErrorCommand,
     LogInfoCommand,
     NoModelerError,
     Query,
+    SetClipboardCommand,
     SyncDocumentCommand,
 } from "@miranum-ide/miranum-vscode-webview";
-import {
-    BpmnModeler,
-    getVsCodeApi,
-    initResizer,
-    UnsupportedEngineError,
-} from "./app";
+import { BpmnModeler, getVsCodeApi, initResizer, UnsupportedEngineError } from "./app";
 
 const vscode = getVsCodeApi();
 
@@ -48,6 +46,7 @@ const debouncedUpdateXML = asyncDebounce(openXml, 100);
 const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
 let modelerIsInitialized = false;
+let clipboardResolver = createResolver<ClipboardQuery>();
 
 /**
  * Entry point executed once the webview DOM is fully loaded.
@@ -71,6 +70,20 @@ window.onload = async function () {
     const bpmnFileQuery = await bpmnFileResolver.wait();
     await initializeModeler(bpmnFileQuery?.content, bpmnFileQuery?.engine);
     modelerIsInitialized = true;
+
+    // Only override clipboard in VS Code where navigator.clipboard is sandboxed.
+    // In development (plain browser) NativeCopyPaste handles clipboard natively.
+    if (process.env.NODE_ENV !== "development") {
+        bpmnModeler.installClipboardInterceptor(
+            async () => {
+                clipboardResolver = createResolver<ClipboardQuery>();
+                vscode.postMessage(new GetClipboardCommand());
+                const q = await clipboardResolver.wait();
+                return q?.text ?? "";
+            },
+            (text) => vscode.postMessage(new SetClipboardCommand(text)),
+        );
+    }
 
     console.debug("[DEBUG] Modeler is initialized...");
 
@@ -100,6 +113,26 @@ async function initializeModeler(
         // The grid layer is created during diagram.init (triggered by openXml),
         // so this is the earliest point at which the opacity can be applied.
         bpmnModeler.applyGridStyle();
+
+        // Restore the saved viewport if one exists (e.g. after a tab switch).
+        // Must run after openXml because the canvas does not exist before importXML.
+        try {
+            const saved = vscode.getState().viewport;
+            if (saved) {
+                bpmnModeler.setViewport(saved);
+            }
+        } catch {
+            // No state yet — first open, leave viewport at diagram-js default.
+        }
+
+        // Persist viewport changes so they survive the next tab switch.
+        bpmnModeler.onViewportChanged((viewport) => {
+            try {
+                vscode.updateState({ viewport });
+            } catch {
+                vscode.setState({ viewport });
+            }
+        });
     } catch (error: any) {
         if (error instanceof NoModelerError) {
             vscode.postMessage(new LogErrorCommand(error.message));
@@ -185,6 +218,10 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>): Promise
             } catch (error: any) {
                 vscode.postMessage(new LogErrorCommand(errorPrefix + error.message));
             }
+            break;
+        }
+        case queryOrCommand.type === "ClipboardQuery": {
+            clipboardResolver.done(message.data as ClipboardQuery);
             break;
         }
         case queryOrCommand.type === "GetDiagramAsSVGCommand": {

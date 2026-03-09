@@ -44,6 +44,15 @@ export class BpmnModelerSettingQuery extends Query {
     }
 }
 
+export class ClipboardQuery extends Query {
+    public readonly text: string;
+
+    constructor(text: string) {
+        super("ClipboardQuery");
+        this.text = text;
+    }
+}
+
 // <================================== Queries ===================================
 //
 // =================================== Commands ==================================>
@@ -76,6 +85,21 @@ export class GetElementTemplatesCommand extends Command {
 export class GetBpmnModelerSettingCommand extends Command {
     constructor() {
         super("GetBpmnModelerSettingCommand");
+    }
+}
+
+export class GetClipboardCommand extends Command {
+    constructor() {
+        super("GetClipboardCommand");
+    }
+}
+
+export class SetClipboardCommand extends Command {
+    public readonly text: string;
+
+    constructor(text: string) {
+        super("SetClipboardCommand");
+        this.text = text;
     }
 }
 
