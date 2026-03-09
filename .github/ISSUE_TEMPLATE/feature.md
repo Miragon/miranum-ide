@@ -1,6 +1,6 @@
 ---
 name: Feature
-about: Create a Feature for Miranum IDE
+about: Create a Feature for bpmn-vscode-modeler
 title: '[Feature] - <your-name-here>'
 labels: 'feature'
 

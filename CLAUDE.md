@@ -5,7 +5,8 @@ this repository.
 
 ## Project Overview
 
-Miranum IDE is a VS Code extension for BPMN/DMN process modeling, built with **Yarn 4
+The BPMN modeler is a VS Code extension for BPMN/DMN process modeling, built with **Yarn
+4
 workspaces**. It provides:
 
 - **Camunda Modeler** (`bpmn-modeler`): BPMN 2.0 and DMN diagram editor for Camunda 7 and

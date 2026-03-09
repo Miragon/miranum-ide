@@ -12,62 +12,88 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/Miragon/miranum-ide/main/images/miragon-logo.png" alt="Logo" height="180">
+        <img src="https://raw.githubusercontent.com/Miragon/bpmn-vscode-modeler/main/images/miragon-logo.png" alt="Logo" height="180">
     </a>
-    <h3>Miragon VsCode Plugins</h3>
+    <h3>BPMN VS Code Modeler</h3>
     <p>
-        <a href="https://github.com/Miragon/miranum-ide/issues">Report Bug</a>
+        <a href="https://github.com/Miragon/bpmn-vscode-modeler/issues">Report Bug</a>
         ·
-        <a href="https://github.com/Miragon/miranum-ide/pulls">Request Feature</a>
+        <a href="https://github.com/Miragon/bpmn-vscode-modeler/pulls">Request Feature</a>
     </p>
 </div>
 
 ## About The Project
 
-This is a collection of different vs code plugins.
+The BPMN VS Code Modeler is a VS Code extension for BPMN and DMN process modeling, built
+on top of [bpmn-js](https://bpmn.io/toolkit/bpmn-js/). It targets teams working
+with **Camunda 7 and Camunda 8** and integrates directly into your existing VS Code
+workflow.
 
-## Use-Cases
+## Features
 
-- **Process Modeling**: Creating and editing BPMN and DMN diagrams specifically for *
-  *Camunda**.
-- **Form Modeling**: Create and edit forms based on [JSON Forms](https://jsonforms.io/).
+- **BPMN Modeling**: Create and edit BPMN 2.0 diagrams with full Camunda 7 and Camunda 8
+  support.
+- **DMN Modeling**: Create and edit DMN decision tables.
+- **Element Templates**: Convention-based element template discovery — place templates
+  under `<configFolder>/element-templates/` anywhere between your BPMN file and the
+  workspace root. No extra project config file needed.
 
-## Engage with the Miragon team
+## Getting Started (Users)
 
-If you have any questions or need support, feel free to reach out to us via
-email ([info@miragon.io](mailto:info@miragon.io)).
-We are here to help you, especially if you are considering introducing Miranum-IDE in
-your organization.
+Install the extension from the VS Code Marketplace and open any `.bpmn` or `.dmn` file.
+The modeler opens automatically as a custom editor.
 
-For inquiries and professional support, please contact us
-at: [info@miragon.io](mailto:info@miragon.io)
+### Configuration
+
+| Setting                            | Default    | Description                                     |
+|------------------------------------|------------|-------------------------------------------------|
+| `miragon.bpmnModeler.configFolder` | `.camunda` | Folder name used for element template discovery |
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn,
-inspire, and create. Any
-contributions you make are **greatly appreciated**.
+inspire, and create. Any contributions are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please open an issue with the tag
-`enhancement`, fork the repo and
-create a pull request.
-You can also open an issue with the tag `enhancement`.
+For a full contributor guide including setup, project structure, development workflow,
+code style, branching model, and CI/CD details, see
+**[docs/README.md](docs/README.md)**.
+
+### Quick Start
+
+1. **Prerequisites**: Node.js v20+, `corepack enable`, VS Code
+2. **Clone and install**:
+   ```bash
+   git clone https://github.com/Miragon/bpmn-vscode-modeler.git
+   cd bpmn-vscode-modeler
+   corepack yarn install
+   ```
+3. **Start watch mode**: `yarn dev`
+4. **Launch the extension**: Open the **Run and Debug** panel in VS Code, select
+   **"Run modeler-plugin"**, and press **F5**.
+
+### Opening a Pull Request
+
+1. Open an issue with the tag `enhancement` or `bug`
+2. Fork the repository
+3. Create a feature branch (`git checkout -b feat/my-feature`)
+4. Use semantic commit messages scoped to the affected workspace:
+   ```
+   feat(bpmn): add token simulation toolbar
+   fix(dmn): correct decision table rendering
+   ```
+5. Push and open a Pull Request
+
 Please use semantic commit messages as described
-in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).  
-Remember to give the project a star!
-Thanks again!
+in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
 
-1. Open an issue with the tag "enhancement"
-2. Fork the Project
-3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-More about this in
-the [Code of Conduct](https://miranum.com/docs/components/contributing/) file.
+## Support
+
+If you have questions or need support, reach out via
+email ([info@miragon.io](mailto:info@miragon.io)).
 
 ## License
 
@@ -78,22 +104,22 @@ Distributed under the [Apache License Version 2.0](LICENSE).
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/Miragon/miranum-ide.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/Miragon/bpmn-vscode-modeler.svg?style=for-the-badge
 
-[contributors-url]: https://github.com/Miragon/miranum-ide/graphs/contributors
+[contributors-url]: https://github.com/Miragon/bpmn-vscode-modeler/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/Miragon/miranum-ide.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/Miragon/bpmn-vscode-modeler.svg?style=for-the-badge
 
-[forks-url]: https://github.com/Miragon/miranum-ide/network/members
+[forks-url]: https://github.com/Miragon/bpmn-vscode-modeler/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/Miragon/miranum-ide.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/Miragon/bpmn-vscode-modeler.svg?style=for-the-badge
 
-[stars-url]: https://github.com/Miragon/miranum-ide/stargazers
+[stars-url]: https://github.com/Miragon/bpmn-vscode-modeler/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/Miragon/miranum-ide.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/Miragon/bpmn-vscode-modeler.svg?style=for-the-badge
 
-[issues-url]: https://github.com/Miragon/miranum-ide/issues
+[issues-url]: https://github.com/Miragon/bpmn-vscode-modeler/issues
 
-[license-shield]: https://img.shields.io/github/license/Miragon/miranum-ide.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/Miragon/bpmn-vscode-modeler.svg?style=for-the-badge
 
-[license-url]: https://github.com/Miragon/miranum-ide/blob/main/LICENSE
+[license-url]: https://github.com/Miragon/bpmn-vscode-modeler/blob/main/LICENSE
