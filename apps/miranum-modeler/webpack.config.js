@@ -72,6 +72,11 @@ module.exports = (env, argv) => {
                         to: "assets",
                     },
                     {
+                        from: path.resolve(__dirname, "../../images/miragon-logo.png"),
+                        to: "assets",
+                        noErrorOnMissing: true,
+                    },
+                    {
                         from: path.resolve(__dirname, "../../LICENSE"),
                         to: ".",
                         noErrorOnMissing: true,
