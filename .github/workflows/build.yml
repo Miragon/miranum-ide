@@ -15,7 +15,7 @@ jobs:
       - name: Enable corepack
         run: corepack enable
 
-      - name: Setup NodeJS 18
+      - name: Setup NodeJS 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'

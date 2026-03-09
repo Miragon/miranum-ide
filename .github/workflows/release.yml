@@ -3,85 +3,114 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release-tag:
-        description: 'Release Tag'
+      release-type:
+        description: 'Release type'
         required: true
-        default: 'release/XXX'
-      miranum-modeler:
-        description: 'Release miranum-modeler?'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry-run:
+        description: 'Dry run (no commit, tag, release, or publish)'
+        required: false
         type: boolean
-        required: true
-        default: true
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bpmn-vscode-modeler-release
+  cancel-in-progress: false
 
 jobs:
-  build:
+  release:
+    name: Release
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
     steps:
-      - name: Checkout sources
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.RELEASE_PAT }}
 
-      - name: PREP / Setup yarn
-        run: corepack enable
+      - name: Corepack enable
+        run: corepack enable && corepack prepare yarn@stable --activate
 
-      - name: Setup NodeJS 20
+      - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          cache: yarn
 
-      - name: PREP / Install dependencies
-        run: yarn
+      - name: Install dependencies
+        run: yarn install --immutable
 
-      - name: PREP / Lint
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}"
+
+      - name: Bump version
+        id: version
+        run: |
+          PKG_PATH="./apps/miranum-modeler/package.json"
+          PKG_NAME=$(node -e "console.log(require('$PKG_PATH').name)")
+          yarn workspace "$PKG_NAME" version "${{ inputs.release-type }}"
+          yarn version apply --all
+          NEW_VERSION=$(node -e "console.log(require('$PKG_PATH').version)")
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not exist
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists; aborting." && exit 1
+          fi
+
+      - name: Lint
         run: yarn lint
 
-      - name: PREP / Test
+      - name: Test
         run: yarn test
 
-      - name: BUILD / Build
+      - name: Build
         run: yarn build
 
-      # miranum-modeler
-      - name: GIT / Upload miranum-modeler
-        uses: actions/upload-artifact@v4
+      - name: Install vsce
+        run: npm install -g @vscode/vsce@3.2.2
+
+      - name: Package vsix
+        working-directory: dist/apps/modeler-plugin
+        run: vsce package --out bpmn-modeler-plugin.vsix --yarn --no-dependencies
+
+      - name: Commit and tag
+        if: success() && inputs.dry-run == false
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          git add apps/miranum-modeler/package.json .yarn/releases .yarn/versions || true
+          git commit -m "chore(release): bump version to ${NEW_VERSION}"
+          git push origin HEAD
+          git tag -a "v${NEW_VERSION}" -m "release v${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
+
+      - name: Create GitHub Release
+        if: success() && inputs.dry-run == false
+        uses: softprops/action-gh-release@v2
         with:
-          name: miranum-modeler
-          path: dist/apps/miranum-modeler
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: dist/apps/modeler-plugin/bpmn-modeler-plugin.vsix
 
-  # miranum-modeler
-  publish-miranum-modeler:
-    if: github.event.inputs.miranum-modeler == 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: GIT / Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: miranum-modeler
-
-      - name: PREP / Setup yarn
-        run: corepack enable
-
-      - name: PREP / Setup NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: PREP / Install vsce
-        run: npm install -g @vscode/vsce@latest
-
-      - name: RELEASE / Publish extension
+      - name: Publish to VS Code Marketplace
+        if: success() && inputs.dry-run == false
+        working-directory: dist/apps/modeler-plugin
         run: vsce publish --yarn --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PUBLISH }}
-
-  create-release:
-    if: github.event.inputs.release-tag
-    needs:
-      - publish-miranum-modeler
-    uses: ./.github/workflows/workflow-github-release.yml
-    with:
-      release-version: ${{ github.event.inputs.release-tag }}
-    secrets: inherit
