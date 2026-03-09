@@ -49,11 +49,7 @@ export class BpmnModeler {
      * @throws {UnsupportedEngineError} If the engine string is not recognised.
      */
     create(engine: "c7" | "c8"): void {
-        const commonModules = [
-            TokenSimulationModule,
-            ElementTemplateChooserModule,
-            TransactionBoundariesModule,
-        ];
+        const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
 
         switch (engine) {
             case "c7": {
@@ -62,6 +58,7 @@ export class BpmnModeler {
                     additionalModules: [
                         ...commonModules,
                         CreateAppendElementTemplatesModule,
+                        TransactionBoundariesModule,
                     ],
                 });
                 break;
