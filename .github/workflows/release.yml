@@ -89,6 +89,14 @@ jobs:
         working-directory: dist/apps/modeler-plugin
         run: vsce package --out bpmn-modeler-plugin.vsix --yarn --no-dependencies
 
+      - name: Upload vsix artifact (dry-run)
+        if: inputs.dry-run == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpmn-modeler-plugin-v${{ steps.version.outputs.version }}
+          path: dist/apps/modeler-plugin/bpmn-modeler-plugin.vsix
+          retention-days: 7
+
       - name: Commit and tag
         if: success() && inputs.dry-run == false
         run: |
