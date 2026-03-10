@@ -155,3 +155,89 @@ export function formatErrors(errors: string[]): string {
 }
 
 // <================================== Functions ===================================
+
+// =================================== Deployment ==================================>
+
+/** Shared payload shape used in deploy commands and queries. */
+export interface DeploymentConfigPayload {
+    readonly deploymentName: string;
+    readonly tenantId: string;
+    readonly endpoint: string;
+    readonly engine: "c7" | "c8";
+    readonly mainFilePath: string;
+    readonly additionalFilePaths: string[];
+}
+
+/** Pre-populated defaults sent from the extension host to the deployment form. */
+export interface DeploymentFormDefaults {
+    readonly deploymentName: string;
+    readonly tenantId: string;
+    readonly endpoint: string;
+    readonly engine: "c7" | "c8";
+}
+
+// --- Webview → Extension commands ---
+
+/** Sent by the deployment webview on load to request pre-populated form defaults. */
+export class RequestFormDefaultsCommand extends Command {
+    constructor() {
+        super("RequestFormDefaultsCommand");
+    }
+}
+
+/** Sent by the deployment webview when the user clicks Deploy. */
+export class DeployCommand extends Command {
+    public readonly config: DeploymentConfigPayload;
+
+    constructor(config: DeploymentConfigPayload) {
+        super("DeployCommand");
+        this.config = config;
+    }
+}
+
+/** Sent by the deployment webview when the user clicks the + button for additional files. */
+export class RequestAdditionalFilesCommand extends Command {
+    constructor() {
+        super("RequestAdditionalFilesCommand");
+    }
+}
+
+// --- Extension → Webview queries ---
+
+/** Sent by the extension host to pre-populate the deployment form. */
+export class FormDefaultsQuery extends Query {
+    public readonly defaults: DeploymentFormDefaults;
+
+    constructor(defaults: DeploymentFormDefaults) {
+        super("FormDefaultsQuery");
+        this.defaults = defaults;
+    }
+}
+
+/** Sent by the extension host after a deployment attempt completes. */
+export class DeploymentResultQuery extends Query {
+    public readonly success: boolean;
+
+    public readonly message: string;
+
+    public readonly deploymentId: string | undefined;
+
+    constructor(success: boolean, message: string, deploymentId?: string) {
+        super("DeploymentResultQuery");
+        this.success = success;
+        this.message = message;
+        this.deploymentId = deploymentId;
+    }
+}
+
+/** Sent by the extension host with the paths selected via QuickPick. */
+export class AdditionalFilesQuery extends Query {
+    public readonly filePaths: string[];
+
+    constructor(filePaths: string[]) {
+        super("AdditionalFilesQuery");
+        this.filePaths = filePaths;
+    }
+}
+
+// <================================== Deployment ===================================
