@@ -20,6 +20,18 @@ export class VsCodeSettings {
     }
 
     /**
+     * Reads the showTransactionBoundaries setting from VS Code configuration.
+     * @returns `true` if transaction boundaries should be shown (default), `false` otherwise.
+     */
+    getShowTransactionBoundaries(): boolean {
+        return (
+            workspace
+                .getConfiguration("miragon.bpmnModeler")
+                .get<boolean>("showTransactionBoundaries") ?? true
+        );
+    }
+
+    /**
      * Reads the config folder name from VS Code configuration.
      *
      * Defaults to `.camunda` if the setting is not configured.

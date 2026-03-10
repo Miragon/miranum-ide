@@ -94,6 +94,7 @@ class MockedVsCodeApi extends VsCodeMock<StateType, MessageType> {
                 dispatchEvent(
                     new BpmnModelerSettingQuery({
                         alignToOrigin: true,
+                        showTransactionBoundaries: true,
                     }),
                 );
                 break;
