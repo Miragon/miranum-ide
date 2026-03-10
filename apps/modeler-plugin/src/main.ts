@@ -13,6 +13,10 @@ import { DmnModelerService } from "./service/DmnModelerService";
 import { CommandController } from "./controller/CommandController";
 import { BpmnEditorController } from "./controller/BpmnEditorController";
 import { DmnEditorController } from "./controller/DmnEditorController";
+import { VsCodeDeploymentState } from "./infrastructure/VsCodeDeploymentState";
+import { CamundaRestClient } from "./infrastructure/CamundaRestClient";
+import { DeploymentService } from "./service/DeploymentService";
+import { DeploymentController } from "./controller/DeploymentController";
 
 /**
  * VS Code extension entry point.
@@ -21,9 +25,10 @@ import { DmnEditorController } from "./controller/DmnEditorController";
  * constructor injection — no DI framework required.
  *
  * Instantiation order:
- * 1. Infrastructure (EditorStore, VsCodeDocument, VsCodeWorkspace, VsCodeSettings, VsCodeUI)
- * 2. Services (ArtifactService, BpmnModelerService, DmnModelerService)
- * 3. Controllers (CommandController, BpmnEditorController, DmnEditorController)
+ * 1. Infrastructure (EditorStore, VsCodeDocument, VsCodeWorkspace, VsCodeSettings, VsCodeUI,
+ *    VsCodeDeploymentState, CamundaRestClient)
+ * 2. Services (ArtifactService, BpmnModelerService, DmnModelerService, DeploymentService)
+ * 3. Controllers (CommandController, BpmnEditorController, DmnEditorController, DeploymentController)
  */
 export function activate(context: ExtensionContext): void {
     // 0. Notify the user of a new release (once per version).
@@ -38,6 +43,8 @@ export function activate(context: ExtensionContext): void {
     const vsWorkspace = new VsCodeWorkspace();
     const vsSettings = new VsCodeSettings();
     const vsUI = new VsCodeUI();
+    const deploymentState = new VsCodeDeploymentState();
+    const restClient = new CamundaRestClient();
 
     // 3. Services
     const artifactSvc = new ArtifactService(vsWorkspace, vsSettings);
@@ -49,6 +56,13 @@ export function activate(context: ExtensionContext): void {
         artifactSvc,
     );
     const dmnService = new DmnModelerService(editorStore, vsDocument, vsUI);
+    const deploymentSvc = new DeploymentService(
+        vsDocument,
+        vsWorkspace,
+        deploymentState,
+        restClient,
+        vsUI,
+    );
 
     // 4. Controllers
     const commandController = new CommandController(editorStore, vsDocument, vsUI);
@@ -57,6 +71,7 @@ export function activate(context: ExtensionContext): void {
     );
     new DmnEditorController(editorStore, dmnService, vsUI).register(context);
     commandController.register(context);
+    new DeploymentController(editorStore, deploymentSvc, vsUI).register(context);
 }
 
 const RELEASES_BASE = "https://github.com/Miragon/bpmn-vscode-modeler/releases/tag";

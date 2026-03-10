@@ -32,3 +32,28 @@ export class UserCancelledError extends Error {
         super("The operation was cancelled by the user.");
     }
 }
+
+/** Thrown when {@link DeploymentConfigBuilder.build} finds empty required fields. */
+export class InvalidDeploymentConfigError extends Error {
+    /**
+     * @param missingFields Names of the required fields that were empty.
+     */
+    constructor(missingFields: string[]) {
+        super(
+            `Invalid deployment configuration. Missing required fields: ${missingFields.join(", ")}.`,
+        );
+        this.name = "InvalidDeploymentConfigError";
+    }
+}
+
+/** Thrown by {@link CamundaRestClient} when the REST API returns a non-2xx status. */
+export class DeploymentFailedError extends Error {
+    /**
+     * @param status HTTP status code returned by the server.
+     * @param body Response body text for diagnostic purposes.
+     */
+    constructor(status: number, body: string) {
+        super(`Deployment failed with HTTP ${status}: ${body}`);
+        this.name = "DeploymentFailedError";
+    }
+}
