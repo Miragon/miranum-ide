@@ -111,7 +111,12 @@ module.exports = (env, argv) => {
         watchOptions: {
             // Prevent webpack from watching its own output, which would otherwise
             // cause an infinite rebuild loop when CopyWebpackPlugin writes files.
-            ignored: path.resolve(__dirname, "../../dist/apps/modeler-plugin"),
+            // The glob suffix `/**` is required for anymatch to treat this as a
+            // pattern covering all files inside the directory, not just the path itself.
+            ignored: [
+                "**/node_modules/**",
+                path.resolve(__dirname, "../../dist/apps/modeler-plugin/**"),
+            ],
         },
     };
 };
