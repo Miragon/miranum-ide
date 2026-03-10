@@ -1,4 +1,4 @@
-import { ExtensionContext } from "vscode";
+import { env, ExtensionContext, Uri, window } from "vscode";
 
 import { setContext } from "./infrastructure/extensionContext";
 
@@ -26,6 +26,9 @@ import { DmnEditorController } from "./controller/DmnEditorController";
  * 3. Controllers (CommandController, BpmnEditorController, DmnEditorController)
  */
 export function activate(context: ExtensionContext): void {
+    // 0. Notify the user of a new release (once per version).
+    notifyIfNewRelease(context);
+
     // 1. Make the extension context globally available for helpers that need it.
     setContext(context);
 
@@ -49,7 +52,43 @@ export function activate(context: ExtensionContext): void {
 
     // 4. Controllers
     const commandController = new CommandController(editorStore, vsDocument, vsUI);
-    new BpmnEditorController(editorStore, bpmnService, artifactSvc, vsUI).register(context);
+    new BpmnEditorController(editorStore, bpmnService, artifactSvc, vsUI).register(
+        context,
+    );
     new DmnEditorController(editorStore, dmnService, vsUI).register(context);
     commandController.register(context);
+}
+
+const RELEASES_BASE = "https://github.com/Miragon/bpmn-vscode-modeler/releases/tag";
+const LAST_NOTIFIED_KEY = "lastNotifiedVersion";
+
+/**
+ * Shows a release-notes notification the first time the extension runs after
+ * a version bump. Persists the current version in globalState so the message
+ * is displayed exactly once per release.
+ *
+ * @param context - The VS Code extension context used to read the current
+ *   version and persist the last notified version across restarts.
+ */
+function notifyIfNewRelease(context: ExtensionContext): void {
+    const current: string = context.extension.packageJSON.version;
+    const last = context.globalState.get<string>(LAST_NOTIFIED_KEY);
+
+    if (current === last) {
+        return;
+    }
+
+    // Persist before showing so a crash/dismiss never re-triggers the prompt.
+    context.globalState.update(LAST_NOTIFIED_KEY, current);
+
+    window
+        .showInformationMessage(
+            `Camunda Modeler updated to v${current}. See what's new!`,
+            "View Release Notes",
+        )
+        .then((selection) => {
+            if (selection === "View Release Notes") {
+                env.openExternal(Uri.parse(`${RELEASES_BASE}/v${current}`));
+            }
+        });
 }
