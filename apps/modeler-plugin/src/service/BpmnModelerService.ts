@@ -257,6 +257,7 @@ export class BpmnModelerService implements ArtifactChangeTarget {
         try {
             const settings = new SettingBuilder()
                 .alignToOrigin(this.vsSettings.getAlignToOrigin())
+                .showTransactionBoundaries(this.vsSettings.getShowTransactionBoundaries())
                 .buildBpmnModeler();
 
             if (
@@ -264,6 +265,7 @@ export class BpmnModelerService implements ArtifactChangeTarget {
                     editorId,
                     new BpmnModelerSettingQuery({
                         alignToOrigin: settings.alignToOrigin,
+                        showTransactionBoundaries: settings.showTransactionBoundaries,
                     }),
                 )
             ) {

@@ -58,7 +58,7 @@
             {
                 "id": "bpmn-modeler.bpmn",
                 "viewType": "bpmn-modeler.bpmn",
-                "displayName": "Miragon: Camunda Modeler (BPMN)",
+                "displayName": "BPMN Modeler",
                 "selector": [
                     {
                         "filenamePattern": "*.bpmn"
@@ -69,7 +69,7 @@
             {
                 "id": "bpmn-modeler.dmn",
                 "viewType": "bpmn-modeler.dmn",
-                "displayName": "Miragon: Camunda Modeler (DMN)",
+                "displayName": "DMN Modeler",
                 "selector": [
                     {
                         "filenamePattern": "*.dmn"
@@ -81,21 +81,21 @@
         "commands": [
             {
                 "command": "bpmn-modeler.toggleTextEditor",
-                "title": "Miragon Modeler: Toggle Standard Text Editor",
+                "title": "BPMN Modeler: Toggle Standard Text Editor",
                 "icon": "$(notebook-mimetype)"
             },
             {
                 "command": "bpmn-modeler.openLoggingConsole",
-                "title": "Miragon Modeler: Display Logging Information",
+                "title": "BPMN Modeler: Display Logging Information",
                 "icon": "$(callstack-view-session)"
             },
             {
                 "command": "bpmn-modeler.copyDiagramAsSvg",
-                "title": "Miragon Modeler: Copy Diagram as SVG"
+                "title": "BPMN Modeler: Copy Diagram as SVG"
             },
             {
                 "command": "bpmn-modeler.saveDiagramAsSvgCommand",
-                "title": "Miragon Modeler: Save Diagram as SVG"
+                "title": "BPMN Modeler: Save Diagram as SVG"
             }
         ],
         "keybindings": [
@@ -133,7 +133,7 @@
             ]
         },
         "configuration": {
-            "title": "MiragonCamundaModeler",
+            "title": "BPMN Modeler",
             "properties": {
                 "miragon.camundaModeler.alignToOrigin": {
                     "type": "boolean",
@@ -143,7 +143,12 @@
                 "miragon.bpmnModeler.configFolder": {
                     "type": "string",
                     "default": ".camunda",
-                    "markdownDescription": "Name of the config folder searched at each directory level from the BPMN file up to the workspace root. **Element templates must be placed under `<config>\\/element-templates\\/`** (e.g. `.camunda\\/element-templates\\/my-template.json`)."
+                    "markdownDescription": "Name of the config folder searched at each directory level from the BPMN file up to the workspace root. **Element templates must be placed under `<config>/element-templates/`** (e.g. `.camunda/element-templates/my-template.json`)."
+                },
+                "miragon.bpmnModeler.showTransactionBoundaries": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Show transaction boundaries in the BPMN diagram (Camunda 7 only). Click [here](https://docs.camunda.io/docs/8.7/components/best-practices/development/understanding-transaction-handling-c7/) to learn more."
                 }
             }
         }

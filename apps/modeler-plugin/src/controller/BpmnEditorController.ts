@@ -182,6 +182,9 @@ export class BpmnEditorController implements CustomTextEditorProvider {
             if (event.affectsConfiguration("miragon.camundaModeler.alignToOrigin")) {
                 this.bpmnService.setSettings(id);
             }
+            if (event.affectsConfiguration("miragon.bpmnModeler.showTransactionBoundaries")) {
+                this.bpmnService.setSettings(id);
+            }
             if (event.affectsConfiguration("miragon.bpmnModeler.configFolder")) {
                 this.bpmnService.setElementTemplates(id);
             }

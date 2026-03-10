@@ -12,6 +12,7 @@ import { ViewportData } from "./vscode";
 
 const DEFAULT_SETTINGS: BpmnModelerSetting = {
     alignToOrigin: false,
+    showTransactionBoundaries: true,
 };
 
 const MODELER_OPTIONS = {
@@ -41,6 +42,9 @@ export class BpmnModeler {
     /** Tracks the current VS Code theme kind; used to re-apply grid opacity after diagram init. */
     private isDark: boolean = false;
 
+    /** Tracks the active engine so transaction-boundary calls are gated to C7 only. */
+    private engine: "c7" | "c8" | undefined = undefined;
+
     /**
      * Creates and mounts a new bpmn-js modeler for the given execution engine.
      *
@@ -49,11 +53,9 @@ export class BpmnModeler {
      * @throws {UnsupportedEngineError} If the engine string is not recognised.
      */
     create(engine: "c7" | "c8"): void {
-        const commonModules = [
-            TokenSimulationModule,
-            ElementTemplateChooserModule,
-            TransactionBoundariesModule,
-        ];
+        const commonModules = [TokenSimulationModule, ElementTemplateChooserModule];
+
+        this.engine = engine;
 
         switch (engine) {
             case "c7": {
@@ -62,6 +64,7 @@ export class BpmnModeler {
                     additionalModules: [
                         ...commonModules,
                         CreateAppendElementTemplatesModule,
+                        TransactionBoundariesModule,
                     ],
                 });
                 break;
@@ -125,10 +128,13 @@ export class BpmnModeler {
             return await this.getModeler()
                 .importXML(bpmn)
                 .then((result: ImportXMLResult) => {
-                    const transactionBoundaries: any = this.getModeler().get(
-                        "transactionBoundaries",
-                    );
-                    transactionBoundaries.show();
+                    // Transaction boundaries are only available for the C7 modeler.
+                    if (
+                        this.engine === "c7" &&
+                        this.settings.showTransactionBoundaries
+                    ) {
+                        this.getModeler().get<any>("transactionBoundaries").show();
+                    }
                     return result;
                 });
         } catch (error: unknown) {
@@ -196,6 +202,13 @@ export class BpmnModeler {
         // Ensure the modeler exists before applying any settings.
         this.getModeler();
         this.settings = { ...this.settings, ...settings };
+
+        // Apply transaction boundary visibility change immediately for C7.
+        if (this.engine === "c7") {
+            const tb = this.getModeler().get<any>("transactionBoundaries");
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            this.settings.showTransactionBoundaries ? tb.show() : tb.hide();
+        }
     }
 
     /**
