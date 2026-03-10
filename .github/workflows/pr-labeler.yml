@@ -1,5 +1,7 @@
 name: PR Labeler
-on: pull_request
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
 jobs:
   labelPR:
     name: Label PR With Repo(s)
@@ -10,3 +12,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_DIRS: "apps|libs"
+
+  label-by-type:
+    name: Label PR By Conventional Commit Type
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Apply label from PR title prefix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const match = title.match(/^(\w+)(\(.*\))?!?:/);
+            if (!match) return;
+
+            const typeMap = {
+              feat:     'feature',
+              fix:      'bug',
+              refactor: 'refactoring',
+              perf:     'refactoring',
+              style:    'refactoring',
+              docs:     'docs',
+              chore:    'chore',
+              test:     'chore',
+              build:    'chore',
+              ci:       'chore',
+            };
+
+            const label = typeMap[match[1]];
+            if (!label) return;
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [label],
+            });
