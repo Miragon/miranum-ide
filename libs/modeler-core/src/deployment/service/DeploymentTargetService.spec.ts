@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestHost, TestHostOptions } from "../../testing";
 import { serializeDeploymentTargets, DeploymentTarget } from "../domain/deploymentTarget";
 import { DeploymentTargetService } from "./DeploymentTargetService";
 
@@ -23,43 +22,77 @@ function target(name: string, overrides: Partial<DeploymentTarget> = {}): Deploy
         overrides.audience ?? "",
         overrides.deployUrl,
         overrides.startInstanceUrl,
+        overrides.username,
+        overrides.password,
+        overrides.clientId,
+        overrides.clientSecret,
     );
 }
 
-function createService(options: TestHostOptions = {}) {
-    const host = createTestHost({
-        folders: ["/ws"],
-        settings: { configFolder: CONFIG_FOLDER },
-        answers: { confirmDestructive: true },
-        ...options,
-    });
+function createService() {
     const artifactService = {
         getWorkspaceRoot: vi.fn().mockResolvedValue("/ws"),
         findConfigFile: vi.fn().mockResolvedValue(undefined),
     };
+    const settings = { getConfigFolder: vi.fn().mockReturnValue(CONFIG_FOLDER) };
+    const workspace = {
+        readFile: vi.fn(),
+        writeFile: vi.fn().mockResolvedValue(undefined),
+        getWorkspaceFolderPaths: vi.fn().mockReturnValue(["/ws"]),
+    };
+    const secretStore = {
+        saveBasicAuth: vi.fn().mockResolvedValue(undefined),
+        getBasicAuth: vi.fn(),
+        saveOAuth2: vi.fn().mockResolvedValue(undefined),
+        getOAuth2: vi.fn(),
+        delete: vi.fn().mockResolvedValue(undefined),
+    };
+    const deploymentState = {
+        getActiveTargetName: vi.fn().mockReturnValue(""),
+        saveActiveTargetName: vi.fn().mockResolvedValue(undefined),
+    };
+    const picker = {
+        pickDeploymentTarget: vi.fn(),
+        confirmDestructive: vi.fn().mockResolvedValue(true),
+    };
+    const notifier = {
+        notifyError: vi.fn(),
+        logError: vi.fn(),
+        openDocument: vi.fn().mockResolvedValue(undefined),
+    };
 
     const service = new DeploymentTargetService(
         artifactService as never,
-        host.settings,
-        host.workspace,
-        host.secrets,
-        host.deploymentState,
-        host.picker,
-        host.notifier,
+        settings as never,
+        workspace as never,
+        secretStore as never,
+        deploymentState as never,
+        picker as never,
+        notifier as never,
     );
 
-    return { service, host, artifactService };
+    return {
+        service,
+        artifactService,
+        workspace,
+        secretStore,
+        deploymentState,
+        picker,
+        notifier,
+    };
 }
 
-const slot = (name: string) => `${FILE_PATH}::${name}`;
+beforeEach(() => vi.clearAllMocks());
 
 describe("DeploymentTargetService.listTargets", () => {
     it("reads and parses the nearest existing file", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("dev")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev")));
 
         const targets = await c.service.listTargets(DOC_DIR);
 
+        expect(c.workspace.readFile).toHaveBeenCalledWith(FILE_PATH);
         expect(targets.map((t) => t.name)).toEqual(["dev"]);
     });
 
@@ -71,26 +104,24 @@ describe("DeploymentTargetService.listTargets", () => {
     });
 
     it("reports a parse error and returns []", async () => {
-        const c = createService({ files: { [FILE_PATH]: "{ not valid json" } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue("{ not valid json");
 
         expect(await c.service.listTargets(DOC_DIR)).toEqual([]);
-        expect(c.host.notifier.errors).toEqual([
-            expect.stringMatching(/^Could not read deployment targets\n/),
-        ]);
+        expect(c.notifier.notifyError).toHaveBeenCalledOnce();
     });
 });
 
 describe("DeploymentTargetService.openTargetsFile", () => {
     it("opens the existing file without rewriting it", async () => {
-        const existing = fileWith(target("dev"));
-        const c = createService({ files: { [FILE_PATH]: existing } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
 
         await c.service.openTargetsFile(DOC_DIR);
 
-        expect(c.host.workspace.files).toEqual(new Map([[FILE_PATH, existing]]));
-        expect(c.host.notifier.openedDocuments).toEqual([FILE_PATH]);
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
+        expect(c.notifier.openDocument).toHaveBeenCalledWith(FILE_PATH);
     });
 
     it("creates an empty targets file first when none exists", async () => {
@@ -99,40 +130,28 @@ describe("DeploymentTargetService.openTargetsFile", () => {
 
         await c.service.openTargetsFile(DOC_DIR);
 
-        const [[writtenPath, content]] = c.host.workspace.files;
+        const [writtenPath, content] = c.workspace.writeFile.mock.calls[0];
         expect(writtenPath).toMatch(/deployment-targets\.json$/);
         expect(JSON.parse(content)).toEqual({ targets: [] });
-        expect(c.host.notifier.openedDocuments).toEqual([writtenPath]);
+        expect(c.notifier.openDocument).toHaveBeenCalledWith(writtenPath);
     });
 
     it("throws when there is no workspace", async () => {
-        const c = createService({ folders: [] });
+        const c = createService();
+        c.workspace.getWorkspaceFolderPaths.mockReturnValue([]);
 
         await expect(c.service.openTargetsFile(undefined)).rejects.toThrow(/workspace/);
-        expect(c.host.notifier.openedDocuments).toEqual([]);
+        expect(c.notifier.openDocument).not.toHaveBeenCalled();
     });
 });
 
 describe("DeploymentTargetService.saveTarget", () => {
-    async function seedOldTarget(c: ReturnType<typeof createService>) {
-        await c.host.secrets.saveBasicAuth("old-user", "old-pass", slot("old"));
-        c.host.deploymentState.activeTargetName = "old";
-    }
-
-    async function expectOldTargetUntouched(c: ReturnType<typeof createService>) {
-        await expect(c.host.secrets.getBasicAuth(slot("old"))).resolves.toEqual({
-            username: "old-user",
-            password: "old-pass",
-        });
-        expect(c.host.deploymentState.activeTargetName).toBe("old");
-    }
-
     it.each(["{ broken", JSON.stringify({ targets: [{ name: "broken" }] })])(
         "leaves the file, secrets, and active target untouched after a parse failure: %s",
         async (content) => {
-            const c = createService({ files: { [FILE_PATH]: content } });
+            const c = createService();
             c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-            await seedOldTarget(c);
+            c.workspace.readFile.mockResolvedValue(content);
             await expect(
                 c.service.saveTarget(
                     {
@@ -148,18 +167,18 @@ describe("DeploymentTargetService.saveTarget", () => {
                 ),
             ).rejects.toThrow();
             await expect(c.service.deleteTarget("old", DOC_DIR)).rejects.toThrow();
-            expect(c.host.workspace.files.get(FILE_PATH)).toBe(content);
-            await expect(c.host.secrets.getBasicAuth(slot("new"))).resolves.toBeUndefined();
-            await expect(c.host.secrets.getOAuth2(slot("new"))).resolves.toBeUndefined();
-            await expectOldTargetUntouched(c);
+            expect(c.workspace.writeFile).not.toHaveBeenCalled();
+            expect(c.secretStore.saveBasicAuth).not.toHaveBeenCalled();
+            expect(c.secretStore.saveOAuth2).not.toHaveBeenCalled();
+            expect(c.secretStore.delete).not.toHaveBeenCalled();
+            expect(c.deploymentState.saveActiveTargetName).not.toHaveBeenCalled();
         },
     );
 
     it("aborts mutations when the existing file is unreadable", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("old")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        vi.spyOn(c.host.workspace, "readFile").mockRejectedValue(new Error("EACCES"));
-        await seedOldTarget(c);
+        c.workspace.readFile.mockRejectedValue(new Error("EACCES"));
         await expect(
             c.service.saveTarget(
                 {
@@ -175,8 +194,9 @@ describe("DeploymentTargetService.saveTarget", () => {
             ),
         ).rejects.toThrow("EACCES");
         await expect(c.service.deleteTarget("old", DOC_DIR)).rejects.toThrow("EACCES");
-        expect(c.host.workspace.files.get(FILE_PATH)).toBe(fileWith(target("old")));
-        await expectOldTargetUntouched(c);
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
+        expect(c.secretStore.delete).not.toHaveBeenCalled();
+        expect(c.deploymentState.saveActiveTargetName).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -184,7 +204,6 @@ describe("DeploymentTargetService.saveTarget", () => {
         { name: "new", endpoint: " " },
     ])("rejects invalid input before writing: %j", async (fields) => {
         const c = createService();
-        c.host.deploymentState.activeTargetName = "old";
         await expect(
             c.service.saveTarget(
                 { ...fields, engine: "c7", tenantId: "", authType: "basic" },
@@ -193,14 +212,15 @@ describe("DeploymentTargetService.saveTarget", () => {
                 DOC_DIR,
             ),
         ).rejects.toThrow();
-        expect(c.host.workspace.files.size).toBe(0);
-        await expect(c.host.secrets.getBasicAuth(slot(fields.name))).resolves.toBeUndefined();
-        expect(c.host.deploymentState.activeTargetName).toBe("old");
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
+        expect(c.secretStore.saveBasicAuth).not.toHaveBeenCalled();
+        expect(c.deploymentState.saveActiveTargetName).not.toHaveBeenCalled();
     });
 
     it("writes the upserted file, stores secrets under the slot, and activates", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("prod")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("prod")));
 
         await c.service.saveTarget(
             {
@@ -215,20 +235,57 @@ describe("DeploymentTargetService.saveTarget", () => {
             DOC_DIR,
         );
 
-        const written = c.host.workspace.files.get(FILE_PATH);
+        const written = c.workspace.writeFile.mock.calls[0][1] as string;
         expect(written).toContain('"prod"');
         expect(written).toContain('"dev"');
-        await expect(c.host.secrets.getBasicAuth(slot("dev"))).resolves.toEqual({
-            username: "u",
-            password: "p",
-        });
-        expect(c.host.deploymentState.activeTargetName).toBe("dev");
+        expect(c.secretStore.saveBasicAuth).toHaveBeenCalledWith("u", "p", `${FILE_PATH}::dev`);
+        expect(c.deploymentState.saveActiveTargetName).toHaveBeenCalledWith("dev");
+    });
+
+    it("routes a whole-value credential ref to the JSON and blanks it in the secret store", async () => {
+        const c = createService();
+        c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith());
+
+        await c.service.saveTarget(
+            { name: "dev", engine: "c7", endpoint: "http://h", tenantId: "", authType: "basic" },
+            { authType: "basic", username: "admin", password: "${env:CAMUNDA_PASSWORD}" },
+            undefined,
+            DOC_DIR,
+        );
+
+        const written = c.workspace.writeFile.mock.calls[0][1] as string;
+        expect(written).toContain("${env:CAMUNDA_PASSWORD}");
+        // The literal username reaches the store; the ref password is blanked so
+        // any prior real secret is overwritten and file-wins read stays inert.
+        expect(c.secretStore.saveBasicAuth).toHaveBeenCalledWith("admin", "", `${FILE_PATH}::dev`);
+    });
+
+    it("keeps a literal credential out of the JSON and in the secret store", async () => {
+        const c = createService();
+        c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith());
+
+        await c.service.saveTarget(
+            { name: "dev", engine: "c7", endpoint: "http://h", tenantId: "", authType: "basic" },
+            { authType: "basic", username: "admin", password: "plain-secret" },
+            undefined,
+            DOC_DIR,
+        );
+
+        const written = c.workspace.writeFile.mock.calls[0][1] as string;
+        expect(written).not.toContain("plain-secret");
+        expect(c.secretStore.saveBasicAuth).toHaveBeenCalledWith(
+            "admin",
+            "plain-secret",
+            `${FILE_PATH}::dev`,
+        );
     });
 
     it("deletes the previous credential slot on rename", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("old")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        await c.host.secrets.saveBasicAuth("u", "p", slot("old"));
+        c.workspace.readFile.mockResolvedValue(fileWith(target("old")));
 
         await c.service.saveTarget(
             { name: "new", engine: "c7", endpoint: "http://h", tenantId: "", authType: "none" },
@@ -237,11 +294,12 @@ describe("DeploymentTargetService.saveTarget", () => {
             DOC_DIR,
         );
 
-        await expect(c.host.secrets.getBasicAuth(slot("old"))).resolves.toBeUndefined();
+        expect(c.secretStore.delete).toHaveBeenCalledWith(`${FILE_PATH}::old`);
     });
 
     it("throws when there is no workspace to store the file in", async () => {
-        const c = createService({ folders: [] });
+        const c = createService();
+        c.workspace.getWorkspaceFolderPaths.mockReturnValue([]);
 
         await expect(
             c.service.saveTarget(
@@ -260,10 +318,9 @@ describe("DeploymentTargetService.saveTarget", () => {
     });
 
     it("throws and leaves the file untouched on a rename collision", async () => {
-        const existing = fileWith(target("dev"), target("prod"));
-        const c = createService({ files: { [FILE_PATH]: existing } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        await c.host.secrets.saveBasicAuth("u", "p", slot("dev"));
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev"), target("prod")));
 
         await expect(
             c.service.saveTarget(
@@ -279,18 +336,16 @@ describe("DeploymentTargetService.saveTarget", () => {
                 DOC_DIR,
             ),
         ).rejects.toThrow(/already exists/);
-        expect(c.host.workspace.files.get(FILE_PATH)).toBe(existing);
-        await expect(c.host.secrets.getBasicAuth(slot("dev"))).resolves.toEqual({
-            username: "u",
-            password: "p",
-        });
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
+        expect(c.secretStore.delete).not.toHaveBeenCalled();
     });
 });
 
 describe("DeploymentTargetService.createTarget", () => {
     it("writes the appended file, stores secrets under the slot, and activates", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("prod")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("prod")));
 
         await c.service.createTarget(
             {
@@ -304,20 +359,17 @@ describe("DeploymentTargetService.createTarget", () => {
             DOC_DIR,
         );
 
-        const written = c.host.workspace.files.get(FILE_PATH);
+        const written = c.workspace.writeFile.mock.calls[0][1] as string;
         expect(written).toContain('"prod"');
         expect(written).toContain('"dev"');
-        await expect(c.host.secrets.getBasicAuth(slot("dev"))).resolves.toEqual({
-            username: "u",
-            password: "p",
-        });
-        expect(c.host.deploymentState.activeTargetName).toBe("dev");
+        expect(c.secretStore.saveBasicAuth).toHaveBeenCalledWith("u", "p", `${FILE_PATH}::dev`);
+        expect(c.deploymentState.saveActiveTargetName).toHaveBeenCalledWith("dev");
     });
 
     it("throws and writes nothing when the name already exists", async () => {
-        const existing = fileWith(target("dev"));
-        const c = createService({ files: { [FILE_PATH]: existing } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev")));
 
         await expect(
             c.service.createTarget(
@@ -332,25 +384,24 @@ describe("DeploymentTargetService.createTarget", () => {
                 DOC_DIR,
             ),
         ).rejects.toThrow(/already exists/);
-        expect(c.host.workspace.files.get(FILE_PATH)).toBe(existing);
-        await expect(c.host.secrets.getBasicAuth(slot("dev"))).resolves.toBeUndefined();
-        expect(c.host.deploymentState.activeTargetName).toBe("");
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
+        expect(c.secretStore.saveBasicAuth).not.toHaveBeenCalled();
+        expect(c.deploymentState.saveActiveTargetName).not.toHaveBeenCalled();
     });
 });
 
 it("returns OAuth metadata even when this machine has no credentials", async () => {
-    const c = createService({
-        files: {
-            [FILE_PATH]: fileWith(
-                target("shared", {
-                    authType: "oauth2",
-                    tokenEndpoint: "https://login/token",
-                    audience: "api",
-                }),
-            ),
-        },
-    });
+    const c = createService();
     c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+    c.workspace.readFile.mockResolvedValue(
+        fileWith(
+            target("shared", {
+                authType: "oauth2",
+                tokenEndpoint: "https://login/token",
+                audience: "api",
+            }),
+        ),
+    );
     expect(await c.service.getStoredCredentials("shared", DOC_DIR)).toEqual({
         authType: "oauth2",
         tokenEndpoint: "https://login/token",
@@ -360,37 +411,35 @@ it("returns OAuth metadata even when this machine has no credentials", async () 
 
 describe("DeploymentTargetService.deleteTarget", () => {
     it("removes the target, deletes its slot, and clears the active target", async () => {
-        const c = createService({
-            files: { [FILE_PATH]: fileWith(target("dev"), target("prod")) },
-        });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        c.host.deploymentState.activeTargetName = "dev";
-        await c.host.secrets.saveBasicAuth("u", "p", slot("dev"));
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev"), target("prod")));
+        c.deploymentState.getActiveTargetName.mockReturnValue("dev");
 
         const deleted = await c.service.deleteTarget("dev", DOC_DIR);
 
         expect(deleted).toBe(true);
-        const written = c.host.workspace.files.get(FILE_PATH);
+        const written = c.workspace.writeFile.mock.calls[0][1] as string;
         expect(written).not.toContain('"dev"');
-        await expect(c.host.secrets.getBasicAuth(slot("dev"))).resolves.toBeUndefined();
-        expect(c.host.deploymentState.activeTargetName).toBe("");
+        expect(c.secretStore.delete).toHaveBeenCalledWith(`${FILE_PATH}::dev`);
+        expect(c.deploymentState.saveActiveTargetName).toHaveBeenCalledWith("");
     });
 
     it("is a no-op when the user cancels the confirm", async () => {
-        const existing = fileWith(target("dev"));
-        const c = createService({ files: { [FILE_PATH]: existing }, answers: {} });
-        c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        const c = createService();
+        c.picker.confirmDestructive.mockResolvedValue(false);
 
         expect(await c.service.deleteTarget("dev", DOC_DIR)).toBe(false);
-        expect(c.host.workspace.files.get(FILE_PATH)).toBe(existing);
+        expect(c.workspace.writeFile).not.toHaveBeenCalled();
     });
 });
 
 describe("DeploymentTargetService.getActiveTarget", () => {
     it("returns undefined for a dangling active name", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("dev")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        c.host.deploymentState.activeTargetName = "gone";
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev")));
+        c.deploymentState.getActiveTargetName.mockReturnValue("gone");
 
         expect(await c.service.getActiveTarget(DOC_DIR)).toBeUndefined();
     });
@@ -399,41 +448,39 @@ describe("DeploymentTargetService.getActiveTarget", () => {
 describe("DeploymentTargetService.switchActiveTarget", () => {
     it("is a no-op on dismissal", async () => {
         const c = createService();
-        c.host.deploymentState.activeTargetName = "prod";
+        c.picker.pickDeploymentTarget.mockResolvedValue(undefined);
 
         await c.service.switchActiveTarget(DOC_DIR);
 
-        expect(c.host.deploymentState.activeTargetName).toBe("prod");
+        expect(c.deploymentState.saveActiveTargetName).not.toHaveBeenCalled();
     });
 
     it("persists the picked target", async () => {
-        const c = createService({
-            files: { [FILE_PATH]: fileWith(target("dev")) },
-            answers: { deploymentTarget: "dev" },
-        });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev")));
+        c.picker.pickDeploymentTarget.mockResolvedValue("dev");
 
         await c.service.switchActiveTarget(DOC_DIR);
 
-        expect(c.host.deploymentState.activeTargetName).toBe("dev");
+        expect(c.deploymentState.saveActiveTargetName).toHaveBeenCalledWith("dev");
     });
 });
 
 describe("DeploymentTargetService.getStoredCredentials", () => {
     it("resolves oauth2 secrets plus the target's token endpoint and audience", async () => {
-        const c = createService({
-            files: {
-                [FILE_PATH]: fileWith(
-                    target("dev", {
-                        authType: "oauth2",
-                        tokenEndpoint: "https://idp/token",
-                        audience: "aud",
-                    }),
-                ),
-            },
-        });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
-        await c.host.secrets.saveOAuth2("cid", "sec", slot("dev"));
+        c.workspace.readFile.mockResolvedValue(
+            fileWith(
+                target("dev", {
+                    authType: "oauth2",
+                    tokenEndpoint: "https://idp/token",
+                    audience: "aud",
+                }),
+            ),
+        );
+        c.secretStore.getOAuth2.mockResolvedValue({ clientId: "cid", clientSecret: "sec" });
 
         await expect(c.service.getStoredCredentials("dev", DOC_DIR)).resolves.toEqual({
             authType: "oauth2",
@@ -442,14 +489,31 @@ describe("DeploymentTargetService.getStoredCredentials", () => {
             tokenEndpoint: "https://idp/token",
             audience: "aud",
         });
+        expect(c.secretStore.getOAuth2).toHaveBeenCalledWith(`${FILE_PATH}::dev`);
     });
 
     it("returns a none payload for an unknown target", async () => {
-        const c = createService({ files: { [FILE_PATH]: fileWith(target("dev")) } });
+        const c = createService();
         c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(fileWith(target("dev")));
 
         await expect(c.service.getStoredCredentials("missing", DOC_DIR)).resolves.toEqual({
             authType: "none",
+        });
+    });
+
+    it("prefers a file credential ref over the secret store (file wins)", async () => {
+        const c = createService();
+        c.artifactService.findConfigFile.mockResolvedValue(FILE_PATH);
+        c.workspace.readFile.mockResolvedValue(
+            fileWith(target("dev", { authType: "basic", password: "${env:PW}" })),
+        );
+        c.secretStore.getBasicAuth.mockResolvedValue({ username: "admin", password: "old-stored" });
+
+        await expect(c.service.getStoredCredentials("dev", DOC_DIR)).resolves.toEqual({
+            authType: "basic",
+            username: "admin",
+            password: "${env:PW}",
         });
     });
 });

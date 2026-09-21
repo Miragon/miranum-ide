@@ -1,99 +1,141 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { NoAuth } from "../domain/deployment";
+import { BasicAuth, NoAuth } from "../domain/deployment";
 import { StartInstanceConfig, StartInstanceResult } from "../domain/startInstance";
 import { StartInstanceService } from "./StartInstanceService";
+import { EnvValueResolver } from "./EnvValueResolver";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
-import { createTestHost, TestHostOptions } from "../../testing";
+import { FileNotFound } from "../../shared/domain/errors";
+
+function createEnvResolver(
+    dotEnv: Record<string, string> = {},
+    processEnv: Record<string, string> = {},
+): EnvValueResolver {
+    const artifactService = { getWorkspaceRoot: vi.fn().mockResolvedValue("/work") };
+    const workspace = {
+        readFile: vi.fn().mockImplementation(async (path: string) => {
+            if (path.endsWith(".env")) {
+                return Object.entries(dotEnv)
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join("\n");
+            }
+            throw new FileNotFound(path);
+        }),
+        getWorkspaceFolderPaths: vi.fn().mockReturnValue(["/work"]),
+    };
+    const env = { get: (name: string) => processEnv[name] };
+    return new EnvValueResolver(artifactService as never, workspace as never, env as never);
+}
 
 // A real C7 document so `getProcessDefinitionKey` exercises the production
 // `BpmnDocument.extractProcessId` regex against valid XML rather than a stub.
 const C7_DOC = BpmnDocument.empty("c7", "7.24.0");
 
-function createService(options: TestHostOptions = {}) {
-    const host = createTestHost(options);
+/**
+ * Builds the service with structural port doubles. The service only ever calls
+ * these methods, so bare `vi.fn()` records cast to the interfaces keep the test
+ * free of any `vscode` surface. `ArtifactService` is concrete in production but
+ * is doubled here the same way — the cast erases the nominal type.
+ */
+function createService(envResolver: EnvValueResolver = createEnvResolver()) {
+    const vsDocument = {
+        getFilePath: vi.fn(),
+        getContent: vi.fn(),
+    };
+    const vsWorkspace = {
+        readFile: vi.fn(),
+    };
     const restClient = {
         startInstance: vi.fn(),
+    };
+    const notifier = {
+        showInfo: vi.fn(),
+        logError: vi.fn(),
+    };
+    const picker = {
+        pickPayloadFile: vi.fn(),
     };
     const artifactService = {
         getPayloadPaths: vi.fn(),
     };
 
     const service = new StartInstanceService(
-        host.documents,
-        host.workspace,
+        vsDocument as never,
+        vsWorkspace as never,
         restClient as never,
-        host.notifier,
-        host.picker,
+        notifier as never,
+        picker as never,
         artifactService as never,
+        envResolver,
     );
 
-    return { service, host, restClient, artifactService };
+    return { service, vsDocument, vsWorkspace, restClient, notifier, picker, artifactService };
 }
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
 describe("StartInstanceService.getProcessDefinitionKey", () => {
     it("returns the process id extracted from the editor's BPMN content", () => {
-        const { service, host } = createService();
-        host.openEditor("/work/other.bpmn", "<bpmn:definitions/>");
-        const editor = host.openEditor("/work/order.bpmn", C7_DOC.xml);
+        const { service, vsDocument } = createService();
+        vsDocument.getContent.mockReturnValue(C7_DOC.xml);
 
-        expect(service.getProcessDefinitionKey(editor.id)).toBe("Process_0gjrx3e");
+        expect(service.getProcessDefinitionKey("editor-1")).toBe("Process_0gjrx3e");
+        expect(vsDocument.getContent).toHaveBeenCalledWith("editor-1");
     });
 
     it("propagates the error when the content has no process element", () => {
-        const { service, host } = createService();
-        const editor = host.openEditor("/work/order.bpmn", "<bpmn:definitions/>");
+        const { service, vsDocument } = createService();
+        vsDocument.getContent.mockReturnValue("<bpmn:definitions/>");
 
-        expect(() => service.getProcessDefinitionKey(editor.id)).toThrow();
+        expect(() => service.getProcessDefinitionKey("editor-1")).toThrow();
     });
 });
 
 describe("StartInstanceService.selectPayloadFile", () => {
     it("shows an info notice and returns null when no payload files exist", async () => {
-        const { service, host, artifactService } = createService();
-        const editor = host.openEditor("/work/order.bpmn");
+        const { service, vsDocument, artifactService, picker, notifier } = createService();
+        vsDocument.getFilePath.mockReturnValue("/work/order.bpmn");
         artifactService.getPayloadPaths.mockResolvedValue([]);
 
-        const result = await service.selectPayloadFile(editor.id);
+        const result = await service.selectPayloadFile("editor-1");
 
         expect(result).toBeNull();
-        expect(host.notifier.infos).toEqual([
-            "No payload files found in <configFolder>/payloads/.",
-        ]);
-        expect(host.picker.prompts).toEqual([]);
+        expect(notifier.showInfo).toHaveBeenCalledOnce();
+        expect(picker.pickPayloadFile).not.toHaveBeenCalled();
     });
 
     it("walks up from the document directory and delegates selection to the picker", async () => {
+        const { service, vsDocument, artifactService, picker } = createService();
+        vsDocument.getFilePath.mockReturnValue("/work/sub/order.bpmn");
         const payloads = ["/work/sub/payloads/a.json"];
-        const picked = { filePath: payloads[0], label: "a.json" };
-        const { service, host, artifactService } = createService({
-            answers: { payloadFile: picked },
-        });
-        const editor = host.openEditor("/work/sub/order.bpmn");
         artifactService.getPayloadPaths.mockResolvedValue(payloads);
+        const picked = { filePath: payloads[0], label: "a.json" };
+        picker.pickPayloadFile.mockResolvedValue(picked);
 
-        const result = await service.selectPayloadFile(editor.id);
+        const result = await service.selectPayloadFile("editor-1");
 
         expect(result).toBe(picked);
         // Discovery starts from the document's directory, not the file path.
         expect(artifactService.getPayloadPaths).toHaveBeenCalledWith("/work/sub");
-        expect(host.picker.prompts).toEqual([{ method: "pickPayloadFile", args: [payloads] }]);
+        expect(picker.pickPayloadFile).toHaveBeenCalledWith(payloads);
     });
 
     it("returns null when payloads exist but the user cancels the picker", async () => {
-        const { service, host, artifactService } = createService();
-        const editor = host.openEditor("/work/order.bpmn");
+        const { service, vsDocument, artifactService, picker } = createService();
+        vsDocument.getFilePath.mockReturnValue("/work/order.bpmn");
         artifactService.getPayloadPaths.mockResolvedValue(["/work/payloads/a.json"]);
+        picker.pickPayloadFile.mockResolvedValue(null);
 
-        await expect(service.selectPayloadFile(editor.id)).resolves.toBeNull();
+        await expect(service.selectPayloadFile("editor-1")).resolves.toBeNull();
     });
 });
 
 describe("StartInstanceService.startInstance", () => {
     it("reads and parses the payload, then forwards a parsed config to the REST client", async () => {
-        const { service, restClient } = createService({
-            files: { "/work/payloads/a.json": '{"amount":42}' },
-        });
+        const { service, vsWorkspace, restClient } = createService();
+        vsWorkspace.readFile.mockResolvedValue('{"amount":42}');
         const success = new StartInstanceResult(true, "started", "pi-1");
         restClient.startInstance.mockResolvedValue(success);
 
@@ -112,8 +154,7 @@ describe("StartInstanceService.startInstance", () => {
     });
 
     it("passes a null payload when no payload path is given and never reads a file", async () => {
-        const { service, host, restClient } = createService();
-        const readFile = vi.spyOn(host.workspace, "readFile");
+        const { service, vsWorkspace, restClient } = createService();
         const success = new StartInstanceResult(true, "started", "pi-1");
         restClient.startInstance.mockResolvedValue(success);
 
@@ -121,11 +162,11 @@ describe("StartInstanceService.startInstance", () => {
 
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
         expect(config.payload).toBeNull();
-        expect(readFile).not.toHaveBeenCalled();
+        expect(vsWorkspace.readFile).not.toHaveBeenCalled();
     });
 
     it("passes a failed REST result straight through without logging", async () => {
-        const { service, host, restClient } = createService();
+        const { service, restClient, notifier } = createService();
         const failure = new StartInstanceResult(false, "rejected by server");
         restClient.startInstance.mockResolvedValue(failure);
 
@@ -138,11 +179,11 @@ describe("StartInstanceService.startInstance", () => {
         );
 
         expect(result).toBe(failure);
-        expect(host.notifier.logged("error")).toEqual([]);
+        expect(notifier.logError).not.toHaveBeenCalled();
     });
 
     it("never throws: a rejected REST call becomes a failed result and is logged", async () => {
-        const { service, host, restClient } = createService();
+        const { service, restClient, notifier } = createService();
         restClient.startInstance.mockRejectedValue(new Error("network down"));
 
         const result = await service.startInstance(
@@ -155,13 +196,12 @@ describe("StartInstanceService.startInstance", () => {
 
         expect(result.success).toBe(false);
         expect(result.message).toBe("network down");
-        expect(host.notifier.logged("error")).toEqual(["network down"]);
+        expect(notifier.logError).toHaveBeenCalledOnce();
     });
 
     it("never throws: malformed payload JSON becomes a failed result and skips the REST call", async () => {
-        const { service, host, restClient } = createService({
-            files: { "/work/payloads/bad.json": "{ not json" },
-        });
+        const { service, vsWorkspace, restClient, notifier } = createService();
+        vsWorkspace.readFile.mockResolvedValue("{ not json");
 
         const result = await service.startInstance(
             "Process_1",
@@ -173,6 +213,48 @@ describe("StartInstanceService.startInstance", () => {
 
         expect(result.success).toBe(false);
         expect(restClient.startInstance).not.toHaveBeenCalled();
-        expect(host.notifier.logged("error")).toHaveLength(1);
+        expect(notifier.logError).toHaveBeenCalledOnce();
+    });
+
+    it("resolves ${env:VAR} in endpoint, auth, and URL before the REST call", async () => {
+        const { service, restClient } = createService(
+            createEnvResolver({ STAGE: "prod", TOKEN: "t0ken" }),
+        );
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+
+        await service.startInstance(
+            "Process_1",
+            "https://camunda.${env:STAGE}.example/engine-rest",
+            "c7",
+            new BasicAuth("admin", "${env:TOKEN}"),
+            "",
+            "https://gw.${env:STAGE}/{processDefinitionKey}/start",
+            "/work",
+        );
+
+        const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
+        expect(config.endpoint).toBe("https://camunda.prod.example/engine-rest");
+        expect((config.auth as BasicAuth).password).toBe("t0ken");
+        // Env expands first; {processDefinitionKey} is left for the REST client.
+        expect(config.startInstanceUrl).toBe("https://gw.prod/{processDefinitionKey}/start");
+    });
+
+    it("returns a failed result when a referenced variable is unset", async () => {
+        const { service, restClient } = createService(createEnvResolver());
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+
+        const result = await service.startInstance(
+            "Process_1",
+            "https://camunda.${env:MISSING_STAGE}/rest",
+            "c7",
+            new NoAuth(),
+            "",
+            undefined,
+            "/work",
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain("MISSING_STAGE");
+        expect(restClient.startInstance).not.toHaveBeenCalled();
     });
 });

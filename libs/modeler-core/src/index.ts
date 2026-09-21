@@ -32,6 +32,7 @@ export * from "./shared/infrastructure/webviewNotificationHandlers";
 export * from "./shared/infrastructure/orderedDocumentDispatch";
 export * from "./shared/infrastructure/webviewFocusHandlers";
 export * from "./shared/infrastructure/helpers";
+export * from "./shared/infrastructure/ProcessEnv";
 
 // ── modeler ─────────────────────────────────────────────────────────────────
 export * from "./modeler/bpmn/domain/model";
@@ -92,6 +93,8 @@ export * from "./deployment/domain/deployment";
 export * from "./deployment/domain/deploymentLedger";
 export * from "./deployment/domain/deploymentTarget";
 export * from "./deployment/domain/deploymentVerification";
+export * from "./deployment/domain/dotEnv";
+export * from "./deployment/domain/envRef";
 export * from "./deployment/domain/ports";
 export * from "./deployment/domain/startInstance";
 export * from "./deployment/domain/urlTemplate";
@@ -100,6 +103,7 @@ export * from "./deployment/service/DeployFilesService";
 export * from "./deployment/service/DeploymentService";
 export * from "./deployment/service/DeploymentStatusService";
 export * from "./deployment/service/DeploymentTargetService";
+export * from "./deployment/service/EnvValueResolver";
 export * from "./deployment/service/StartInstanceService";
 export * from "./deployment/service/DeploymentVerificationService";
 export * from "./deployment/service/DeploymentMessageDispatcher";

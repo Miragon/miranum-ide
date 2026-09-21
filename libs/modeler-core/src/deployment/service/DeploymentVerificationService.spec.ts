@@ -1,12 +1,32 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { EngineInspectionFailedError } from "../../shared/domain/errors";
-import { createTestHost } from "../../testing";
-import { NoAuth } from "../domain/deployment";
+import { EngineInspectionFailedError, FileNotFound } from "../../shared/domain/errors";
+import { BasicAuth, NoAuth } from "../domain/deployment";
 import { contentFingerprint, DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import { EngineDeploymentSnapshot } from "../domain/deploymentVerification";
 import { DeploymentVerificationService } from "./DeploymentVerificationService";
+import { EnvValueResolver } from "./EnvValueResolver";
+
+function createEnvResolver(
+    dotEnv: Record<string, string> = {},
+    processEnv: Record<string, string> = {},
+): EnvValueResolver {
+    const artifactService = { getWorkspaceRoot: vi.fn().mockResolvedValue("/work") };
+    const workspace = {
+        readFile: vi.fn().mockImplementation(async (path: string) => {
+            if (path.endsWith(".env")) {
+                return Object.entries(dotEnv)
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join("\n");
+            }
+            throw new FileNotFound(path);
+        }),
+        getWorkspaceFolderPaths: vi.fn().mockReturnValue(["/work"]),
+    };
+    const env = { get: (name: string) => processEnv[name] };
+    return new EnvValueResolver(artifactService as never, workspace as never, env as never);
+}
 
 const FILE_PATH = "/work/order-process.bpmn";
 const XML = '<bpmn:process id="order"/>';
@@ -32,9 +52,14 @@ const snapshot = (overrides: Partial<EngineDeploymentSnapshot> = {}): EngineDepl
     ...overrides,
 });
 
-function createService(content = XML) {
-    const host = createTestHost();
-    const editor = host.openEditor(FILE_PATH, content);
+function createService(envResolver: EnvValueResolver = createEnvResolver()) {
+    const editorStore = {
+        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
+    };
+    const documentPort = {
+        getFilePath: vi.fn().mockReturnValue(FILE_PATH),
+        getContent: vi.fn().mockReturnValue(XML),
+    };
     const deploymentTargetService = {
         getActiveTarget: vi.fn().mockResolvedValue(c7Target),
         getCredentials: vi.fn().mockResolvedValue(new NoAuth()),
@@ -48,34 +73,48 @@ function createService(content = XML) {
     const inspection = {
         fetchLatestDefinition: vi.fn().mockResolvedValue(snapshot()),
     };
+    const notifier = {
+        showInfo: vi.fn(),
+        showError: vi.fn(),
+        notifyError: vi.fn(),
+        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
+    };
 
     const service = new DeploymentVerificationService(
-        host.store,
-        host.documents,
+        editorStore as never,
+        documentPort as never,
         deploymentTargetService as never,
         deploymentStatusService as never,
         inspection as never,
-        host.notifier,
+        notifier as never,
+        envResolver,
     );
 
     return {
         service,
-        host,
-        editor,
+        editorStore,
+        documentPort,
         deploymentTargetService,
         deploymentStatusService,
         inspection,
+        notifier,
     };
 }
+
+beforeEach(() => vi.clearAllMocks());
 
 describe("DeploymentVerificationService.verifyActive", () => {
     it("reports when no diagram is focused", async () => {
         const c = createService();
-        c.host.store.unregister(c.editor.id, c.editor);
+        c.editorStore.getActiveEditorId.mockImplementation(() => {
+            throw new Error("no active editor");
+        });
 
         await c.service.verifyActive();
 
-        expect(c.host.notifier.infos).toEqual(["Open a BPMN diagram to verify its deployment."]);
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+            "Open a BPMN diagram to verify its deployment.",
+        );
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -85,9 +124,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             "Select a named Camunda 7 target to verify against.",
-        ]);
+        );
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -97,18 +136,19 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             "Verification is not available for Camunda 8 targets.",
-        ]);
+        );
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
     it("shows an error when the diagram has no process id", async () => {
-        const c = createService("<bpmn:definitions/>");
+        const c = createService();
+        c.documentPort.getContent.mockReturnValue("<bpmn:definitions/>");
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.errors).toHaveLength(1);
+        expect(c.notifier.showError).toHaveBeenCalledOnce();
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -136,9 +176,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             expect.objectContaining({ ...recorded, verifiedAt: expect.any(String) }),
         );
         expect(c.deploymentStatusService.refreshActive).toHaveBeenCalled();
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             expect.stringContaining("dev runs your last deployment"),
-        ]);
+        );
     });
 
     it("adopts an engine revision matching this diagram", async () => {
@@ -151,9 +191,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             identity,
             expect.objectContaining({ origin: "engine", deploymentId: "dep-9" }),
         );
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             expect.stringContaining("dev runs exactly this diagram"),
-        ]);
+        );
     });
 
     it("reports a differing engine deployment as information", async () => {
@@ -171,10 +211,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
             hour: "2-digit",
             minute: "2-digit",
         });
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             `The version deployed on dev (deployed ${deployedTime}) differs from your diagram.`,
-        ]);
-        expect(c.host.notifier.errors).toEqual([]);
+        );
+        expect(c.notifier.showError).not.toHaveBeenCalled();
     });
 
     it("omits the deployment time when it is unavailable", async () => {
@@ -185,10 +225,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.infos).toEqual([
+        expect(c.notifier.showInfo).toHaveBeenCalledWith(
             "The version deployed on dev differs from your diagram.",
-        ]);
-        expect(c.host.notifier.errors).toEqual([]);
+        );
+        expect(c.notifier.showError).not.toHaveBeenCalled();
     });
 
     it("forgets the row when the process is not deployed", async () => {
@@ -199,7 +239,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         expect(c.deploymentStatusService.forgetRevision).toHaveBeenCalledWith(FILE_PATH, identity);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
-        expect(c.host.notifier.infos).toEqual(["Process 'order' is not deployed on dev."]);
+        expect(c.notifier.showInfo).toHaveBeenCalledWith("Process 'order' is not deployed on dev.");
     });
 
     it("points at the target credentials on an auth failure, leaving the ledger untouched", async () => {
@@ -210,9 +250,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.errors).toEqual([
+        expect(c.notifier.showError).toHaveBeenCalledWith(
             'Could not verify deployment on "dev" — check the target credentials.',
-        ]);
+        );
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -223,8 +263,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.errors).toEqual(["Could not verify deployment\nconnection refused"]);
-        expect(c.host.notifier.logged("error")).toEqual(["connection refused"]);
+        expect(c.notifier.notifyError).toHaveBeenCalledWith(
+            "Could not verify deployment",
+            expect.any(Error),
+        );
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -234,6 +276,44 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.host.notifier.progressTitles).toEqual(['Verifying on "dev"…']);
+        expect(c.notifier.withProgress).toHaveBeenCalledWith(
+            'Verifying on "dev"…',
+            expect.any(Function),
+        );
+    });
+
+    it("resolves ${env:VAR} in endpoint and credentials before the lookup", async () => {
+        const refTarget = new DeploymentTarget(
+            "dev",
+            "c7",
+            "https://camunda.${env:STAGE}/rest",
+            "",
+            "basic",
+            "",
+            "",
+        );
+        const c = createService(createEnvResolver({ STAGE: "prod", PW: "p@ss" }));
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(refTarget);
+        c.deploymentTargetService.getCredentials.mockResolvedValue(
+            new BasicAuth("admin", "${env:PW}"),
+        );
+
+        await c.service.verifyActive("/work");
+
+        const call = c.inspection.fetchLatestDefinition.mock.calls[0][0];
+        expect(call.endpoint).toBe("https://camunda.prod/rest");
+        expect((call.auth as BasicAuth).password).toBe("p@ss");
+    });
+
+    it("shows the env error and skips the lookup when a referenced variable is unset", async () => {
+        const c = createService(createEnvResolver());
+        c.deploymentTargetService.getCredentials.mockResolvedValue(
+            new BasicAuth("admin", "${env:MISSING_PW}"),
+        );
+
+        await c.service.verifyActive("/work");
+
+        expect(c.notifier.showError).toHaveBeenCalledWith(expect.stringContaining("MISSING_PW"));
+        expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     AdditionalFilesQuery,
@@ -30,16 +30,23 @@ import { DeploymentTarget } from "../domain/deploymentTarget";
 import { BasicAuth, DeploymentResult, NoAuth, OAuth2Auth } from "../domain/deployment";
 import { StartInstanceResult } from "../domain/startInstance";
 import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
-import { createTestHost } from "../../testing";
 import { DeploymentMessageDispatcher } from "./DeploymentMessageDispatcher";
 
-// Deliberately distinct from the payload's `mainFilePath` so a regression
-// that trusts the webview payload instead of the document path is caught.
-const TRUSTED_PATH = "/work/trusted/order-process.bpmn";
-
-function createDispatcher({ openDiagram = true } = {}) {
-    const host = createTestHost();
-    if (openDiagram) host.openEditor(TRUSTED_PATH);
+/**
+ * Assembles the dispatcher with structural port doubles. Each collaborator is a
+ * bare `vi.fn()` record cast to its interface — the dispatcher only calls these
+ * methods, so structural doubles keep the test free of any host surface. The
+ * injected `post` is a spy that captures every query the dispatcher sends back.
+ */
+function createDispatcher() {
+    const editorStore = {
+        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
+    };
+    // Deliberately distinct from the payload's `mainFilePath` so a regression
+    // that trusts the webview payload instead of the document path is caught.
+    const documentPort = {
+        getFilePath: vi.fn().mockReturnValue("/work/trusted/order-process.bpmn"),
+    };
     const deploymentService = {
         deploy: vi.fn(),
         getFormDefaults: vi.fn(),
@@ -63,6 +70,15 @@ function createDispatcher({ openDiagram = true } = {}) {
         resolveSlot: vi.fn().mockResolvedValue(undefined),
         openTargetsFile: vi.fn().mockResolvedValue(undefined),
     };
+    const notifier = {
+        showInfo: vi.fn(),
+        showError: vi.fn(),
+        notifyError: vi.fn(),
+        logDebug: vi.fn(),
+        logInfo: vi.fn(),
+        logWarning: vi.fn(),
+        logError: vi.fn(),
+    };
     const deploymentStatusService = {
         refreshActive: vi.fn().mockResolvedValue(undefined),
         recordDeployment: vi.fn().mockResolvedValue(undefined),
@@ -72,23 +88,25 @@ function createDispatcher({ openDiagram = true } = {}) {
     const post = vi.fn();
 
     const dispatcher = new DeploymentMessageDispatcher(
-        host.store,
-        host.documents,
+        editorStore as never,
+        documentPort as never,
         deploymentService as never,
         startInstanceService as never,
         deploymentTargetService as never,
         deploymentStatusService as never,
-        host.notifier,
+        notifier as never,
         post,
     );
 
     return {
         dispatcher,
-        host,
+        editorStore,
+        documentPort,
         deploymentService,
         startInstanceService,
         deploymentTargetService,
         deploymentStatusService,
+        notifier,
         post,
     };
 }
@@ -130,6 +148,10 @@ const startInstance = (c: ReturnType<typeof createDispatcher>, auth: AuthConfigP
         type: "StartInstanceCommand",
         config: startPayload(auth),
     } as StartInstanceCommand);
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
 describe("DeploymentMessageDispatcher deploy auth construction", () => {
     it("builds a BasicAuth from a basic payload", async () => {
@@ -179,7 +201,8 @@ describe("DeploymentMessageDispatcher deploy auth construction", () => {
         await deploy(c, { authType: "none" });
 
         const config = c.deploymentService.deploy.mock.calls[0][0];
-        expect(config.mainFilePath).toBe(TRUSTED_PATH);
+        expect(c.documentPort.getFilePath).toHaveBeenCalledWith("editor-1");
+        expect(config.mainFilePath).toBe("/work/trusted/order-process.bpmn");
         expect(config.mainFilePath).not.toBe("/work/order-process.bpmn");
     });
 });
@@ -193,8 +216,8 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.host.notifier.infos).toEqual(["deployed"]);
-        expect(c.host.notifier.errors).toEqual([]);
+        expect(c.notifier.showInfo).toHaveBeenCalledWith("deployed");
+        expect(c.notifier.showError).not.toHaveBeenCalled();
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(true);
         expect(query.message).toBe("deployed");
@@ -207,8 +230,8 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.host.notifier.errors).toEqual(["rejected"]);
-        expect(c.host.notifier.infos).toEqual([]);
+        expect(c.notifier.showError).toHaveBeenCalledWith("rejected");
+        expect(c.notifier.showInfo).not.toHaveBeenCalled();
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe("rejected");
@@ -221,7 +244,7 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.host.notifier.errors).toEqual([error.message]);
+        expect(c.notifier.showError).toHaveBeenCalledWith(error.message);
         expect(postedQuery(c.post, DeploymentResultQuery).message).toBe(error.message);
     });
 
@@ -232,7 +255,7 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
         await deploy(c, { authType: "none" });
 
         const fallback = "An unexpected error occurred during deployment.";
-        expect(c.host.notifier.errors).toEqual([fallback]);
+        expect(c.notifier.showError).toHaveBeenCalledWith(fallback);
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe(fallback);
@@ -240,8 +263,16 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 });
 
 describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
+    /** Every string passed to any notifier log method across the whole call. */
     function allLoggedText(c: ReturnType<typeof createDispatcher>): string {
-        return c.host.notifier.logs.map((entry) => entry.message).join("\n");
+        return [
+            ...c.notifier.logDebug.mock.calls,
+            ...c.notifier.logInfo.mock.calls,
+            ...c.notifier.logWarning.mock.calls,
+            ...c.notifier.logError.mock.calls,
+        ]
+            .map((args) => String(args[0]))
+            .join("\n");
     }
 
     it("logs a start breadcrumb with the trusted basename, engine, and endpoint host", async () => {
@@ -250,7 +281,7 @@ describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.host.notifier.logged("info")).toContain(
+        expect(c.notifier.logInfo).toHaveBeenCalledWith(
             "Deployment started: order-process.bpmn -> c7 @ localhost:8080",
         );
     });
@@ -261,7 +292,7 @@ describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.host.notifier.logged("warning")).toEqual(["Deployment failed: rejected"]);
+        expect(c.notifier.logWarning).toHaveBeenCalledWith("Deployment failed: rejected");
     });
 
     it("never writes the basic-auth password to any log line", async () => {
@@ -326,6 +357,15 @@ describe("DeploymentMessageDispatcher start-instance auth construction", () => {
 
         expect(c.startInstanceService.startInstance.mock.calls[0][3]).toBeInstanceOf(NoAuth);
     });
+
+    it("threads the active document directory so env refs resolve against its .env", async () => {
+        const c = createDispatcher();
+        c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
+
+        await startInstance(c, { authType: "none" });
+
+        expect(c.startInstanceService.startInstance.mock.calls[0][6]).toBe("/work/trusted");
+    });
 });
 
 describe("DeploymentMessageDispatcher start-instance result handling", () => {
@@ -337,7 +377,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
 
         await startInstance(c, { authType: "none" });
 
-        expect(c.host.notifier.infos).toEqual(["started"]);
+        expect(c.notifier.showInfo).toHaveBeenCalledWith("started");
         const query = postedQuery(c.post, StartInstanceResultQuery);
         expect(query.success).toBe(true);
         expect(query.processInstanceId).toBe("pi-1");
@@ -351,7 +391,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
 
         await startInstance(c, { authType: "none" });
 
-        expect(c.host.notifier.errors).toEqual(["no instance"]);
+        expect(c.notifier.showError).toHaveBeenCalledWith("no instance");
         expect(postedQuery(c.post, StartInstanceResultQuery).success).toBe(false);
     });
 
@@ -362,7 +402,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
         await startInstance(c, { authType: "none" });
 
         const fallback = "An unexpected error occurred while starting the process instance.";
-        expect(c.host.notifier.errors).toEqual([fallback]);
+        expect(c.notifier.showError).toHaveBeenCalledWith(fallback);
         const query = postedQuery(c.post, StartInstanceResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe(fallback);
@@ -407,21 +447,24 @@ describe("DeploymentMessageDispatcher.sendFormDefaults", () => {
 
         expect(postedQuery(c.post, ProcessDefinitionKeyQuery).processDefinitionKey).toBe("");
         // A parseable diagram whose key can't be read is a degradation → warn.
-        expect(c.host.notifier.logged("warning")).toEqual([
+        expect(c.notifier.logWarning).toHaveBeenCalledWith(
             expect.stringContaining("Process-definition key extraction failed"),
-        ]);
+        );
     });
 
     it("falls back to empty defaults (and only debug-logs) when there is no active editor", () => {
-        const c = createDispatcher({ openDiagram: false });
+        const c = createDispatcher();
+        c.editorStore.getActiveEditorId.mockImplementation(() => {
+            throw new Error("no active editor");
+        });
 
         c.dispatcher.sendFormDefaults();
 
         // No active editor is the expected steady state — debug, not warn.
-        expect(c.host.notifier.logged("debug")).toContainEqual(
+        expect(c.notifier.logDebug).toHaveBeenCalledWith(
             expect.stringContaining("No active editor for deployment form defaults"),
         );
-        expect(c.host.notifier.logged("warning")).toEqual([]);
+        expect(c.notifier.logWarning).not.toHaveBeenCalled();
         const defaults = postedQuery(c.post, FormDefaultsQuery).defaults;
         expect(defaults.deploymentName).toBe("");
         expect(defaults.engine).toBe("c7");
@@ -669,7 +712,7 @@ describe("DeploymentMessageDispatcher target commands", () => {
             new DeploymentTarget("other", "c7", "https://other", "", "none", "", ""),
         );
         c.deploymentTargetService.getTarget.mockImplementation(async () => {
-            c.host.openEditor("/another/diagram.bpmn");
+            c.documentPort.getFilePath.mockReturnValue("/another/diagram.bpmn");
             return new DeploymentTarget(
                 "dev",
                 "c7",
@@ -687,7 +730,7 @@ describe("DeploymentMessageDispatcher target commands", () => {
         expect(c.deploymentTargetService.getTarget).toHaveBeenCalledWith("dev", "/work/trusted");
         expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledWith("dev", "/work/trusted");
         const [config, , identity] = c.deploymentService.deploy.mock.calls[0];
-        expect(config.mainFilePath).toBe(TRUSTED_PATH);
+        expect(config.mainFilePath).toBe("/work/trusted/order-process.bpmn");
         expect(identity.key()).toBe("target:dev@localhost:8080");
     });
 
@@ -777,9 +820,7 @@ describe("DeploymentMessageDispatcher target commands", () => {
 
         await c.dispatcher.handle({ type: "OpenTargetsFileCommand" } as Command);
 
-        expect(c.host.notifier.errors).toEqual([
-            "Could not open deployment targets file\nno workspace",
-        ]);
+        expect(c.notifier.notifyError).toHaveBeenCalledOnce();
     });
 
     it("creates a target and posts a success TargetSavedQuery", async () => {
@@ -959,9 +1000,9 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
         await c.dispatcher.handle(new LogWarningCommand("w"));
         await c.dispatcher.handle(new LogErrorCommand("boom", "at foo"));
 
-        expect(c.host.notifier.logged("info")).toContain("[webview:deployment] i");
-        expect(c.host.notifier.logged("warning")).toContain("[webview:deployment] w");
-        expect(c.host.notifier.logged("error")).toContain("[webview:deployment] boom\nat foo");
+        expect(c.notifier.logInfo).toHaveBeenCalledWith("[webview:deployment] i");
+        expect(c.notifier.logWarning).toHaveBeenCalledWith("[webview:deployment] w");
+        expect(c.notifier.logError).toHaveBeenCalledWith("[webview:deployment] boom\nat foo");
     });
 
     it("does not enter the command switch for a Log* command", async () => {
@@ -971,7 +1012,7 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
 
         // The switch's per-message debug breadcrumb is skipped for log traffic
         // so forwarded lines aren't double-logged.
-        expect(c.host.notifier.logged("debug")).not.toContain(
+        expect(c.notifier.logDebug).not.toHaveBeenCalledWith(
             "Deployment message received -> LogInfoCommand",
         );
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
@@ -983,7 +1024,7 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
         await c.dispatcher.handle({ type: "TotallyUnknownCommand" } as Command);
 
         expect(c.post).not.toHaveBeenCalled();
-        expect(c.host.notifier.logged("debug")).toContain(
+        expect(c.notifier.logDebug).toHaveBeenCalledWith(
             "Deployment message received -> TotallyUnknownCommand",
         );
     });

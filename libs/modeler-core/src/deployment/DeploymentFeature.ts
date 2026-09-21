@@ -13,6 +13,7 @@ import {
     WorkspacePort,
 } from "../shared/domain/hostPorts";
 import { EditorSessionStore } from "../shared/infrastructure/EditorSessionStore";
+import { ProcessEnv } from "../shared/infrastructure/ProcessEnv";
 import { ArtifactService } from "../shared/service/ArtifactService";
 import { HttpClient } from "./domain/ports";
 import { AuthHeaderResolver } from "./infrastructure/camunda/AuthHeaderResolver";
@@ -27,6 +28,7 @@ import { DeploymentService } from "./service/DeploymentService";
 import { DeploymentStatusService } from "./service/DeploymentStatusService";
 import { DeploymentTargetService } from "./service/DeploymentTargetService";
 import { DeploymentVerificationService } from "./service/DeploymentVerificationService";
+import { EnvValueResolver } from "./service/EnvValueResolver";
 import { StartInstanceService } from "./service/StartInstanceService";
 import { DeploymentStatusParticipant } from "./session/DeploymentStatusParticipant";
 
@@ -78,6 +80,7 @@ export class DeploymentFeature {
             c7Client,
             new Camunda8RestClient(http, auth, ports.settings.getC8ApiVersion()),
         );
+        const envResolver = new EnvValueResolver(ports.artifacts, ports.workspace, new ProcessEnv());
 
         const startInstance = new StartInstanceService(
             ports.documents,
@@ -86,6 +89,7 @@ export class DeploymentFeature {
             ports.notifier,
             ports.picker,
             ports.artifacts,
+            envResolver,
         );
         this.targets = new DeploymentTargetService(
             ports.artifacts,
@@ -112,6 +116,7 @@ export class DeploymentFeature {
             this.status,
             c7Client,
             ports.notifier,
+            envResolver,
         );
         const deployment = new DeploymentService(
             ports.documents,
@@ -122,6 +127,7 @@ export class DeploymentFeature {
             ports.picker,
             ports.secrets,
             this.status,
+            envResolver,
         );
         this.deployActiveDiagram = new DeployActiveDiagramService(
             ports.store,
