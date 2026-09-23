@@ -21,7 +21,6 @@ import {
 import { posix } from "path";
 
 import { BasicAuth, DeploymentConfigBuilder, NoAuth, OAuth2Auth } from "../domain/deployment";
-import { DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import {
     DeploymentTargetChangedError,
@@ -296,7 +295,7 @@ export class DeploymentMessageDispatcher {
             );
             if (renamedFrom !== undefined) {
                 await this.deploymentStatusService.pruneTarget(
-                    DeploymentTargetIdentity.fromTarget(renamedFrom),
+                    await this.deploymentStatusService.targetIdentity(renamedFrom, documentDir),
                 );
             }
             this.post(
@@ -319,7 +318,7 @@ export class DeploymentMessageDispatcher {
             if (deleted) {
                 if (target !== undefined) {
                     await this.deploymentStatusService.pruneTarget(
-                        DeploymentTargetIdentity.fromTarget(target),
+                        await this.deploymentStatusService.targetIdentity(target, documentDir),
                     );
                 }
                 this.post(new TargetSavedQuery(true, `Deleted deployment target "${name}".`));
@@ -525,8 +524,12 @@ export class DeploymentMessageDispatcher {
                     : await this.deploymentTargetService.resolveSlot(target.name, documentDir);
             const identity =
                 target === undefined
-                    ? DeploymentTargetIdentity.adHoc(config.endpoint, config.tenantId)
-                    : DeploymentTargetIdentity.fromTarget(target);
+                    ? await this.deploymentStatusService.adHocIdentity(
+                          config.endpoint,
+                          config.tenantId,
+                          documentDir,
+                      )
+                    : await this.deploymentStatusService.targetIdentity(target, documentDir);
 
             // Breadcrumb. Only host[:port] is logged (never the full URL, which can
             // carry credentials, and never the auth payload) — see endpointHost.
