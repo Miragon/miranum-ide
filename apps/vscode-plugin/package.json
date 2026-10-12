@@ -15,7 +15,7 @@
         "tslib": "2.8.1"
     },
     "devDependencies": {
-        "@bpmn-io/form-js": "1.26.1",
+        "@bpmn-io/form-js": "2.0.1",
         "@bpmn-io/form-json-schema": "1.18.0",
         "@types/mocha": "10.0.10",
         "@types/node": "26.6.1",
