@@ -18,9 +18,24 @@ import { createScopedRequire } from "bpmnlint/lib/resolver/helper";
  * pre-loaded with the core BPMN packages, optionally merged with additional
  * (e.g. Camunda) moddle extensions — the same call `bpmnlint`'s CLI uses.
  */
-type BpmnModdleFactory = (extensions?: Record<string, unknown>) => {
+type BpmnModdleFactory = (extensions?: Record<string, unknown>) => BpmnModdle;
+
+interface BpmnModdle {
     fromXML: (xml: string) => Promise<{ rootElement: unknown }>;
-};
+}
+
+/** Everything a lint run needs that depends only on the config version. */
+interface LintSetup {
+    readonly moddle: BpmnModdle;
+    readonly resolvers: readonly Resolver[];
+    readonly resolved: Map<string, unknown>;
+    readonly moddleExtensionMisses: readonly string[];
+}
+
+interface CachedLintSetup {
+    readonly configFingerprint: string;
+    readonly setup: Promise<LintSetup>;
+}
 
 /**
  * Runs bpmnlint in a full Node context (the VS Code extension host or the
@@ -35,87 +50,137 @@ type BpmnModdleFactory = (extensions?: Record<string, unknown>) => {
  * installed still lints. A rule the workspace declares but cannot provide (plugin
  * not installed) is skipped and reported, never fatal.
  *
+ * The moddle, the loaded extensions and the resolved rules are kept per config
+ * path until the config changes, so an edit only pays for the parse and the rules.
+ *
  * Host-agnostic on purpose (no `vscode` import): the IntelliJ bridge, a Bun
  * process, reuses it verbatim.
  */
 export class NodeBpmnLinter implements LintRunnerPort {
+    private readonly setupsByConfigPath = new Map<string, CachedLintSetup>();
+    private bundledResolver: Resolver | undefined;
+    private moddleFactory: Promise<BpmnModdleFactory> | undefined;
+
     async lint(
         xml: string,
         configPath: string,
         config: Record<string, unknown>,
     ): Promise<{ results: LintResults; unresolved: string[] }> {
-        const configDir = dirname(uriPathToFsPath(configPath));
-        const scopedRequire = createScopedRequire(configDir);
+        const setup = await this.lintSetupFor(configPath, config);
 
-        const resolver = new CompositeResolver(
-            new NodeResolver({ require: scopedRequire, requireLocal: scopedRequire }),
-            createBundledResolver() as Resolver,
-        );
+        const resolver = new CompositeResolver(setup.resolvers, setup.resolved);
+        resolver.unresolved.push(...setup.moddleExtensionMisses);
+        const { rootElement } = await setup.moddle.fromXML(xml);
 
-        const moddleExtensions = this.loadModdleExtensions(config, scopedRequire, resolver);
-        const moddle = (await this.createModdle())(moddleExtensions);
-        const { rootElement } = await moddle.fromXML(xml);
-
+        // Never reuse a Linter: it caches rule instances, and rules keep per-run
+        // state in their closures (`no-duplicate-sequence-flows` would flag every
+        // flow from the second run on).
         const linter = new Linter({ config, resolver });
         const results = (await linter.lint(rootElement)) as LintResults;
 
         return { results, unresolved: resolver.unresolved };
     }
 
-    /**
-     * Resolves the config's `moddleExtensions` (`{ prefix: value }`) so rules that
-     * inspect Camunda/Zeebe properties see the same typed model the CLI does.
-     *
-     * A workspace `.bpmnlintrc` declares each extension as a module-path string,
-     * `require`d from the workspace. The zero-config default instead embeds the
-     * descriptor object directly (see {@link DefaultBpmnlintConfigService}) because
-     * a config-less workspace has no `node_modules` to resolve it from — those
-     * pass straight through. A string module that fails to load is skipped and
-     * recorded rather than aborting the lint.
-     */
-    private loadModdleExtensions(
-        config: Record<string, unknown>,
-        scopedRequire: NodeRequire,
-        resolver: CompositeResolver,
-    ): Record<string, unknown> {
-        const declared = config.moddleExtensions;
-        if (!declared || typeof declared !== "object") {
-            return {};
+    private lintSetupFor(configPath: string, config: Record<string, unknown>): Promise<LintSetup> {
+        const configFingerprint = JSON.stringify(config);
+        const cached = this.setupsByConfigPath.get(configPath);
+        if (cached?.configFingerprint === configFingerprint) {
+            return cached.setup;
         }
 
-        const extensions: Record<string, unknown> = {};
-        for (const [prefix, value] of Object.entries(declared as Record<string, unknown>)) {
-            if (value && typeof value === "object") {
-                extensions[prefix] = value;
-                continue;
+        const setup = this.createLintSetup(configPath, config);
+        this.setupsByConfigPath.set(configPath, { configFingerprint, setup });
+        const forget = () => {
+            if (this.setupsByConfigPath.get(configPath)?.setup === setup) {
+                this.setupsByConfigPath.delete(configPath);
             }
-            try {
-                extensions[prefix] = scopedRequire(String(value));
-            } catch {
-                resolver.unresolved.push(`moddleExtension:${prefix}`);
-            }
-        }
-        return extensions;
-    }
-
-    /**
-     * `bpmn-moddle` has no `default` export on some bundler interops — its ESM
-     * dist re-exports the factory as `BpmnModdle` too. Accept both (mirrors
-     * `BpmnDiffService`).
-     */
-    private async createModdle(): Promise<BpmnModdleFactory> {
-        const mod = (await import("bpmn-moddle")) as unknown as {
-            default?: BpmnModdleFactory;
-            BpmnModdle?: BpmnModdleFactory;
         };
-        const factory = mod.default ?? mod.BpmnModdle;
-        if (typeof factory !== "function") {
-            throw new Error(
-                "bpmn-moddle did not expose a factory under `default` or `BpmnModdle`.",
-            );
-        }
-        return factory;
+        // A missing moddle extension may be installed later; retry it next run.
+        setup.then((created) => {
+            if (created.moddleExtensionMisses.length > 0) {
+                forget();
+            }
+        }, forget);
+        return setup;
     }
+
+    private async createLintSetup(
+        configPath: string,
+        config: Record<string, unknown>,
+    ): Promise<LintSetup> {
+        const scopedRequire = createScopedRequire(dirname(uriPathToFsPath(configPath)));
+        const { extensions, misses } = loadModdleExtensions(config, scopedRequire);
+        const moddle = (await this.loadModdleFactory())(extensions);
+        this.bundledResolver ??= createBundledResolver() as Resolver;
+
+        return {
+            moddle,
+            resolvers: [
+                new NodeResolver({ require: scopedRequire, requireLocal: scopedRequire }),
+                this.bundledResolver,
+            ],
+            resolved: new Map(),
+            moddleExtensionMisses: misses,
+        };
+    }
+
+    private loadModdleFactory(): Promise<BpmnModdleFactory> {
+        this.moddleFactory ??= importModdleFactory();
+        return this.moddleFactory;
+    }
+}
+
+/**
+ * Resolves the config's `moddleExtensions` (`{ prefix: value }`) so rules that
+ * inspect Camunda/Zeebe properties see the same typed model the CLI does.
+ *
+ * A workspace `.bpmnlintrc` declares each extension as a module-path string,
+ * `require`d from the workspace. The zero-config default instead embeds the
+ * descriptor object directly (see {@link DefaultBpmnlintConfigService}) because
+ * a config-less workspace has no `node_modules` to resolve it from — those
+ * pass straight through. A string module that fails to load is skipped and
+ * recorded rather than aborting the lint.
+ */
+function loadModdleExtensions(
+    config: Record<string, unknown>,
+    scopedRequire: NodeRequire,
+): { extensions: Record<string, unknown>; misses: string[] } {
+    const extensions: Record<string, unknown> = {};
+    const misses: string[] = [];
+    const declared = config.moddleExtensions;
+    if (!declared || typeof declared !== "object") {
+        return { extensions, misses };
+    }
+
+    for (const [prefix, value] of Object.entries(declared as Record<string, unknown>)) {
+        if (value && typeof value === "object") {
+            extensions[prefix] = value;
+            continue;
+        }
+        try {
+            extensions[prefix] = scopedRequire(String(value));
+        } catch {
+            misses.push(`moddleExtension:${prefix}`);
+        }
+    }
+    return { extensions, misses };
+}
+
+/**
+ * `bpmn-moddle` has no `default` export on some bundler interops — its ESM
+ * dist re-exports the factory as `BpmnModdle` too. Accept both (mirrors
+ * `BpmnDiffService`).
+ */
+async function importModdleFactory(): Promise<BpmnModdleFactory> {
+    const mod = (await import("bpmn-moddle")) as unknown as {
+        default?: BpmnModdleFactory;
+        BpmnModdle?: BpmnModdleFactory;
+    };
+    const factory = mod.default ?? mod.BpmnModdle;
+    if (typeof factory !== "function") {
+        throw new Error("bpmn-moddle did not expose a factory under `default` or `BpmnModdle`.");
+    }
+    return factory;
 }
 
 /**

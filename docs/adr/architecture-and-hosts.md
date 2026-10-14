@@ -205,6 +205,14 @@ a cached result must equal an uncached run.
   still watches, because a change there would otherwise go unnoticed.
   Accepted cost: a marketplace update made by another window is not seen while
   editors of this process stay open.
+- **Escalated lint setup.** `NodeBpmnLinter` keeps the moddle, the loaded
+  moddle extensions and the resolved rules and configs per `.bpmnlintrc` path,
+  keyed by the config content. A changed config replaces the entry. Every run
+  still builds its own `Linter`, as [Linting](bpmn-modeler.md#linting) requires.
+  Rules no resolver finds, and setups with a missing moddle extension, are not
+  kept, so installing the package takes effect on the next run. Accepted cost:
+  a workspace plugin installed mid-session that shadows a bundled rule takes
+  effect only after the config changes or the host restarts.
 
 ## Alternatives and consequences
 
