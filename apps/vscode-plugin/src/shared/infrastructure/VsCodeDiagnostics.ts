@@ -11,15 +11,18 @@ import {
 import { LintResults } from "@miragon/bpmn-modeler-types";
 import { DiagnosticsPort } from "@miragon/bpmn-modeler-core";
 
+import { ElementIdPositions, TextPosition } from "./elementIdPositions";
+
 /**
  * Publishes bpmnlint findings into VS Code's Problems panel via a single shared
  * {@link DiagnosticCollection}, so lint results are searchable and clickable
  * without opening the diagram — the payoff of linting in the host.
  *
  * bpmnlint reports address elements by id, not text ranges, so the range is a
- * best-effort scan for the element's `id="…"` in the XML, falling back to the
- * document start. That is enough for the Problems entry to open the file; the
- * precise on-canvas location is still shown by the in-diagram overlay.
+ * best-effort scan for the element's `id="…"` in the XML ({@link ElementIdPositions}),
+ * falling back to the document start. That is enough for the Problems entry to
+ * open the file; the precise on-canvas location is still shown by the
+ * in-diagram overlay.
  *
  * Element-specific findings additionally get a clickable `code` link to a host
  * command that centres the element — the only handle a Problems entry has,
@@ -36,10 +39,14 @@ export class VsCodeDiagnostics implements DiagnosticsPort {
     publish(documentUri: string, xml: string, results: LintResults): void {
         const uri = Uri.parse(documentUri);
         const diagnostics: Diagnostic[] = [];
+        let elementIdPositions: ElementIdPositions | undefined;
 
         for (const reports of Object.values(results)) {
             for (const report of reports) {
-                const range = this.rangeForElement(xml, report.id);
+                const position = report.id
+                    ? (elementIdPositions ??= new ElementIdPositions(xml)).positionOf(report.id)
+                    : undefined;
+                const range = this.rangeAt(position);
                 const diagnostic = new Diagnostic(
                     range,
                     report.message,
@@ -86,30 +93,10 @@ export class VsCodeDiagnostics implements DiagnosticsPort {
         }
     }
 
-    /**
-     * Best-effort locate of the element's `id="…"` attribute in the raw XML. A
-     * plain string scan (not an XML parse) keeps this cheap; a diagram-level or
-     * unlocatable finding collapses to the document start.
-     */
-    private rangeForElement(xml: string, id: string | undefined): Range {
-        const start = new Position(0, 0);
-        if (!id) {
-            return new Range(start, start);
-        }
-
-        const offset = xml.search(new RegExp(`\\sid=["']${escapeRegExp(id)}["']`));
-        if (offset < 0) {
-            return new Range(start, start);
-        }
-
-        const before = xml.slice(0, offset);
-        const line = before.split("\n").length - 1;
-        const column = offset - (before.lastIndexOf("\n") + 1);
-        const position = new Position(line, Math.max(column, 0));
+    private rangeAt(textPosition: TextPosition | undefined): Range {
+        const position = textPosition
+            ? new Position(textPosition.line, textPosition.character)
+            : new Position(0, 0);
         return new Range(position, position);
     }
-}
-
-function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

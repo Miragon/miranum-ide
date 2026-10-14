@@ -2,6 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const setMock = vi.fn();
 const deleteMock = vi.fn();
+const positionIndexesBuilt = vi.hoisted(() => vi.fn());
+
+vi.mock("./elementIdPositions", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./elementIdPositions")>();
+    return {
+        ElementIdPositions: class extends actual.ElementIdPositions {
+            constructor(xml: string) {
+                super(xml);
+                positionIndexesBuilt();
+            }
+        },
+    };
+});
 
 vi.mock("vscode", () => {
     class Position {
@@ -54,6 +67,7 @@ function publishedDiagnostic(results: LintResults, focusCommandId?: string) {
 beforeEach(() => {
     setMock.mockClear();
     deleteMock.mockClear();
+    positionIndexesBuilt.mockClear();
 });
 
 describe("VsCodeDiagnostics element-specific navigation", () => {
@@ -108,5 +122,50 @@ describe("VsCodeDiagnostics element-specific navigation", () => {
         );
 
         expect(diagnostic.code).toBe("label-required");
+    });
+});
+
+describe("VsCodeDiagnostics element ranges", () => {
+    const TASK_COUNT = 5000;
+    // One task per line after the header, so Task_<n> sits on line n + 1.
+    const largeXml = [
+        `<?xml version="1.0"?><bpmn:definitions id="Definitions_1">`,
+        ...Array.from({ length: TASK_COUNT }, (_, n) => `  <bpmn:task id="Task_${n}" />`),
+        `</bpmn:definitions>`,
+    ].join("\n");
+
+    function publishedRanges(results: LintResults): { line: number; character: number }[] {
+        new VsCodeDiagnostics().publish(DOC, largeXml, results);
+        return (
+            setMock.mock.calls[0][1] as { range: { start: { line: number; character: number } } }[]
+        ).map((diagnostic) => diagnostic.range.start);
+    }
+
+    it("locates every finding of a push from one scan of the XML", () => {
+        const findings = Array.from({ length: 2000 }, (_, n) => ({
+            id: `Task_${n * 2}`,
+            message: "Label required",
+            category: "warn",
+        }));
+
+        const starts = publishedRanges({ "label-required": findings });
+
+        expect(positionIndexesBuilt).toHaveBeenCalledOnce();
+        expect(starts[0]).toEqual({ line: 1, character: 12 });
+        expect(starts[1999]).toEqual({ line: 3999, character: 12 });
+    });
+
+    it("places diagram-level and unknown findings at the document start without scanning", () => {
+        const starts = publishedRanges({
+            "no-implementation-process": [{ message: "…", category: "warn" }],
+        });
+
+        expect(positionIndexesBuilt).not.toHaveBeenCalled();
+        expect(starts).toEqual([{ line: 0, character: 0 }]);
+
+        setMock.mockClear();
+        expect(
+            publishedRanges({ "label-required": [{ id: "Gone", message: "…", category: "warn" }] }),
+        ).toEqual([{ line: 0, character: 0 }]);
     });
 });
