@@ -1,7 +1,7 @@
 # Architecture and hosts
 
 - Status: accepted
-- Last reviewed: 2026-10-08
+- Last reviewed: 2026-10-14
 
 ## Context
 
@@ -19,6 +19,7 @@ depends on another host's internals.
 - [Process lifecycle](#process-lifecycle)
 - [Host-replicated state](#host-replicated-state)
 - [Document causation and session identity](#document-causation-and-session-identity)
+- [Shared host caches](#shared-host-caches)
 - [Alternatives and consequences](#alternatives-and-consequences)
 
 ## Decision
@@ -185,6 +186,25 @@ peers reject mismatched identities, including stale disposal. For existing
 compatibility, a missing session ID addresses the current session; legacy
 webview writes without a document revision are accepted only before revision
 zero advances. The core's own session guard remains a second defense.
+
+### Shared host caches
+
+A host process serves every open editor, so work whose result does not depend
+on the editor is cached in the `modeler-core` service that every editor of the
+process shares. Hosts only wire lifecycle events into that service. Each entry
+has an owner that keeps it valid: a version key that changes with its input, or
+a live watcher of an open editor. An entry is released with its last editor, and
+a cached result must equal an uncached run.
+
+- **Element templates.** `BpmnElementTemplatesService` caches parsed templates
+  per template directory, plus the marketplace cache. The directories that exist
+  are still probed per request, so a new `element-templates` folder is found.
+  A template watcher event drops all directory entries once, after a short
+  debounce over the per-editor watchers. A marketplace action drops the
+  marketplace entry. Releasing an editor drops the directories no open editor
+  still watches, because a change there would otherwise go unnoticed.
+  Accepted cost: a marketplace update made by another window is not seen while
+  editors of this process stay open.
 
 ## Alternatives and consequences
 

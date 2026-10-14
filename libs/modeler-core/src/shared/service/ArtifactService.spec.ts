@@ -224,27 +224,20 @@ describe("ArtifactService.collectTemplateDirs", () => {
     });
 });
 
-describe("ArtifactService.getArtifactPaths", () => {
-    it("aggregates JSON paths from every template dir and reports the extension", async () => {
+describe("ArtifactService.getTemplateDirs", () => {
+    it("returns the existing template dirs nearest-first", async () => {
         const { service, vsWorkspace } = createService();
         vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
-        vsWorkspace.readDirectory.mockImplementation((path: string) => {
-            if (path === "/work/a/.camunda/element-templates") {
-                return Promise.resolve([["near.json", "file"]]);
-            }
-            if (path === "/work/.camunda/element-templates") {
-                return Promise.resolve([["root.json", "file"]]);
-            }
-            return Promise.resolve([]);
-        });
+        vsWorkspace.readDirectory.mockImplementation((path: string) =>
+            path === "/work/a/.camunda/element-templates" ||
+            path === "/work/.camunda/element-templates"
+                ? Promise.resolve([])
+                : Promise.reject(new DirectoryNotFound(path)),
+        );
 
-        const [paths, extension] = await service.getArtifactPaths("/work/a");
-
-        expect(extension).toBe(".json");
-        // Nearest-first dir order is preserved across the aggregation.
-        expect(paths).toEqual([
-            "/work/a/.camunda/element-templates/near.json",
-            "/work/.camunda/element-templates/root.json",
+        await expect(service.getTemplateDirs("/work/a")).resolves.toEqual([
+            "/work/a/.camunda/element-templates",
+            "/work/.camunda/element-templates",
         ]);
     });
 });
@@ -282,7 +275,7 @@ describe("ArtifactService.createWatcher", () => {
         vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
         const handle = { dispose: vi.fn() };
         vsWorkspace.createWatcher.mockReturnValue(handle);
-        const target = { setElementTemplates: vi.fn().mockResolvedValue(true) };
+        const target = { refreshElementTemplates: vi.fn() };
 
         const result = await service.createWatcher("/work/proc/order.bpmn", target as never);
 
@@ -305,35 +298,7 @@ describe("ArtifactService.createWatcher", () => {
         handlers.onCreate("/work/.camunda/element-templates/copied-folder");
         handlers.onChange("/work/.camunda/element-templates/x.json");
         handlers.onDelete("/work/.camunda/element-templates/x.json");
-        expect(target.setElementTemplates).toHaveBeenCalledTimes(3);
-        expect(target.setElementTemplates).toHaveBeenNthCalledWith(1, "/work/proc/order.bpmn");
-    });
-
-    it("logs a rejected template refresh instead of leaking an unhandled rejection", async () => {
-        const { vsWorkspace, vsSettings } = createService();
-        vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
-        vsWorkspace.createWatcher.mockReturnValue({ dispose: vi.fn() });
-        const logger = {
-            logDebug: vi.fn(),
-            logInfo: vi.fn(),
-            logWarning: vi.fn(),
-            logError: vi.fn(),
-        };
-        const service = new ArtifactService(
-            vsWorkspace as never,
-            vsSettings as never,
-            logger as never,
-        );
-        const boom = new Error("templates dir unreadable");
-        const target = { setElementTemplates: vi.fn().mockRejectedValue(boom) };
-
-        await service.createWatcher("/work/proc/order.bpmn", target as never);
-        const handlers = vsWorkspace.createWatcher.mock.calls[0][2];
-        handlers.onChange("/work/.camunda/element-templates/x.json");
-        // The `.catch` guard runs on a later microtask; flush before asserting.
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(logger.logError).toHaveBeenCalledWith(boom);
+        expect(target.refreshElementTemplates).toHaveBeenCalledTimes(3);
+        expect(target.refreshElementTemplates).toHaveBeenNthCalledWith(1, "/work/proc/order.bpmn");
     });
 });

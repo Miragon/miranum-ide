@@ -166,7 +166,7 @@ async function addMarketplace(
         );
         await persistRegistration(deps, location, scope);
         deps.notifier.logDebug(`Marketplace registration persist requested: ${location}`);
-        await refreshOpenEditors(deps, handles.templatesSvc);
+        await handles.templatesSvc.reloadMarketplaceTemplates();
         deps.notifier.showInfo("Marketplace added.");
     } catch (error) {
         deps.notifier.notifyError("Failed to add marketplace.", error as Error);
@@ -189,7 +189,7 @@ async function updateMarketplaces(
     const outcome = await deps.notifier.withProgress("Updating marketplaces…", () =>
         handles.marketplaceSvc.updateAll(),
     );
-    await refreshOpenEditors(deps, handles.templatesSvc);
+    await handles.templatesSvc.reloadMarketplaceTemplates();
 
     const total = outcome.succeeded + outcome.failures.length;
     if (total === 0) {
@@ -227,7 +227,7 @@ async function removeMarketplaces(
     try {
         const pruned = await handles.marketplaceSvc.pruneOrphanedCaches();
         deps.notifier.logDebug(`Pruned marketplace cache(s): ${pruned.join(", ") || "none"}`);
-        await refreshOpenEditors(deps, handles.templatesSvc);
+        await handles.templatesSvc.reloadMarketplaceTemplates();
         deps.notifier.showInfo(`Removed ${removedCount} marketplace(s).`);
     } catch (error) {
         deps.notifier.notifyError("Failed to remove marketplace(s).", error as Error);
@@ -256,15 +256,5 @@ async function persistRegistration(
                 ? new Error(`Failed to persist marketplace registration: ${error.message}`)
                 : new Error("Failed to persist marketplace registration"),
         );
-    }
-}
-
-/** Re-pushes templates to every open editor so newly cached ones appear without reopening. */
-async function refreshOpenEditors(
-    deps: BridgeSharedDeps,
-    templatesSvc: BpmnElementTemplatesService,
-): Promise<void> {
-    for (const editorId of deps.store.getEditorIds()) {
-        await templatesSvc.setElementTemplates(editorId);
     }
 }

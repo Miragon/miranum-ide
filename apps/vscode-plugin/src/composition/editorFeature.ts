@@ -156,6 +156,7 @@ export function register(
         deps.notifier,
         marketplaceSvc,
     );
+    context.subscriptions.push({ dispose: () => templatesSvc.dispose() });
     const lintConfigLocator = new BpmnLintConfigLocator(
         deps.vsWorkspace,
         deps.vsSettings,

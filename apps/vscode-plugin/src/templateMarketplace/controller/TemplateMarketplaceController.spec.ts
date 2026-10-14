@@ -31,8 +31,7 @@ function createController() {
         updateAll: vi.fn().mockResolvedValue({ succeeded: 1, failures: [] }),
         pruneOrphanedCaches: vi.fn().mockResolvedValue([]),
     };
-    const templatesSvc = { setElementTemplates: vi.fn().mockResolvedValue(undefined) };
-    const editorStore = { getEditorIds: vi.fn().mockReturnValue([]) };
+    const templatesSvc = { reloadMarketplaceTemplates: vi.fn().mockResolvedValue(undefined) };
     const settings = {
         addMarketplace: vi.fn().mockResolvedValue(undefined),
         removeMarketplaces: vi.fn().mockResolvedValue(undefined),
@@ -58,13 +57,12 @@ function createController() {
     const controller = new TemplateMarketplaceController(
         marketplaceSvc as never,
         templatesSvc as never,
-        editorStore as never,
         settings as never,
         notifier as never,
     );
     controller.register({ subscriptions: [] } as never);
 
-    return { handlers, marketplaceSvc, templatesSvc, editorStore, settings, notifier };
+    return { handlers, marketplaceSvc, templatesSvc, settings, notifier };
 }
 
 /** Models an open workspace vs. an empty window for the scope pick. */
@@ -222,14 +220,12 @@ describe("TemplateMarketplaceController.addMarketplace", () => {
 
 describe("TemplateMarketplaceController.updateMarketplaces", () => {
     it("re-fetches all marketplaces and refreshes open editors", async () => {
-        const { handlers, marketplaceSvc, templatesSvc, editorStore } = createController();
-        editorStore.getEditorIds.mockReturnValue(["editor-1", "editor-2"]);
+        const { handlers, marketplaceSvc, templatesSvc } = createController();
 
         await handlers.get(UPDATE_MARKETPLACES_CMD)!();
 
         expect(marketplaceSvc.updateAll).toHaveBeenCalledOnce();
-        expect(templatesSvc.setElementTemplates).toHaveBeenCalledWith("editor-1");
-        expect(templatesSvc.setElementTemplates).toHaveBeenCalledWith("editor-2");
+        expect(templatesSvc.reloadMarketplaceTemplates).toHaveBeenCalledOnce();
     });
 
     it("shows a success toast with the refreshed count", async () => {
@@ -316,9 +312,7 @@ describe("TemplateMarketplaceController.removeMarketplace", () => {
     });
 
     it("removes the picked entries, prunes the cache, refreshes editors, and reports the count", async () => {
-        const { handlers, settings, marketplaceSvc, templatesSvc, editorStore, notifier } =
-            createController();
-        editorStore.getEditorIds.mockReturnValue(["editor-1", "editor-2"]);
+        const { handlers, settings, marketplaceSvc, templatesSvc, notifier } = createController();
         settings.getMarketplacesWithScopes.mockReturnValue([
             { entry: "https://github.com/acme/one", scopes: ["user"] },
             { entry: "https://github.com/acme/two", scopes: ["workspace"] },
@@ -337,8 +331,7 @@ describe("TemplateMarketplaceController.removeMarketplace", () => {
             "https://github.com/acme/two",
         ]);
         expect(marketplaceSvc.pruneOrphanedCaches).toHaveBeenCalledOnce();
-        expect(templatesSvc.setElementTemplates).toHaveBeenCalledWith("editor-1");
-        expect(templatesSvc.setElementTemplates).toHaveBeenCalledWith("editor-2");
+        expect(templatesSvc.reloadMarketplaceTemplates).toHaveBeenCalledOnce();
         expect(notifier.showInfo).toHaveBeenCalledWith("Removed 2 marketplace(s).");
     });
 

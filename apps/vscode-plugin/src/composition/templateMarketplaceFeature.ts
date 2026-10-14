@@ -78,7 +78,6 @@ export function registerCommands(
     new TemplateMarketplaceController(
         handles.marketplaceSvc,
         handles.templatesSvc,
-        deps.editorStore,
         deps.vsSettings,
         deps.notifier,
     ).register(context);
