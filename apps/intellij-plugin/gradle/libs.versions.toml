@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 intellijPlatform = "2.19.0"
 gson = "2.14.0"
 junit = "6.1.3"
