@@ -10,6 +10,7 @@ import {
     LanguageQuery,
     PropertiesPanelStateQuery,
     ReleaseDocumentFlushQuery,
+    UpdateOpenScriptEditorsQuery,
 } from "@miragon/bpmn-modeler-shared";
 import { i18n } from "@miragon/bpmn-modeler-i18n";
 
@@ -72,7 +73,11 @@ vi.mock("@miragon/bpmn-modeler-i18n", () => ({
     },
 }));
 
-vi.mock("./diffMode", () => ({ DiffMode: class {} }));
+vi.mock("./diffMode", () => ({
+    DiffMode: class {
+        startWith = vi.fn(async () => undefined);
+    },
+}));
 vi.mock("./hostEditorActions", () => ({ installHostEditorActions: vi.fn() }));
 vi.mock("./state", () => ({
     readSavedPanelVisibility: vi.fn(() => undefined),
@@ -980,6 +985,163 @@ describe("bootstrap mode switching", () => {
             expect(modeler.loadDiagram).toHaveBeenLastCalledWith("<pushed />");
             expect(i18n.setLanguage).not.toHaveBeenCalledWith("fr");
             expect(i18n.getLocale()).toBe("de");
+        });
+    });
+
+    describe("host handshake", () => {
+        const settingsQuery = () =>
+            new BpmnModelerSettingQuery({
+                alignToOrigin: false,
+                showTransactionBoundaries: false,
+                colorTheme: "light",
+            });
+
+        // The document reply is dispatched by the test, so other replies can
+        // overtake it the way an awaited host lookup (engine picker) lets them.
+        function makeDeferredFileHost(replies: Record<string, () => unknown[]> = {}) {
+            return {
+                getState: vi.fn(() => ({})),
+                setState: vi.fn(),
+                updateState: vi.fn(),
+                postMessage: vi.fn((message: { type: string }) => {
+                    const answer = replies[message.type];
+                    if (answer) {
+                        queueMicrotask(() => answer().forEach(dispatch));
+                    }
+                }),
+            };
+        }
+
+        function makeGatedImportModeler(overrides: Record<string, unknown> = {}) {
+            let releaseImport!: () => void;
+            const modeler = makeModeler({
+                loadDiagram: vi.fn(
+                    () =>
+                        new Promise((resolve) => {
+                            releaseImport = () => resolve({ warnings: [] });
+                        }),
+                ),
+                ...overrides,
+            });
+            return { modeler, releaseImport: () => releaseImport() };
+        }
+
+        const firstCall = (fn: ReturnType<typeof vi.fn>) => fn.mock.invocationCallOrder[0];
+
+        it("requests settings and panel state together with the document", () => {
+            const host = makeDeferredFileHost();
+
+            boot(host);
+
+            expect(sentTypes(host)).toEqual([
+                "GetBpmnFileCommand",
+                "GetBpmnModelerSettingCommand",
+                "GetPropertiesPanelStateCommand",
+            ]);
+        });
+
+        it("requests element templates and the lint config before the import completes", async () => {
+            const { modeler, releaseImport } = makeGatedImportModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeDeferredFileHost();
+
+            boot(host);
+            dispatch(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram).toHaveBeenCalledOnce();
+            expect(sentTypes(host)).toEqual(
+                expect.arrayContaining(["GetElementTemplatesCommand", "GetBpmnlintConfigCommand"]),
+            );
+
+            releaseImport();
+            await drainAsyncWork();
+        });
+
+        it("applies replies that overtake the document after the import, in arrival order", async () => {
+            const applyOpenScriptEditors = vi.fn();
+            const modeler = makeModeler({ applyOpenScriptEditors });
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeDeferredFileHost({
+                GetBpmnModelerSettingCommand: () => [
+                    settingsQuery(),
+                    new UpdateOpenScriptEditorsQuery([]),
+                ],
+                GetElementTemplatesCommand: () => [new ElementTemplatesQuery([])],
+            });
+
+            boot(host);
+            await drainMicrotasks();
+            dispatch(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+            await drainAsyncWork();
+
+            expect(firstCall(modeler.loadDiagram)).toBeLessThan(firstCall(modeler.setSettings));
+            expect(firstCall(modeler.setSettings)).toBeLessThan(firstCall(applyOpenScriptEditors));
+            expect(firstCall(applyOpenScriptEditors)).toBeLessThan(
+                firstCall(modeler.setElementTemplates),
+            );
+            expect(sentTypes(host)).not.toContain("LogErrorCommand");
+        });
+
+        it("does not re-import for a matching LanguageQuery that overtakes the document", async () => {
+            const modeler = makeModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeDeferredFileHost({
+                GetBpmnModelerSettingCommand: () => [settingsQuery(), new LanguageQuery("de")],
+            });
+
+            boot(host);
+            await drainMicrotasks();
+            dispatch(new BpmnFileQuery("<tagged />", "c7", "modeler", 1, undefined, "de"));
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram).toHaveBeenCalledOnce();
+            expect(modeler.exportDiagram).not.toHaveBeenCalled();
+            expect(i18n.getLocale()).toBe("de");
+        });
+
+        it("clears busy without another host request after the import", async () => {
+            const { modeler, releaseImport } = makeGatedImportModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeDeferredFileHost({
+                GetBpmnModelerSettingCommand: () => [settingsQuery()],
+                GetPropertiesPanelStateCommand: () => [new PropertiesPanelStateQuery(true)],
+                GetElementTemplatesCommand: () => [new ElementTemplatesQuery([])],
+            });
+
+            boot(host);
+            dispatch(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+            await drainAsyncWork();
+            host.postMessage.mockClear();
+
+            releaseImport();
+            // Microtasks only: advancing timers would let the reply timeouts clear busy.
+            for (let round = 0; round < 5; round++) {
+                await drainMicrotasks();
+            }
+
+            expect(sentTypes(host).filter((type) => type.startsWith("Get"))).toEqual([]);
+            expect(document.getElementById("js-properties-panel")!.getAttribute("aria-busy")).toBe(
+                "false",
+            );
+        });
+
+        it("drops held replies in a diff pane and applies later language changes directly", async () => {
+            const host = makeDeferredFileHost({
+                GetBpmnModelerSettingCommand: () => [settingsQuery(), new LanguageQuery("de")],
+            });
+
+            boot(host);
+            await drainMicrotasks();
+            dispatch(new BpmnFileQuery("<left />", "c7", "viewer", 1));
+            await drainAsyncWork();
+            expect(i18n.setLanguage).not.toHaveBeenCalledWith("de");
+
+            dispatch(new LanguageQuery("fr"));
+            await drainMicrotasks();
+
+            expect(i18n.setLanguage).toHaveBeenCalledWith("fr");
+            expect(sentTypes(host)).not.toContain("LogErrorCommand");
         });
     });
 });

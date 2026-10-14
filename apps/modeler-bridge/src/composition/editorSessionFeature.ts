@@ -66,8 +66,8 @@ export function register(
         })
         // The remaining handshake reply is a bridge-level stub because its real
         // service (properties panel) is not wired on this host path. It must still
-        // answer, or the webview's `Promise.all` over templates+settings+panel-state
-        // never resolves and bootstrap stalls.
+        // answer, or the webview waits out its reply timeout before restoring the
+        // panel.
         .on("GetPropertiesPanelStateCommand", (_m: Command, editorId: string) => {
             deps.store.postMessage(editorId, query("PropertiesPanelStateQuery", { visible: true }));
         });

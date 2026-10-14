@@ -280,9 +280,11 @@ yarn perf:webview --json results.json              # also write raw samples
 The bench serves the production bundle from
 `dist/webview-staging/bpmn-webview/` and opens it in headless Chromium. It uses
 its own host shim, because the dev `MockHost` is compiled out of production
-builds. The shim answers the webview's requests asynchronously, in the same
-order as the real host: file (carrying the initial locale), lint config,
-settings, then `LanguageQuery`.
+builds. Like the real host, it answers each request asynchronously and sends
+`LanguageQuery` right after the settings. The file reply (carrying the initial
+locale) waits for the model fetch, so the settings, panel-state, template and
+lint replies overtake it. The webview holds the replies that act on the diagram
+until its initial import has completed.
 
 - **Lint `off`**: the host replies with `BpmnLintDisabledQuery`.
 - **Lint `in-page`**: the host replies with a payload-free
