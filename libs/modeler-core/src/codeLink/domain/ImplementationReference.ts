@@ -19,6 +19,12 @@ export const JVM_EXTENSIONS = ["java", "kt", "groovy", "scala"] as const;
  */
 export const SCRIPT_WORKER_EXTENSIONS = ["js", "ts"] as const;
 
+export const SOURCE_EXTENSIONS = [...JVM_EXTENSIONS, ...SCRIPT_WORKER_EXTENSIONS] as const;
+
+export function isSourceFile(path: string): boolean {
+    return SOURCE_EXTENSIONS.some((extension) => path.endsWith(`.${extension}`));
+}
+
 /**
  * Extracts the leading bean / variable id from a Camunda expression.
  *

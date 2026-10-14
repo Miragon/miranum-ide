@@ -2,7 +2,10 @@ import { posix } from "path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ImplementationEntry } from "@miragon/bpmn-modeler-types";
+
 import { ImplementationLocator } from "./ImplementationLocator";
+import { SourceIndex } from "./SourceIndex";
 
 /**
  * `findFiles` is driven per test by a `glob → paths` function so each test
@@ -33,6 +36,7 @@ function createLocator(opts: {
         findWorkspaceFolderForDocument: vi.fn(() => folders[0]),
         getWorkspaceFolderPaths: vi.fn(() => folders),
         getDocumentDirectory: vi.fn((document: string) => posix.dirname(document)),
+        createWatcher: vi.fn(() => ({ dispose: vi.fn() })),
     };
     const notifier = { logInfo: vi.fn(), logWarning: vi.fn() };
     const locator = new ImplementationLocator(vsWorkspace as never, notifier as never);
@@ -356,5 +360,78 @@ describe("ImplementationLocator — resolveMany", () => {
 
         expect(result.get("A")).toEqual([]);
         expect(vsWorkspace.findFiles).not.toHaveBeenCalled();
+    });
+});
+
+describe("ImplementationLocator — resolveMany through a shared source index", () => {
+    const SOURCES = {
+        "/src/com/example/Charge.java": "class Charge {}",
+        "/src/MyBean.java": "class MyBean {}",
+        "/src/Renamed.java": '@Service("renamedBean")\nclass Renamed {}',
+        "/src/Worker.java": '@JobWorker(type = "pay") @JobWorker(type = "pay later")',
+    };
+    const ENTRIES: ImplementationEntry[] = [
+        { activityId: "A", kind: "javaClass", reference: "com.example.Charge" },
+        { activityId: "B", kind: "delegateExpression", reference: "${myBean}" },
+        { activityId: "C", kind: "expression", reference: "${renamedBean.run()}" },
+        { activityId: "D", kind: "jobType", reference: "pay" },
+        { activityId: "E", kind: "externalTopic", reference: "missing" },
+    ];
+
+    function createIndexedLocator() {
+        const created = createLocator({
+            findFiles: () => Object.keys(SOURCES),
+            fileContents: SOURCES,
+        });
+        const index = new SourceIndex(created.vsWorkspace as never, created.notifier as never);
+        const resolveFor = (editorId: string, entries: ImplementationEntry[]) =>
+            created.locator.resolveMany(
+                entries,
+                "/doc.bpmn",
+                index.sourcesFor(editorId, "/doc.bpmn"),
+            );
+        return { ...created, resolveFor };
+    }
+
+    it("resolves exactly what a direct search resolves", async () => {
+        const direct = createLocator({
+            findFiles: () => Object.keys(SOURCES),
+            fileContents: SOURCES,
+        });
+        const { resolveFor } = createIndexedLocator();
+
+        const expected = await direct.locator.resolveMany(ENTRIES, "/doc.bpmn");
+        const indexed = await resolveFor("editor1", ENTRIES);
+
+        expect(indexed).toEqual(expected);
+        expect(indexed.get("C")).toEqual(["/src/Renamed.java"]);
+        expect(indexed.get("D")).toEqual(["/src/Worker.java"]);
+    });
+
+    it("lets a second editor resolve without listing or reading the workspace again", async () => {
+        const { resolveFor, vsWorkspace } = createIndexedLocator();
+
+        await resolveFor("editor1", ENTRIES);
+        vsWorkspace.findFiles.mockClear();
+        vsWorkspace.readFile.mockClear();
+        const second = await resolveFor("editor2", ENTRIES);
+
+        expect(second.get("D")).toEqual(["/src/Worker.java"]);
+        expect(vsWorkspace.findFiles).not.toHaveBeenCalled();
+        expect(vsWorkspace.readFile).not.toHaveBeenCalled();
+    });
+
+    it("reads the content again for a literal the indexed facts cannot decide", async () => {
+        const { resolveFor, vsWorkspace } = createIndexedLocator();
+        const spacedTopic: ImplementationEntry[] = [
+            { activityId: "F", kind: "jobType", reference: "pay later" },
+        ];
+
+        await resolveFor("editor1", ENTRIES);
+        vsWorkspace.readFile.mockClear();
+        const result = await resolveFor("editor2", spacedTopic);
+
+        expect(result.get("F")).toEqual(["/src/Worker.java"]);
+        expect(vsWorkspace.readFile).toHaveBeenCalledTimes(Object.keys(SOURCES).length);
     });
 });

@@ -51,6 +51,13 @@ function createService(
         ),
     };
 
+    const sourceCatalog = { listSources: vi.fn(), inspect: vi.fn() };
+    const sourceIndex = {
+        sourcesFor: vi.fn(() => sourceCatalog),
+        release: vi.fn(),
+        dispose: vi.fn(),
+    };
+
     const artifactSvc = { getWorkspaceRoot: vi.fn(() => Promise.resolve(ROOT)) };
 
     const createdWatchers: { dispose: ReturnType<typeof vi.fn> }[] = [];
@@ -86,6 +93,7 @@ function createService(
     const service = new CodeLinkMapService(
         editorStore as never,
         locator as never,
+        sourceIndex as never,
         artifactSvc as never,
         vsWorkspace as never,
         vsSettings as never,
@@ -99,6 +107,8 @@ function createService(
     return {
         service,
         locator,
+        sourceIndex,
+        sourceCatalog,
         vsWorkspace,
         vsSettings,
         artifactSvc,
@@ -129,13 +139,19 @@ afterEach(() => {
 describe("CodeLinkMapService — sync diff", () => {
     it("cold-open batch-resolves all activities and pushes their status", async () => {
         const abs = "/work/proj/src/A.java";
-        const { service, locator, lastStatus } = createService({
+        const { service, locator, sourceIndex, sourceCatalog, lastStatus } = createService({
             resolveMap: { "com.example.A": [abs] },
         });
 
         await service.syncActivities("editor1", [entry("Act_A", "javaClass", "com.example.A")]);
 
         expect(locator.resolveMany).toHaveBeenCalledTimes(1);
+        expect(sourceIndex.sourcesFor).toHaveBeenCalledWith("editor1", DOC);
+        expect(locator.resolveMany.mock.calls[0]).toEqual([
+            [entry("Act_A", "javaClass", "com.example.A")],
+            DOC,
+            sourceCatalog,
+        ]);
         expect(lastStatus("editor1")).toEqual({
             [implementationStatusKey("Act_A", "com.example.A")]: true,
         });
@@ -519,13 +535,47 @@ describe("CodeLinkMapService — lifecycle", () => {
         expect(() => service.disposeEditor("never-opened")).not.toThrow();
     });
 
-    it("dispose() tears down every outstanding watcher", async () => {
-        const { service, createdWatchers } = createService({ resolveMap: { a: ["/p/a"] } });
+    it("does not register an editor closed during its sync with the source index", async () => {
+        const { service, artifactSvc, sourceIndex, vsWorkspace } = createService({
+            resolveMap: { a: ["/p/a"] },
+        });
+        let releaseRoot!: (root: string) => void;
+        artifactSvc.getWorkspaceRoot.mockImplementationOnce(
+            () =>
+                new Promise<string>((resolve) => {
+                    releaseRoot = resolve;
+                }),
+        );
+
+        const sync = service.syncActivities("editor1", [entry("A", "jobType", "a")]);
+        await Promise.resolve();
+        service.disposeEditor("editor1");
+        releaseRoot(ROOT);
+        await sync;
+
+        expect(sourceIndex.sourcesFor).not.toHaveBeenCalled();
+        expect(vsWorkspace.createWatcher).not.toHaveBeenCalled();
+    });
+
+    it("releases the editor's share of the source index when it closes", async () => {
+        const { service, sourceIndex } = createService({ resolveMap: { a: ["/p/a"] } });
+        await service.syncActivities("editor1", [entry("A", "jobType", "a")]);
+
+        service.disposeEditor("editor1");
+
+        expect(sourceIndex.release).toHaveBeenCalledWith("editor1");
+    });
+
+    it("dispose() tears down every outstanding watcher and the source index", async () => {
+        const { service, sourceIndex, createdWatchers } = createService({
+            resolveMap: { a: ["/p/a"] },
+        });
         await service.syncActivities("editor1", [entry("A", "jobType", "a")]);
 
         service.dispose();
 
         expect(createdWatchers[0].dispose).toHaveBeenCalledTimes(1);
+        expect(sourceIndex.dispose).toHaveBeenCalledOnce();
     });
 
     it("logs and continues when a status push fails (hidden editor)", async () => {

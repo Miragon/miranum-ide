@@ -40,6 +40,41 @@ export function escapeRegex(value: string): string {
 }
 
 /**
+ * Where a workspace search for a document looks: every workspace folder, or —
+ * for a loose file outside all folders — the tree under its directory.
+ */
+export type SearchScope =
+    { kind: "workspace-folders"; folders: string[] } | { kind: "loose-file"; directory: string };
+
+/**
+ * @returns `undefined` when there is nothing to search (no workspace folder and
+ *   no source document to anchor a walk).
+ */
+export function resolveSearchScope(
+    ws: WorkspacePort,
+    sourceDocumentPath?: string,
+): SearchScope | undefined {
+    if (
+        sourceDocumentPath !== undefined &&
+        ws.findWorkspaceFolderForDocument(sourceDocumentPath) === undefined
+    ) {
+        return { kind: "loose-file", directory: ws.getDocumentDirectory(sourceDocumentPath) };
+    }
+    const folders = ws.getWorkspaceFolderPaths();
+    return folders.length === 0 ? undefined : { kind: "workspace-folders", folders };
+}
+
+interface FindFilesOptions {
+    logger?: SearchLogger;
+    /**
+     * Decides whether a file encountered during the fs-walk fallback is a
+     * candidate. The `findFiles` path already filters by `glob`, so this is
+     * only consulted on the walk paths (which enumerate every file).
+     */
+    matchesWalkedFile: (absolutePath: string) => boolean;
+}
+
+/**
  * Finds workspace files matching `glob`, excluding build/output dirs, with an
  * fs-walk fallback for hosts where the bundled ripgrep is missing.
  *
@@ -52,40 +87,25 @@ export function escapeRegex(value: string): string {
  *   3. fs-walk primary — for loose-file scenarios (document outside every folder).
  *
  * @returns the candidate absolute paths (possibly empty), or `undefined` when
- *   there is nothing to search (no workspace folder and no source document to
- *   anchor a walk).
+ *   there is nothing to search (see {@link resolveSearchScope}).
  */
 export async function findFilesExcluding(
     ws: WorkspacePort,
     glob: string,
-    options: {
-        sourceDocumentPath?: string;
-        logger?: SearchLogger;
-        /**
-         * Decides whether a file encountered during the fs-walk fallback is a
-         * candidate. The `findFiles` path already filters by `glob`, so this is
-         * only consulted on the walk paths (which enumerate every file).
-         */
-        matchesWalkedFile: (absolutePath: string) => boolean;
-    },
+    options: FindFilesOptions & { sourceDocumentPath?: string },
 ): Promise<string[] | undefined> {
-    const { sourceDocumentPath, logger, matchesWalkedFile } = options;
+    const scope = resolveSearchScope(ws, options.sourceDocumentPath);
+    return scope && findFilesInScope(ws, scope, glob, options);
+}
 
-    const containingFolderPath =
-        sourceDocumentPath !== undefined
-            ? ws.findWorkspaceFolderForDocument(sourceDocumentPath)
-            : undefined;
-    const looseFile = sourceDocumentPath !== undefined && containingFolderPath === undefined;
-
-    if (looseFile) {
-        // No workspace folder covers the document → walk from its directory.
-        const rootDir = ws.getDocumentDirectory(sourceDocumentPath!);
-        return walkWorkspaceTree(ws, rootDir, matchesWalkedFile, logger, "walk-primary");
-    }
-
-    const folderPaths = ws.getWorkspaceFolderPaths();
-    if (folderPaths.length === 0) {
-        return undefined;
+export async function findFilesInScope(
+    ws: WorkspacePort,
+    scope: SearchScope,
+    glob: string,
+    { logger, matchesWalkedFile }: FindFilesOptions,
+): Promise<string[]> {
+    if (scope.kind === "loose-file") {
+        return walkWorkspaceTree(ws, scope.directory, matchesWalkedFile, logger, "walk-primary");
     }
 
     // Pass no excludes — VS Code layers the user's `files.exclude` and
@@ -104,7 +124,7 @@ export async function findFilesExcluding(
 
     // Fallback: findFiles failed silently (ripgrep missing in packaged .app).
     const walked = await Promise.all(
-        folderPaths.map((root) =>
+        scope.folders.map((root) =>
             walkWorkspaceTree(ws, root, matchesWalkedFile, logger, "walk-fallback"),
         ),
     );

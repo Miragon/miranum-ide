@@ -59,6 +59,7 @@ export * from "./navigation/service/FormReferenceStatusService";
 export * from "./codeLink/service/ImplementationLocator";
 export * from "./codeLink/service/ImplementationNavigationService";
 export * from "./codeLink/service/CodeLinkMapService";
+export * from "./codeLink/service/SourceIndex";
 
 // ── migration ────────────────────────────────────────────────────────────────
 export * from "./migration/domain/MigrationPlan";

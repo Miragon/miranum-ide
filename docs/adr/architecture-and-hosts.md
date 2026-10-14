@@ -213,6 +213,20 @@ a cached result must equal an uncached run.
   kept, so installing the package takes effect on the next run. Accepted cost:
   a workspace plugin installed mid-session that shadows a bundled rule takes
   effect only after the config changes or the host restarts.
+- **Code-link source index.** `SourceIndex` keeps, per set of workspace
+  folders, the listed source files and each file's facts: the bean ids its
+  Spring/CDI annotations name and its short quoted literals. A resolve then
+  answers from map lookups instead of reading every source. The facts give the
+  same answers as the content matchers for every literal they can decide,
+  checked by a fuzz spec. A longer literal, or one with whitespace or quotes,
+  is still matched against the content. One `**/*` watcher per folder keeps the
+  index current at constant cost per event: a change drops one file's facts, a
+  delete or an unknown create lists the folders again on the next resolve, and
+  a folder created or deleted as a whole drops its files' facts then. Documents
+  outside every folder are not indexed. Accepted costs: facts stay in memory
+  while an editor of those folders is open (files over 1 MB are not kept), and
+  changes the watchers miss, for example under `files.watcherExclude`, show
+  only after the last such editor closes.
 
 ## Alternatives and consequences
 

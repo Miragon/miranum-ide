@@ -23,6 +23,7 @@ import {
 } from "../domain/CodeLinkMap";
 import { JVM_EXTENSIONS, SCRIPT_WORKER_EXTENSIONS } from "../domain/ImplementationReference";
 import { ImplementationLocator } from "./ImplementationLocator";
+import { SourceIndex } from "./SourceIndex";
 
 /** How a watched source file changed, as reported by the workspace watcher. */
 type SourceChangeKind = "created" | "changed" | "deleted";
@@ -101,6 +102,7 @@ export class CodeLinkMapService {
     constructor(
         private readonly editorStore: EditorSessionStore,
         private readonly locator: ImplementationLocator,
+        private readonly sourceIndex: SourceIndex,
         private readonly artifactSvc: ArtifactService,
         private readonly vsWorkspace: WorkspacePort,
         private readonly vsSettings: SettingsPort,
@@ -158,8 +160,9 @@ export class CodeLinkMapService {
         await Promise.all(affected.map(([, state]) => state.tail));
     }
 
-    /** Drops an editor's state and releases its share of the workspace-root watcher. */
+    /** Drops an editor's state and releases its share of the workspace-root watcher and source index. */
     disposeEditor(editorId: string): void {
+        this.sourceIndex.release(editorId);
         const state = this.states.get(editorId);
         if (!state) {
             return;
@@ -177,6 +180,7 @@ export class CodeLinkMapService {
         }
         this.watchers.clear();
         this.states.clear();
+        this.sourceIndex.dispose();
     }
 
     private async runSync(
@@ -232,8 +236,17 @@ export class CodeLinkMapService {
             }
         }
 
+        // Closed while this sync waited: resolving now would register the
+        // editor with the source index again, and nothing would release it.
+        if (this.states.get(editorId) !== state) {
+            return;
+        }
         if (toResolve.length > 0) {
-            const resolved = await this.locator.resolveMany(toResolve, state.documentFsPath);
+            const resolved = await this.locator.resolveMany(
+                toResolve,
+                state.documentFsPath,
+                this.sourceIndex.sourcesFor(editorId, state.documentFsPath),
+            );
             for (const entry of toResolve) {
                 const paths = resolved.get(entry.activityId) ?? [];
                 state.map.set(entry.activityId, {
@@ -408,6 +421,9 @@ export class CodeLinkMapService {
         state.documentPath = handle.documentPath();
         state.documentFsPath = handle.documentFsPath();
         const root = await this.artifactSvc.getWorkspaceRoot(posix.dirname(state.documentPath));
+        if (this.states.get(editorId) !== state) {
+            return;
+        }
         state.workspaceRoot = root;
         state.attachedRoot = root;
         this.acquireWatcher(root);

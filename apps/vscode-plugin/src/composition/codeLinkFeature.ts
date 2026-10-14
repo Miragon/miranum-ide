@@ -4,6 +4,7 @@ import {
     CodeLinkMapService,
     ImplementationLocator,
     ImplementationNavigationService,
+    SourceIndex,
 } from "@miragon/bpmn-modeler-core";
 import { CodeLinkParticipant } from "../codeLink/controller/editor-participants/CodeLinkParticipant";
 import { SharedDeps } from "./sharedDeps";
@@ -43,6 +44,7 @@ export function register(context: ExtensionContext, deps: SharedDeps): CodeLinkH
     const codeLinkMap = new CodeLinkMapService(
         deps.editorStore,
         locator,
+        new SourceIndex(deps.vsWorkspace, deps.notifier),
         deps.artifactSvc,
         deps.vsWorkspace,
         deps.vsSettings,
