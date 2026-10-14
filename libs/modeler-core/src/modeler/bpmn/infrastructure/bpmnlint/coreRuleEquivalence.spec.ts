@@ -11,8 +11,8 @@ import {
 } from "../../../../../../../scripts/perf/largeBpmnModel.mjs";
 import { NodeBpmnLinter } from "./NodeBpmnLinter";
 
-// The snapshot was recorded on unpatched bpmnlint 11.14.0; the yarn patch that makes
-// these rules sub-quadratic must reproduce it verbatim, report order included.
+// These rules were rewritten upstream for speed, so a bpmnlint bump that changes
+// which elements they report, or in which order, must fail here.
 
 const CORE_RULES = ["no-overlapping-elements", "no-bpmndi"] as const;
 const CONFIG = { rules: Object.fromEntries(CORE_RULES.map((rule) => [rule, "error"])) };

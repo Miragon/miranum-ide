@@ -1717,10 +1717,10 @@ exports[`bpmnlint core rules keep their reports > overlapping-shapes.bpmn 1`] = 
   "no-bpmndi": [],
   "no-overlapping-elements": [
     "Task_Right: Element overlaps with other element",
-    "Task_OverlapsRight: Element overlaps with other element",
     "Task_Left: Element overlaps with other element",
-    "Task_OverlapsLeft: Element overlaps with other element",
     "Task_Wide: Element overlaps with other element",
+    "Task_OverlapsLeft: Element overlaps with other element",
+    "Task_OverlapsRight: Element overlaps with other element",
   ],
 }
 `;
@@ -1730,13 +1730,13 @@ exports[`bpmnlint core rules keep their reports > stacked-shapes.bpmn 1`] = `
   "no-bpmndi": [],
   "no-overlapping-elements": [
     "Task_FarRight: Element overlaps with other element",
-    "Task_FarLeft: Element overlaps with other element",
     "Task_Stacked_A: Element overlaps with other element",
     "Task_PartlyOverlapping: Element overlaps with other element",
     "Task_Stacked_B: Element overlaps with other element",
     "Boundary_OnStacked_C: Element overlaps with other element",
     "Task_Stacked_C: Element overlaps with other element",
     "Task_Stacked_D: Element overlaps with other element",
+    "Task_FarLeft: Element overlaps with other element",
     "Task_Stacked_E: Element overlaps with other element",
     "Task_Stacked_F: Element overlaps with other element",
   ],
