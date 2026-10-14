@@ -9,7 +9,9 @@ name: Publish Standalone (Homebrew)
 #     by downloading the DMG from the release.
 #
 # Required GitHub repo (or org) secret:
-#   HOMEBREW_TAP_TOKEN   PAT with repo scope on Miragon/homebrew-tap
+#   HOMEBREW_TAP_TOKEN   PAT with repo scope on Miragon/homebrew-tap (or fine-grained:
+#                        contents + pull-requests write). main is PR-only/squash-only,
+#                        so the job opens a PR and squash-merges it immediately.
 #   This job is intentionally ungated (see update-tap below), so the token must
 #   be readable without the homebrew-tap environment.
 
@@ -141,18 +143,25 @@ jobs:
           echo "--- Generated formula ---"
           cat miragon-bpmn-modeler.rb
 
-      - name: Push to homebrew-tap
+      - name: Open and squash-merge PR on homebrew-tap
         if: ${{ !inputs.dry-run }}
         env:
           VERSION: ${{ inputs.version }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
+          BRANCH="miragon-bpmn-modeler-${VERSION}"
+          TITLE="chore: update miragon-bpmn-modeler to ${VERSION}"
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/Miragon/homebrew-tap.git" tap
           mkdir -p tap/Casks
           cp miragon-bpmn-modeler.rb tap/Casks/miragon-bpmn-modeler.rb
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add Casks/miragon-bpmn-modeler.rb
-          git commit -m "chore: update miragon-bpmn-modeler to ${VERSION}"
-          git push
+          git commit -m "$TITLE"
+          git push --force origin "$BRANCH"
+          gh pr create --repo Miragon/homebrew-tap --base main --head "$BRANCH" \
+            --title "$TITLE" --body "Automated Cask update for release vscode-v${VERSION}."
+          gh pr merge "$BRANCH" --repo Miragon/homebrew-tap --squash --delete-branch
