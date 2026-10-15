@@ -32,19 +32,24 @@ const NOOP_CONFIG = { rules: {} };
  * is collected in {@link unresolved} and a no-op is returned so the rest of the
  * lint still runs. An unknown rule becomes a visible, non-fatal "N rules skipped"
  * rather than failing the whole lint or being silently dropped.
+ *
+ * One instance serves one lint run. Successful resolutions can be shared across
+ * runs through `resolved`; a miss is never shared, so a plugin installed later
+ * is picked up by the next run.
  */
 export class CompositeResolver implements Resolver {
     /** Names of rules/configs that could not be resolved this run. */
     readonly unresolved: string[] = [];
 
-    private readonly resolvers: Resolver[];
-
-    constructor(...resolvers: Resolver[]) {
-        this.resolvers = resolvers;
-    }
+    constructor(
+        private readonly resolvers: readonly Resolver[],
+        private readonly resolved: Map<string, unknown> = new Map(),
+    ) {}
 
     resolveRule(pkg: string, ruleName: string): unknown {
-        const resolved = this.tryResolve((r) => r.resolveRule(pkg, ruleName));
+        const resolved = this.resolveOnce(`rule:${pkg}\0${ruleName}`, (r) =>
+            r.resolveRule(pkg, ruleName),
+        );
         if (resolved !== undefined) {
             return resolved;
         }
@@ -53,12 +58,25 @@ export class CompositeResolver implements Resolver {
     }
 
     resolveConfig(pkg: string, configName: string): unknown {
-        const resolved = this.tryResolve((r) => r.resolveConfig(pkg, configName));
+        const resolved = this.resolveOnce(`config:${pkg}\0${configName}`, (r) =>
+            r.resolveConfig(pkg, configName),
+        );
         if (resolved !== undefined) {
             return resolved;
         }
         this.unresolved.push(`plugin:${pkg}/${configName}`);
         return NOOP_CONFIG;
+    }
+
+    private resolveOnce(key: string, resolve: (r: Resolver) => unknown): unknown {
+        if (this.resolved.has(key)) {
+            return this.resolved.get(key);
+        }
+        const resolved = this.tryResolve(resolve);
+        if (resolved !== undefined) {
+            this.resolved.set(key, resolved);
+        }
+        return resolved;
     }
 
     /**

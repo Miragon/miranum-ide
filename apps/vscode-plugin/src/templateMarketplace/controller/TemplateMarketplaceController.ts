@@ -5,7 +5,6 @@ import { commands, ExtensionContext, QuickPickItem, window, workspace } from "vs
 
 import {
     BpmnElementTemplatesService,
-    EditorSessionStore,
     marketplaceEntryLabel,
     MarketplaceSettingsEntry,
     parseMarketplaceUrl,
@@ -58,7 +57,6 @@ export class TemplateMarketplaceController {
     constructor(
         private readonly marketplaceSvc: TemplateMarketplaceService,
         private readonly templatesSvc: BpmnElementTemplatesService,
-        private readonly editorStore: EditorSessionStore,
         private readonly settings: VsCodeSettings,
         private readonly notifier: VsCodeNotifier,
     ) {}
@@ -115,7 +113,7 @@ export class TemplateMarketplaceController {
             );
             await this.settings.addMarketplace(location, scope);
             this.notifier.logDebug(`Marketplace registration persisted to settings: ${location}`);
-            await this.refreshOpenEditors();
+            await this.templatesSvc.reloadMarketplaceTemplates();
             this.notifier.showInfo("Marketplace added.");
         } catch (error) {
             await this.handleAddFailure(error as Error);
@@ -186,7 +184,7 @@ export class TemplateMarketplaceController {
         const outcome = await this.notifier.withProgress("Updating marketplaces…", () =>
             this.marketplaceSvc.updateAll(),
         );
-        await this.refreshOpenEditors();
+        await this.templatesSvc.reloadMarketplaceTemplates();
 
         const total = outcome.succeeded + outcome.failures.length;
         if (total === 0) {
@@ -243,16 +241,10 @@ export class TemplateMarketplaceController {
             // Local-only and fast — no progress indicator needed, unlike a fetch.
             const pruned = await this.marketplaceSvc.pruneOrphanedCaches();
             this.notifier.logDebug(`Pruned marketplace cache(s): ${pruned.join(", ") || "none"}`);
-            await this.refreshOpenEditors();
+            await this.templatesSvc.reloadMarketplaceTemplates();
             this.notifier.showInfo(`Removed ${picked.length} marketplace(s).`);
         } catch (error) {
             this.notifier.notifyError("Failed to remove marketplace(s).", error as Error);
-        }
-    }
-
-    private async refreshOpenEditors(): Promise<void> {
-        for (const editorId of this.editorStore.getEditorIds()) {
-            await this.templatesSvc.setElementTemplates(editorId);
         }
     }
 }

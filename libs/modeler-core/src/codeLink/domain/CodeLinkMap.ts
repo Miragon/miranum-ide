@@ -23,6 +23,7 @@ import {
     ImplementationKind,
     JVM_EXTENSIONS,
 } from "./ImplementationReference";
+import { BEAN_ANNOTATION_PREFIX, commentAndCdataRanges, isInsideRanges } from "./sourceText";
 
 export type { ImplementationKind };
 
@@ -205,11 +206,7 @@ export function contentImplementsLiteral(content: string, literal: string): bool
 export function contentDeclaresBean(content: string, bean: string): boolean {
     return matchesOutsideComments(
         content,
-        new RegExp(
-            `@(?:Component|Service|Repository|Named|Bean)\\s*\\(\\s*(?:value\\s*=\\s*)?["']${escapeRegex(
-                bean,
-            )}["']`,
-        ),
+        new RegExp(`${BEAN_ANNOTATION_PREFIX}${escapeRegex(bean)}["']`),
     );
 }
 
@@ -264,20 +261,14 @@ function escapeRegex(value: string): string {
  * than an extra heuristic link). Revisit only with a real tokenizer if it bites.
  */
 function matchesOutsideComments(content: string, pattern: RegExp): boolean {
-    const excluded: Array<[number, number]> = [];
-    for (const re of [/<!--[\s\S]*?-->/g, /<!\[CDATA\[[\s\S]*?\]\]>/g]) {
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(content)) !== null) {
-            excluded.push([m.index, m.index + m[0].length]);
-        }
-    }
+    const excluded = commentAndCdataRanges(content);
     const global = new RegExp(
         pattern.source,
         pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
     );
     let match: RegExpExecArray | null;
     while ((match = global.exec(content)) !== null) {
-        if (!excluded.some(([start, end]) => match!.index >= start && match!.index < end)) {
+        if (!isInsideRanges(excluded, match.index)) {
             return true;
         }
     }

@@ -116,6 +116,19 @@ describe("bridge template marketplace (real core + cache over a fake transport)"
                 params: registerParams(editorId, workspaceRoot, sourcePath, BPMN_XML),
             }),
         );
+        // A marketplace change refreshes only editors whose modeler asked for templates.
+        await rpc.handleLine(
+            JSON.stringify({
+                method: "webview/message",
+                params: { editorId, message: { type: "GetElementTemplatesCommand" } },
+            }),
+        );
+        await waitForFrame(
+            frames,
+            (f) =>
+                f.method === "editor/postMessage" &&
+                f.params.message?.type === "ElementTemplatesQuery",
+        );
 
         cleanups.push(() => fs.rm(tmp, { recursive: true, force: true }));
         return { rpc, frames, editorId, cacheRoot, tmp };

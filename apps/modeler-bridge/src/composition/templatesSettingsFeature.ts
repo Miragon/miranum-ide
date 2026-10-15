@@ -49,10 +49,17 @@ export function register(
     );
 
     const watchers = new Map<string, { dispose(): void }[]>();
+    const latestWatcherArming = new Map<string, number>();
     const refreshWatcher = async (params: RegisterParams): Promise<void> => {
-        watchers.get(params.editorId)?.forEach((disposable) => disposable.dispose());
-        watchers.delete(params.editorId);
+        const arming = (latestWatcherArming.get(params.editorId) ?? 0) + 1;
+        latestWatcherArming.set(params.editorId, arming);
         const { disposables } = await deps.artifactSvc.createWatcher(params.editorId, templatesSvc);
+        // A newer arming or the session's disposal overtook this one.
+        if (latestWatcherArming.get(params.editorId) !== arming) {
+            disposables.forEach((disposable) => disposable.dispose());
+            return;
+        }
+        watchers.get(params.editorId)?.forEach((disposable) => disposable.dispose());
         watchers.set(params.editorId, disposables);
     };
 
@@ -89,7 +96,11 @@ export function register(
                 settingsBroadcaster.subscribe(params.editorId);
                 deps.store.subscribeToSettingChangeEvent(params.editorId, (event, editorId) => {
                     if (event.affectsConfiguration("miragon.bpmnModeler.configFolder")) {
-                        void templatesSvc.setElementTemplates(editorId);
+                        // The watcher glob embeds the config folder.
+                        refreshWatcher(params).catch((error) =>
+                            deps.notifier.logError(error as Error),
+                        );
+                        templatesSvc.refreshElementTemplates(editorId);
                     }
                 });
 
@@ -103,8 +114,10 @@ export function register(
                 await templatesSvc.setElementTemplates(params.editorId);
             },
             onSessionDisposed: (editorId) => {
+                latestWatcherArming.delete(editorId);
                 watchers.get(editorId)?.forEach((d) => d.dispose());
                 watchers.delete(editorId);
+                templatesSvc.releaseEditor(editorId);
             },
         },
     };

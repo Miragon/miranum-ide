@@ -8,6 +8,7 @@ import {
     CodeLinkMapService,
     ImplementationLocator,
     ImplementationNavigationService,
+    SourceIndex,
 } from "@miragon/bpmn-modeler-core";
 
 import { BridgeSharedDeps } from "./sharedDeps";
@@ -48,6 +49,7 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
     const codeLinkMapService = new CodeLinkMapService(
         deps.store,
         implementationLocator,
+        new SourceIndex(deps.nodeWorkspace, deps.notifier),
         deps.artifactSvc,
         deps.nodeWorkspace,
         deps.settings,

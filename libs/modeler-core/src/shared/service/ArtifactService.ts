@@ -9,7 +9,7 @@ import { LoggerPort, SettingsPort, WorkspacePort } from "../domain/hostPorts";
  * module import.
  */
 export interface ArtifactChangeTarget {
-    setElementTemplates(editorId: string): Promise<boolean>;
+    refreshElementTemplates(editorId: string): void;
 }
 
 export interface WatcherResult {
@@ -157,7 +157,7 @@ export class ArtifactService {
         return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
     }
 
-    async getArtifactPaths(documentDir: string): Promise<[string[], string]> {
+    async getTemplateDirs(documentDir: string): Promise<string[]> {
         const configFolder = this.vsSettings.getConfigFolder();
         const workspaceRoot = await this.getWorkspaceRoot(documentDir);
         const templateDirs = await this.collectTemplateDirs(
@@ -182,11 +182,7 @@ export class ArtifactService {
             );
         }
 
-        const allPaths: string[] = [];
-        for (const dir of templateDirs) {
-            allPaths.push(...(await this.readDirectory(dir, ".json")));
-        }
-        return [allPaths, ".json"];
+        return templateDirs;
     }
 
     async getPayloadPaths(documentDir: string): Promise<string[]> {
@@ -222,21 +218,14 @@ export class ArtifactService {
         // No `*.json` suffix: a one-shot folder copy into element-templates can
         // surface as a single directory-create event, which a file-extension
         // glob would filter out and the templates would stay stale until reopen.
-        // Over-firing is harmless — the refresh below re-scans from disk and
-        // `getArtifactPaths` applies the `.json` filter itself.
+        // Over-firing is harmless — the refresh re-scans from disk and applies
+        // the `.json` filter itself.
         const pattern = `**/${configFolder}/element-templates/**`;
-        // A watcher callback's rejection has no caller to await it, so a failed
-        // re-push (unreadable template dir, gone webview) would float away as an
-        // unhandled rejection instead of reaching the channel.
-        const repushTemplates = () => {
-            target.setElementTemplates(editorId).catch((error) => {
-                this.logger?.logError(error instanceof Error ? error : new Error(String(error)));
-            });
-        };
+        const refreshTemplates = () => target.refreshElementTemplates(editorId);
         const handle = this.vsWorkspace.createWatcher(workspaceRoot, pattern, {
-            onCreate: repushTemplates,
-            onChange: repushTemplates,
-            onDelete: repushTemplates,
+            onCreate: refreshTemplates,
+            onChange: refreshTemplates,
+            onDelete: refreshTemplates,
         });
 
         return { disposables: [handle], errors: [] };

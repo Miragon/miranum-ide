@@ -10,39 +10,56 @@ import { ElementTemplatesParticipant } from "./ElementTemplatesParticipant";
 const EDITOR_ID = "file:///diagram.bpmn";
 
 function createContext() {
-    const captured: { settingChange?: (event: SettingChange, id: string) => void } = {};
-    const addDisposable = vi.fn();
+    const captured: {
+        settingChange?: (event: SettingChange, id: string) => void;
+        dispose?: () => void;
+    } = {};
     const context: EditorSessionContext = {
         editorId: EDITOR_ID,
         panel: {} as never,
         isCurrent: () => true,
         onDocumentChange: vi.fn(),
         onSettingChange: (cb) => void (captured.settingChange = cb),
-        onDispose: vi.fn(),
-        addDisposable,
+        onDispose: (cb) => void (captured.dispose = cb),
+        addDisposable: vi.fn(),
     };
-    return { context, captured, addDisposable };
+    return { context, captured };
 }
 
 function settingChange(affected: string): SettingChange {
     return { affectsConfiguration: (section: string) => section === affected };
 }
 
-function createServices(watcher: WatcherResult) {
-    const templatesSvc = { setElementTemplates: vi.fn() } as unknown as BpmnElementTemplatesService;
-    const artifactSvc = {
-        createWatcher: vi.fn().mockResolvedValue(watcher),
-    } as unknown as ArtifactService;
+function createServices(...watchers: WatcherResult[]) {
+    const templatesSvc = {
+        refreshElementTemplates: vi.fn(),
+        releaseEditor: vi.fn(),
+    };
+    const createWatcher = vi.fn();
+    watchers.forEach((watcher) => createWatcher.mockResolvedValueOnce(watcher));
+    const artifactSvc = { createWatcher } as unknown as ArtifactService;
     const notifier = { showError: vi.fn(), logError: vi.fn() } as unknown as VsCodeNotifier;
-    return { templatesSvc, artifactSvc, notifier };
+    return {
+        templatesSvc: templatesSvc as typeof templatesSvc & BpmnElementTemplatesService,
+        artifactSvc,
+        createWatcher,
+        notifier,
+    };
+}
+
+async function flushPromises(): Promise<void> {
+    await Promise.resolve();
+    await Promise.resolve();
 }
 
 describe("ElementTemplatesParticipant", () => {
-    it("reloads templates only when the configFolder setting changes", async () => {
-        const { templatesSvc, artifactSvc, notifier } = createServices({
-            disposables: [],
-            errors: [],
-        });
+    it("re-arms the watcher and refreshes templates only when the configFolder setting changes", async () => {
+        const first = { dispose: vi.fn() };
+        const second = { dispose: vi.fn() };
+        const { templatesSvc, artifactSvc, createWatcher, notifier } = createServices(
+            { disposables: [first], errors: [] },
+            { disposables: [second], errors: [] },
+        );
         const { context, captured } = createContext();
 
         await new ElementTemplatesParticipant(templatesSvc, artifactSvc, notifier).onResolve(
@@ -50,26 +67,36 @@ describe("ElementTemplatesParticipant", () => {
         );
 
         captured.settingChange?.(settingChange("miragon.bpmnModeler.language"), EDITOR_ID);
-        expect(templatesSvc.setElementTemplates).not.toHaveBeenCalled();
+        expect(templatesSvc.refreshElementTemplates).not.toHaveBeenCalled();
+        expect(createWatcher).toHaveBeenCalledOnce();
 
         captured.settingChange?.(settingChange("miragon.bpmnModeler.configFolder"), EDITOR_ID);
-        expect(templatesSvc.setElementTemplates).toHaveBeenCalledWith(EDITOR_ID);
+        await flushPromises();
+
+        expect(templatesSvc.refreshElementTemplates).toHaveBeenCalledWith(EDITOR_ID);
+        expect(createWatcher).toHaveBeenCalledTimes(2);
+        expect(first.dispose).toHaveBeenCalledOnce();
+        expect(second.dispose).not.toHaveBeenCalled();
     });
 
-    it("joins watcher disposables to the session bag", async () => {
+    it("disposes the watcher and releases the editor's templates when the session closes", async () => {
         const disposable = { dispose: vi.fn() };
-        const { templatesSvc, artifactSvc, notifier } = createServices({
+        const { templatesSvc, artifactSvc, createWatcher, notifier } = createServices({
             disposables: [disposable],
             errors: [],
         });
-        const { context, addDisposable } = createContext();
+        const { context, captured } = createContext();
 
         await new ElementTemplatesParticipant(templatesSvc, artifactSvc, notifier).onResolve(
             context,
         );
+        expect(createWatcher).toHaveBeenCalledWith(EDITOR_ID, templatesSvc);
+        expect(disposable.dispose).not.toHaveBeenCalled();
 
-        expect(artifactSvc.createWatcher).toHaveBeenCalledWith(EDITOR_ID, templatesSvc);
-        expect(addDisposable).toHaveBeenCalledWith(disposable);
+        captured.dispose?.();
+
+        expect(disposable.dispose).toHaveBeenCalledOnce();
+        expect(templatesSvc.releaseEditor).toHaveBeenCalledWith(EDITOR_ID);
     });
 
     it("surfaces watcher setup errors to the user", async () => {

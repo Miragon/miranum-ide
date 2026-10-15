@@ -1,10 +1,24 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import NodeResolver from "bpmnlint/lib/resolver/node-resolver";
 
 import { DefaultBpmnlintConfigService } from "../../service/DefaultBpmnlintConfigService";
 import { NodeBpmnLinter } from "./NodeBpmnLinter";
+
+const moddlesCreated = vi.hoisted(() => vi.fn());
+
+vi.mock("bpmn-moddle", async (importOriginal) => {
+    const actual = await importOriginal<{ BpmnModdle: (...args: unknown[]) => unknown }>();
+    const countingFactory = (...args: unknown[]) => {
+        moddlesCreated();
+        return actual.BpmnModdle(...args);
+    };
+    return { default: countingFactory, BpmnModdle: countingFactory };
+});
 
 // A tmp dir has no `node_modules` up its tree, so the workspace NodeResolver
 // misses and resolution falls back to the bundled built-in rules — the same path
@@ -152,5 +166,111 @@ describe("NodeBpmnLinter", () => {
 
         expect(unresolved).toEqual([]);
         expect(Object.keys(results)).toContain("start-event-required");
+    });
+});
+
+describe("NodeBpmnLinter across runs", () => {
+    const BPMN_TWO_FLOWS = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_1" />
+    <bpmn:task id="Task_1" name="Do the thing" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="End_1" />
+    <bpmn:endEvent id="End_1" />
+  </bpmn:process>
+</bpmn:definitions>`;
+
+    let workspaceDir: string;
+
+    beforeEach(async () => {
+        moddlesCreated.mockClear();
+        workspaceDir = await mkdtemp(join(tmpdir(), "node-bpmn-linter-"));
+    });
+
+    afterEach(async () => {
+        vi.restoreAllMocks();
+        await rm(workspaceDir, { recursive: true, force: true });
+    });
+
+    it("starts every run with fresh rule state", async () => {
+        const linter = new NodeBpmnLinter();
+        const config = { rules: { "no-duplicate-sequence-flows": "error" } };
+
+        const first = await linter.lint(BPMN_TWO_FLOWS, CONFIG_PATH, config);
+        const second = await linter.lint(BPMN_TWO_FLOWS, CONFIG_PATH, config);
+
+        expect(first.results).toEqual({});
+        expect(second.results).toEqual({});
+    });
+
+    it("reports the same unresolved rules on every run", async () => {
+        const linter = new NodeBpmnLinter();
+        const config = {
+            rules: { "custom-plugin/no-such-rule": "error" },
+            moddleExtensions: { custom: "no-such-moddle-extension" },
+        };
+
+        const first = await linter.lint(BPMN_WITH_TASK, CONFIG_PATH, config);
+        const second = await linter.lint(BPMN_WITH_TASK, CONFIG_PATH, config);
+
+        expect(first.unresolved).toEqual([
+            "moddleExtension:custom",
+            "bpmnlint-plugin-custom-plugin/no-such-rule",
+        ]);
+        expect(second.unresolved).toEqual(first.unresolved);
+    });
+
+    it("reuses the moddle and resolved rules until the config changes", async () => {
+        const resolveRule = vi.spyOn(NodeResolver.prototype, "resolveRule");
+        const linter = new NodeBpmnLinter();
+        const recommended = { extends: "bpmnlint:recommended" };
+
+        await linter.lint(BPMN_WITH_TASK, CONFIG_PATH, recommended);
+        expect(moddlesCreated).toHaveBeenCalledOnce();
+        expect(resolveRule).toHaveBeenCalled();
+
+        resolveRule.mockClear();
+        const { results } = await linter.lint(BPMN_WITH_TASK, CONFIG_PATH, { ...recommended });
+        expect(moddlesCreated).toHaveBeenCalledOnce();
+        expect(resolveRule).not.toHaveBeenCalled();
+        expect(Object.keys(results)).toContain("start-event-required");
+
+        await linter.lint(BPMN_WITH_TASK, CONFIG_PATH, {
+            ...recommended,
+            rules: { "label-required": "off" },
+        });
+        expect(moddlesCreated).toHaveBeenCalledTimes(2);
+        expect(resolveRule).toHaveBeenCalled();
+    });
+
+    it("picks up a plugin installed after a run that could not resolve it", async () => {
+        const linter = new NodeBpmnLinter();
+        const configPath = join(workspaceDir, ".bpmnlintrc");
+        const config = { rules: { "custom-plugin/task-found": "warn" } };
+
+        const before = await linter.lint(BPMN_WITH_TASK, configPath, config);
+        expect(before.unresolved).toEqual(["bpmnlint-plugin-custom-plugin/task-found"]);
+
+        const pluginDir = join(workspaceDir, "node_modules", "bpmnlint-plugin-custom-plugin");
+        await mkdir(join(pluginDir, "rules"), { recursive: true });
+        await writeFile(
+            join(pluginDir, "package.json"),
+            JSON.stringify({ name: "bpmnlint-plugin-custom-plugin", version: "1.0.0" }),
+        );
+        await writeFile(
+            join(pluginDir, "rules", "task-found.js"),
+            `module.exports = () => ({
+                check(node, reporter) {
+                    if (node.$type === "bpmn:Task") reporter.report(node.id, "Task found");
+                },
+            });`,
+        );
+
+        const after = await linter.lint(BPMN_WITH_TASK, configPath, config);
+        expect(after.unresolved).toEqual([]);
+        expect(after.results["custom-plugin/task-found"]).toEqual([
+            expect.objectContaining({ id: "Task_1" }),
+        ]);
     });
 });

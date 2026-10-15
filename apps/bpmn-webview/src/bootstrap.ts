@@ -93,6 +93,7 @@ import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
+import { MessageGate } from "./messageGate";
 import { readSavedMode, readSavedPanelVisibility, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
@@ -119,6 +120,25 @@ import "../../../packages/bpmn-modeler/src/styles/mode.css";
  * through their normal message handlers.
  */
 const RESOLVER_TIMEOUT_MS = 5000;
+
+/**
+ * Host replies that act on the imported diagram. The webview requests their
+ * sources before the import so the host round trip overlaps it, which means
+ * they can arrive before the surface exists; they are held until the initial
+ * import has completed.
+ */
+const IMPORT_BOUND_QUERY_TYPES: ReadonlySet<string> = new Set([
+    "ElementTemplatesQuery",
+    "BpmnModelerSettingQuery",
+    "BpmnlintResultsQuery",
+    "BpmnLintDisabledQuery",
+    "BpmnlintInPageQuery",
+    "LanguageQuery",
+    "UpdateScriptContentQuery",
+    "UpdateScriptFormatQuery",
+    "UpdateOpenScriptEditorsQuery",
+    "ImplementationStatusQuery",
+]);
 
 /**
  * Starts the BPMN webview against the given host. The entry (real or demo)
@@ -249,6 +269,10 @@ function startSession(
     // default. The webview uses this value only when its own webview state has
     // no panelVisible entry — see WebviewStateManager.restorePanelVisibility.
     const panelStateResolver = createResolver<PropertiesPanelStateQuery>();
+
+    const importBoundQueries = new MessageGate<MessageEvent<Query | Command>>((message) => {
+        void onReceiveMessage(message);
+    });
 
     /**
      * State manager for persisting and restoring viewport/selection across tab
@@ -508,9 +532,10 @@ function startSession(
      * Entry point executed once the webview DOM is fully loaded.
      *
      * Registers the message listener first so no backend messages are missed,
-     * then requests the BPMN file and waits for the reply before creating the
-     * modeler. After the modeler is ready, secondary resources (element
-     * templates, settings) are requested.
+     * then requests the BPMN file together with the settings and panel state.
+     * Element templates and the lint config depend on the surface kind, so they
+     * are requested once the surface exists but before the import. Replies that
+     * act on the diagram are held until the initial import has completed.
      *
      * There are two reasons the webview is built:
      * 1. A new `.bpmn` file was opened.
@@ -604,6 +629,8 @@ function startSession(
         }
 
         host.postMessage(new GetBpmnFileCommand());
+        host.postMessage(new GetBpmnModelerSettingCommand());
+        host.postMessage(new GetPropertiesPanelStateCommand());
         const savedMode = readSavedMode(host);
         if (savedMode) {
             prefetchSurfaceModules(savedMode, { linting: injectedLinting === undefined });
@@ -621,6 +648,8 @@ function startSession(
          * the readonly DiffMode and skip the editable modeler entirely.
          */
         if (bpmnFileQuery?.viewerMode === "viewer") {
+            // A diff pane has no surface to apply them to, but still follows later language changes.
+            importBoundQueries.discard();
             document.body.classList.add("viewer-mode");
             const canvas = document.getElementById("js-canvas");
             const dropZone = document.getElementById("js-drop-zone");
@@ -981,6 +1010,7 @@ function startSession(
             return;
         }
         surfaceMode = modeSession.getMode();
+        requestSurfaceResources();
 
         // Always offer all three modes, greying out the ones the current
         // engine can't reach (Implement on an untagged model) so the mode is
@@ -1074,10 +1104,11 @@ function startSession(
         await drainPendingSessionActions();
         if (engineReloadPending) return;
         modelerIsInitialized = true;
-        // Templates + lint config are modeler-only; settings + panel state always.
-        requestSurfaceResources();
-        host.postMessage(new GetBpmnModelerSettingCommand());
-        host.postMessage(new GetPropertiesPanelStateCommand());
+        importBoundQueries.open();
+        // A held LanguageQuery may have queued a refresh; it must land before
+        // the selection restore below.
+        await drainPendingSessionActions();
+        if (engineReloadPending) return;
 
         // Panel visibility: this editor's own saved entry (applied early above)
         // wins. Only when absent do we fall back to the host's global default —
@@ -1213,6 +1244,9 @@ function startSession(
             engineReloadPending &&
             !["FlushDocumentQuery", "ReleaseDocumentFlushQuery"].includes(queryOrCommand.type)
         ) {
+            return;
+        }
+        if (IMPORT_BOUND_QUERY_TYPES.has(queryOrCommand.type) && importBoundQueries.hold(message)) {
             return;
         }
         const errorPrefix = "Error receiving message: " + queryOrCommand.type + " — ";

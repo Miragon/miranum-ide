@@ -10,7 +10,6 @@ import {
     searchFilesContent,
 } from "../../shared/service/workspaceFileSearch";
 import {
-    contentDeclaresBean,
     contentImplementsLiteral,
     matchesBeanClassName,
     matchesClassPath,
@@ -21,16 +20,25 @@ import {
     fqcnToGlobPath,
     ImplementationKind,
     JVM_EXTENSIONS,
-    SCRIPT_WORKER_EXTENSIONS,
+    SOURCE_EXTENSIONS,
 } from "../domain/ImplementationReference";
+import { SourceFileFacts } from "../domain/SourceFileFacts";
+import { BEAN_ANNOTATION_PREFIX } from "../domain/sourceText";
+import { DirectSourceCatalog, InspectedSource, SourceCatalog } from "./SourceIndex";
 
 // Max length of a reference echoed back into a user-facing log line.
 const REFERENCE_DISPLAY_LIMIT = 120;
 
 // Brace-expansion glob fragments. VS Code's `findFiles` expands `{a,b}`.
 const JVM_GLOB_EXT = `{${JVM_EXTENSIONS.join(",")}}`;
-const ALL_SOURCE_EXTENSIONS = [...JVM_EXTENSIONS, ...SCRIPT_WORKER_EXTENSIONS];
-const SOURCE_GLOB_EXT = `{${ALL_SOURCE_EXTENSIONS.join(",")}}`;
+const SOURCE_GLOB_EXT = `{${SOURCE_EXTENSIONS.join(",")}}`;
+
+/** A reference only file content can settle, with the bean id it names, if any. */
+interface ContentTarget {
+    activityId: string;
+    reference: string;
+    bean?: string;
+}
 
 /**
  * Outcome of locating the source file(s) implementing a task reference.
@@ -90,15 +98,19 @@ export class ImplementationLocator {
      * One candidate scan; then a content-free pass settles `javaClass` and
      * filename-matched beans by path alone, and the remaining content-based
      * references (literals, and beans whose class file is named differently)
-     * are decided by reading each candidate at most once and testing every
-     * outstanding pattern against it.
+     * are decided from each candidate's {@link SourceFileFacts}, reading a file
+     * only when `sources` does not know it yet or a literal needs the content.
      *
-     * @returns activity id → matched absolute paths. Every input id is present;
-     *   an unresolved reference (or no search scope) maps to an empty array.
+     * @param sources The shared index of the document's workspace folders;
+     *   without one the candidates are listed and read for this call only.
+     * @returns activity id → matched absolute paths in candidate order. Every
+     *   input id is present; an unresolved reference (or no search scope) maps
+     *   to an empty array.
      */
     async resolveMany(
         entries: readonly ImplementationEntry[],
         sourceDocumentPath?: string,
+        sources?: SourceCatalog,
     ): Promise<Map<string, string[]>> {
         const result = new Map<string, string[]>(entries.map((entry) => [entry.activityId, []]));
         if (entries.length === 0) {
@@ -106,24 +118,22 @@ export class ImplementationLocator {
         }
 
         this.notifier.logInfo(`[code-link] batch-resolving ${entries.length} reference(s)`);
-        const sources = await this.collectSources(
-            SOURCE_GLOB_EXT,
-            ALL_SOURCE_EXTENSIONS,
-            sourceDocumentPath,
-        );
-        if (sources === undefined || sources.length === 0) {
+        const catalog =
+            sources ?? new DirectSourceCatalog(this.vsWorkspace, this.notifier, sourceDocumentPath);
+        const candidates = await catalog.listSources();
+        if (candidates === undefined || candidates.length === 0) {
             return result;
         }
 
         // Path-only pass: anything decidable without reading a file. Whatever is
         // left (literals, and beans with no matching class-file name) needs a
         // content scan and is queued with the bean id it should look for.
-        const contentTargets: { activityId: string; reference: string; bean?: string }[] = [];
+        const contentTargets: ContentTarget[] = [];
         for (const entry of entries) {
             if (entry.kind === "javaClass") {
                 result.set(
                     entry.activityId,
-                    sources.filter((path) => matchesClassPath(entry.reference, path)),
+                    candidates.filter((path) => matchesClassPath(entry.reference, path)),
                 );
                 continue;
             }
@@ -132,7 +142,7 @@ export class ImplementationLocator {
                 if (!bean) {
                     continue;
                 }
-                const byName = sources.filter((path) => matchesBeanClassName(bean, path));
+                const byName = candidates.filter((path) => matchesBeanClassName(bean, path));
                 if (byName.length > 0) {
                     result.set(entry.activityId, byName);
                 } else {
@@ -152,26 +162,23 @@ export class ImplementationLocator {
             return result;
         }
 
-        // Single read per candidate, every outstanding pattern tested against it.
-        await Promise.all(
-            sources.map(async (path) => {
-                let content: string;
-                try {
-                    content = await this.vsWorkspace.readFile(path);
-                } catch {
-                    return;
-                }
-                for (const target of contentTargets) {
-                    const matched =
-                        target.bean !== undefined
-                            ? contentDeclaresBean(content, target.bean)
-                            : contentImplementsLiteral(content, target.reference);
-                    if (matched) {
-                        result.get(target.activityId)!.push(path);
-                    }
-                }
+        const withContent = contentTargets.some(
+            (target) =>
+                target.bean === undefined && !SourceFileFacts.decidesLiteral(target.reference),
+        );
+        const matchedTargets = await Promise.all(
+            candidates.map(async (path) => {
+                const source = await catalog.inspect(path, withContent);
+                return source
+                    ? contentTargets.filter((target) => implementsTarget(source, target))
+                    : [];
             }),
         );
+        candidates.forEach((path, index) => {
+            for (const target of matchedTargets[index]) {
+                result.get(target.activityId)!.push(path);
+            }
+        });
         return result;
     }
 
@@ -262,7 +269,7 @@ export class ImplementationLocator {
     ): Promise<LocateImplementationResult> {
         const sources = await this.collectSources(
             SOURCE_GLOB_EXT,
-            ALL_SOURCE_EXTENSIONS,
+            SOURCE_EXTENSIONS,
             sourceDocumentPath,
         );
         if (sources === undefined) {
@@ -297,10 +304,18 @@ export class ImplementationLocator {
  * e.g. `@Service("myBean")` or `@Component(value = "myBean")`.
  */
 function beanAnnotationPattern(bean: string): RegExp {
-    return new RegExp(
-        `@(?:Component|Service|Repository|Named|Bean)\\s*\\(\\s*(?:value\\s*=\\s*)?["']${escapeRegex(
-            bean,
-        )}["']`,
+    return new RegExp(`${BEAN_ANNOTATION_PREFIX}${escapeRegex(bean)}["']`);
+}
+
+function implementsTarget(source: InspectedSource, target: ContentTarget): boolean {
+    if (target.bean !== undefined) {
+        return source.facts.declaresBean(target.bean);
+    }
+    if (SourceFileFacts.decidesLiteral(target.reference)) {
+        return source.facts.implementsLiteral(target.reference);
+    }
+    return (
+        source.content !== undefined && contentImplementsLiteral(source.content, target.reference)
     );
 }
 
