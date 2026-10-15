@@ -413,6 +413,12 @@ const _designerAcceptsNavigation = {
 } satisfies DesignerOptions;
 void _designerAcceptsNavigation;
 
+const _designerAcceptsDefinitionSearch = {
+    propertiesPanel: { parent: document.createElement("div") },
+    capabilities: { definitionSearch: { search: async () => [] } },
+} satisfies DesignerOptions;
+void _designerAcceptsDefinitionSearch;
+
 const _designerRejectsCodeLink = {
     propertiesPanel: { parent: document.createElement("div") },
     // @ts-expect-error — codeLink is engine-bound, absent from DesignerCapabilities.
@@ -456,6 +462,12 @@ const _viewerRejectsScripting = {
     capabilities: { scripting: {} },
 } satisfies ViewerOptions;
 void _viewerRejectsScripting;
+
+const _viewerRejectsDefinitionSearch = {
+    // @ts-expect-error — definition search edits the model, absent from ViewerCapabilities.
+    capabilities: { definitionSearch: { search: async () => [] } },
+} satisfies ViewerOptions;
+void _viewerRejectsDefinitionSearch;
 
 const _viewerCapabilities = { modelNavigation: _asyncNavigation } satisfies ViewerCapabilities;
 void _viewerCapabilities;

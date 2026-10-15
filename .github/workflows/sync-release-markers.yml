@@ -66,6 +66,7 @@ on:
       - 'libs/bpmn-diff/**'
       - 'libs/bpmn-i18n-extras/**'
       - 'libs/code-link/**'
+      - 'libs/definition-search/**'
       - 'libs/element-template-chooser/**'
       - 'libs/flow-navigation/**'
       - 'libs/inline-scripting/**'
@@ -107,9 +108,9 @@ jobs:
 
           SHORT_SHA="${SHA:0:7}"
 
-          # The npm-package sphere: packages/bpmn-modeler plus the 10 libs it
+          # The npm-package sphere: packages/bpmn-modeler plus the 11 libs it
           # inlines (vite.config.mts INLINED_LIBS). Bundled by both hosts.
-          SPHERE='^packages/bpmn-modeler/|^libs/(append-menu|bpmn-clipboard|bpmn-diff|bpmn-i18n-extras|code-link|element-template-chooser|flow-navigation|inline-scripting|model-navigation|modeler-types)/'
+          SPHERE='^packages/bpmn-modeler/|^libs/(append-menu|bpmn-clipboard|bpmn-diff|bpmn-i18n-extras|code-link|definition-search|element-template-chooser|flow-navigation|inline-scripting|model-navigation|modeler-types)/'
 
           VSC_RELEVANT="^apps/(bpmn-webview|dmn-webview|form-webview|deployment-webview|standalone)/|^libs/(modeler-core|shared|standalone-extension)/|^packages/dmn-modeler/|${SPHERE}"
           IJ_RELEVANT="^apps/(bpmn-webview|deployment-webview|modeler-bridge)/|^libs/(modeler-core|shared)/|${SPHERE}"

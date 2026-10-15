@@ -2,7 +2,7 @@
  * The engine-neutral design surface's stylesheet, built standalone as
  * `@miragon/bpmn-modeler/design.css` (see `vite.viewer-css.config.mts`). It
  * carries the bpmn-js base diagram/font CSS, the engine-neutral properties panel
- * and append-menu chrome, and the mode-invariant canvas chrome (minimap, token
+ * and append-menu chrome, the definition-search results list, and the mode-invariant canvas chrome (minimap, token
  * simulation, canvas focus indicator), plus the injection-only lint
  * chrome (hide-until-configured, so it costs nothing unless a host
  * injects linting) — plus the dark-theme overrides scoped under
@@ -19,6 +19,7 @@
 @import "bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css";
 @import "../bpmnlint/bpmnlint.css";
 @import "../../../../libs/append-menu/src/append-menu.css";
+@import "../../../../libs/definition-search/src/definitionSearch.css";
 @import "./canvasFocusIndicator.css";
 @import "./dark-theme/diagram-js.css";
 @import "./dark-theme/properties-panel.css";

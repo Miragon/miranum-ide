@@ -86,13 +86,14 @@ Every feature the modeler exposes falls into one of three categories:
   `options.capabilities`. **An absent capability means the feature's UI cannot appear** — no
   context-pad entries, no lock badges, no dead buttons.
 
-The three optional capability ports (`ModelerCapabilities`) are:
+The optional capability ports (`ModelerCapabilities`) are:
 
 | Capability        | Port                  | Wires up                                                                                                                                                             |
 |-------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `modelNavigation` | `ModelNavigationPort` | jump-to-element / model navigation (engine-neutral — **also available on `/design` and `/viewer`** via their narrower `DesignerCapabilities` / `ViewerCapabilities`) |
 | `codeLink`        | `CodeLinkPort`        | code ↔ diagram linking                                                                                                                                               |
 | `scripting`       | `InlineScriptingPort` | inline script editing (**C7 only** — the C8 modeler leaves it unregistered even if the port is supplied)                                                             |
+| `definitionSearch` | `DefinitionSearchPort` | "Search other models" at the end of the message / signal / error / escalation group; picking a result copies the definition into the current model (**also on `/design`**) |
 
 ```ts
 const modeler = await createModeler( canvas, {
@@ -103,6 +104,44 @@ const modeler = await createModeler( canvas, {
         codeLink: myCodeLinkPort,
     },
 } );
+```
+
+### Definition search
+
+BPMN cannot reference a message, signal, error or escalation in another file, so
+the search field copies the picked definition into the current model (or reuses
+an equal one) and links it. Where results come from is up to you: answer
+`search({ kind, text })` from your model store or a server; `text` is trimmed
+and never empty. `extractModelDefinitions(xml)` lists the
+definitions of one BPMN file together with the elements that throw or catch
+them:
+
+```ts
+import { createModeler, extractModelDefinitions } from "@miragon/bpmn-modeler";
+
+const definitions = otherModels.flatMap(({ path, xml }) =>
+    extractModelDefinitions(xml).map((definition) => ({
+        ...definition,
+        source: { path, label: path.split("/").pop() ?? path },
+    })),
+);
+
+const modeler = await createModeler(canvas, {
+    engine: "c8",
+    propertiesPanel: { parent: panel },
+    capabilities: {
+        definitionSearch: {
+            search: async ({ kind, text }) =>
+                definitions.filter(
+                    (definition) =>
+                        definition.kind === kind &&
+                        [definition.name, definition.code].some((value) =>
+                            value?.toLowerCase().includes(text.toLowerCase()),
+                        ),
+                ),
+        },
+    },
+});
 ```
 
 ## Escape hatches

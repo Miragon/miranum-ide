@@ -3,25 +3,34 @@ import { createViewer } from "@miragon/bpmn-modeler/viewer";
 import { createDesigner } from "@miragon/bpmn-modeler/design";
 import * as lintModule from "@miragon/bpmn-modeler/lint";
 import type { SurfaceFactories } from "@miragon/bpmn-modeler/mode";
-import { openReference } from "../../src";
+import { DemoDefinitionSearch, openReference } from "../../src";
 import { registerDemoCustomGroup } from "../../src/demoCustomGroup";
 
 /**
  * The demo's per-mode surface factories, injected into the mode session. Every
  * surface shares the demo canvas + panel mount and registers the demo custom
- * group so the host slot is observable in all three modes. The one host
- * capability wired everywhere is model navigation; both editable surfaces lint
+ * group so the host slot is observable in all three modes. Model navigation is
+ * wired everywhere; the editable surfaces add the definition search over the
+ * other registry models. Both editable surfaces lint
  * in-page (the eager `/lint` module) — the designer with the engine-neutral
  * Design config, the modeler additionally toggling Design↔Implement live and
  * re-resolving its lint config per mode.
  */
-export function buildDemoSurfaces(panelMount: HTMLElement): SurfaceFactories {
+export function buildDemoSurfaces(panelMount: HTMLElement, modelId: string): SurfaceFactories {
     const propertiesPanel = { parent: panelMount };
-    const capabilities = { modelNavigation: { openReference } };
+    const viewerCapabilities = { modelNavigation: { openReference } };
+    const capabilities = {
+        ...viewerCapabilities,
+        definitionSearch: new DemoDefinitionSearch(modelId),
+    };
 
     return {
         view: async ({ container, theme }) => {
-            const handle = await createViewer(container, { theme, propertiesPanel, capabilities });
+            const handle = await createViewer(container, {
+                theme,
+                propertiesPanel,
+                capabilities: viewerCapabilities,
+            });
             registerDemoCustomGroup(handle);
             return handle;
         },

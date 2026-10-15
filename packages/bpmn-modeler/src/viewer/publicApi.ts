@@ -49,8 +49,8 @@ export type CoreViewerServices = Pick<
  * construction — the viewer has no editing surface to bind them to.
  *
  * Its own interface rather than a reuse of {@link DesignerCapabilities}: the
- * viewer must not import from `src/design/*`. Structural identity with
- * `DesignerCapabilities` is asserted in `publicApi.spec.ts`.
+ * viewer must not import from `src/design/*`. It omits `definitionSearch`,
+ * which edits the model; `publicApi.spec.ts` asserts both stay assignable.
  */
 export interface ViewerCapabilities {
     modelNavigation?: ModelNavigationPort;

@@ -55,6 +55,10 @@ export * from "./navigation/service/ModelNavigationService";
 export * from "./navigation/service/ReferencedModelLocator";
 export * from "./navigation/service/FormReferenceStatusService";
 
+// ── definition search ────────────────────────────────────────────────────────
+export * from "./definitionSearch/service/WorkspaceDefinitionIndex";
+export * from "./definitionSearch/service/DefinitionSearchService";
+
 // ── codeLink ─────────────────────────────────────────────────────────────────
 export * from "./codeLink/service/ImplementationLocator";
 export * from "./codeLink/service/ImplementationNavigationService";

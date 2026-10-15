@@ -76,6 +76,15 @@ const SOURCE_ONLY = new Set([
     "Read-only",
     "Being edited in",
     "Element actions",
+    // Workspace definition-search entry: it only renders with a search port,
+    // which the harvest driver does not supply.
+    "Search other models",
+    "Name or code",
+    "No matches in other models",
+    "Search failed",
+    "Searching…",
+    "thrown by {elements}",
+    "caught by {elements}",
     // Mode-strip labels the webview emits before any surface exists, so the
     // harvest driver (which drives a live modeler) never records them.
     "View",

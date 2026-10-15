@@ -15,6 +15,7 @@ export default defineConfig({
             "libs/append-menu",
             "libs/bpmn-i18n-extras",
             "libs/code-link",
+            "libs/definition-search",
             "libs/element-template-chooser",
             "libs/inline-scripting",
             "libs/properties-panel",

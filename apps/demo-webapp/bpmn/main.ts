@@ -62,7 +62,7 @@ async function main(): Promise<void> {
     const session = await createModeSession({
         container: canvas,
         engine,
-        surfaces: buildDemoSurfaces(panelMount),
+        surfaces: buildDemoSurfaces(panelMount, model.id),
         initialMode: readRequestedMode(),
         theme: themeMode as ThemeMode,
         onModeChanged: (mode) => {

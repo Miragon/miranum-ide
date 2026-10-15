@@ -5,6 +5,7 @@ import {
     OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
     NavigateToImplementationCommand,
+    SearchWorkspaceDefinitionsCommand,
     NavigateToReferencedModelCommand,
     SetClipboardCommand,
     SetLintingEnabledCommand,
@@ -40,6 +41,7 @@ import { BpmnLintConfigService } from "@miragon/bpmn-modeler-core";
 import { BpmnPropertiesPanelService } from "@miragon/bpmn-modeler-core";
 import { BpmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
 import { FormReferenceStatusService, ModelNavigationService } from "../../../../navigation/index";
+import { DefinitionSearchService } from "../../../../definitionSearch/index";
 import { CodeLinkMapService, ImplementationNavigationService } from "../../../../codeLink/index";
 import { ScriptTaskService } from "../../../../scriptTask/index";
 
@@ -348,6 +350,15 @@ export function getFormReferenceStatusHandler(
 ): MessageHandler {
     return async (_message: Command, editorId: string) => {
         await statusService.requestStatus(editorId);
+    };
+}
+
+/** `SearchWorkspaceDefinitionsCommand` → answer with matching definitions of other models. */
+export function searchWorkspaceDefinitionsHandler(
+    searchService: DefinitionSearchService,
+): MessageHandler {
+    return async (message: Command, editorId: string) => {
+        await searchService.search(editorId, message as SearchWorkspaceDefinitionsCommand);
     };
 }
 

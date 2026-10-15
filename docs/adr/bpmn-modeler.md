@@ -45,8 +45,8 @@ templates and settings. Clipboard defaults to native behavior and accepts a
 host bridge or explicit disabling. Theme and locale have built-in defaults.
 Linting is explicitly opt-in through the [injection contract](#linting).
 
-Navigation, code-link and scripting are capabilities enabled by supplying
-ports. Without a port their UI is absent. Internal DI factories and forwarders
+Navigation, code-link, scripting and definition search are capabilities
+enabled by supplying ports. Without a port their UI is absent. Internal DI factories and forwarders
 are composition details. Outbound notifications use individual `on*` callbacks,
 not a generic event bus. A notification cannot replace a capability that must
 resolve a target or answer a query; action ports can accept asynchronous host
@@ -59,6 +59,16 @@ modeler rebuilds an open pad and unsubscribes on destruction. Without those
 hooks, syntactically valid references are available. The IDE adapter restricts
 linked Forms until its workspace index provides resolvable IDs.
 
+The definition-search port is the first query port: `search({ kind, text })`
+returns a `Promise` of messages, signals, errors or escalations from other
+models. The entry ignores answers to superseded queries, so implementations
+need not cancel. BPMN cannot reference another file's definitions, so picking
+a result copies the definition into the current model, or reuses one with the
+same name and code, in one undoable command. The package also exports
+`extractModelDefinitions(xml)`, so host-less consumers can build their own index
+with the same tag scanner the IDE hosts use. It is a scanner rather than a
+moddle parse because hosts index whole workspaces.
+
 `getService` has a typed overload for seven semver-covered services: `canvas`,
 `commandStack`, `elementRegistry`, `eventBus`, `modeling`, `overlays`, and
 `selection`. Their map uses upstream documented types and can be narrowed with
@@ -70,7 +80,7 @@ instance or services object would duplicate this API and expose more internals.
 | Entry | Construction and contract |
 | --- | --- |
 | Root `createModeler` | Camunda 7/8 editor; live Design/Implement mode, default Implement |
-| `/design` `createDesigner` | Editable engine-neutral bpmn-js Modeler with neutral panel, clipboard and optional navigation/lint |
+| `/design` `createDesigner` | Editable engine-neutral bpmn-js Modeler with neutral panel, clipboard and optional navigation/definition search/lint |
 | `/viewer` `createViewer` | NavigatedViewer with outline, optional readonly panel and optional navigation |
 | `/mode` `createModeSession` | Surface-independent orchestration using consumer-supplied factories |
 
@@ -78,8 +88,10 @@ Designer and viewer handles are signature-compatible subsets of the modeler
 handle. The designer has all seven core services. The viewer omits `modeling`
 and `commandStack`; attempts to resolve them throw, including when its panel
 or navigation capability is enabled. Viewer navigation adds diagram-js's
-context pad, not bpmn-js's editing provider. Designer and viewer capability
-types expose navigation only, without importing one surface into the other.
+context pad, not bpmn-js's editing provider. Designer capability types expose
+the engine-neutral ports, navigation and definition search; viewer capability
+types expose navigation only, because definition search edits the model. Neither
+surface imports the other.
 
 For an engine-tagged diagram, Design/Implement is a live `setMode` on the same
 engine modeler. Its moddle, behaviors, command stack and DI graph remain intact,

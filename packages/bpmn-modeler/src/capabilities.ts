@@ -1,5 +1,6 @@
 import type { ModelNavigationPort } from "@miragon/bpmn-model-navigation";
 import type { CodeLinkPort } from "@miragon/bpmn-modeler-code-link";
+import type { DefinitionSearchPort } from "@miragon/bpmn-modeler-definition-search";
 import type { InlineScriptingPort } from "@miragon/bpmn-modeler-inline-scripting";
 
 /**
@@ -16,4 +17,5 @@ export interface ModelerCapabilities {
     modelNavigation?: ModelNavigationPort;
     codeLink?: CodeLinkPort;
     scripting?: InlineScriptingPort;
+    definitionSearch?: DefinitionSearchPort;
 }

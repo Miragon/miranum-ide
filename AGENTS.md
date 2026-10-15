@@ -102,6 +102,8 @@ libs/
   bpmn-i18n-extras/      # C7/dmn-js/internal translation overlay merged onto
                          # the shared @miragon/bpmn-modeler-i18n npm package
   code-link/             # Code-link feature
+  definition-search/     # Workspace search for messages/signals/errors/
+                         # escalations defined in other models
   element-template-chooser/ # Element-template chooser module
   inline-scripting/      # Inline-script editing (C7 script tasks/listeners)
   model-navigation/      # Model navigation module
@@ -124,8 +126,9 @@ build → package plugin → bundle → start chain.
 - **Webviews**: Vite — `apps/{bpmn,dmn,form,deployment}-webview/vite.config.mts`
 - **Tests**: Vitest — root `vitest.config.ts` aggregates per-workspace projects
   (vscode-plugin, modeler-bridge, bpmn-webview, form-webview, append-menu,
-  bpmn-i18n-extras, code-link, element-template-chooser, inline-scripting,
-  modeler-core, modeler-types, shared, flow-navigation, model-navigation); root
+  bpmn-i18n-extras, code-link, definition-search, element-template-chooser,
+  inline-scripting, modeler-core, modeler-types, shared, flow-navigation,
+  model-navigation); root
   `test` = `vitest run --coverage`
 - **Output**: `dist/apps/vscode-plugin/`
 
@@ -146,6 +149,7 @@ Each `@miragon/...` alias maps to `libs/<dir>/src/index.ts`:
 - `@miragon/bpmn-modeler-append-menu` → `libs/append-menu`
 - `@miragon/bpmn-model-navigation` → `libs/model-navigation`
 - `@miragon/bpmn-modeler-code-link` → `libs/code-link`
+- `@miragon/bpmn-modeler-definition-search` → `libs/definition-search`
 - `@miragon/bpmn-modeler-inline-scripting` → `libs/inline-scripting`
 - Resolved by `TsconfigPathsPlugin` (webpack) and `vite-tsconfig-paths` (Vite)
 

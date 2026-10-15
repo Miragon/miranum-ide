@@ -41,18 +41,13 @@
                 "./libs/element-template-chooser/src/*"
             ],
             "@miragon/bpmn-modeler-append-menu": ["./libs/append-menu/src/index.ts"],
-            "@miragon/bpmn-modeler-properties-panel": [
-                "./libs/properties-panel/src/index.ts"
-            ],
+            "@miragon/bpmn-modeler-properties-panel": ["./libs/properties-panel/src/index.ts"],
             "@miragon/bpmn-modeler-properties-panel/*": ["./libs/properties-panel/src/*"],
             "@miragon/bpmn-model-navigation": ["./libs/model-navigation/src/index.ts"],
+            "@miragon/bpmn-modeler-definition-search": ["./libs/definition-search/src/index.ts"],
             "@miragon/bpmn-modeler-code-link": ["./libs/code-link/src/index.ts"],
-            "@miragon/bpmn-modeler-inline-scripting": [
-                "./libs/inline-scripting/src/index.ts"
-            ],
-            "@miragon/bpmn-modeler-flow-navigation": [
-                "./libs/flow-navigation/src/index.ts"
-            ],
+            "@miragon/bpmn-modeler-inline-scripting": ["./libs/inline-scripting/src/index.ts"],
+            "@miragon/bpmn-modeler-flow-navigation": ["./libs/flow-navigation/src/index.ts"],
             "@miragon/bpmn-modeler-layout": ["./libs/bpmn-layout/src/index.ts"],
             "@miragon/bpmn-modeler-webview": ["./apps/bpmn-webview/src/index.ts"]
         }

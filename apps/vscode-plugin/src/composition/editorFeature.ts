@@ -65,6 +65,7 @@ import {
     navigateToImplementationHandler,
     syncActivitiesHandler,
     getFormReferenceStatusHandler,
+    searchWorkspaceDefinitionsHandler,
 } from "../modeler/bpmn/controller/webview-handlers/bpmnMessageHandlers";
 import {
     getDmnFileHandler,
@@ -90,7 +91,9 @@ import { CodeLinkHandles } from "./codeLinkFeature";
 import { DeploymentStatusParticipant } from "../deployment/controller/editor-participants/DeploymentStatusParticipant";
 import { SharedDeps } from "./sharedDeps";
 import { FormReferenceStatusService } from "../navigation";
+import { DefinitionSearchService, WorkspaceDefinitionIndex } from "../definitionSearch";
 import { FormReferenceStatusParticipant } from "../navigation/controller/editor-participants/FormReferenceStatusParticipant";
+import { DefinitionSearchParticipant } from "../definitionSearch/controller/editor-participants/DefinitionSearchParticipant";
 
 /**
  * Lifecycle-bearing collaborators owned by sibling features that the editor
@@ -225,6 +228,15 @@ export function register(
         deps.notifier,
     );
     context.subscriptions.push({ dispose: () => formReferenceStatusService.dispose() });
+    const definitionIndex = new WorkspaceDefinitionIndex(deps.vsWorkspace, deps.notifier);
+    const definitionSearchService = new DefinitionSearchService(
+        deps.editorStore,
+        deps.vsDocument,
+        deps.vsWorkspace,
+        definitionIndex,
+        deps.notifier,
+    );
+    context.subscriptions.push({ dispose: () => definitionIndex.dispose() });
 
     // One router per editor: both protocols carry `SyncDocumentCommand` but
     // route it to a different service, so they cannot share a dispatch table.
@@ -281,6 +293,10 @@ export function register(
         "GetFormReferenceStatusCommand",
         getFormReferenceStatusHandler(formReferenceStatusService),
     );
+    bpmnMessageRouter.on(
+        "SearchWorkspaceDefinitionsCommand",
+        searchWorkspaceDefinitionsHandler(definitionSearchService),
+    );
     // Tags forwarded webview log lines with the diagram's basename so a warning
     // can be correlated to a file when several editors are open. getFilePath
     // throws for an editorId the store no longer tracks; a bare `[webview]` tag
@@ -321,6 +337,7 @@ export function register(
         participants: [
             new BpmnRenderParticipant(bpmnService, deps.notifier),
             new FormReferenceStatusParticipant(formReferenceStatusService),
+            new DefinitionSearchParticipant(definitionSearchService),
             new ElementTemplatesParticipant(templatesSvc, deps.artifactSvc, deps.notifier),
             new BpmnlintParticipant(
                 lintConfigSvc,

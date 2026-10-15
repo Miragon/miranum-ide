@@ -40,6 +40,7 @@ import * as marketplaceFeature from "./composition/marketplaceFeature";
 import * as templatesSettingsFeature from "./composition/templatesSettingsFeature";
 import * as clipboardFeature from "./composition/clipboardFeature";
 import * as navigationFeature from "./composition/navigationFeature";
+import * as definitionSearchFeature from "./composition/definitionSearchFeature";
 import * as codeLinkFeature from "./composition/codeLinkFeature";
 import * as bpmnlintFeature from "./composition/bpmnlintFeature";
 import * as scriptFeature from "./composition/scriptFeature";
@@ -94,14 +95,14 @@ export function createBridge(
     });
     clipboardFeature.register(deps);
     const navigation = navigationFeature.register(deps);
+    const definitionSearch = definitionSearchFeature.register(deps);
     const codeLink = codeLinkFeature.register(deps);
     const bpmnlint = bpmnlintFeature.register(deps);
     const script = scriptFeature.register(deps);
-    // Hook order is the per-session teardown order. Navigation, code-link,
-    // bpmnlint, and templates all own per-editor file watchers.
     const editorSession = editorSessionFeature.register(deps, [
         script.sessionHooks,
         navigation.sessionHooks,
+        definitionSearch.sessionHooks,
         codeLink.sessionHooks,
         bpmnlint.sessionHooks,
         templates.sessionHooks,
