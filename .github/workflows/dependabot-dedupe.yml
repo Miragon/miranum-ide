@@ -49,9 +49,24 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        # A locally created commit is unsigned and fails the signed-commits rule
+        # on main; createCommitOnBranch has GitHub sign it as the App. The body
+        # goes through a file because the base64 lockfile exceeds ARG_MAX.
+        # [dependabot skip] keeps Dependabot rebasing the PR over this commit.
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          # [dependabot skip] keeps Dependabot rebasing the PR over this commit.
-          git commit -m "chore(deps): dedupe yarn.lock [dependabot skip]" yarn.lock
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:${HEAD_REF}"
+          base64 -w0 yarn.lock > "$RUNNER_TEMP/yarn.lock.b64"
+          jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$HEAD_REF" \
+            --arg head "$(git rev-parse HEAD)" \
+            --rawfile contents "$RUNNER_TEMP/yarn.lock.b64" \
+            '{
+              query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",
+              variables: { input: {
+                branch: { repositoryNameWithOwner: $repo, branchName: $branch },
+                expectedHeadOid: $head,
+                message: { headline: "chore(deps): dedupe yarn.lock [dependabot skip]" },
+                fileChanges: { additions: [{ path: "yarn.lock", contents: $contents }] }
+              } }
+            }' > "$RUNNER_TEMP/dedupe-commit.json"
+          gh api graphql --input "$RUNNER_TEMP/dedupe-commit.json"
