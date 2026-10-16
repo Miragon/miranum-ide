@@ -67,6 +67,11 @@ through ports. It sends private Query/Command messages through
 The protocol can change across all in-repo hosts in one change without becoming
 a public browser API commitment.
 
+Commands and Queries are not correlated by default: a request is a Command and
+the answer a later pushed Query. A webview port that answers a query while
+several requests can be in flight carries a request id that the host echoes,
+as `SearchWorkspaceDefinitionsCommand` and `WorkspaceDefinitionsQuery` do.
+
 Enforcement lives in the [core architecture tests](../../libs/modeler-core/src/architecture.spec.ts),
 [VS Code architecture tests](../../apps/vscode-plugin/src/architecture.spec.ts),
 [BPMN package tests](../../packages/bpmn-modeler/src/architecture.spec.ts),

@@ -51,6 +51,10 @@ export default defineConfig({
                 __dirname,
                 "../../libs/code-link/src/index.ts",
             ),
+            "@miragon/bpmn-modeler-definition-search": resolve(
+                __dirname,
+                "../../libs/definition-search/src/index.ts",
+            ),
             "@miragon/bpmn-modeler-inline-scripting": resolve(
                 __dirname,
                 "../../libs/inline-scripting/src/index.ts",

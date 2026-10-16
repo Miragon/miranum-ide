@@ -22,3 +22,4 @@ export * from "./canvasResize";
 export * from "./disposableStore";
 export * from "./canvasFocusIndicator";
 export * from "./textEditingSurface";
+export * from "./workspaceDefinitions";

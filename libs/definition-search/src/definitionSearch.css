@@ -1,0 +1,52 @@
+.bio-properties-panel .definition-search .bio-properties-panel-textfield {
+    position: relative;
+}
+
+.bio-properties-panel .definition-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 101;
+    list-style: none;
+    margin: 2px 0 0;
+    padding: 4px 0;
+    max-height: 240px;
+    overflow-y: auto;
+    border-radius: 2px;
+    background-color: var(--dropdown-item-background-color);
+    color: var(--text-base-color);
+    box-shadow:
+        0 1px 4px 0 var(--bio-shadow-subtle),
+        0 2px 16px 0 var(--bio-shadow);
+}
+
+.bio-properties-panel .definition-search-result,
+.bio-properties-panel .definition-search-hint {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px;
+    font-size: var(--text-size-small);
+    line-height: 1.4;
+}
+
+.bio-properties-panel .definition-search-result {
+    cursor: pointer;
+}
+
+.bio-properties-panel .definition-search-result.is-active {
+    background-color: var(--dropdown-item-hover-background-color);
+}
+
+.bio-properties-panel .definition-search-name,
+.bio-properties-panel .definition-search-detail {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.bio-properties-panel .definition-search-detail,
+.bio-properties-panel .definition-search-hint {
+    color: var(--description-color);
+    font-size: var(--text-size-smallest);
+}

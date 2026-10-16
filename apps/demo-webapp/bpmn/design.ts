@@ -1,6 +1,6 @@
 import { createDesigner } from "@miragon/bpmn-modeler/design";
 import type { ThemeMode } from "@miragon/bpmn-modeler/design";
-import { mountDemoHeader, openReference } from "../src";
+import { DemoDefinitionSearch, mountDemoHeader, openReference } from "../src";
 import { MODELS } from "../src/registry";
 
 // The design surface ships its own lean stylesheet
@@ -36,10 +36,10 @@ async function main(): Promise<void> {
     const designer = await createDesigner(canvas, {
         propertiesPanel: { parent: panel },
         theme: themeMode as ThemeMode,
-        // The one engine-neutral host capability on /design (#1444): a Call
-        // Activity / Business Rule Task gets a "Navigate to referenced model"
-        // context-pad entry. Omitting `capabilities` renders no entry.
-        capabilities: { modelNavigation: { openReference } },
+        capabilities: {
+            modelNavigation: { openReference },
+            definitionSearch: new DemoDefinitionSearch(model.id),
+        },
     });
     designerRef.current = designer;
     await designer.loadDiagram(model.xml);

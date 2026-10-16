@@ -24,13 +24,17 @@ import {
     HostApiImpl,
     MockHostApi,
     ViewportChangedCommand,
+    SearchWorkspaceDefinitionsCommand,
+    WorkspaceDefinitionsQuery,
 } from "@miragon/bpmn-modeler-shared";
+import { matchesDefinitionQuery } from "@miragon/bpmn-modeler-types";
 import type { DiffResult, DiffSide } from "@miragon/bpmn-modeler/diff";
 
 import c7Samples from "./__fixtures__/c7-samples.json";
 import c8Samples from "./__fixtures__/c8-samples.json";
 import { MOCK_BPMN_XML, MOCK_NEUTRAL_BPMN_XML } from "./__fixtures__/mock-bpmn";
 import { MOCK_DIFF_AFTER_XML, MOCK_DIFF_BEFORE_XML } from "./__fixtures__/mock-diff";
+import { MOCK_WORKSPACE_DEFINITIONS } from "./__fixtures__/mock-workspace-definitions";
 import type { WebviewState } from "./webviewState";
 
 declare const process: { env: { NODE_ENV: string } };
@@ -255,6 +259,14 @@ class MockHost extends MockHostApi<StateType, MessageType> {
             }
             case message.type === "UpdateScriptVariablesCommand": {
                 console.debug("[DEBUG] UpdateScriptVariablesCommand", message);
+                break;
+            }
+            case message.type === "SearchWorkspaceDefinitionsCommand": {
+                const { requestId, kind, text } = message as SearchWorkspaceDefinitionsCommand;
+                const definitions = MOCK_WORKSPACE_DEFINITIONS.filter((definition) =>
+                    matchesDefinitionQuery(definition, { kind, text }),
+                );
+                dispatchEvent(new WorkspaceDefinitionsQuery(requestId, definitions));
                 break;
             }
             default: {

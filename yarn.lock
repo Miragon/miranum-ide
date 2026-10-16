@@ -2446,6 +2446,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@miragon/bpmn-modeler-definition-search@workspace:*, @miragon/bpmn-modeler-definition-search@workspace:libs/definition-search":
+  version: 0.0.0-use.local
+  resolution: "@miragon/bpmn-modeler-definition-search@workspace:libs/definition-search"
+  dependencies:
+    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@miragon/bpmn-modeler-types": "workspace:*"
+    "@typescript/native": "npm:typescript@7.0.2"
+    bpmn-js: "npm:18.28.0"
+    bpmn-moddle: "npm:10.2.0"
+    jsdom: "npm:30.1.0"
+    typescript: "npm:@typescript/typescript6@6.0.2"
+    vite: "npm:8.3.0"
+    vitest: "npm:4.1.11"
+  peerDependencies:
+    "@bpmn-io/properties-panel": 3.56.1
+    bpmn-js: 18.28.0
+  languageName: unknown
+  linkType: soft
+
 "@miragon/bpmn-modeler-demo-webapp@workspace:apps/demo-webapp":
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-demo-webapp@workspace:apps/demo-webapp"
@@ -2759,6 +2778,7 @@ __metadata:
     "@miragon/bpmn-modeler-append-menu": "workspace:*"
     "@miragon/bpmn-modeler-clipboard": "workspace:*"
     "@miragon/bpmn-modeler-code-link": "workspace:*"
+    "@miragon/bpmn-modeler-definition-search": "workspace:*"
     "@miragon/bpmn-modeler-diff": "workspace:*"
     "@miragon/bpmn-modeler-element-template-chooser": "workspace:*"
     "@miragon/bpmn-modeler-flow-navigation": "workspace:*"

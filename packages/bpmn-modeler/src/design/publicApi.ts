@@ -1,5 +1,6 @@
 import type { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import type { ModelNavigationPort } from "@miragon/bpmn-model-navigation";
+import type { DefinitionSearchPort } from "@miragon/bpmn-modeler-definition-search";
 import type {
     BpmnlintConfig,
     CleanupOutcome,
@@ -56,10 +57,10 @@ export type CoreDesignerServices = CoreModelerServices;
 
 /**
  * The host capabilities a designer can opt into. Unlike the root
- * {@link ModelerCapabilities}, this is navigation-only: `modelNavigation`
+ * {@link ModelerCapabilities}, only the engine-neutral ports: `modelNavigation`
  * ("Navigate to referenced model" on Call Activities / Business Rule Tasks /
- * linked forms) is engine-neutral, so it belongs on the design surface. The
- * engine-bound ports (`codeLink`, `scripting`) are deliberately absent so they
+ * linked forms) and `definitionSearch` (messages, signals, errors and
+ * escalations of other models). The engine-bound ports (`codeLink`, `scripting`) are deliberately absent so they
  * are compile-time-rejected here, mirroring how {@link DesignerOptions} rejects
  * `engine` / `elementTemplates`.
  *
@@ -68,6 +69,7 @@ export type CoreDesignerServices = CoreModelerServices;
  */
 export interface DesignerCapabilities {
     modelNavigation?: ModelNavigationPort;
+    definitionSearch?: DefinitionSearchPort;
 }
 
 /**
@@ -75,7 +77,7 @@ export interface DesignerCapabilities {
  * Design mode has no engine (there is no execution platform to bind) and no
  * element templates — every field that survives is engine-neutral. Linting is
  * available on the same injection-only seam as the root modeler (omit for none).
- * Its only host capability is the engine-neutral `modelNavigation` (see
+ * Its host capabilities are the engine-neutral ones (see
  * {@link DesignerCapabilities}).
  */
 export interface DesignerOptions {
@@ -118,9 +120,9 @@ export interface DesignerOptions {
     additionalModules?: unknown[];
 
     /**
-     * Engine-neutral host capabilities to opt into — currently only
-     * `modelNavigation`. Omit a capability and its DI module is never
-     * registered, so its context-pad entry never renders. See
+     * Engine-neutral host capabilities to opt into — `modelNavigation` and
+     * `definitionSearch`. Omit a capability and its DI module is never
+     * registered, so its UI never renders. See
      * {@link DesignerCapabilities}.
      */
     capabilities?: DesignerCapabilities;

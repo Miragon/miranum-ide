@@ -32,6 +32,10 @@
         "sourceRoot": "../../libs/model-navigation/src"
     },
     {
+        "name": "@miragon/bpmn-modeler-definition-search",
+        "sourceRoot": "../../libs/definition-search/src"
+    },
+    {
         "name": "@miragon/bpmn-modeler-code-link",
         "sourceRoot": "../../libs/code-link/src"
     },

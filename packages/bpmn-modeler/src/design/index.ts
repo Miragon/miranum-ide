@@ -20,6 +20,17 @@ export type {
     ReferenceKind,
 } from "@miragon/bpmn-model-navigation";
 
+export type { DefinitionSearchPort } from "@miragon/bpmn-modeler-definition-search";
+export type {
+    DefinitionKind,
+    DefinitionSearchQuery,
+    DefinitionSource,
+    DefinitionUsage,
+    ModelDefinition,
+    WorkspaceDefinition,
+} from "@miragon/bpmn-modeler-types";
+export { extractModelDefinitions } from "../extractModelDefinitions";
+
 export { detectEngine } from "../detectEngine";
 export type { DetectedEngine } from "../detectEngine";
 

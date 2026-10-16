@@ -94,6 +94,7 @@ jobs:
               - 'libs/properties-panel/**'
               - 'libs/model-navigation/**'
               - 'libs/code-link/**'
+              - 'libs/definition-search/**'
               - 'libs/inline-scripting/**'
               - 'libs/flow-navigation/**'
               - 'libs/bpmn-layout/**'

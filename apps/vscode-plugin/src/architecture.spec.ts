@@ -189,6 +189,7 @@ describe("architecture", () => {
             "scriptTask",
             "codeLink",
             "navigation",
+            "definitionSearch",
             "modeler/bpmn",
             "modeler/dmn",
         ];

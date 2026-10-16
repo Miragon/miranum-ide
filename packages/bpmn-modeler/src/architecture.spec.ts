@@ -211,6 +211,10 @@ describe("bpmn-modeler import direction", () => {
             // createModelNavigationModule. The lib's only bare runtime import is
             // bpmn-js/lib/util/ModelUtil, so it drags in no Camunda stack.
             spec === "@miragon/bpmn-model-navigation" ||
+            // Engine-neutral definition search: designer.ts value-imports
+            // createDefinitionSearchModule; its runtime imports are bpmn-js utils
+            // and the panel's own preact.
+            spec === "@miragon/bpmn-modeler-definition-search" ||
             // Engine-neutral formatting/cleanup (#1477): designer.ts value-imports
             // createBpmnLayoutModule. Layout is pure geometry — the lib's runtime
             // imports are bpmn-auto-layout and bpmn-moddle, neither of which

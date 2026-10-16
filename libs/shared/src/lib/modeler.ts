@@ -21,6 +21,7 @@
  * - {@link ImplementationStatusQuery}     — push the per-activity implementation-resolution map for context-pad visibility
  * - {@link FormatDiagramQuery}            — rearrange the diagram (DI only), one undo step
  * - {@link CleanupDiagramQuery}           — report, or on confirmation remove, diagram garbage
+ * - {@link WorkspaceDefinitionsQuery}     — answer a definition search with matches from other models
  *
  * Commands (webview → extension host):
  * - {@link GetBpmnFileCommand}                — webview is ready; request the BPMN file
@@ -45,6 +46,7 @@
  * - {@link NavigateToReferencedModelCommand}  — jump to the referenced BPMN/DMN/form file
  * - {@link NavigateToImplementationCommand}   — jump to the source file implementing a task
  * - {@link SyncActivitiesCommand}             — push the diagram's task implementation references so the host maintains the activity→code map
+ * - {@link SearchWorkspaceDefinitionsCommand} — search other models for messages, signals, errors or escalations
  *
  * @see messages.ts for the base {@link Query} and {@link Command} classes.
  */
@@ -55,6 +57,7 @@ import type {
     BpmnModelerSetting,
     BpmnViewerMode,
     CleanupOutcome,
+    DefinitionKind,
     DetectedEngine,
     SurfaceMode,
     DiffCounts,
@@ -72,6 +75,7 @@ import type {
     ScriptKind,
     ScriptTaskScript,
     Viewport,
+    WorkspaceDefinition,
 } from "@miragon/bpmn-modeler-types";
 
 // =================================== Queries ==================================>
@@ -436,6 +440,27 @@ export class FormReferenceStatusQuery extends Query {
 }
 
 /**
+ * Answers the {@link SearchWorkspaceDefinitionsCommand} with the same
+ * `requestId`. Unlike the other pushes, several searches can be in flight while
+ * the user types, so the id pairs each answer with its request. Every request is
+ * answered, with {@link failed} set when the host could not search.
+ */
+export class WorkspaceDefinitionsQuery extends Query {
+    public readonly requestId: number;
+
+    public readonly definitions: WorkspaceDefinition[];
+
+    public readonly failed: boolean;
+
+    constructor(requestId: number, definitions: WorkspaceDefinition[], failed = false) {
+        super("WorkspaceDefinitionsQuery");
+        this.requestId = requestId;
+        this.definitions = definitions;
+        this.failed = failed;
+    }
+}
+
+/**
  * <================================== Queries ===================================
  *
  * =================================== Commands ==================================>
@@ -622,6 +647,26 @@ export class NavigateToReferencedModelCommand extends Command {
 export class GetFormReferenceStatusCommand extends Command {
     constructor() {
         super("GetFormReferenceStatusCommand");
+    }
+}
+
+/**
+ * Searches the other `.bpmn` files of the workspace for definitions of
+ * {@link kind} whose name or code contains {@link text}. The host answers with a
+ * {@link WorkspaceDefinitionsQuery} carrying the same {@link requestId}.
+ */
+export class SearchWorkspaceDefinitionsCommand extends Command {
+    public readonly requestId: number;
+
+    public readonly kind: DefinitionKind;
+
+    public readonly text: string;
+
+    constructor(requestId: number, kind: DefinitionKind, text: string) {
+        super("SearchWorkspaceDefinitionsCommand");
+        this.requestId = requestId;
+        this.kind = kind;
+        this.text = text;
     }
 }
 

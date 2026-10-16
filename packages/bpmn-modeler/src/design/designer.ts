@@ -16,6 +16,7 @@ import { createBpmnLayoutModule } from "@miragon/bpmn-modeler-layout";
 import type { CleanupService, LayoutOutcome, Layouter } from "@miragon/bpmn-modeler-layout";
 import { createClipboardModules } from "@miragon/bpmn-modeler-clipboard";
 import { createModelNavigationModule } from "@miragon/bpmn-model-navigation";
+import { createDefinitionSearchModule } from "@miragon/bpmn-modeler-definition-search";
 import { TranslateModule } from "@miragon/bpmn-modeler-i18n";
 import { DisposableStore, MutableDisposable, NoModelerError } from "@miragon/bpmn-modeler-types";
 import { installContentEditableClipboardPolyfill } from "../propertiesPanelClipboard";
@@ -150,8 +151,11 @@ export class BpmnDesigner {
         const extra = (this.options.additionalModules as unknown[]) ?? [];
 
         // capabilityModules imports engine features and CSS, which must stay out of the design entry.
-        const navigationPort = this.options.capabilities?.modelNavigation;
-        const capModules = navigationPort ? [createModelNavigationModule(navigationPort)] : [];
+        const { modelNavigation, definitionSearch } = this.options.capabilities ?? {};
+        const capModules = [
+            ...(modelNavigation ? [createModelNavigationModule(modelNavigation)] : []),
+            ...(definitionSearch ? [createDefinitionSearchModule(definitionSearch)] : []),
+        ];
 
         this.allocateModeler(clipModules, capModules, extra);
         this.store.add(() => {

@@ -30,6 +30,10 @@ export const bpmnModelerTestAliases: Record<string, string> = {
         "../../libs/model-navigation/src/index.ts",
     ),
     "@miragon/bpmn-modeler-code-link": resolve(__dirname, "../../libs/code-link/src/index.ts"),
+    "@miragon/bpmn-modeler-definition-search": resolve(
+        __dirname,
+        "../../libs/definition-search/src/index.ts",
+    ),
     "@miragon/bpmn-modeler-inline-scripting": resolve(
         __dirname,
         "../../libs/inline-scripting/src/index.ts",

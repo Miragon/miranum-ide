@@ -35,6 +35,7 @@ import {
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
+    SearchWorkspaceDefinitionsCommand,
     ShowInfoCommand,
     SetClipboardCommand,
     SetLintingEnabledCommand,
@@ -49,6 +50,7 @@ import {
     UpdateScriptFormatQuery,
     UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
+    WorkspaceDefinitionsQuery,
     createFlushResponder,
     createResolver,
     extractProcessVariables,
@@ -235,6 +237,14 @@ function startSession(
     let cancelPendingVariablePublish: (() => void) | undefined;
     let availableProtocolFormIds = new Set<string>();
     const referenceAvailabilityListeners = new Set<() => void>();
+    const pendingDefinitionSearches = new Map<
+        number,
+        {
+            resolve: (definitions: WorkspaceDefinitionsQuery["definitions"]) => void;
+            reject: (reason: Error) => void;
+        }
+    >();
+    let lastDefinitionSearchId = 0;
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
     // editor and focuses in one tick); apply it once the modeler is ready.
@@ -525,6 +535,16 @@ function startSession(
                         ),
                     ),
             },
+            definitionSearch: {
+                search: ({ kind, text }) =>
+                    new Promise((resolve, reject) => {
+                        const requestId = ++lastDefinitionSearchId;
+                        pendingDefinitionSearches.set(requestId, { resolve, reject });
+                        host.postMessage(
+                            new SearchWorkspaceDefinitionsCommand(requestId, kind, text),
+                        );
+                    }),
+            },
         };
     }
 
@@ -782,7 +802,10 @@ function startSession(
                     theme,
                     propertiesPanel: { parent: mountEl },
                     clipboard,
-                    capabilities: { modelNavigation: capabilities.modelNavigation },
+                    capabilities: {
+                        modelNavigation: capabilities.modelNavigation,
+                        definitionSearch: capabilities.definitionSearch,
+                    },
                     additionalModules: extraModules,
                     ...linting,
                 });
@@ -1553,6 +1576,20 @@ function startSession(
                     }
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
+                }
+                break;
+            }
+            case queryOrCommand.type === "WorkspaceDefinitionsQuery": {
+                const { requestId, definitions, failed } =
+                    message.data as WorkspaceDefinitionsQuery;
+                const pendingSearch = pendingDefinitionSearches.get(requestId);
+                if (pendingSearch) {
+                    pendingDefinitionSearches.delete(requestId);
+                    if (failed) {
+                        pendingSearch.reject(new Error("The host could not search other models"));
+                    } else {
+                        pendingSearch.resolve(definitions);
+                    }
                 }
                 break;
             }

@@ -20,6 +20,7 @@ function bundleWithValue(modules: Bundle[], token: string): Bundle | undefined {
 const navPort = { openReference: () => {} };
 const codeLinkPort = { navigateToImplementation: () => {}, syncActivities: () => {} };
 const scriptingPort = { openScriptEditor: () => {}, scriptSourceChanged: () => {} };
+const definitionSearchPort = { search: async () => [] };
 
 describe("capabilityModules", () => {
     it("registers nothing when no capabilities are given", () => {
@@ -69,15 +70,30 @@ describe("capabilityModules", () => {
         expect(modules).toEqual([]);
     });
 
+    it.each(["c7", "c8"] as const)(
+        "registers definition search on %s, carrying the port under definitionSearchPort",
+        (engine) => {
+            const modules = capabilityModules(engine, {
+                definitionSearch: definitionSearchPort,
+            }) as Bundle[];
+
+            expect(modules).toHaveLength(1);
+            expect(modules[0].definitionSearchPort).toEqual(["value", definitionSearchPort]);
+            expect(modules[0].__init__).toEqual(["definitionSearchPropertiesProvider"]);
+        },
+    );
+
     it("registers every present capability together", () => {
         const modules = capabilityModules("c7", {
             modelNavigation: navPort,
             codeLink: codeLinkPort,
             scripting: scriptingPort,
+            definitionSearch: definitionSearchPort,
         }) as Bundle[];
 
         expect(bundleWithValue(modules, "modelNavigationPort")).toBeDefined();
         expect(bundleWithValue(modules, "codeLinkPort")).toBeDefined();
         expect(bundleWithValue(modules, "inlineScriptingPort")).toBeDefined();
+        expect(bundleWithValue(modules, "definitionSearchPort")).toBeDefined();
     });
 });
