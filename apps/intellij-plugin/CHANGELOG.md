@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.11.0](https://github.com/Miragon/bpmn-modeler/compare/intellij-v1.10.2...intellij-v1.11.0) (2026-10-16)
+
+
+### 🎉 New Features
+
+* **bpmn-modeler:** replace the mode strip with a compact mode menu ([#1628](https://github.com/Miragon/bpmn-modeler/issues/1628)) [sync b0a66ca] ([aa2c372](https://github.com/Miragon/bpmn-modeler/commit/aa2c372235d66265aef8d60ef690c556d46f7d7a))
+* **bpmn-webview:** search definitions of other models ([#1649](https://github.com/Miragon/bpmn-modeler/issues/1649)) [sync 1c48e83] ([f711e32](https://github.com/Miragon/bpmn-modeler/commit/f711e322353e87a383d3627b1b183066b3850fe1))
+* replace the komet icons with the bpmn and dmn modeler icons ([#1630](https://github.com/Miragon/bpmn-modeler/issues/1630)) ([4aa0fb2](https://github.com/Miragon/bpmn-modeler/commit/4aa0fb2f7b47d3693755a76f09b28277daf266cd))
+
+
+### 🐞 Bug Fixes
+
+* **bpmn-modeler:** bump bpmn-js-bpmnlint to 0.25.0 for diagram-js theme tokens ([#1656](https://github.com/Miragon/bpmn-modeler/issues/1656)) [sync f93e3ba] ([f417014](https://github.com/Miragon/bpmn-modeler/commit/f4170147e554110ecbe35affa200685d5f897bf9))
+* **bpmn-modeler:** bump bpmnlint to 11.15.0 and drop the core rule patch ([#1640](https://github.com/Miragon/bpmn-modeler/issues/1640)) [sync 680fae4] ([18bc4f1](https://github.com/Miragon/bpmn-modeler/commit/18bc4f1134262ed097bfe6fcd9bc428ab70cde97))
+* **bpmn-modeler:** fix quadratic bpmnlint overlap and bpmndi rules ([#1609](https://github.com/Miragon/bpmn-modeler/issues/1609)) [sync 0966e35] ([15f5ccd](https://github.com/Miragon/bpmn-modeler/commit/15f5ccdcbfa07a3e445dfc9c32aa8e75599486d5))
+* **bpmn-modeler:** stop duplicating and rebuilding transaction boundaries ([#1620](https://github.com/Miragon/bpmn-modeler/issues/1620)) [sync 9c9ea61] ([e5b29be](https://github.com/Miragon/bpmn-modeler/commit/e5b29be2ddfb14ae7bb09f3d270635f749d0550a))
+* **bpmn-modeler:** stop redundant lint runs and overlay rebuilds ([#1606](https://github.com/Miragon/bpmn-modeler/issues/1606)) [sync a506d75] ([33aa226](https://github.com/Miragon/bpmn-modeler/commit/33aa226070d4d756fa5691b33f61df6d88167f7e))
+* **bpmn-webview:** apply the configured locale before the first import ([#1617](https://github.com/Miragon/bpmn-modeler/issues/1617)) [sync 63d01ce] ([df3d535](https://github.com/Miragon/bpmn-modeler/commit/df3d5357f21facb22528218e94b7b7438b11ecb8))
+* **bpmn-webview:** focus the canvas when an editor tab becomes active ([#1659](https://github.com/Miragon/bpmn-modeler/issues/1659)) [sync 7aac2ff] ([da916b3](https://github.com/Miragon/bpmn-modeler/commit/da916b3f201dd6fe7a747b80a3778fdc64e7b93d))
+* **deps:** dedupe bpmn-js, diagram-js and bpmn-moddle in the lockfile ([#1618](https://github.com/Miragon/bpmn-modeler/issues/1618)) [sync d7bc492] ([d411af5](https://github.com/Miragon/bpmn-modeler/commit/d411af568dbff7634c766768cf17b3ba67925af6))
+* **intellij-plugin:** cut XML transport cost between JCEF, JVM and bridge ([#1651](https://github.com/Miragon/bpmn-modeler/issues/1651)) ([d931f7e](https://github.com/Miragon/bpmn-modeler/commit/d931f7e4f8bed45719c9bd4ce8084d3731caf2e9))
+* **modeler-core:** shorten the host open path and per-edit host work ([#1645](https://github.com/Miragon/bpmn-modeler/issues/1645)) [sync 575fc55] ([543558b](https://github.com/Miragon/bpmn-modeler/commit/543558b46961a90a579d6b47bb7935530f24d567))
+
+
+### 🔨 Refactoring
+
+* **bpmn-webview:** split the single webview bundle into lazy chunks ([#1638](https://github.com/Miragon/bpmn-modeler/issues/1638)) ([22f9707](https://github.com/Miragon/bpmn-modeler/commit/22f97073ee0b1685a725240e10b6380b7d52bee8))
+
+
+### 🛠️ Misc
+
+* **deps:** bump gradle-wrapper from 9.7.1 to 9.8.0 in /apps/intellij-plugin in the gradle-minor-patch group ([#1616](https://github.com/Miragon/bpmn-modeler/issues/1616)) ([246ff04](https://github.com/Miragon/bpmn-modeler/commit/246ff04c1a1de03107e1f892e847da4f61e86edc))
+* **deps:** bump the gradle-minor-patch group in /apps/intellij-plugin with 2 updates ([#1641](https://github.com/Miragon/bpmn-modeler/issues/1641)) ([1e647ac](https://github.com/Miragon/bpmn-modeler/commit/1e647ac0e6757ff9964af30a8f7c851c95c9da9c))
+
 ## [1.10.2](https://github.com/Miragon/bpmn-modeler/compare/intellij-v1.10.1...intellij-v1.10.2) (2026-09-28)
 
 
