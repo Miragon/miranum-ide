@@ -55,25 +55,6 @@ describe("DocumentMirror", () => {
         expect(new DocumentMirror().content("missing")).toBe("");
     });
 
-    it("keeps pending write causation scoped to an exact same-uri session", () => {
-        const mirror = new DocumentMirror();
-        mirror.register(META, "old");
-        const oldRevision = mirror.nextWriteRevision(META.editorId, META.sessionId);
-        mirror.remove(META.editorId);
-        const replacement = { ...META, sessionId: 10 };
-        mirror.register(replacement, "replacement");
-        const replacementRevision = mirror.nextWriteRevision(
-            replacement.editorId,
-            replacement.sessionId,
-        );
-
-        mirror.forgetWriteRevision(META.editorId, oldRevision, META.sessionId);
-
-        expect(
-            mirror.isOwnEcho(replacement.editorId, replacementRevision, replacement.sessionId),
-        ).toBe(true);
-    });
-
     it("require throws for an unknown editor but peek tolerates it", () => {
         const mirror = new DocumentMirror();
         expect(() => mirror.require("missing")).toThrow(/No session metadata/);
@@ -88,44 +69,54 @@ describe("DocumentMirror", () => {
         expect(mirror.content(META.editorId)).toBe("");
     });
 
-    it("mints monotonic per-editor revisions and recognises its own echo once", () => {
+    it("completeWrite mirrors an accepted change and notifies content listeners", () => {
         const mirror = new DocumentMirror();
-        const r1 = mirror.nextWriteRevision("a");
-        const r2 = mirror.nextWriteRevision("a");
-        const other = mirror.nextWriteRevision("b");
-        expect([r1, r2]).toEqual([1, 2]);
-        expect(other).toBe(1); // counter is per-editor
+        mirror.register(META, "old");
+        const changedEditors: string[] = [];
+        mirror.onDidChangeContent((editorId) => changedEditors.push(editorId));
 
-        // A pending own revision is recognised exactly once, then consumed.
-        expect(mirror.isOwnEcho("a", r1)).toBe(true);
-        expect(mirror.isOwnEcho("a", r1)).toBe(false);
-        // An unknown/stale causation is never an echo.
-        expect(mirror.isOwnEcho("a", 9999)).toBe(false);
-        // Editors don't share pending revisions.
-        expect(mirror.isOwnEcho("b", r2)).toBe(false);
+        const changed = mirror.completeWrite(META.editorId, META.sessionId, "new", {
+            changed: true,
+            accepted: true,
+        });
+
+        expect(changed).toBe(true);
+        expect(mirror.content(META.editorId)).toBe("new");
+        expect(changedEditors).toEqual([META.editorId]);
     });
 
-    it("forgetWriteRevision drops a pending revision that will never be echoed", () => {
+    it("completeWrite prefers the host-normalised bytes", () => {
         const mirror = new DocumentMirror();
-        const r1 = mirror.nextWriteRevision("a");
-        const r2 = mirror.nextWriteRevision("a");
-        mirror.forgetWriteRevision("a", r1);
-        // The forgotten revision is gone; an unrelated pending one is untouched.
-        expect(mirror.isOwnEcho("a", r1)).toBe(false);
-        expect(mirror.isOwnEcho("a", r2)).toBe(true);
-        // Forgetting an unknown revision (or editor) is a harmless no-op.
-        mirror.forgetWriteRevision("a", 9999);
-        mirror.forgetWriteRevision("unknown", 1);
+        mirror.register(META, "old");
+
+        mirror.completeWrite(META.editorId, META.sessionId, "<xml/>\r\n", {
+            changed: true,
+            accepted: true,
+            normalizedContent: "<xml/>\n",
+        });
+
+        expect(mirror.content(META.editorId)).toBe("<xml/>\n");
     });
 
-    it("remove also clears revision state for the editor", () => {
+    it("completeWrite leaves the mirror untouched for unchanged, rejected or missing replies", () => {
         const mirror = new DocumentMirror();
-        const r1 = mirror.nextWriteRevision("a");
-        mirror.remove("a");
-        // The pending own revision is gone, so the echo would re-render.
-        expect(mirror.isOwnEcho("a", r1)).toBe(false);
-        // The counter resets, so a re-registered editor starts fresh.
-        expect(mirror.nextWriteRevision("a")).toBe(1);
+        mirror.register(META, "host");
+        const listener = vi.fn();
+        mirror.onDidChangeContent(listener);
+
+        expect(mirror.completeWrite(META.editorId, META.sessionId, "a", { changed: false })).toBe(
+            false,
+        );
+        expect(
+            mirror.completeWrite(META.editorId, META.sessionId, "b", {
+                changed: true,
+                accepted: false,
+            }),
+        ).toBe(false);
+        expect(mirror.completeWrite(META.editorId, META.sessionId, "c", null)).toBe(false);
+
+        expect(mirror.content(META.editorId)).toBe("host");
+        expect(listener).not.toHaveBeenCalled();
     });
 });
 
@@ -161,14 +152,15 @@ describe("RpcEditorHandle", () => {
         });
     });
 
-    it("does not overwrite a host echo that arrives before the write response", async () => {
+    it("sends document/write without a causation revision and mirrors the accepted write", async () => {
         const { frames, rpc, answerLast } = harness();
         const mirror = new DocumentMirror();
         mirror.register(META, "old");
         const handle = new RpcEditorHandle(META, mirror, rpc, new BridgeSettings());
 
         const pending = handle.writeContent("new", 4);
-        expect(last(frames)).toMatchObject({
+        expect(last(frames)).toEqual({
+            id: last(frames).id,
             method: "document/write",
             params: {
                 editorId: META.editorId,
@@ -177,47 +169,23 @@ describe("RpcEditorHandle", () => {
                 expectedDocumentRevision: 4,
             },
         });
-        // The write is tagged with a revision the host echoes back as `causedBy`.
-        expect(last(frames).params.revision).toBeTypeOf("number");
-        const revision = last(frames).params.revision as number;
-        expect(mirror.isOwnEcho(META.editorId, revision, META.sessionId)).toBe(true);
-        mirror.setContent(META.editorId, "host-new");
         await answerLast({ changed: true, accepted: true });
 
         await expect(pending).resolves.toBe(true);
-        expect(mirror.content(META.editorId)).toBe("host-new");
+        expect(mirror.content(META.editorId)).toBe("new");
     });
 
     it("keeps authoritative mirror content when the host rejects a stale write", async () => {
-        const { frames, rpc, answerLast } = harness();
+        const { rpc, answerLast } = harness();
         const mirror = new DocumentMirror();
         mirror.register(META, "host");
         const handle = new RpcEditorHandle(META, mirror, rpc, new BridgeSettings());
 
         const pending = handle.writeContent("stale", 2);
-        const revision = last(frames).params.revision as number;
         await answerLast({ changed: false, accepted: false });
 
         await expect(pending).resolves.toBe(false);
         expect(mirror.content(META.editorId)).toBe("host");
-        expect(mirror.isOwnEcho(META.editorId, revision, META.sessionId)).toBe(false);
-    });
-
-    it("forgets the revision of a no-op write so it cannot linger as pending", async () => {
-        const { frames, rpc, answerLast } = harness();
-        const mirror = new DocumentMirror();
-        mirror.register(META, "same");
-        const handle = new RpcEditorHandle(META, mirror, rpc, new BridgeSettings());
-
-        const pending = handle.writeContent("same");
-        const revision = last(frames).params.revision as number;
-        // The host reports no change, so it never echoes a `document/didChange`.
-        await answerLast({ changed: false });
-        await expect(pending).resolves.toBe(false);
-
-        // The minted revision was dropped, so a (hypothetical) later echo of it
-        // would re-render rather than being swallowed, and the set stays bounded.
-        expect(mirror.isOwnEcho(META.editorId, revision, META.sessionId)).toBe(false);
     });
 
     it("keeps authoritative mirror bytes after an accepted no-op write", async () => {

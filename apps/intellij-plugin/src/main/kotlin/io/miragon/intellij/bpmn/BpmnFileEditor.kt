@@ -109,13 +109,13 @@ class BpmnFileEditor(
 
         // Mirror the live IntelliJ Document into the core so external edits
         // (git revert/checkout, the plain-text tab, another tool) re-render the
-        // diagram. The core's own write-backs also fire this — that echo is
-        // filtered in the bridge, not here. Parented to this editor, so the
+        // diagram. The core's own write-backs also fire this; the router skips
+        // them without ever reading the text. Parented to this editor, so the
         // listener is removed when the tab closes.
         FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) {
-                    coreProcess.notifyDocumentChanged(coreSession, event.document.text)
+                    coreProcess.notifyDocumentChanged(coreSession) { event.document.text }
                 }
             },
             this,

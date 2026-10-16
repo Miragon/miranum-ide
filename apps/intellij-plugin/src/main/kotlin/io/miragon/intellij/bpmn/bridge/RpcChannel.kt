@@ -1,6 +1,7 @@
 package io.miragon.intellij.bpmn.bridge
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.intellij.openapi.diagnostic.Logger
 import java.io.BufferedReader
@@ -33,8 +34,12 @@ internal class RpcChannel(
 ) {
     private val log = Logger.getInstance(RpcChannel::class.java)
 
-    /** Shared with the routers so the whole bridge uses one Gson, as before. */
-    val gson = Gson()
+    /**
+     * Shared with the routers so the whole bridge uses one Gson. HTML escaping is
+     * off because frames never land inside HTML, and escaping every `<`/`>`/`=`
+     * would inflate each full-XML frame.
+     */
+    val gson: Gson = GsonBuilder().disableHtmlEscaping().create()
 
     private data class OutFrame(val line: String, val coalesceKey: String?, val reliable: Boolean)
 

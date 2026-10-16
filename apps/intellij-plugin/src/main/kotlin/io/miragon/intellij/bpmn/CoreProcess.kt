@@ -146,7 +146,8 @@ class CoreProcess(private val project: Project) : Disposable {
 
     fun registerSession(session: CoreSession) = editorRouter.registerSession(session)
 
-    fun notifyDocumentChanged(session: CoreSession, content: String) = editorRouter.notifyDocumentChanged(session, content)
+    fun notifyDocumentChanged(session: CoreSession, readContent: () -> String) =
+        editorRouter.notifyDocumentChanged(session, readContent)
 
     fun forwardWebviewMessage(session: CoreSession, rawMessage: String) = editorRouter.forwardWebviewMessage(session, rawMessage)
 

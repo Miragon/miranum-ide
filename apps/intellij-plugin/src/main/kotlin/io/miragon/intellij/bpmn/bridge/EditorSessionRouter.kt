@@ -1,7 +1,9 @@
 package io.miragon.intellij.bpmn.bridge
 
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.stream.JsonToken
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -11,6 +13,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import io.miragon.intellij.bpmn.CoreSession
 import io.miragon.intellij.bpmn.ModelerSettingsStore
+import java.io.StringReader
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledExecutorService
@@ -42,12 +45,11 @@ internal class EditorSessionRouter(
     private val sessions = ConcurrentHashMap<String, SessionEntry>()
     private val nextSessionId = AtomicLong(0)
 
-    // Per-editor causation token bridging [handleWrite] to [notifyDocumentChanged]:
-    // a `document/write` records its revision here right before mutating the
-    // Document, so the synchronous `DocumentListener` echo it triggers can stamp
-    // the outgoing `document/didChange` with `causedBy`. The bridge then drops its
-    // own write by causation instead of comparing content.
-    private val pendingCausation = ConcurrentHashMap<String, Long>()
+    // Editors whose Document is being mutated by a core `document/write`. The
+    // synchronous `DocumentListener` call that `setText` triggers sees the marker
+    // and sends nothing: the write reply already tells the bridge what the
+    // Document holds, so echoing the full XML back would be a wasted hop.
+    private val editorsApplyingCoreWrite: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     // Per-editor debounce timer for *external* edits only (raw-text tab, git
     // checkout, another tool). A newer keystroke cancels and reschedules, so the
@@ -60,10 +62,10 @@ internal class EditorSessionRouter(
 
     private val hostUpdatesAwaitingWebview = ConcurrentHashMap<String, PendingHostUpdate>()
 
-    // Monotonic per-editor change counter. Every change (host write or external)
+    // Monotonic per-editor change counter. Every change (core write or external)
     // bumps it; a debounced external send captures the value at schedule time and
     // sends only if still current at fire time, so a change that superseded it —
-    // crucially a host write, whose echo the bridge drops by causation — never gets
+    // crucially a core write, which sends no didChange of its own — never gets
     // re-rendered as a stale external edit. Bumped and read only on the EDT.
     private val changeSeq = ConcurrentHashMap<String, Long>()
 
@@ -89,16 +91,9 @@ internal class EditorSessionRouter(
                 val editorId = params.get("editorId").asString
                 val entry = sessions[editorId] ?: return@on
                 if (!matchesSession(params, entry)) return@on
-                // `message` is a JSON object; re-serialise it as the postMessage payload.
-                val payload = deps.gson.toJson(params.get("message"))
-                val query =
-                    if (payload.contains(BPMN_FILE_QUERY_MARKER)) {
-                        runCatching { deps.gson.fromJson(payload, JsonObject::class.java) }
-                            .getOrNull()
-                    } else {
-                        null
-                    }
-                val delivered = query?.get("content")?.asString
+                val message = params.getAsJsonObject("message")
+                val query = message.takeIf { it.get("type")?.asStringOrNull() == BPMN_FILE_QUERY_TYPE }
+                val delivered = query?.get("content")?.asStringOrNull()
                 val deliveredRevision =
                     query?.get("documentRevision")
                         ?.takeIf { !it.isJsonNull }
@@ -106,7 +101,7 @@ internal class EditorSessionRouter(
                 if (deliveredRevision != null) {
                     if (deliveredRevision < entry.documentRevision.get()) return@on
                 }
-                entry.session.postToWebview(payload)
+                entry.session.postToWebview(deps.gson.toJson(message))
                 if (query != null) {
                     val expected = hostUpdatesAwaitingWebview[editorId]
                     if (
@@ -223,26 +218,18 @@ internal class EditorSessionRouter(
             if (callback != null && svg != null) callback(svg)
             return
         }
-        if (trimmed.contains(SYNC_COMMAND_MARKER)) {
-            val pendingHostUpdate =
-                debounceTimers.containsKey(editorId) || hostUpdatesAwaitingWebview.containsKey(editorId)
-            val syncRevision =
-                runCatching {
-                    deps.gson.fromJson(trimmed, JsonObject::class.java)
-                        .get("documentRevision")
-                        ?.takeIf { !it.isJsonNull }
-                        ?.asLong
-                }.getOrNull()
-            val currentRevision = entry.documentRevision.get()
-            if (pendingHostUpdate || (syncRevision ?: 0L) < currentRevision) return
+        val isSyncCommand = trimmed.contains(SYNC_COMMAND_MARKER)
+        if (isSyncCommand) {
+            if (debounceTimers.containsKey(editorId) || hostUpdatesAwaitingWebview.containsKey(editorId)) return
+            val syncRevision = readTopLevelLong(trimmed, "documentRevision", deps.gson)
+            if ((syncRevision ?: 0L) < entry.documentRevision.get()) return
         }
         // Capture close-flush replies and forced normal-sync fallbacks while the
         // EDT is blocked in [flushBeforeClose]. Messages still reach the core below.
-        resolveCloseFlush(editorId, trimmed)
+        resolveCloseFlush(editorId, trimmed, isSyncCommand)
         // Document syncs fire once per diagram edit and supersede each other — only
         // the latest XML matters for write-back — so collapse queued ones.
-        val coalesceKey =
-            if (trimmed.contains(SYNC_COMMAND_MARKER)) "sync:$editorId" else null
+        val coalesceKey = if (isSyncCommand) "sync:$editorId" else null
         // Splice the raw message in as the `message` value rather than parse →
         // re-serialise. editorId goes through gson so it is correctly JSON-escaped.
         val frame =
@@ -254,38 +241,34 @@ internal class EditorSessionRouter(
     }
 
     /**
-     * Forwards a document change to the core so external edits (git revert/
-     * checkout, the plain-text tab, another tool) re-render the diagram. The host
-     * stays dumb otherwise, but it does tag the echo of its own `document/write`:
-     * if [handleWrite] left a pending causation token for this editor, the change
-     * carries it as `causedBy` so the bridge can drop its own write by explicit
-     * causation. A genuine external edit has no pending token and omits `causedBy`.
+     * Forwards an external document change (git revert/checkout, the plain-text
+     * tab, another tool) to the core so the diagram re-renders. A change caused by
+     * [handleWrite] is not forwarded: the write reply already reports it, so only
+     * the supersede bookkeeping runs and [readContent] is never called — no
+     * full-document copy per diagram edit.
      *
-     * **The host's own write-echo must stay synchronous.** [handleWrite] sets the
-     * causation token, calls `setText` (which fires the listener → here on the same
-     * thread), then clears the token in its `finally`. Deferring this send past that
-     * `finally` would lose `causedBy` and break echo suppression — the bridge would
-     * re-render its own write. So only the *external* path (no pending token) is
-     * debounced; the causation path always sends immediately.
+     * **[handleWrite] relies on this running synchronously inside `setText`.** It
+     * marks the editor in [editorsApplyingCoreWrite] only for the duration of the
+     * write action, so a deferred listener would mistake the core's write for an
+     * external edit and send it back.
      *
      * Called only on the EDT (document mutations require a write action there). The
      * debounced external send is marshalled back to the EDT and guarded by
-     * [changeSeq] so it never races, nor reorders against, a host write: if anything
+     * [changeSeq] so it never races, nor reorders against, a core write: if anything
      * superseded it, it aborts rather than re-rendering stale XML.
      */
-    fun notifyDocumentChanged(session: CoreSession, content: String) {
+    fun notifyDocumentChanged(session: CoreSession, readContent: () -> String) {
         val entry = sessions[session.editorId] ?: return
         if (entry.session !== session) return
         val editorId = session.editorId
         val seq = (changeSeq[editorId] ?: 0L) + 1L
         changeSeq[editorId] = seq
 
-        val causedBy = pendingCausation.remove(editorId)
-        if (causedBy != null) {
+        if (editorId in editorsApplyingCoreWrite) {
             debounceTimers.remove(editorId)?.cancel(false)
-            sendDidChange(entry, content, causedBy, entry.documentRevision.get())
             return
         }
+        val content = readContent()
         val documentRevision = entry.documentRevision.incrementAndGet()
         // External edit: a newer frame resets the timer so only the latest content
         // is sent. The notify itself is non-blocking; debounce just drops frames.
@@ -300,7 +283,7 @@ internal class EditorSessionRouter(
                     ApplicationManager.getApplication().invokeLater {
                         debounceTimers.remove(editorId)
                         if (changeSeq[editorId] == seq && sessions[editorId] === entry) {
-                            sendDidChange(entry, content, null, documentRevision)
+                            sendDidChange(entry, content, documentRevision)
                         }
                     }
                 },
@@ -312,25 +295,19 @@ internal class EditorSessionRouter(
     private fun sendDidChange(
         entry: SessionEntry,
         content: String,
-        causedBy: Long?,
         documentRevision: Long,
     ) {
         val editorId = entry.session.editorId
-        if (causedBy == null) {
-            hostUpdatesAwaitingWebview[editorId] = PendingHostUpdate(content, documentRevision)
-        }
-        val params =
-            linkedMapOf<String, Any>(
+        hostUpdatesAwaitingWebview[editorId] = PendingHostUpdate(content, documentRevision)
+        deps.channel.notify(
+            "document/didChange",
+            linkedMapOf(
                 "editorId" to editorId,
                 "sessionId" to entry.sessionId,
                 "content" to content,
                 "documentRevision" to documentRevision,
-            )
-        causedBy?.let { params["causedBy"] = it }
-        deps.channel.notify(
-            "document/didChange",
-            params,
-            coalesceKey = if (causedBy == null) "document:$editorId" else null,
+            ),
+            coalesceKey = "document:$editorId",
             reliable = true,
         )
     }
@@ -371,7 +348,7 @@ internal class EditorSessionRouter(
     }
 
     private fun resetSessionState(editorId: String) {
-        pendingCausation.remove(editorId)
+        editorsApplyingCoreWrite.remove(editorId)
         debounceTimers.remove(editorId)?.cancel(false)
         hostUpdatesAwaitingWebview.remove(editorId)
         changeSeq.remove(editorId)
@@ -398,7 +375,7 @@ internal class EditorSessionRouter(
     fun clear() {
         debounceTimers.values.forEach { it.cancel(false) }
         sessions.clear()
-        pendingCausation.clear()
+        editorsApplyingCoreWrite.clear()
         debounceTimers.clear()
         hostUpdatesAwaitingWebview.clear()
         changeSeq.clear()
@@ -417,12 +394,13 @@ internal class EditorSessionRouter(
     /**
      * Writes core-supplied XML into the in-memory Document on the EDT, then replies
      * with whether the content actually changed (the `DocumentPort.write` contract).
-     * IntelliJ Documents require `\n`; webview XML may carry `\r\n`.
+     * IntelliJ Documents require `\n`; webview XML may carry `\r\n`, in which case
+     * the reply returns the normalised bytes so the bridge's mirror stays exact.
      */
     private fun handleWrite(params: JsonObject, id: Int?) {
         val editorId = params.get("editorId").asString
-        val content = StringUtil.convertLineSeparators(params.get("content").asString)
-        val revision = params.get("revision").asLong
+        val writtenContent = params.get("content").asString
+        val content = StringUtil.convertLineSeparators(writtenContent)
         val expectedDocumentRevision =
             params.get("expectedDocumentRevision")
                 ?.takeIf { !it.isJsonNull }
@@ -457,24 +435,25 @@ internal class EditorSessionRouter(
                 // file on every write, on the EDT. StringUtil.equals reads the
                 // CharSequence in place.
                 if (document != null && !StringUtil.equals(document.charsSequence, content)) {
-                    // setText synchronously fires the editor's DocumentListener, which
-                    // calls notifyDocumentChanged on this thread. Stamp the causation
-                    // token first so that echo carries `causedBy`; the listener
-                    // removes it, and the finally clears any stray entry if no echo
-                    // fired (e.g. a write barren of an actual change).
-                    pendingCausation[editorId] = revision
+                    editorsApplyingCoreWrite.add(editorId)
                     try {
                         WriteCommandAction.runWriteCommandAction(session.project) {
                             document.setText(content)
                         }
                     } finally {
-                        pendingCausation.remove(editorId)
+                        editorsApplyingCoreWrite.remove(editorId)
                     }
                     changed = true
                 }
             }
-            id?.let { deps.channel.reply(it, mapOf("changed" to changed, "accepted" to true)) }
+            id?.let { deps.channel.reply(it, writeResult(changed, writtenContent, content)) }
         }
+    }
+
+    private fun writeResult(changed: Boolean, writtenContent: String, normalizedContent: String): Map<String, Any> {
+        val result = linkedMapOf<String, Any>("changed" to changed, "accepted" to true)
+        if (changed && normalizedContent != writtenContent) result["normalizedContent"] = normalizedContent
+        return result
     }
 
     private fun handleSave(params: JsonObject, id: Int?) {
@@ -561,9 +540,9 @@ internal class EditorSessionRouter(
      * only parses when a close is actually in progress and the marker is present,
      * so the hot forward path is untouched during normal editing.
      */
-    private fun resolveCloseFlush(editorId: String, trimmedMessage: String) {
+    private fun resolveCloseFlush(editorId: String, trimmedMessage: String, isSyncCommand: Boolean) {
         val pending = closeFlushLatches[editorId] ?: return
-        if (trimmedMessage.contains(SYNC_COMMAND_MARKER)) {
+        if (isSyncCommand) {
             parseSyncDocumentReply(trimmedMessage, deps.gson)?.let {
                 pending.content = it.content
                 pending.contentRevision = it.documentRevision
@@ -625,7 +604,7 @@ internal class EditorSessionRouter(
         // the forward thread.
         const val SYNC_COMMAND_MARKER = "\"type\":\"SyncDocumentCommand\""
 
-        const val BPMN_FILE_QUERY_MARKER = "\"type\":\"BpmnFileQuery\""
+        const val BPMN_FILE_QUERY_TYPE = "BpmnFileQuery"
 
         // The webview's compact JSON.stringify emits exactly this substring for a
         // DocumentFlushedCommand, so a substring test gates the parse on the close path.
@@ -698,6 +677,30 @@ internal fun parseSyncDocumentReply(raw: String, gson: Gson): SyncDocumentReply?
     } catch (_: Exception) {
         null
     }
+
+/**
+ * Reads one top-level numeric member without materialising the others, so a
+ * multi-MB `content` string is skipped instead of being decoded into a String.
+ * Returns null when the member is absent, null, not a number, or the JSON is malformed.
+ */
+internal fun readTopLevelLong(rawJson: String, memberName: String, gson: Gson): Long? =
+    try {
+        gson.newJsonReader(StringReader(rawJson)).use { reader ->
+            reader.beginObject()
+            while (reader.hasNext()) {
+                if (reader.nextName() != memberName) {
+                    reader.skipValue()
+                    continue
+                }
+                return@use if (reader.peek() == JsonToken.NUMBER) reader.nextLong() else null
+            }
+            null
+        }
+    } catch (_: Exception) {
+        null
+    }
+
+private fun JsonElement.asStringOrNull(): String? = takeIf { !it.isJsonNull }?.asString
 
 internal fun parseSyncDocumentContent(raw: String, gson: Gson): String? =
     parseSyncDocumentReply(raw, gson)?.content

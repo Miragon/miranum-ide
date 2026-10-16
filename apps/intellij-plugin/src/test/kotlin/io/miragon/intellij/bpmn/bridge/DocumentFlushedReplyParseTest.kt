@@ -133,4 +133,26 @@ class DocumentFlushedReplyParseTest {
     fun `malformed json is rejected`() {
         assertNull(parseDocumentFlushedReply("not json", gson))
     }
+
+    @Test
+    fun `readTopLevelLong reads a member that follows a large string`() {
+        val content = "<bpmn:task/>".repeat(10_000)
+        val raw = """{"type":"SyncDocumentCommand","content":"$content","documentRevision":12}"""
+        assertEquals(12L, readTopLevelLong(raw, "documentRevision", gson))
+    }
+
+    @Test
+    fun `readTopLevelLong ignores nested members of the same name`() {
+        val raw = """{"meta":{"documentRevision":5},"list":[1,{"documentRevision":6}],"documentRevision":7}"""
+        assertEquals(7L, readTopLevelLong(raw, "documentRevision", gson))
+    }
+
+    @Test
+    fun `readTopLevelLong returns null for absent, null, non-numeric or malformed input`() {
+        assertNull(readTopLevelLong("""{"type":"SyncDocumentCommand"}""", "documentRevision", gson))
+        assertNull(readTopLevelLong("""{"documentRevision":null}""", "documentRevision", gson))
+        assertNull(readTopLevelLong("""{"documentRevision":"3"}""", "documentRevision", gson))
+        assertNull(readTopLevelLong("""{"documentRevision":""", "documentRevision", gson))
+        assertNull(readTopLevelLong("[1,2]", "documentRevision", gson))
+    }
 }

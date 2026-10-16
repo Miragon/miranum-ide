@@ -21,12 +21,12 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 
 /**
- * Covers explicit causation on the host's write echo — against a **real**
- * IntelliJ `Document`, the only way to verify that `Document.setText`
- * synchronously fires the editor's `DocumentListener` while [EditorSessionRouter]'s
- * per-editor causation token is set. A fake document could only assume that timing;
- * the whole point of the bug class (the bridge dropping its own write by causation
- * rather than by content comparison) lives in that synchronous re-entrancy.
+ * Covers the host side of document sync against a **real** IntelliJ `Document`,
+ * the only way to verify that `Document.setText` synchronously fires the editor's
+ * `DocumentListener` while [EditorSessionRouter] marks the editor as applying a
+ * core write. A fake document could only assume that timing, and the suppression
+ * of the core's own write (no `document/didChange` echo) lives in that synchronous
+ * re-entrancy.
  *
  * `@RunInEdt(writeIntent = true)` runs each test on the EDT with the write-intent
  * lock so write actions and `invokeLater` pumping work; the annotation only targets
@@ -92,56 +92,76 @@ class EditorSessionRouterTest {
     )
 
     /**
-     * Re-creates the host's real echo wiring from `BpmnFileEditor`: the editor's
-     * `DocumentListener` mirrors every Document change back into the core. This is
-     * the listener that `handleWrite`'s `setText` re-enters synchronously, so it
-     * must be in place for the causation token to ever be observed.
+     * Re-creates the host's real listener wiring from `BpmnFileEditor`: the editor's
+     * `DocumentListener` reports every Document change to the router. This is the
+     * listener that `handleWrite`'s `setText` re-enters synchronously. Returns how
+     * often the router asked for the document text.
      */
-    private fun Fixture.attachEditorEcho() {
+    private fun Fixture.attachEditorEcho(): () -> Int {
+        var contentReads = 0
         bpmn.document.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) {
-                    router.notifyDocumentChanged(session, event.document.text)
+                    router.notifyDocumentChanged(session) {
+                        contentReads++
+                        event.document.text
+                    }
                 }
             },
             Disposer.newDisposable(session.project, "editor-echo"),
         )
+        return { contentReads }
+    }
+
+    private fun Fixture.dispatchCoreWrite(content: String, expectedDocumentRevision: Long? = null) {
+        val params =
+            linkedMapOf<String, Any>("editorId" to session.editorId, "sessionId" to sessionId, "content" to content)
+        expectedDocumentRevision?.let { params["expectedDocumentRevision"] = it }
+        wired.handlers.dispatch("document/write", wired.channel.gson.toJsonTree(params).asJsonObject, 1)
+        // handleWrite defers the mutation to invokeLater; pump it so setText (and the
+        // synchronous listener call it triggers) actually runs before we read frames.
+        PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
     }
 
     @Test
-    fun `handleWrite stamps causedBy on the echoed document didChange`() {
+    fun `a core write sends no document didChange and never reads the document text`() {
         val f = setUpRouter(INITIAL_XML)
-        f.attachEditorEcho()
+        val contentReads = f.attachEditorEcho()
 
-        val params =
-            f.wired.channel.gson
-                .toJsonTree(mapOf("editorId" to f.session.editorId, "content" to EDITED_XML, "revision" to REVISION))
-                .asJsonObject
-        f.wired.handlers.dispatch("document/write", params, 1)
-        // handleWrite defers the mutation to invokeLater; pump it so setText (and the
-        // synchronous listener echo it triggers) actually runs before we read frames.
-        PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
-
-        val didChange = parse(f.wired.fake.nextFrame())
-        assertEquals("document/didChange", didChange.get("method").asString)
-        assertEquals(
-            REVISION,
-            didChange.getAsJsonObject("params").get("causedBy").asLong,
-            "the write's echo carries the write's revision as causedBy",
-        )
+        f.dispatchCoreWrite(EDITED_XML)
 
         val reply = parse(f.wired.fake.nextFrame())
-        assertEquals(1, reply.get("id").asInt)
-        assertTrue(reply.getAsJsonObject("result").get("changed").asBoolean, "the write changed the document")
+        assertEquals(1, reply.get("id").asInt, "the write reply is the only frame sent")
+        val result = reply.getAsJsonObject("result")
+        assertTrue(result.get("changed").asBoolean, "the write changed the document")
+        assertFalse(result.has("normalizedContent"), "unnormalised content is not sent back")
+        assertEquals(EDITED_XML, f.bpmn.document.text)
+        assertEquals(0, contentReads(), "the core's own write is not copied out of the Document")
+        f.scheduler.runPending()
+        PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
+        f.wired.fake.expectNoFrame()
     }
 
     @Test
-    fun `an external edit omits causedBy`() {
+    fun `a core write with CRLF line separators replies the normalised content`() {
         val f = setUpRouter(INITIAL_XML)
         f.attachEditorEcho()
 
-        // A genuine external edit (git revert, the plain-text tab, another tool):
-        // no pending causation token, so the echo must not be tagged as the host's own.
+        f.dispatchCoreWrite(EDITED_XML.replace("\n", "\r\n"))
+
+        val result = parse(f.wired.fake.nextFrame()).getAsJsonObject("result")
+        assertTrue(result.get("changed").asBoolean)
+        assertEquals(EDITED_XML, result.get("normalizedContent").asString)
+        assertEquals(EDITED_XML, f.bpmn.document.text)
+        f.wired.fake.expectNoFrame()
+    }
+
+    @Test
+    fun `an external edit sends its content and a new document revision`() {
+        val f = setUpRouter(INITIAL_XML)
+        f.attachEditorEcho()
+
+        // A genuine external edit (git revert, the plain-text tab, another tool).
         WriteCommandAction.runWriteCommandAction(f.session.project) { f.bpmn.document.setText(EDITED_XML) }
 
         // The external path is debounced, so nothing is sent until the timer fires;
@@ -157,17 +177,14 @@ class EditorSessionRouterTest {
             didChange.getAsJsonObject("params").get("content").asString,
             "the debounced send carries the latest external content",
         )
-        assertFalse(
-            didChange.getAsJsonObject("params").has("causedBy"),
-            "an edit the host did not originate carries no causation token",
-        )
+        assertEquals(1L, didChange.getAsJsonObject("params").get("documentRevision").asLong)
     }
 
     @Test
     fun `close does not flush the webview over a pending external host update`() {
         val f = setUpRouter(INITIAL_XML)
 
-        f.router.notifyDocumentChanged(f.session, EDITED_XML)
+        f.router.notifyDocumentChanged(f.session) { EDITED_XML }
         f.router.flushBeforeClose(f.session.editorId)
 
         assertTrue(f.posted.isEmpty(), "the authoritative host edit bypasses webview export")
@@ -195,6 +212,23 @@ class EditorSessionRouterTest {
             "only the latest content of a typing burst is sent",
         )
         f.wired.fake.expectNoFrame()
+    }
+
+    @Test
+    fun `editor postMessage delivers the core message to the webview unescaped`() {
+        val f = setUpRouter(INITIAL_XML)
+        val message =
+            mapOf("type" to "BpmnFileQuery", "content" to EDITED_XML, "engine" to "c8", "documentRevision" to 0)
+        val params =
+            f.wired.channel.gson
+                .toJsonTree(mapOf("editorId" to f.session.editorId, "sessionId" to f.sessionId, "message" to message))
+                .asJsonObject
+
+        f.wired.handlers.dispatch("editor/postMessage", params, null)
+
+        val delivered = f.posted.single()
+        assertEquals(f.wired.channel.gson.toJsonTree(message), parse(delivered))
+        assertTrue(delivered.contains("<bpmn:definitions id="), "XML reaches the webview without HTML escapes")
     }
 
     @Test
@@ -235,7 +269,7 @@ class EditorSessionRouterTest {
     @Test
     fun `a sync is dropped while an external host update is pending`() {
         val f = setUpRouter(INITIAL_XML)
-        f.router.notifyDocumentChanged(f.session, EDITED_XML)
+        f.router.notifyDocumentChanged(f.session) { EDITED_XML }
 
         f.router.forwardWebviewMessage(f.session, syncCommand("<stale/>", 0))
 
@@ -245,7 +279,7 @@ class EditorSessionRouterTest {
     @Test
     fun `a sync older than the latest delivered host revision is dropped`() {
         val f = setUpRouter(INITIAL_XML)
-        f.router.notifyDocumentChanged(f.session, EDITED_XML)
+        f.router.notifyDocumentChanged(f.session) { EDITED_XML }
         f.scheduler.runPending()
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
         parse(f.wired.fake.nextFrame()) // drain document/didChange
@@ -273,7 +307,7 @@ class EditorSessionRouterTest {
     @Test
     fun `a transformed query acknowledges the host revision it represents`() {
         val f = setUpRouter(INITIAL_XML)
-        f.router.notifyDocumentChanged(f.session, "")
+        f.router.notifyDocumentChanged(f.session) { "" }
         f.scheduler.runPending()
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
         parse(f.wired.fake.nextFrame()) // drain document/didChange revision 1
@@ -307,7 +341,7 @@ class EditorSessionRouterTest {
     @Test
     fun `re-registering after a host edit preserves the session revision`() {
         val f = setUpRouter(INITIAL_XML)
-        f.router.notifyDocumentChanged(f.session, EDITED_XML)
+        f.router.notifyDocumentChanged(f.session) { EDITED_XML }
         f.scheduler.runPending()
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
 
@@ -405,7 +439,6 @@ class EditorSessionRouterTest {
                     mapOf(
                         "editorId" to f.session.editorId,
                         "content" to SECOND_EDIT_XML,
-                        "revision" to REVISION,
                         "expectedDocumentRevision" to 0,
                     ),
                 )
@@ -442,7 +475,6 @@ class EditorSessionRouterTest {
                         "editorId" to f.session.editorId,
                         "sessionId" to f.sessionId,
                         "content" to SECOND_EDIT_XML,
-                        "revision" to REVISION,
                         "expectedDocumentRevision" to 1,
                     ),
                 ).asJsonObject
@@ -450,11 +482,10 @@ class EditorSessionRouterTest {
         f.wired.handlers.dispatch("document/write", params, 1)
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
 
-        val echo = parse(f.wired.fake.nextFrame())
-        assertEquals("document/didChange", echo.get("method").asString)
         val reply = parse(f.wired.fake.nextFrame())
         assertTrue(reply.getAsJsonObject("result").get("accepted").asBoolean)
         assertEquals(SECOND_EDIT_XML, f.bpmn.document.text)
+        f.wired.fake.expectNoFrame()
     }
 
     @Test
@@ -520,7 +551,6 @@ class EditorSessionRouterTest {
     }
 
     private companion object {
-        const val REVISION = 7L
         const val INITIAL_XML = "<bpmn:definitions id=\"a\"/>\n"
         const val EDITED_XML = "<bpmn:definitions id=\"b\"/>\n"
         const val SECOND_EDIT_XML = "<bpmn:definitions id=\"c\"/>\n"

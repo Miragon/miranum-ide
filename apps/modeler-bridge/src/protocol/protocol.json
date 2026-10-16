@@ -31,7 +31,6 @@
         "direction": "hostToCore",
         "kind": "notification",
         "paramKeys": [
-            "causedBy",
             "content",
             "documentRevision",
             "editorId",
@@ -259,12 +258,12 @@
             "content",
             "editorId",
             "expectedDocumentRevision",
-            "revision",
             "sessionId"
         ],
         "resultKeys": [
             "accepted",
-            "changed"
+            "changed",
+            "normalizedContent"
         ]
     },
     {

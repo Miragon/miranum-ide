@@ -40,19 +40,17 @@ export interface WebviewMessageParams {
     message: Command;
 }
 
-/** `document/didChange` — the host reports new on-disk/editor text for an editor. */
+/**
+ * `document/didChange` — the host reports new on-disk/editor text for an editor.
+ * Only external changes are sent; the core's own writes are acknowledged by the
+ * {@link DocumentWriteResult} instead of an echo.
+ */
 export interface DocumentDidChangeParams {
     editorId: string;
     sessionId?: number;
     content: string;
     /** Host-owned document revision after applying this external change. */
     documentRevision?: number;
-    /**
-     * Set iff this change is the host's echo of a core-originated
-     * `document/write`, carrying that write's {@link DocumentWriteParams.revision}
-     * so the bridge can drop its own causation. Absent on genuine external edits.
-     */
-    causedBy?: number;
 }
 
 /** `session/setActive`, `session/dispose` — address one exact editor session. */
@@ -204,18 +202,16 @@ export interface DocumentWriteParams {
     content: string;
     /** Host document revision on which this write was based. */
     expectedDocumentRevision?: number;
-    /**
-     * Per-editor monotonic id the host echoes back as
-     * {@link DocumentDidChangeParams.causedBy}, letting the bridge recognise the
-     * resulting `document/didChange` as its own write (LSP-style causation)
-     * rather than inferring it by content comparison.
-     */
-    revision: number;
 }
 export interface DocumentWriteResult {
     changed?: boolean;
     /** False when the host rejected a stale session or document revision. */
     accepted?: boolean;
+    /**
+     * The bytes the host Document actually holds, present only when the host
+     * normalised the written content (line separators) so the mirror stays exact.
+     */
+    normalizedContent?: string;
 }
 
 /** `document/save` — persist the editor; result reports whether a save happened. */

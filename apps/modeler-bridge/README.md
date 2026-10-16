@@ -18,7 +18,7 @@ isn't talking to VS Code.
 | Direction   | Method(s)                               | Port / handle                                                                                 |
 | ----------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
 | host → core | `session/register`, `session/dispose`   | editor lifecycle (seeds the `DocumentPort` mirror)                                            |
-| host → core | `document/didChange`                    | document change → re-render (external edits) or no-op (own-write echo)                        |
+| host → core | `document/didChange`                    | external document change → re-render                                                          |
 | host → core | `session/setActive`                     | focused tab → `EditorSessionStore` active-editor pointer                                      |
 | host → core | `webview/message`                       | inbound `Command` → `WebviewMessageRouter`                                                    |
 | core → host | `document/write`, `document/save`       | `DocumentPort.write` / `.save`                                                                |
@@ -46,7 +46,8 @@ against the checked-in `protocol.json`.
 The **synchronous-read mismatch** — `BpmnModelerService.display()` reads
 `DocumentPort.getContent()` synchronously, impossible over async RPC — is solved
 by a local `DocumentMirror` the host seeds on `session/register` and keeps
-current with `document/didChange`, so reads hit a cache instead of blocking.
+current with `document/didChange` and `document/write` replies, so reads hit a
+cache instead of blocking.
 
 **Session and document causation.** Every open editor gets a host-owned
 `sessionId`; lifecycle, webview, document, and post-message frames carry it so
@@ -57,13 +58,11 @@ webview write returns that revision as `expectedDocumentRevision`; the host
 accepts the write only while it is still current and reports the decision as
 `accepted`.
 
-The host reports _every_ accepted document change, including the echo of the
-core's own `document/write`. The bridge tells the two apart by **explicit
-causation**: every write also mints a bridge-local revision the host echoes as
-`causedBy`. A `document/didChange` whose `causedBy` matches a pending own write
-is the host's echo and is dropped; an external edit carries no `causedBy` (or a
-stale one) and re-renders. The core's `ModelerSession` guard stays wired as a
-second line of defence.
+The host reports only **external** document changes. The core's own
+`document/write` is acknowledged by its reply alone: an accepted, changed write
+updates the mirror (with `normalizedContent` when the host rewrote line
+separators) and never re-renders, so the full XML is not echoed back over the
+pipe. The core's `ModelerSession` guard stays wired as a second line of defence.
 
 The mirror lifecycle (seed/re-seed, ownership/single-writer, echo rules, and the
 checklist for adding the next synchronous port) is written up once in

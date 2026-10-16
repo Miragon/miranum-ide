@@ -72,27 +72,14 @@ export interface SessionMeta {
 
 /**
  * Local mirror of every open document's text + identity, seeded by the host on
- * `session/register` and refreshed on `document/didChange`. Exists solely to
- * make the core's synchronous `getContent()` work without a blocking RPC
- * round-trip.
- *
- * It also owns the per-editor **write-revision** state behind echo suppression:
- * every core-originated `document/write` mints a monotonic revision, and the
- * host echoes it back on the resulting `document/didChange` as `causedBy`, so
- * the bridge drops its own write by explicit causation rather than by comparing
- * content (LSP-style versioned `didChange`).
+ * `session/register`, refreshed on external `document/didChange` and on every
+ * acknowledged core `document/write`. Exists solely to make the core's
+ * synchronous `getContent()` work without a blocking RPC round-trip.
  */
 export class DocumentMirror {
     private readonly meta = new Map<string, SessionMeta>();
     private readonly text = new Map<string, string>();
     private readonly contentListeners = new Set<(editorId: string) => void>();
-
-    // Causation belongs to an exact editor generation: same-URI replacement
-    // sessions may mint the same revision numbers without sharing pending writes.
-    private readonly writeRevisions = new Map<
-        string,
-        Map<number | undefined, { next: number; pending: Set<number> }>
-    >();
 
     register(meta: SessionMeta, content: string): void {
         this.meta.set(meta.editorId, meta);
@@ -115,54 +102,22 @@ export class DocumentMirror {
     }
 
     /**
-     * Mints the next write revision for an editor and records it as a pending own
-     * revision, so the host's echo of this write can be recognised by
-     * {@link isOwnEcho}. Starts at 1 (0 would be ambiguous with an absent
-     * `causedBy` on the wire).
+     * Applies the outcome of a core `document/write`. The host sends no
+     * `document/didChange` echo for its own write, so the reply is the only
+     * signal that the Document now holds these bytes. A reply for a replaced
+     * session generation must not overwrite the current session's text.
      */
-    nextWriteRevision(editorId: string, sessionId?: number): number {
-        const state = this.writeRevisionState(editorId, sessionId);
-        const revision = ++state.next;
-        state.pending.add(revision);
-        return revision;
-    }
-
-    /**
-     * True iff `causedBy` is one of this editor's pending own revisions; consumes
-     * it so the set stays bounded. A stale/unknown `causedBy` (or one already
-     * consumed) returns false — that change still renders, never mistaken for an
-     * echo.
-     */
-    isOwnEcho(editorId: string, causedBy: number, sessionId?: number): boolean {
-        return this.writeRevisions.get(editorId)?.get(sessionId)?.pending.delete(causedBy) ?? false;
-    }
-
-    /**
-     * Drops a pending own revision that will never be echoed. A no-op write (the
-     * host's `Document` already holds the content, e.g. after `\r\n`→`\n`
-     * normalisation) fires no `document/didChange`, so its minted revision would
-     * otherwise linger forever; the caller forgets it to keep the set bounded.
-     */
-    forgetWriteRevision(editorId: string, revision: number, sessionId?: number): void {
-        this.writeRevisions.get(editorId)?.get(sessionId)?.pending.delete(revision);
-    }
-
     completeWrite(
         editorId: string,
         sessionId: number | undefined,
-        revision: number,
-        content: string,
-        changed: boolean,
-    ): void {
-        const pending = this.writeRevisions.get(editorId)?.get(sessionId)?.pending;
-        if (!pending?.has(revision)) return;
-        if (!changed) {
-            pending.delete(revision);
-            return;
+        writtenContent: string,
+        result: DocumentWriteResult | null,
+    ): boolean {
+        const changed = result?.accepted !== false && result?.changed === true;
+        if (changed && this.meta.get(editorId)?.sessionId === sessionId) {
+            this.setContent(editorId, result?.normalizedContent ?? writtenContent);
         }
-        if (this.meta.get(editorId)?.sessionId === sessionId) {
-            this.text.set(editorId, content);
-        }
+        return changed;
     }
 
     require(editorId: string): SessionMeta {
@@ -181,24 +136,6 @@ export class DocumentMirror {
     remove(editorId: string): void {
         this.meta.delete(editorId);
         this.text.delete(editorId);
-        this.writeRevisions.delete(editorId);
-    }
-
-    private writeRevisionState(
-        editorId: string,
-        sessionId?: number,
-    ): { next: number; pending: Set<number> } {
-        let sessions = this.writeRevisions.get(editorId);
-        if (!sessions) {
-            sessions = new Map();
-            this.writeRevisions.set(editorId, sessions);
-        }
-        let state = sessions.get(sessionId);
-        if (!state) {
-            state = { next: 0, pending: new Set() };
-            sessions.set(sessionId, state);
-        }
-        return state;
     }
 }
 
@@ -248,19 +185,13 @@ export class RpcEditorHandle implements EditorHandle {
     }
 
     async writeContent(content: string, expectedDocumentRevision?: number): Promise<boolean> {
-        // Tag the write so the host's echoed `document/didChange` carries this
-        // revision as `causedBy`; the mirror update keeps sync `getContent` correct.
-        const revision = this.mirror.nextWriteRevision(this.id, this.meta.sessionId);
         const result = (await this.rpc.request(METHODS.documentWrite, {
             editorId: this.id,
             sessionId: this.meta.sessionId,
             content,
-            revision,
             expectedDocumentRevision,
         })) as DocumentWriteResult | null;
-        const changed = result?.accepted !== false && result?.changed === true;
-        this.mirror.completeWrite(this.id, this.meta.sessionId, revision, content, changed);
-        return changed;
+        return this.mirror.completeWrite(this.id, this.meta.sessionId, content, result);
     }
 
     async save(): Promise<boolean> {
@@ -361,20 +292,14 @@ export class RpcDocumentPort implements DocumentPort {
         content: string,
         expectedDocumentRevision?: number,
     ): Promise<boolean> {
-        // Tag the write so the host's echoed `document/didChange` carries this
-        // revision as `causedBy` (see DocumentMirror.isOwnEcho).
         const sessionId = this.mirror.require(editorId).sessionId;
-        const revision = this.mirror.nextWriteRevision(editorId, sessionId);
         const result = (await this.rpc.request(METHODS.documentWrite, {
             editorId,
             sessionId,
             content,
-            revision,
             expectedDocumentRevision,
         })) as DocumentWriteResult | null;
-        const changed = result?.accepted !== false && result?.changed === true;
-        this.mirror.completeWrite(editorId, sessionId, revision, content, changed);
-        return changed;
+        return this.mirror.completeWrite(editorId, sessionId, content, result);
     }
 
     async save(editorId: string): Promise<boolean> {

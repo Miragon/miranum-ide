@@ -92,6 +92,23 @@ class RpcChannelTest {
         fake.expectNoFrame()
     }
 
+    @Test
+    fun `notify writes XML content without HTML escapes`() {
+        val fake = fakeProcess()
+        val channel = rpcChannel { _, _, _ -> }
+        val xml = "<bpmn:task id='t' name=\"A & B\"/>".repeat(1_000)
+
+        channel.notify("document/didChange", mapOf("content" to xml))
+        channel.attach(fake.outputStream, fake.inputStream)
+
+        val frame = fake.nextFrame()
+        assertFalse(frame.contains("\\u003c") || frame.contains("\\u0026") || frame.contains("\\u0027"))
+        assertTrue(frame.contains("<bpmn:task id='t'"), "markup is written verbatim")
+        assertEquals(xml, parse(frame).getAsJsonObject("params").get("content").asString)
+        val quoteEscapes = 2 * 1_000
+        assertTrue(frame.length < xml.length + quoteEscapes + 100, "frame size stays close to the raw XML length")
+    }
+
     /**
      * Past [OUTBOUND_CAPACITY] the oldest frame is dropped and the newest kept.
      * The writer stays detached while we overflow, so the drop happens purely in
