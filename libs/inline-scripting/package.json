@@ -12,7 +12,7 @@
     },
     "peerDependencies": {
         "@bpmn-io/properties-panel": "3.56.1",
-        "bpmn-js": "18.28.0"
+        "bpmn-js": "18.31.0"
     },
     "devDependencies": {
         "@bpmn-io/properties-panel": "3.56.1",

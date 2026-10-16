@@ -2422,7 +2422,7 @@ __metadata:
     diagram-js: "npm:15.28.1"
     typescript: "npm:@typescript/typescript6@6.0.2"
   peerDependencies:
-    bpmn-js: 18.28.0
+    bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
 
@@ -2565,7 +2565,7 @@ __metadata:
     vite: "npm:8.3.0"
     vitest: "npm:5.0.3"
   peerDependencies:
-    bpmn-js: 18.28.0
+    bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
 
@@ -2602,7 +2602,7 @@ __metadata:
     vitest: "npm:5.0.3"
   peerDependencies:
     "@bpmn-io/properties-panel": 3.56.1
-    bpmn-js: 18.28.0
+    bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
 
@@ -8357,9 +8357,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-properties-panel@npm:5.65.0":
-  version: 5.65.0
-  resolution: "bpmn-js-properties-panel@npm:5.65.0"
+"bpmn-js-properties-panel@npm:5.65.2":
+  version: 5.65.2
+  resolution: "bpmn-js-properties-panel@npm:5.65.2"
   dependencies:
     "@bpmn-io/extract-process-variables": "npm:^2.2.1"
     array-move: "npm:^4.0.0"
@@ -8371,13 +8371,13 @@ __metadata:
     bpmn-js: ">= 11.5"
     camunda-bpmn-js-behaviors: ">= 0.4"
     diagram-js: ">= 11.9"
-  checksum: 10c0/17348ee364908a2dc947b556e7e6f3ccf4ff4eb343351454f391679a1e74a359f471e1ca36a4e230c31d81f2a6ff445c61acaf22a77ffb624d09452e632ebc80
+  checksum: 10c0/c7cfcdad606ef38de76cc80658cf06d3dfee0ff82b47d280af802286808c47a9ffe4f48e96100514540c47f00c7a3472ea246e96e16bf93443c4389ef0b11833
   languageName: node
   linkType: hard
 
-"bpmn-js-properties-panel@patch:bpmn-js-properties-panel@npm%3A5.65.0#~/.yarn/patches/bpmn-js-properties-panel-npm-5.65.0-7e66ff7b5f.patch":
-  version: 5.65.0
-  resolution: "bpmn-js-properties-panel@patch:bpmn-js-properties-panel@npm%3A5.65.0#~/.yarn/patches/bpmn-js-properties-panel-npm-5.65.0-7e66ff7b5f.patch::version=5.65.0&hash=625c47"
+"bpmn-js-properties-panel@patch:bpmn-js-properties-panel@npm%3A5.65.2#~/.yarn/patches/bpmn-js-properties-panel-npm-5.65.2-5f05209da3.patch":
+  version: 5.65.2
+  resolution: "bpmn-js-properties-panel@patch:bpmn-js-properties-panel@npm%3A5.65.2#~/.yarn/patches/bpmn-js-properties-panel-npm-5.65.2-5f05209da3.patch::version=5.65.2&hash=8ab0a7"
   dependencies:
     "@bpmn-io/extract-process-variables": "npm:^2.2.1"
     array-move: "npm:^4.0.0"
@@ -8389,7 +8389,7 @@ __metadata:
     bpmn-js: ">= 11.5"
     camunda-bpmn-js-behaviors: ">= 0.4"
     diagram-js: ">= 11.9"
-  checksum: 10c0/b4541fb53ef21fff9a9d3f3f73187f328bcfbee7b0a87f972874da6440be145124d425fc2d78588e198fd09dbafd43a1b8c787c219928b8b939b74207ea3b2a2
+  checksum: 10c0/9332fb3b7f98d18cade8de4048c84346e665c53e7de50bcdf848cc6faa5edd5c0f69ceff02c1002e47ed486afcdbfdb7ab73848508e9fd12ef5c902ae75a03bc
   languageName: node
   linkType: hard
 
