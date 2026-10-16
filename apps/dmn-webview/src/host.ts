@@ -13,6 +13,7 @@ import {
     LogWarningCommand,
     PropertiesPanelStateQuery,
     Query,
+    TakeFocusQuery,
     HostApi,
     HostApiImpl,
     MockHostApi,
@@ -89,6 +90,11 @@ class MockHost extends MockHostApi<StateType, MessageType> {
             }
             case message.type === "SetPropertiesPanelStateCommand": {
                 // No host to persist to in standalone browser runs.
+                break;
+            }
+            case message.type === "RequestFocusCommand": {
+                // The preview page is always the active editor.
+                dispatchEvent(new TakeFocusQuery());
                 break;
             }
             // The webview forwards log entries to the host; in a standalone

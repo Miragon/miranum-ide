@@ -35,6 +35,7 @@ import {
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
+    RequestFocusCommand,
     SearchWorkspaceDefinitionsCommand,
     ShowInfoCommand,
     SetClipboardCommand,
@@ -55,7 +56,9 @@ import {
     createResolver,
     extractProcessVariables,
     initResizer,
+    installCanvasAutoFocus,
     installPanelShortcuts,
+    takeFocus,
 } from "@miragon/bpmn-modeler-shared";
 import {
     NoModelerError,
@@ -212,6 +215,7 @@ function startSession(
     let surfaceMode!: SurfaceMode;
     let strip!: ModeStrip;
     let modeSession: ModeSession | undefined;
+    const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
     let switchPending = false;
     // Saved `document.body.inert` from the start of a recreate switch, restored
     // when it lands (unless a concurrent engine reload has taken ownership).
@@ -741,8 +745,6 @@ function startSession(
         const capabilities = injectedCapabilities ?? createProtocolCapabilities();
         const extraModules = (injectedModules as unknown[]) ?? [];
 
-        const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
-
         // The shared lint options for both editable surfaces (Implement + Design):
         // the injected tier or the external default a real host uses, plus the
         // result/toggle sinks that feed the host's Problems panel + status bar.
@@ -1166,6 +1168,8 @@ function startSession(
             },
             { getPanelRoot: () => mountEl },
         );
+        installCanvasAutoFocus({ focusCanvas });
+        host.postMessage(new RequestFocusCommand());
 
         // Selection + panel-side UI state must wait until element-template and
         // settings side-effects have run (they clear selection; group indexes are
@@ -1603,6 +1607,10 @@ function startSession(
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
+                break;
+            }
+            case queryOrCommand.type === "TakeFocusQuery": {
+                takeFocus(focusCanvas);
                 break;
             }
             case ["FlushDocumentQuery", "ReleaseDocumentFlushQuery"].includes(

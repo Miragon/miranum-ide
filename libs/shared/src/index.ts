@@ -6,6 +6,7 @@ export * from "./lib/modeler";
 export * from "./lib/processVariables";
 export * from "./lib/propertiesPanelResizer";
 export * from "./lib/propertiesPanelFocus";
+export * from "./lib/canvasAutoFocus";
 export * from "./lib/hostTheme";
 export * from "./lib/variableManifest";
 export * from "./lib/harvestRecorder";

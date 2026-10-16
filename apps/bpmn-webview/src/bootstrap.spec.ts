@@ -7,9 +7,11 @@ import {
     ElementTemplatesQuery,
     FlushDocumentQuery,
     FocusElementQuery,
+    installCanvasAutoFocus,
     LanguageQuery,
     PropertiesPanelStateQuery,
     ReleaseDocumentFlushQuery,
+    TakeFocusQuery,
     UpdateOpenScriptEditorsQuery,
 } from "@miragon/bpmn-modeler-shared";
 import { i18n } from "@miragon/bpmn-modeler-i18n";
@@ -58,6 +60,7 @@ vi.mock("@miragon/bpmn-modeler-shared", async (importOriginal) => {
         ...actual,
         initResizer: mocks.initResizer,
         installPanelShortcuts: vi.fn(),
+        installCanvasAutoFocus: vi.fn(),
     };
 });
 
@@ -89,6 +92,7 @@ vi.mock("./state", () => ({
         captureViewState = vi.fn();
         applyViewState = vi.fn();
         restoreViewport = vi.fn();
+        markViewportRestored = vi.fn();
         restoreSelection = vi.fn();
         restorePanelUiState = vi.fn();
         restorePanelVisibility = vi.fn();
@@ -909,6 +913,40 @@ describe("bootstrap mode switching", () => {
         expect(document.getElementById("js-properties-panel")!.getAttribute("aria-busy")).toBe(
             "false",
         );
+    });
+
+    it("auto-focuses the canvas of the current surface after a recreate", async () => {
+        const modeler = makeModeler();
+        const viewer = makeViewer();
+        mocks.createModeler.mockResolvedValue(modeler);
+        mocks.createViewer.mockResolvedValue(viewer);
+        const host = makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+
+        boot(host);
+        await drainAsyncWork();
+        modeButtons()[0].click();
+        await drainAsyncWork();
+
+        expect(installCanvasAutoFocus).toHaveBeenCalledOnce();
+        vi.mocked(installCanvasAutoFocus).mock.calls[0][0].focusCanvas();
+        expect(viewer.getService("canvas").focus).toHaveBeenCalledOnce();
+        expect(modeler.getService("canvas").focus).not.toHaveBeenCalled();
+    });
+
+    it("asks the host for focus once ready and focuses the canvas when told to", async () => {
+        const modeler = makeModeler();
+        mocks.createModeler.mockResolvedValue(modeler);
+        const host = makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+
+        boot(host);
+        await drainAsyncWork();
+        expect(sentTypes(host)).toContain("RequestFocusCommand");
+        expect(modeler.getService("canvas").focus).not.toHaveBeenCalled();
+
+        dispatch(new TakeFocusQuery());
+        await drainAsyncWork();
+
+        expect(modeler.getService("canvas").focus).toHaveBeenCalledOnce();
     });
 
     it("ignores a mode click while a switch is in flight", async () => {

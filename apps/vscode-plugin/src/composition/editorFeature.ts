@@ -6,6 +6,7 @@ import { PropertiesPanelStateRepository } from "../modeler/bpmn/infrastructure/P
 import { WebviewMessageRouter } from "@miragon/bpmn-modeler-core";
 import { registerWebviewLogHandlers } from "@miragon/bpmn-modeler-core";
 import { registerWebviewNotificationHandlers } from "@miragon/bpmn-modeler-core";
+import { registerWebviewFocusHandlers } from "@miragon/bpmn-modeler-core";
 import { BpmnModelerService } from "@miragon/bpmn-modeler-core";
 import { DocumentFlushService, documentFlushedHandler } from "@miragon/bpmn-modeler-core";
 import { BpmnClipboardMediator } from "@miragon/bpmn-modeler-core";
@@ -313,6 +314,7 @@ export function register(
     // the router drops them as unknown types and webview diagnostics never surface.
     registerWebviewLogHandlers(bpmnMessageRouter, deps.notifier, resolveSource);
     registerWebviewNotificationHandlers(bpmnMessageRouter, deps.notifier);
+    registerWebviewFocusHandlers(bpmnMessageRouter, deps.editorStore);
     const dmnMessageRouter = new WebviewMessageRouter()
         .on("GetDmnFileCommand", getDmnFileHandler(dmnService, deps.notifier))
         .on("GetDmnModelerSettingCommand", getDmnModelerSettingHandler(dmnSettingsBroadcaster))
@@ -322,6 +324,7 @@ export function register(
         .on("DocumentFlushedCommand", documentFlushedHandler(flushSvc));
     registerWebviewLogHandlers(dmnMessageRouter, deps.notifier, resolveSource);
     registerWebviewNotificationHandlers(dmnMessageRouter, deps.notifier);
+    registerWebviewFocusHandlers(dmnMessageRouter, deps.editorStore);
     const formMessageRouter = new WebviewMessageRouter()
         .on("GetFormFileCommand", getFormFileHandler(formService, deps.notifier))
         .on("GetFormInputValuesCommand", getFormInputValuesHandler(formValues))
