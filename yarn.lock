@@ -2427,7 +2427,7 @@ __metadata:
     "@miragon/bpmn-modeler-diff": "workspace:*"
     "@miragon/bpmn-modeler-shared": "workspace:*"
     "@miragon/bpmn-modeler-types": "workspace:*"
-    "@miragon/bpmnlint-plugin-rules": "npm:0.11.1"
+    "@miragon/bpmnlint-plugin-rules": "npm:0.12.0"
     "@types/node": "npm:26.6.1"
     "@typescript/native": "npm:typescript@7.0.2"
     "@vitest/coverage-v8": "npm:5.0.3"
@@ -2743,7 +2743,7 @@ __metadata:
     "@miragon/bpmn-modeler-i18n-extras": "workspace:*"
     "@miragon/bpmn-modeler-shared": "workspace:*"
     "@miragon/bpmn-modeler-types": "workspace:*"
-    "@miragon/bpmnlint-plugin-rules": "npm:0.11.1"
+    "@miragon/bpmnlint-plugin-rules": "npm:0.12.0"
     "@types/vscode-webview": "npm:1.57.5"
     "@typescript/native": "npm:typescript@7.0.2"
     "@vitest/coverage-v8": "npm:5.0.3"
@@ -2783,7 +2783,7 @@ __metadata:
     "@miragon/bpmn-modeler-layout": "workspace:*"
     "@miragon/bpmn-modeler-properties-panel": "workspace:*"
     "@miragon/bpmn-modeler-types": "workspace:*"
-    "@miragon/bpmnlint-plugin-rules": "npm:0.11.1"
+    "@miragon/bpmnlint-plugin-rules": "npm:0.12.0"
     "@miragon/create-append-c7": "npm:1.0.1"
     "@types/node": "npm:26.6.1"
     "@typescript/native": "npm:typescript@7.0.2"
@@ -2828,17 +2828,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@miragon/bpmnlint-plugin-rules@npm:0.11.1":
-  version: 0.11.1
-  resolution: "@miragon/bpmnlint-plugin-rules@npm:0.11.1"
+"@miragon/bpmnlint-plugin-rules@npm:0.12.0":
+  version: 0.12.0
+  resolution: "@miragon/bpmnlint-plugin-rules@npm:0.12.0"
   dependencies:
-    bpmnlint-plugin-camunda-compat: "npm:2.61.0"
+    bpmnlint-plugin-camunda-compat: "npm:2.61.1"
     bpmnlint-utils: "npm:1.1.1"
-    camunda-bpmn-moddle: "npm:8.0.1"
+    camunda-bpmn-moddle: "npm:8.0.2"
     zeebe-bpmn-moddle: "npm:2.0.0"
   peerDependencies:
     bpmnlint: ">=11"
-  checksum: 10c0/67645ff17cc3c42b2a6c2700142c3dbdd1f1031756ad3d79441d33c9a86e27e7d1e70bfa6d0f2af15a805e0279fe5e2ca32de1e17a9a5d4cf0eee860dde63706
+  checksum: 10c0/f61b287da32456c42200bfb3497013976e23bd08a9fecc34c0b400e6b6ea9db175c983a688510a753ba96adef13c3453bdb437e5db2c02959b656d6f231960b1
   languageName: node
   linkType: hard
 
@@ -8404,7 +8404,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-moddle@npm:10.3.1, bpmn-moddle@npm:^10.0.0, bpmn-moddle@npm:^10.1.0, bpmn-moddle@npm:^10.2.0, bpmn-moddle@npm:^10.3.1":
+"bpmn-moddle@npm:10.3.1, bpmn-moddle@npm:^10.0.0, bpmn-moddle@npm:^10.1.0, bpmn-moddle@npm:^10.3.1":
   version: 10.3.1
   resolution: "bpmn-moddle@npm:10.3.1"
   dependencies:
@@ -8445,9 +8445,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"bpmnlint-plugin-camunda-compat@npm:2.61.0":
-  version: 2.61.0
-  resolution: "bpmnlint-plugin-camunda-compat@npm:2.61.0"
+"bpmnlint-plugin-camunda-compat@npm:2.61.1":
+  version: 2.61.1
+  resolution: "bpmnlint-plugin-camunda-compat@npm:2.61.1"
   dependencies:
     "@bpmn-io/feel-analyzer": "npm:^0.3.0"
     "@bpmn-io/lezer-feel": "npm:^2.5.0"
@@ -8459,7 +8459,7 @@ __metadata:
     semver-compare: "npm:^1.0.0"
   peerDependencies:
     bpmnlint: ">= 11.6.0"
-  checksum: 10c0/1e84ffba0605b95d3edabc612db163417e21907ddc7a4088e83926c2dc2423f3f7d49e107b4c0f1086d44fe9b509feb7afbf19a3dfebabbbadab5200ef532604
+  checksum: 10c0/3db032f98f663023e8eeb8ea35dda5ac4788a9eb7babe2c56e6c7126930532d957f14e2cd9126f878ab1bd37c1722d6676403baaa48f4f445e98fbba81730222
   languageName: node
   linkType: hard
 
@@ -8842,16 +8842,6 @@ __metadata:
   peerDependencies:
     bpmn-js-properties-panel: ">= 3.0.0"
   checksum: 10c0/2b62bc663720bdceb54e047c50157387e18a483fc7d1f5410b5676761bc514a1feca93c2204524af6e8ed654a526f1932dc10bdce02dc6d7b2122bcfc314a3c9
-  languageName: node
-  linkType: hard
-
-"camunda-bpmn-moddle@npm:8.0.1":
-  version: 8.0.1
-  resolution: "camunda-bpmn-moddle@npm:8.0.1"
-  dependencies:
-    bpmn-moddle: "npm:^10.2.0"
-    moddle: "npm:^8.2.0"
-  checksum: 10c0/b2fb568e319ae42eb0f7b53c83ba83d0966e5e790da028b86453eba01e03ca919b51b433302bdf9f8306ff07fb4c7935de8f78b053b492adf7b45d96cd742325
   languageName: node
   linkType: hard
 
