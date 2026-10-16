@@ -27,6 +27,11 @@ updates:
       - dependency-name: "mermaid"
         update-types:
           - "version-update:semver-major"
+      # @bpmn-io/diagram-js-ui and form-js still require preact ^10; the root
+      # resolution pins 10.x, so a workspace-only major bump ships untested.
+      - dependency-name: "preact"
+        update-types:
+          - "version-update:semver-major"
     groups:
       # bpmnlint must move in lockstep with the bundled resolver in
       # @miragon/bpmnlint-plugin-rules.
