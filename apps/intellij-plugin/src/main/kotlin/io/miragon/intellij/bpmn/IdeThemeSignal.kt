@@ -1,6 +1,6 @@
 package io.miragon.intellij.bpmn
 
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -37,7 +37,8 @@ import org.cef.browser.CefBrowser
  */
 @Service(Service.Level.APP)
 class IdeThemeSignal : Disposable {
-    private val gson = Gson()
+    // The literal is only ever run via executeJavaScript, never inlined into HTML.
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     // Lock-free because change notifications arrive on the EDT while editors
     // register/deregister their callbacks from the same thread — but a

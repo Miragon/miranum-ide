@@ -226,7 +226,6 @@ export const PROTOCOL = [
             sessionId: 1,
             content: "<bpmn/>",
             documentRevision: 2,
-            causedBy: 1,
         } satisfies DocumentDidChangeParams,
     },
     {
@@ -413,9 +412,12 @@ export const PROTOCOL = [
             sessionId: 1,
             content: "<bpmn/>",
             expectedDocumentRevision: 2,
-            revision: 1,
         } satisfies DocumentWriteParams,
-        resultFixture: { changed: true, accepted: true } satisfies DocumentWriteResult,
+        resultFixture: {
+            changed: true,
+            accepted: true,
+            normalizedContent: "<bpmn/>",
+        } satisfies DocumentWriteResult,
     },
     {
         method: METHODS.documentSave,

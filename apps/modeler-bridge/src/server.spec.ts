@@ -537,13 +537,12 @@ describe("bridge end-to-end (real core over a fake transport)", () => {
         await rpc.handleLine(JSON.stringify({ method: "session/dispose", params: { editorId } }));
     });
 
-    it("suppresses the echo of its own write — no re-render loop", async () => {
+    it("mirrors its own write from the reply without re-rendering", async () => {
         const { rpc, frames, root, bpmnPath } = await setup();
         const editorId = `file://${bpmnPath}`;
         await open(rpc, editorId, root, bpmnPath);
         const before = renders(frames, editorId).length;
 
-        // The webview edits the diagram → the core writes it back to the host…
         const edited = C7_XML.replace("Process_1", "Process_synced").replace(/\n/g, "\r\n");
         const hostContent = `${edited.replace(/\r\n/g, "\n")}\n`;
         await rpc.handleLine(
@@ -555,16 +554,14 @@ describe("bridge end-to-end (real core over a fake transport)", () => {
         await settle();
         const write = frames.find((f) => f.method === "document/write");
         expect(write).toBeDefined();
-        // The write carries the per-editor revision the host must echo back.
-        expect(write.params.revision).toBeTypeOf("number");
+        expect(write.params).not.toHaveProperty("revision");
 
-        // …and the host echoes that change back, stamped with the write's
-        // revision as `causedBy`. Re-rendering it would loop; the bridge drops it
-        // by explicit causation, not by comparing content.
+        // The host sends no document/didChange for this write; its reply carries
+        // the normalised bytes the Document now holds.
         await rpc.handleLine(
             JSON.stringify({
-                method: "document/didChange",
-                params: { editorId, content: hostContent, causedBy: write.params.revision },
+                id: write.id,
+                result: { changed: true, accepted: true, normalizedContent: hostContent },
             }),
         );
         await settle();
@@ -580,31 +577,6 @@ describe("bridge end-to-end (real core over a fake transport)", () => {
         await settle();
         const currentRenders = renders(frames, editorId);
         expect(currentRenders[currentRenders.length - 1].params.message.content).toBe(hostContent);
-
-        await rpc.handleLine(JSON.stringify({ method: "session/dispose", params: { editorId } }));
-    });
-
-    it("re-renders on a document/didChange carrying a stale/unknown causedBy", async () => {
-        const { rpc, frames, root, bpmnPath } = await setup();
-        const editorId = `file://${bpmnPath}`;
-        await open(rpc, editorId, root, bpmnPath);
-        const before = renders(frames, editorId).length;
-
-        // A `causedBy` the bridge never minted (e.g. a revision already consumed,
-        // or one from a different host quirk) must not be mistaken for an echo —
-        // the change still renders.
-        const external = C7_XML.replace("Process_1", "Process_stale_cause");
-        await rpc.handleLine(
-            JSON.stringify({
-                method: "document/didChange",
-                params: { editorId, content: external, causedBy: 9999 },
-            }),
-        );
-        await settle();
-
-        const after = renders(frames, editorId);
-        expect(after).toHaveLength(before + 1);
-        expect(after[after.length - 1].params.message.content).toContain("Process_stale_cause");
 
         await rpc.handleLine(JSON.stringify({ method: "session/dispose", params: { editorId } }));
     });

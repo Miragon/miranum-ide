@@ -174,12 +174,17 @@ and optimistic deployment state.
 
 ### Document causation and session identity
 
-Each bridge write carries a per-editor revision. The host threads it through
-the synchronous Document change and echoes it as `causedBy`. The bridge
-consumes matching pending revisions to suppress its own render echo, after
-updating its mirror with the host's normalized bytes. Content equality alone
-cannot distinguish an echo from an external edit. A no-op reply (`changed:
-false`) removes the pending revision because no echo will arrive.
+The `document/write` reply is the causation signal for the bridge's own
+writes; the host sends no `document/didChange` echo for them. While applying a
+write, the host marks the editor so the synchronous Document listener skips
+the change without copying the text. An accepted, changed reply updates the
+bridge mirror and never re-renders. When the host normalizes line separators,
+the reply carries `normalizedContent` so the mirror keeps the host's exact
+bytes; otherwise the full XML is not sent back. Every `document/didChange` is
+therefore external and re-renders. Content equality alone is never used to
+classify a change. This relies on the host replying on the same ordered
+channel after the Document mutation, so a later external change always
+arrives after the reply.
 
 Separately, the host advances `documentRevision` on external changes. Renders
 carry it to the webview; writes return it as `expectedDocumentRevision`.

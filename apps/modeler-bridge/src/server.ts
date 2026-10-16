@@ -11,6 +11,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { createBridge } from "./bridge";
+import { createLineSplitter } from "./lineFraming";
 
 // The host (IntelliJ) sets this to a `PathManager`-derived location segmented by
 // the project's location hash (per-project, shared only among windows on that
@@ -27,22 +28,15 @@ const { rpc } = createBridge(
 );
 
 // Read stdin as newline-delimited JSON frames.
-let buffer = "";
-process.stdin.setEncoding("utf8");
-process.stdin.on("data", (chunk: string) => {
-    buffer += chunk;
-    let newline = buffer.indexOf("\n");
-    while (newline >= 0) {
-        const line = buffer.slice(0, newline);
-        buffer = buffer.slice(newline + 1);
-        void rpc.handleLine(line).catch((error: unknown) => {
-            process.stderr.write(
-                `[core] handler error: ${error instanceof Error ? error.message : String(error)}\n`,
-            );
-        });
-        newline = buffer.indexOf("\n");
-    }
+const splitLines = createLineSplitter((line) => {
+    void rpc.handleLine(line).catch((error: unknown) => {
+        process.stderr.write(
+            `[core] handler error: ${error instanceof Error ? error.message : String(error)}\n`,
+        );
+    });
 });
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", splitLines);
 process.stdin.on("end", () => process.exit(0));
 
 // stdin EOF is the normal teardown, but the host also sends SIGTERM (its
