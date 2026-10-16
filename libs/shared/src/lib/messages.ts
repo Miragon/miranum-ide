@@ -15,6 +15,8 @@
  *   output channel
  * - {@link ShowInfoCommand} — webview asks the host to surface a user-facing
  *   information notification
+ * - {@link RequestFocusCommand} / {@link TakeFocusQuery} — webview asks whether it
+ *   may take keyboard focus; the host answers only for the active editor
  *
  * @see modeler.ts for the modeler-specific Query and Command implementations that
  * extend these base classes.
@@ -161,5 +163,23 @@ export class ShowInfoCommand extends Command {
     constructor(message: string) {
         super("ShowInfoCommand");
         this.message = message;
+    }
+}
+
+/**
+ * Webview → host, once the modeler is ready. A re-created VS Code webview never
+ * receives the focus VS Code meant for it, and only the host knows whether its
+ * editor is the active one.
+ */
+export class RequestFocusCommand extends Command {
+    constructor() {
+        super("RequestFocusCommand");
+    }
+}
+
+/** Host → webview reply to {@link RequestFocusCommand}: the editor is active. */
+export class TakeFocusQuery extends Query {
+    constructor() {
+        super("TakeFocusQuery");
     }
 }
