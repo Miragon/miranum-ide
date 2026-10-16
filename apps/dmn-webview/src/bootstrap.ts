@@ -18,6 +18,7 @@ import {
     type HostThemeAdapter,
     type HostThemeMode,
     initResizer,
+    installCanvasAutoFocus,
     installPanelShortcuts,
     LanguageQuery,
     LogErrorCommand,
@@ -25,9 +26,11 @@ import {
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
+    RequestFocusCommand,
     resolveHostThemeKind,
     SetPropertiesPanelStateCommand,
     SyncDocumentCommand,
+    takeFocus,
 } from "@miragon/bpmn-modeler-shared";
 import { asyncDebounce, NoModelerError, serializeAsync } from "@miragon/bpmn-modeler-types";
 import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
@@ -277,6 +280,9 @@ async function run(): Promise<void> {
         isEnabled: () => getModeler().isDrdViewActive(),
         escapeToCanvas: true,
     });
+    // Ungated, unlike the shortcuts: the handle's focusCanvas already ignores non-DRD views.
+    installCanvasAutoFocus({ focusCanvas });
+    host.postMessage(new RequestFocusCommand());
 
     stateManager.restorePanelUiState();
     stateManager.startPersisting();
@@ -385,6 +391,10 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
             }
             break;
         }
+        case queryOrCommand.type === "TakeFocusQuery": {
+            takeFocus(focusCanvas);
+            break;
+        }
         case ["FlushDocumentQuery", "ReleaseDocumentFlushQuery"].includes(queryOrCommand.type): {
             await respondToFlush(message.data as FlushDocumentQuery | ReleaseDocumentFlushQuery);
             break;
@@ -409,6 +419,10 @@ export function bootstrap(
     } else {
         window.addEventListener("load", () => void run());
     }
+}
+
+function focusCanvas(): void {
+    getModeler().focusCanvas();
 }
 
 function getModeler(): DmnModelerHandle {

@@ -20,6 +20,7 @@ import {
     Query,
     ShowInfoCommand,
     SyncDocumentCommand,
+    TakeFocusQuery,
     HostApi,
     HostApiImpl,
     MockHostApi,
@@ -162,6 +163,11 @@ class MockHost extends MockHostApi<StateType, MessageType> {
             }
             case message.type === "SetPropertiesPanelStateCommand": {
                 console.debug("[DEBUG] SetPropertiesPanelStateCommand", message);
+                break;
+            }
+            case message.type === "RequestFocusCommand": {
+                // The preview page is always the active editor.
+                dispatchEvent(new TakeFocusQuery());
                 break;
             }
             case message.type === "GetClipboardCommand": {

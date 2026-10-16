@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
         ),
         initResizer: vi.fn(() => panelHandle),
         installPanelShortcuts: vi.fn(),
+        installCanvasAutoFocus: vi.fn(),
         stateManagerCtor: vi.fn(),
         stateManager: {
             restorePanelVisibility: vi.fn(),
@@ -71,6 +72,7 @@ vi.mock("@miragon/bpmn-modeler-shared", async () => {
         ...actual,
         initResizer: mocks.initResizer,
         installPanelShortcuts: mocks.installPanelShortcuts,
+        installCanvasAutoFocus: mocks.installCanvasAutoFocus,
     };
 });
 
@@ -154,6 +156,14 @@ describe("DMN bootstrap", () => {
         expect(mocks.handle.focusCanvas).toHaveBeenCalledOnce();
         expect(mocks.handle.isCanvasFocused).toHaveBeenCalledOnce();
         expect(mocks.handle.isDrdViewActive).toHaveBeenCalledOnce();
+
+        expect(mocks.installCanvasAutoFocus).toHaveBeenCalledOnce();
+        mocks.installCanvasAutoFocus.mock.calls[0][0].focusCanvas();
+        expect(mocks.handle.focusCanvas).toHaveBeenCalledTimes(2);
+
+        expect(posted).toContainEqual(expect.objectContaining({ type: "RequestFocusCommand" }));
+        dispatch({ type: "TakeFocusQuery" });
+        await vi.waitFor(() => expect(mocks.handle.focusCanvas).toHaveBeenCalledTimes(3));
 
         options.onContentChanged?.();
         dispatch({ type: "DmnFileQuery", content: "<host-update />", documentRevision: 8 });
