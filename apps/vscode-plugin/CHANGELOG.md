@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.16.0](https://github.com/Miragon/bpmn-modeler/compare/vscode-v1.15.0...vscode-v1.16.0) (2026-10-16)
+
+
+### 🎉 New Features
+
+* **bpmn-webview:** search definitions of other models ([#1649](https://github.com/Miragon/bpmn-modeler/issues/1649)) ([1c48e83](https://github.com/Miragon/bpmn-modeler/commit/1c48e833c934a5523e81d01cba882317c3b8f140))
+
+
+### 🐞 Bug Fixes
+
+* **bpmn-modeler:** bump bpmn-js-bpmnlint to 0.25.0 for diagram-js theme tokens ([#1656](https://github.com/Miragon/bpmn-modeler/issues/1656)) [sync f93e3ba] ([f417014](https://github.com/Miragon/bpmn-modeler/commit/f4170147e554110ecbe35affa200685d5f897bf9))
+* **bpmn-modeler:** bump bpmnlint to 11.15.0 and drop the core rule patch ([#1640](https://github.com/Miragon/bpmn-modeler/issues/1640)) [sync 680fae4] ([18bc4f1](https://github.com/Miragon/bpmn-modeler/commit/18bc4f1134262ed097bfe6fcd9bc428ab70cde97))
+* **bpmn-webview:** focus the canvas when an editor tab becomes active ([#1659](https://github.com/Miragon/bpmn-modeler/issues/1659)) ([7aac2ff](https://github.com/Miragon/bpmn-modeler/commit/7aac2ff5c64425370f5169224720dc6122335f77))
+* **modeler-core:** shorten the host open path and per-edit host work ([#1645](https://github.com/Miragon/bpmn-modeler/issues/1645)) ([575fc55](https://github.com/Miragon/bpmn-modeler/commit/575fc551c337b09b28ad7c80626dec9e54c7479a))
+
+
+### 🔨 Refactoring
+
+* **bpmn-webview:** split the single webview bundle into lazy chunks ([#1638](https://github.com/Miragon/bpmn-modeler/issues/1638)) ([22f9707](https://github.com/Miragon/bpmn-modeler/commit/22f97073ee0b1685a725240e10b6380b7d52bee8))
+
+
+### 🛠️ Misc
+
+* **deps:** bump the bpmn-io group across 1 directory with 12 updates ([#1644](https://github.com/Miragon/bpmn-modeler/issues/1644)) ([586f66f](https://github.com/Miragon/bpmn-modeler/commit/586f66f3e202646d636fdc480df926bd4552dfe2))
+* **deps:** bump the npm-major group across 1 directory with 6 updates ([#1650](https://github.com/Miragon/bpmn-modeler/issues/1650)) ([be237db](https://github.com/Miragon/bpmn-modeler/commit/be237db00ec63fb25c9c717e669e23decead21fc))
+* **deps:** bump the npm-minor-patch group across 1 directory with 26 updates ([#1655](https://github.com/Miragon/bpmn-modeler/issues/1655)) ([d0069a9](https://github.com/Miragon/bpmn-modeler/commit/d0069a96f6913cab84abf372f4c03c1bad64e9ba))
+* **deps:** unblock dependabot major bumps and fix webview dev preview ([#1631](https://github.com/Miragon/bpmn-modeler/issues/1631)) ([c40e3d7](https://github.com/Miragon/bpmn-modeler/commit/c40e3d7b8848190da2cf207384d4d5d84389bc89))
+
 ## [1.15.0](https://github.com/Miragon/bpmn-modeler/compare/vscode-v1.14.2...vscode-v1.15.0) (2026-10-08)
 
 
