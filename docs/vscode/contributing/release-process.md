@@ -258,14 +258,18 @@ environment:
 | Host | Environment |
 |---|---|
 | VS Code | `vscode-marketplace` |
+| Open VSX | `open-vsx-marketplace` |
 | IntelliJ | `jetbrains-marketplace` |
 | Standalone | `standalone` |
-| npm package (`@miragon/bpmn-modeler`) | `npm-registry` |
-| DMN npm package (`@miragon/dmn-modeler`) | `npm-registry` (shared) |
+| npm package (`@miragon/bpmn-modeler`) | `npm-bpmn-modeler` |
+| DMN npm package (`@miragon/dmn-modeler`) | `npm-dmn-modeler` |
 
 The repo
 [Environments / Deployments page](https://github.com/Miragon/bpmn-modeler/deployments)
-then shows the last-published version per host.
+then shows the last-published version per host. The npm packages record into
+their own environments because they usually publish in the same release run;
+the `npm-registry` environment only gates the publish job for Trusted
+Publishing (see below).
 
 ## Artefact distribution
 

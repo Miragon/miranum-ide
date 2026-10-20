@@ -187,7 +187,10 @@ jobs:
         run: npm publish "$RUNNER_TEMP/${{ steps.meta.outputs.slug }}.tgz" --provenance --access public
 
       # Record a deployment so the repo Environments page shows the npm
-      # package's last-published version. The environment auto-creates on first use.
+      # package's last-published version. One environment per package, because
+      # both packages usually publish in the same release run and a shared one
+      # only shows the last. The environment auto-creates on first use; the
+      # job's npm-registry environment stays the Trusted Publishing gate.
       - name: Record deployment
         if: env.EFFECTIVE_DRY_RUN == 'false' && steps.published.outputs.already == 'false'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -199,7 +202,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: context.sha,
-              environment: "npm-registry",
+              environment: `npm-${workspace.split("/").pop()}`,
               description: `${workspace} v${version}`,
               required_contexts: [],
               auto_merge: false,
