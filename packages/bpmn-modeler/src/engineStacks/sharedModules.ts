@@ -7,7 +7,7 @@ import { CopyAsImageModule } from "bpmn-js-copy-as-image";
 import AlignToOriginModule from "@bpmn-io/align-to-origin";
 import GridModule from "diagram-js-grid";
 
-export const sharedLeadingModules: readonly ModuleDeclaration[] = [
+const sharedLeadingModules: readonly ModuleDeclaration[] = [
     MinimapModule,
     ExecutableFixModule,
     NativeCopyPasteModule,
@@ -17,7 +17,10 @@ export const sharedLeadingModules: readonly ModuleDeclaration[] = [
 ];
 
 // camunda-bpmn-js appended these after the engine modules; keep that order.
-export const sharedTrailingModules: readonly ModuleDeclaration[] = [
-    AlignToOriginModule,
-    GridModule,
-];
+const sharedTrailingModules: readonly ModuleDeclaration[] = [AlignToOriginModule, GridModule];
+
+export function composeUpstreamModules(
+    engineUpstreamModules: readonly ModuleDeclaration[],
+): readonly ModuleDeclaration[] {
+    return [...sharedLeadingModules, ...engineUpstreamModules, ...sharedTrailingModules];
+}

@@ -2,8 +2,8 @@
  * bpmn-js DI module: host-bridge override for element copy/paste in sandboxed
  * webviews.
  *
- * The default clipboard path is bpmn-js's own `NativeCopyPaste` — registered by
- * camunda-bpmn-js and emitting a wire-compatible payload; this module is only
+ * The default clipboard path is bpmn-js-native-copy-paste's `NativeCopyPaste`,
+ * which emits a wire-compatible payload; this module is only
  * registered when the host cannot reach the system clipboard from the webview
  * (e.g. a VS Code iframe lacking `clipboard-read`/`clipboard-write`). It
  * disables `NativeCopyPaste` and routes copy/paste through a {@link ClipboardBridge}

@@ -125,14 +125,24 @@ the library barrel's CSS side effect. `/mode` likewise has its own `mode.css`.
 
 The root modeler constructs `bpmn-js/lib/Modeler` itself; it does not use
 camunda-bpmn-js's C7/C8 Modeler classes. Each engine stack is data: upstream
-plugin modules in camunda-bpmn-js's registration order, the engine's moddle
+plugin modules in camunda-bpmn-js's registration order, with the shared leading
+and trailing modules spliced around them by one helper, the engine's moddle
 extension, and the properties-panel/popup-menu option defaults. Those classes
 added popup-menu providers across releases that the custom append menu then had
 to disable, and they declare bpmn-js and diagram-js as regular dependencies
 rather than peers. Owning the composition makes upstream features opt-in.
 Options and features we do not use stay unwired: `disableAdjustOrigin` /
-`disableGrid`, the upstream template chooser (ours replaces it), create-append
-groups, and C8 external resources (inert without a resources provider).
+`disableGrid`, the upstream template chooser (ours replaces it), the
+create/append group and tab providers, and C8 external resources (inert without
+a resources provider). The group and tab providers would regroup the flat
+`bpmn-create`/`bpmn-append` entries the custom append menu reads; the C8 stack
+registers only the replace tabs provider, so the append menu disables no
+upstream providers. A
+[browser spec](../../packages/bpmn-modeler/src/engineStacks/engineStacks.upstream.browser.spec.ts)
+pins each stack's composition and option defaults, net of these deliberate
+differences, against the installed camunda-bpmn-js C7/C8 Modeler classes, so a
+camunda-bpmn-js bump that adds or reorders modules fails instead of drifting
+silently; it stays until #1672 drops the dependency.
 Proposed (#1672): vendor the remaining camunda-bpmn-js features — element
 descriptions, C8 search keywords and C8 replace tabs, still deep-imported — and
 drop the dependency.

@@ -9,14 +9,16 @@ This skill covers how the BPMN webview (`apps/bpmn-webview/`) uses the bpmn-js l
 
 ## Modeler Initialization
 
-The modeler is encapsulated in `apps/bpmn-webview/src/app/modeler.ts` as a `BpmnModeler` class. It wraps the underlying `camunda-bpmn-js` modeler (which extends `bpmn-js`).
+The modeler is encapsulated in `packages/bpmn-modeler/src/modeler.ts` as a `BpmnModeler` class. It constructs `bpmn-js/lib/Modeler` itself from the selected engine stack.
 
 ### Engine Variants
 
 The modeler supports two Camunda engine variants, selected at initialization:
 
-- **Camunda 7** — imports `BpmnModeler7` from `camunda-bpmn-js/lib/camunda-platform/Modeler`. Additional modules: `CreateAppendElementTemplatesModule`, `TransactionBoundariesModule`.
-- **Camunda 8** — imports `BpmnModeler8` from `camunda-bpmn-js/lib/camunda-cloud/Modeler`. No extra modules beyond the common set.
+Each engine stack (`packages/bpmn-modeler/src/engineStacks/c7.ts`, `c8.ts`) is data: the upstream plugin modules in camunda-bpmn-js's former registration order (wrapped by `composeUpstreamModules` with the shared leading/trailing modules), the engine moddle extension, and the properties-panel / popup-menu option defaults.
+
+- **Camunda 7** — `camunda` moddle extension. Engine modules: `CreateAppendElementTemplatesModule`, `CreateAppendC7ElementTemplatesModule`, `TransactionBoundariesModule`.
+- **Camunda 8** — `zeebe` moddle extension, `popupMenu.defaultTab`. No engine modules beyond its upstream set.
 
 Both variants share `TokenSimulationModule` and `ElementTemplateChooserModule` as common modules.
 
@@ -71,18 +73,18 @@ bpmn-js events use a priority system. Higher priority listeners fire first and c
 
 - Default priority: `1000`
 - The element-clipboard interceptor in `BridgedClipboardModule` uses priority
-  **`2051`** — intentionally above bpmn-js's `NativeCopyPaste` (priority `2050`)
+  **`2051`** — intentionally above `NativeCopyPaste` (priority `2050`)
   to intercept `copyPaste.elementsCopied` / `copyPaste.pasteElements` before the
   default handler runs
 
 ## Copy-Paste Architecture (Three Layers)
 
 Copy-paste in this project operates at three distinct layers. The **default is
-the native browser clipboard** — camunda-bpmn-js always registers bpmn-js's
-`NativeCopyPaste`, so a plain browser (the demo, `serve`) needs nothing extra
-(#1374). The first two layers below are the **host-bridge override**: bpmn-js DI
-modules in the shared `libs/bpmn-clipboard` package
-(`@miragon/bpmn-modeler-clipboard`), built by its `createClipboardModules({
+the native browser clipboard** — the engine stacks and the designer register
+`bpmn-js-native-copy-paste`'s `NativeCopyPaste`, so a plain browser (the demo,
+`serve`) needs nothing extra (#1374). The first two layers below are the
+**host-bridge override**: bpmn-js DI modules in the shared `libs/bpmn-clipboard`
+package (`@miragon/bpmn-modeler-clipboard`), built by its `createClipboardModules({
 element, text? })` factory and registered only when the webview can't reach the
 system clipboard; the third is a webview-local polyfill. `apps/bpmn-webview/src/bootstrap.ts`
 selects between them (native for dev / `clipboard: "native"`, otherwise the
@@ -173,7 +175,7 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 
 ## Key Files
 
-- **Modeler wrapper**: `apps/bpmn-webview/src/app/modeler.ts`
+- **Modeler wrapper**: `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
 - **Webview entry** (installs the clipboard modules): `apps/bpmn-webview/src/main.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`

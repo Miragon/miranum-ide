@@ -69,10 +69,6 @@ declare module "camunda-bpmn-js-behaviors/lib/util/ElementUtil" {
     export const createElement;
 }
 
-declare module "@bpmn-io/element-template-chooser" {
-    export const ElementTemplateChooserModule;
-}
-
 declare module "bpmn-js-token-simulation" {
     export const TokenSimulationModule;
 }
@@ -145,25 +141,6 @@ declare module "camunda-bpmn-js-behaviors/lib/camunda-platform" {
 declare module "camunda-bpmn-js-behaviors/lib/camunda-cloud" {
     const CamundaCloudBehaviorsModule;
     export default CamundaCloudBehaviorsModule;
-}
-
-declare module "camunda-bpmn-js/lib/base/features/element-descriptions" {
-    const ElementDescriptionsModule;
-    export default ElementDescriptionsModule;
-}
-
-declare module "camunda-bpmn-js/lib/base/features/create-append-tabs" {
-    const CreateAppendTabsModule;
-    export default CreateAppendTabsModule;
-}
-
-declare module "camunda-bpmn-js/lib/camunda-cloud/features/popup-menu" {
-    const CamundaDetailsPopupMenuModule;
-    export default CamundaDetailsPopupMenuModule;
-}
-
-declare module "camunda-bpmn-js/lib/base/features/create-append-tabs/tabs" {
-    export const BPMN_TAB;
 }
 
 declare module "bpmn-js-copy-as-image" {

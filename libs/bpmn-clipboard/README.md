@@ -1,7 +1,7 @@
 # `@miragon/bpmn-modeler-clipboard`
 
 The **host-bridge override** for BPMN element and label-text copy/paste. By
-default the modeler uses bpmn-js's own native browser clipboard — this package
+default the modeler uses the native browser clipboard — this package
 is only registered when the modeler runs somewhere the system clipboard is out
 of reach from the diagram (a sandboxed webview iframe lacking
 `clipboard-read`/`clipboard-write`, e.g. VS Code / IntelliJ / Theia). It routes
@@ -11,10 +11,10 @@ copy/paste through a `ClipboardBridge` the host wires to its own clipboard.
 
 Clipboard is on by default, one override away.
 
-- **Native (default).** camunda-bpmn-js always registers bpmn-js's
-  `NativeCopyPaste` (both C7 and C8). Registering **nothing** from this package
-  leaves it in charge — zero extra code, full wire compatibility. This is what a
-  plain browser (the demo, `serve`) gets.
+- **Native (default).** The modeler registers `bpmn-js-native-copy-paste`'s
+  `NativeCopyPaste` on every editable surface (C7, C8 and Design). Registering
+  **nothing** from this package leaves it in charge — zero extra code, full wire
+  compatibility. This is what a plain browser (the demo, `serve`) gets.
 - **Bridged (override).** A host that can't reach the system clipboard from its
   webview calls `createClipboardModules({ element, text? })` and adds the result
   to `additionalModules`. This disables `NativeCopyPaste`

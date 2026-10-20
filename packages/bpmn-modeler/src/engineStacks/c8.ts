@@ -12,9 +12,9 @@ import {
 } from "bpmn-js-create-append-anything";
 import CamundaDetailsPopupMenuModule from "camunda-bpmn-js/lib/camunda-cloud/features/popup-menu";
 import ElementDescriptionsModule from "camunda-bpmn-js/lib/base/features/element-descriptions";
-import CreateAppendTabsModule from "camunda-bpmn-js/lib/base/features/create-append-tabs";
+import { ReplaceTabsProvider } from "camunda-bpmn-js/lib/base/features/create-append-tabs/CreateAppendTabsProvider";
 import { BPMN_TAB } from "camunda-bpmn-js/lib/base/features/create-append-tabs/tabs";
-import { sharedLeadingModules, sharedTrailingModules } from "./sharedModules";
+import { composeUpstreamModules } from "./sharedModules";
 import type { EngineStack } from "./engineStack";
 
 const FEEL_POPUP_LINKS = {
@@ -28,9 +28,14 @@ const FEEL_POPUP_LINKS = {
     },
 } as const;
 
+// The create/append tab providers would regroup the entries the custom append menu reads.
+const ReplaceTabsModule = {
+    __init__: ["replaceTabsProvider"],
+    replaceTabsProvider: ["type", ReplaceTabsProvider],
+};
+
 export const c8Stack: EngineStack = {
-    upstreamModules: [
-        ...sharedLeadingModules,
+    upstreamModules: composeUpstreamModules([
         ElementTemplateIconRendererModule,
         CamundaCloudBehaviorsModule,
         ZeebePropertiesProviderModule,
@@ -42,9 +47,8 @@ export const c8Stack: EngineStack = {
         ExampleDataPropertiesProviderModule,
         CamundaDetailsPopupMenuModule,
         ElementDescriptionsModule,
-        CreateAppendTabsModule,
-        ...sharedTrailingModules,
-    ],
+        ReplaceTabsModule,
+    ]),
     engineModules: [],
     moddleExtensions: { zeebe: zeebeModdle },
     propertiesPanelDefaults: {

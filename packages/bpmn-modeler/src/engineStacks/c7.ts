@@ -16,12 +16,11 @@ import ElementDescriptionsModule from "camunda-bpmn-js/lib/base/features/element
 import { CreateAppendC7ElementTemplatesModule } from "@miragon/create-append-c7";
 // The CJS entry wraps the ESM module in a default export, preventing DI registration under Vite.
 import TransactionBoundariesModule from "camunda-transaction-boundaries/lib/index.js";
-import { sharedLeadingModules, sharedTrailingModules } from "./sharedModules";
+import { composeUpstreamModules } from "./sharedModules";
 import type { EngineStack } from "./engineStack";
 
 export const c7Stack: EngineStack = {
-    upstreamModules: [
-        ...sharedLeadingModules,
+    upstreamModules: composeUpstreamModules([
         CamundaPlatformBehaviorsModule,
         CamundaPlatformPropertiesProviderModule,
         ElementTemplatesPropertiesProviderModule,
@@ -30,8 +29,7 @@ export const c7Stack: EngineStack = {
         ElementDescriptionsModule,
         CamundaVariableResolverModule,
         RemoveTemplatesModule,
-        ...sharedTrailingModules,
-    ],
+    ]),
     engineModules: [
         CreateAppendElementTemplatesModule,
         CreateAppendC7ElementTemplatesModule,
