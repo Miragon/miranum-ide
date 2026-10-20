@@ -10,6 +10,15 @@ import { BasicAuth, DeploymentConfig, NoAuth, OAuth2Auth } from "../../domain/de
 import { StartInstanceConfig } from "../../domain/startInstance";
 import { DeploymentFailedError, StartInstanceFailedError } from "../../../shared/domain/errors";
 
+function escapeHtml(value: string | undefined): string {
+    return (value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 /**
  * Integration tests for {@link Camunda8RestClient}.
  *
@@ -569,7 +578,7 @@ describe("Camunda8RestClient (integration)", () => {
             handler = (req, _body, res) => {
                 res.writeHead(502, { "Content-Type": "text/html" });
                 res.end(
-                    `<html><head><title>502 Bad Gateway</title></head><body>${req.url} ${req.headers.authorization}</body></html>`,
+                    `<html><head><title>502 Bad Gateway</title></head><body>${escapeHtml(req.url)} ${escapeHtml(req.headers.authorization)}</body></html>`,
                 );
             };
             const config = new DeploymentConfig(
