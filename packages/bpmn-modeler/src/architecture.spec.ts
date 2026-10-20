@@ -150,6 +150,29 @@ describe("bpmn-modeler import direction", () => {
         ).toEqual([]);
     });
 
+    it("stylesheets import plugin CSS from its own package, never camunda-bpmn-js' copies", () => {
+        // camunda-bpmn-js/dist/assets bundles diagram-js/properties-panel CSS frozen
+        // at its own build, which drifts from the JS versions we pin.
+        const offenders: string[] = [];
+        const walk = (absDir: string): void => {
+            for (const entry of readdirSync(absDir)) {
+                const abs = join(absDir, entry);
+                if (statSync(abs).isDirectory()) {
+                    walk(abs);
+                    continue;
+                }
+                if (!entry.endsWith(".css")) continue;
+                postcss.parse(readFileSync(abs, "utf8")).walkAtRules("import", (rule) => {
+                    if (rule.params.includes("camunda-bpmn-js/dist/")) {
+                        offenders.push(`${abs.slice(PKG_SRC.length + 1)}: @import ${rule.params}`);
+                    }
+                });
+            }
+        };
+        walk(join(PKG_SRC, "styles"));
+        expect(offenders, offenders.join("\n")).toEqual([]);
+    });
+
     it("only src/bpmnlint/ value-imports the lint stack (#1407)", () => {
         // The lint stack is injection-only: a host imports `@miragon/bpmn-modeler/lint`
         // (which resolves to `src/bpmnlint/index.ts`) and hands the module in. No

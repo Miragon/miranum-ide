@@ -1,7 +1,7 @@
 # BPMN modeler
 
 - Status: accepted
-- Last reviewed: 2026-10-08
+- Last reviewed: 2026-10-20
 
 ## Context
 
@@ -216,7 +216,10 @@ A host root theme must not be allowed to override differently themed instances.
 
 Author dark overrides once, scoped under the attribute. The main stylesheet
 combines them with the upstream light base; derive unscoped legacy light/dark
-sheets by stripping that scope. Mirroring an existing `#theme-link` remains a
+sheets by stripping that scope. The light base imports each plugin's own
+stylesheet at the pinned version, never camunda-bpmn-js's prebuilt
+`dist/assets` copies: those are frozen at Camunda's build and drift from the JS
+we run (#1670). An architecture test rejects such imports. Mirroring an existing `#theme-link` remains a
 supported silent fallback. Removing it would break existing consumers; authoring
 two independent theme sources would invite drift. The attribute/custom-property
 approach also avoids depending on newer CSS color features across IDE browsers.
