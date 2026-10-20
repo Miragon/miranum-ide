@@ -792,7 +792,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bpmn-io/properties-panel@npm:3.56.1, @bpmn-io/properties-panel@npm:^3.55.0":
+"@bpmn-io/properties-panel@npm:3.57.0":
+  version: 3.57.0
+  resolution: "@bpmn-io/properties-panel@npm:3.57.0"
+  dependencies:
+    "@bpmn-io/feel-editor": "npm:^2.7.1"
+    "@bpmn-io/feelers-editor": "npm:^1.1.1"
+    "@codemirror/autocomplete": "npm:^6.18.6"
+    "@codemirror/commands": "npm:^6.10.3"
+    "@codemirror/lang-json": "npm:^6.0.2"
+    "@codemirror/language": "npm:^6.11.0"
+    "@codemirror/lint": "npm:^6.9.5"
+    "@codemirror/state": "npm:^6.6.0"
+    "@codemirror/view": "npm:^6.28.1"
+    classnames: "npm:^2.5.1"
+    focus-trap: "npm:^8.0.0"
+    min-dash: "npm:^5.1.0"
+    min-dom: "npm:^5.3.0"
+  checksum: 10c0/c7fdf81ebee4f0869bdf28290455762688cf52aae75bc351834cb35332cb27bf8bea0595f816c9d0ad1057f50ff661bf58fea05a06676d0a3063896a9b5eb4fd
+  languageName: node
+  linkType: hard
+
+"@bpmn-io/properties-panel@npm:^3.55.0":
   version: 3.56.1
   resolution: "@bpmn-io/properties-panel@npm:3.56.1"
   dependencies:
@@ -2443,7 +2464,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-definition-search@workspace:libs/definition-search"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@miragon/bpmn-modeler-types": "workspace:*"
     "@typescript/native": "npm:typescript@7.0.2"
     bpmn-js: "npm:18.31.0"
@@ -2453,7 +2474,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.4"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.56.1
+    "@bpmn-io/properties-panel": 3.57.0
     bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
@@ -2462,7 +2483,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-demo-webapp@workspace:apps/demo-webapp"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@miragon/bpmn-modeler": "workspace:*"
     "@miragon/bpmn-modeler-shared": "workspace:*"
     "@miragon/dmn-modeler": "workspace:*"
@@ -2570,7 +2591,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-inline-scripting@workspace:libs/inline-scripting"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@miragon/bpmn-modeler-types": "workspace:*"
     "@typescript/native": "npm:typescript@7.0.2"
     jsdom: "npm:30.1.2"
@@ -2578,7 +2599,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.4"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.56.1
+    "@bpmn-io/properties-panel": 3.57.0
     bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
@@ -2608,7 +2629,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-properties-panel@workspace:libs/properties-panel"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@typescript/native": "npm:typescript@7.0.2"
     bpmn-js: "npm:18.31.0"
     diagram-js: "npm:15.28.1"
@@ -2620,7 +2641,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.4"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.56.1
+    "@bpmn-io/properties-panel": 3.57.0
     bpmn-js: 18.31.0
     diagram-js: 15.28.1
     ids: 3.0.2
@@ -2734,7 +2755,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-webview@workspace:apps/bpmn-webview"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@bpmn-io/svg-to-image": "npm:1.0.1"
     "@miragon/bpmn-modeler": "workspace:*"
     "@miragon/bpmn-modeler-i18n": "npm:0.2.0"
@@ -2764,7 +2785,7 @@ __metadata:
   resolution: "@miragon/bpmn-modeler@workspace:packages/bpmn-modeler"
   dependencies:
     "@bpmn-io/cm-theme": "npm:0.2.2"
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@lezer/lr": "npm:1.4.11"
     "@microsoft/api-extractor": "npm:7.59.4"
     "@miragon/bpmn-model-navigation": "workspace:*"
@@ -2878,7 +2899,7 @@ __metadata:
   resolution: "@miragon/dmn-modeler@workspace:packages/dmn-modeler"
   dependencies:
     "@bpmn-io/cm-theme": "npm:0.2.2"
-    "@bpmn-io/properties-panel": "npm:3.56.1"
+    "@bpmn-io/properties-panel": "npm:3.57.0"
     "@emaarco/dmn-js-simulation": "npm:0.3.2"
     "@microsoft/api-extractor": "npm:7.59.4"
     "@miragon/bpmn-modeler-i18n": "npm:0.2.0"
