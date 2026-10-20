@@ -36,15 +36,17 @@ new-diagram round trips, readonly/designer contracts and bridged clipboard.
 The mode-session recreate transaction itself remains tested with jsdom doubles;
 real-viewer restore tests cover the post-import viewport behavior it relies on.
 
-Browser coverage collection is off to avoid combining a separate browser V8
-coverage stream. Unit coverage remains enabled. The browser project incurs a
-Chromium installation and startup cost; a separate Playwright test runner would
-duplicate the Vite module graph, aliases and test conventions. Manual demo
+The package `vitest.config.ts` runs both projects in one invocation so their V8
+coverage merges into a single report; measured separately, code that only the
+browser specs exercise (modeler composition, engine stacks, linting) reads as
+uncovered. The browser project incurs a Chromium installation and startup cost;
+a separate Playwright test runner would duplicate the Vite module graph, aliases
+and test conventions. Manual demo
 testing remains useful but does not replace automated timing-sensitive cases.
 
 The vendored properties panel requires production Preact JSX transforms in both
 test pipelines. Check [browser configuration](../../packages/bpmn-modeler/vitest.browser.config.ts),
-[unit configuration](../../packages/bpmn-modeler/vitest.config.ts),
+[unit configuration](../../packages/bpmn-modeler/vitest.unit.config.ts),
 [shared aliases](../../packages/bpmn-modeler/vitest.aliases.ts) and
 [lifecycle contracts](../../packages/bpmn-modeler/src/lifecycleContract.browser.spec.ts)
 when upstream bundler/runtime behavior changes.
@@ -56,8 +58,7 @@ Each Vitest workspace owns its coverage target as `coverage.thresholds` in its
 fails below it, so the required `ci` check enforces the target without a
 separate coverage job, and the PR coverage comment reads the same numbers.
 Measure all `src/**/*.{ts,tsx}` files rather than only those a test imports,
-otherwise a new untested module does not lower the percentage. The BPMN package
-target is low because browser coverage is off (above).
+otherwise a new untested module does not lower the percentage.
 
 CI posts the per-module coverage comment and uploads to Codecov only when a PR
 changes that module's code files, matched by extension in the

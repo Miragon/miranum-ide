@@ -81,9 +81,9 @@
         "check:design-pure": "node scripts/check-design-pure-entry.mjs",
         "check:mode-pure": "node scripts/check-mode-pure-entry.mjs",
         "check:dep-alignment": "yarn constraints",
-        "test": "npm-run-all -s test:unit test:browser",
-        "test:unit": "vitest run --coverage",
-        "test:browser": "vitest run -c vitest.browser.config.ts"
+        "test": "vitest run --coverage",
+        "test:unit": "vitest run --project bpmn-modeler",
+        "test:browser": "vitest run --project bpmn-modeler-browser"
     },
     "dependencies": {
         "@bpmn-io/align-to-origin": "0.7.0",
