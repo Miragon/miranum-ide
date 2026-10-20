@@ -14,7 +14,11 @@ function services() {
     const newElement = { id: "created" };
     return {
         newElement,
-        elementTemplates: { createElement: vi.fn((_t: ElementTemplate) => newElement) },
+        elementTemplates: {
+            createElement: vi.fn(
+                (_template: ElementTemplate, _options?: { presetId?: string }) => newElement,
+            ),
+        },
         autoPlace: { append: vi.fn() },
         create: { start: vi.fn() },
         mouse: { getLastMoveEvent: vi.fn(() => new Event("mousemove")) },
@@ -40,12 +44,26 @@ describe("executeTemplateTypeAction", () => {
             template,
             "bpmn:SendTask",
             new Event("click"),
+            undefined,
         );
         const passed = s.elementTemplates.createElement.mock.calls[0]![0];
         expect(passed.elementType).toEqual({ value: "bpmn:SendTask" });
         expect(passed.id).toBe("t1");
         // The original template is left untouched.
         expect(template.elementType).toBeUndefined();
+    });
+
+    it("forwards the preset of a stepped template", () => {
+        const s = services();
+        executeTemplateTypeAction(
+            s,
+            { providerId: "bpmn-append", target: {} },
+            template,
+            "bpmn:SendTask",
+            new Event("click"),
+            "basic",
+        );
+        expect(s.elementTemplates.createElement.mock.calls[0]![1]).toEqual({ presetId: "basic" });
     });
 
     it("auto-places on the append path when autoPlace is available", () => {
@@ -57,6 +75,7 @@ describe("executeTemplateTypeAction", () => {
             template,
             "bpmn:SendTask",
             new Event("click"),
+            undefined,
         );
         expect(s.autoPlace.append).toHaveBeenCalledWith(target, s.newElement);
         expect(s.create.start).not.toHaveBeenCalled();
@@ -72,6 +91,7 @@ describe("executeTemplateTypeAction", () => {
             template,
             "bpmn:BoundaryEvent",
             event,
+            undefined,
         );
         expect(s.autoPlace.append).not.toHaveBeenCalled();
         expect(s.create.start).toHaveBeenCalledWith(event, s.newElement, { source: target });
@@ -86,6 +106,7 @@ describe("executeTemplateTypeAction", () => {
             template,
             "bpmn:SendTask",
             event,
+            undefined,
         );
         expect(s.create.start).toHaveBeenCalledWith(event, s.newElement, undefined);
     });
@@ -100,6 +121,7 @@ describe("executeTemplateTypeAction", () => {
             template,
             "bpmn:SendTask",
             new FakeKeyboardEvent() as unknown as Event,
+            undefined,
         );
         expect(s.mouse.getLastMoveEvent).toHaveBeenCalled();
         expect(s.create.start).toHaveBeenCalledWith(moveEvent, s.newElement, undefined);

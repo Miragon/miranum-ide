@@ -2,7 +2,7 @@
  * Type definitions for popup menu entries and utilities to classify them
  * into element template entries vs. standard BPMN element entries.
  */
-import type { ElementTemplate } from "@miragon/bpmn-modeler-element-template-chooser";
+import type { ElementTemplate, TemplateStep } from "@miragon/bpmn-modeler-element-template-chooser";
 
 export type Translate = (template: string, replacements?: Record<string, string>) => string;
 
@@ -34,9 +34,9 @@ export interface PopupMenuEntry {
     documentationRef?: string;
     disabled?: boolean;
     /**
-     * Present on drill-in category entries produced by camunda-bpmn-js ≥5.33
-     * grouping providers. Such entries carry no `action`; their leaf children
-     * live here (and typically lost their own `group` marker).
+     * Replaces `action` on element templates and template steps that declare
+     * `steps` (bpmn-js-create-append-anything), and on third-party drill-in
+     * categories. Children carry no `group` and may nest further.
      */
     entries?: Record<string, PopupMenuEntry>;
 }
@@ -49,6 +49,7 @@ export interface EnrichedTemplateEntry {
     id: string;
     entry: PopupMenuEntry;
     template: ElementTemplate | undefined;
+    presetId?: string;
 }
 
 export interface BpmnElementEntry {
@@ -75,7 +76,11 @@ export interface ClassifiedEntries {
  * or by having an `imageUrl` (which standard BPMN entries never have).
  */
 function isTemplateEntry(key: string, entry: PopupMenuEntry): boolean {
-    return key.includes("template-") || !!entry.imageUrl;
+    return isTemplateKey(key) || !!entry.imageUrl;
+}
+
+function isTemplateKey(key: string): boolean {
+    return key.includes("template-");
 }
 
 /**
@@ -87,6 +92,33 @@ function isTemplateEntry(key: string, entry: PopupMenuEntry): boolean {
 function extractTemplateId(key: string): string | undefined {
     const match = key.match(/template-(.+)$/);
     return match?.[1];
+}
+
+// Step keys (`step-0`, …) repeat across templates, so ids carry the parent path.
+// Steps match `node.steps` by position because upstream builds them from it in order.
+function flattenTemplateEntry(
+    id: string,
+    entry: PopupMenuEntry,
+    template: ElementTemplate | undefined,
+    node: { presetId?: string; steps?: TemplateStep[] } | undefined = template,
+): EnrichedTemplateEntry[] {
+    if (!entry.entries) {
+        return [{ id, entry, template, presetId: node?.presetId }];
+    }
+    return Object.entries(entry.entries).flatMap(([stepKey, step], index) =>
+        flattenTemplateEntry(
+            `${id}/${stepKey}`,
+            {
+                ...step,
+                label: `${entry.label} › ${step.label}`,
+                description: step.description ?? entry.description,
+                documentationRef: step.documentationRef ?? entry.documentationRef,
+                search: [...(entry.search ?? []), ...(step.search ?? [])],
+            },
+            template,
+            node?.steps?.[index],
+        ),
+    );
 }
 
 /**
@@ -108,15 +140,13 @@ export function classifyEntries(
         templateIndex.set(t.id, t);
     }
 
-    // Classifies a single entry. `inheritedGroup` is the group synthesized from
-    // an enclosing camunda-5.33 drill-in category, applied to children that lost
-    // their own `group` marker when the upstream provider nested them.
+    // Children of a drill-in category carry no `group`, so they fall under one named after it.
     const classify = (
         key: string,
         entry: PopupMenuEntry,
         inheritedGroup?: { id: string; name: string },
     ): void => {
-        if (entry.entries) {
+        if (entry.entries && !isTemplateKey(key)) {
             const categoryGroup = { id: key, name: entry.label };
             for (const [childKey, child] of Object.entries(entry.entries)) {
                 classify(childKey, child, categoryGroup);
@@ -126,16 +156,12 @@ export function classifyEntries(
 
         if (isTemplateEntry(key, entry)) {
             const templateId = extractTemplateId(key);
-            templates.push({
-                id: key,
-                entry,
-                template: templateId ? templateIndex.get(templateId) : undefined,
-            });
+            const template = templateId ? templateIndex.get(templateId) : undefined;
+            templates.push(...flattenTemplateEntry(key, entry, template));
             return;
         }
 
-        // A non-template entry with neither an action nor children is a tab
-        // header or other non-selectable artifact — skip it.
+        // Only third-party providers emit such entries; they cannot be selected.
         if (!entry.action) {
             return;
         }

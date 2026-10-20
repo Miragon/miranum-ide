@@ -45,7 +45,12 @@ interface AppendMenuOverlayProps {
     position: { x: number; y: number };
     canvasBounds: { right: number; bottom: number };
     onSelect: (action: PopupMenuEntryAction | undefined, event: Event) => void;
-    onTemplateTypeSelect: (template: ElementTemplate, bpmnType: string, event: Event) => void;
+    onTemplateTypeSelect: (
+        template: ElementTemplate,
+        bpmnType: string,
+        event: Event,
+        presetId: string | undefined,
+    ) => void;
     onCancel: () => void;
 }
 
@@ -263,7 +268,12 @@ export function AppendMenuOverlay({
                     selectedTemplate.template.appliesTo,
                 );
                 if (bpmnType) {
-                    onTemplateTypeSelect(selectedTemplate.template, bpmnType, event);
+                    onTemplateTypeSelect(
+                        selectedTemplate.template,
+                        bpmnType,
+                        event,
+                        selectedTemplate.presetId,
+                    );
                     return;
                 }
                 // Non-matching entries are hidden, so this shouldn't happen;
