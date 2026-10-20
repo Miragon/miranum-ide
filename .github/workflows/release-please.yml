@@ -4,8 +4,9 @@ name: Release Please
 # @miragon/bpmn-modeler npm package — the root component, so it watches the
 # package plus its inlined libs), "apps/vscode-plugin" (vscode),
 # "apps/intellij-plugin" (intellij) and "packages/dmn-modeler" (the publishable
-# @miragon/dmn-modeler npm package), each with its own Release PR, tag and
-# publish jobs. Root outputs are unprefixed; sub-packages are prefixed by path.
+# @miragon/dmn-modeler npm package). They share one combined Release PR; each
+# line keeps its own tag, changelog and publish jobs, which have no order among
+# them. Root outputs are unprefixed; sub-packages are prefixed by path.
 
 on:
   push:

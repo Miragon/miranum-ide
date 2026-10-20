@@ -26,13 +26,20 @@ so the root `package.json` version tracks the npm package, not the extension.
 The flow has two phases, both automated:
 
 1. **Prepare** — [release-please](https://github.com/googleapis/release-please)
-   watches `main` and maintains **one Release PR per line**
-   (`separate-pull-requests: true`). Each PR bumps its line's version files,
-   updates that line's `CHANGELOG.md`, and — when merged — cuts that line's tag
-   + GitHub Release.
-2. **Publish** — merging a Release PR triggers `release-please.yml`, which fans
-   out **only to that line's** publish jobs. Each `publish-*` workflow is also
-   runnable on its own via `workflow_dispatch` for reruns.
+   watches `main` and maintains **one combined Release PR**
+   (`separate-pull-requests: false`) covering every line with releasable
+   changes. For each included line it bumps the version files and updates that
+   line's `CHANGELOG.md`; when merged it cuts each included line's tag + GitHub
+   Release. A line without releasable changes is simply left out.
+2. **Publish** — merging the Release PR triggers `release-please.yml`, which
+   waits for one approval and then fans out to the publish jobs of every
+   released line. The lines have **no release order**: each builds from source
+   at its own tag. Each `publish-*` workflow is also runnable on its own via
+   `workflow_dispatch` for reruns.
+
+A single line cannot be held back: merging the Release PR ships every line it
+contains (see
+[Release and publishing: release pull request](https://github.com/Miragon/bpmn-modeler/blob/main/docs/adr/release-and-publishing.md#release-pull-request)).
 
 ### How commits are routed
 
@@ -132,11 +139,8 @@ decide who bumps and how:
 flowchart LR
     commits([Conventional commits on main])
     sync[sync-release-markers.yml<br/>marks each host on bundled-source change]
-    rp[release-please.yml<br/>one Release PR per line]
-    pr_v{{vscode Release PR}}
-    pr_i{{intellij Release PR}}
-    pr_n{{npm Release PR}}
-    pr_d{{dmn-modeler Release PR}}
+    rp[release-please.yml<br/>one combined Release PR]
+    pr{{Release PR<br/>every line with releasable changes}}
     tag_v[(vscode-v&lt;version&gt; tag<br/>+ Release)]
     tag_i[(intellij-v&lt;version&gt; tag<br/>+ Release)]
     tag_n[(bpmn-modeler-v&lt;version&gt; tag<br/>+ Release)]
@@ -144,10 +148,11 @@ flowchart LR
 
     commits --> rp
     commits --> sync --> commits
-    rp --> pr_v -->|merge| tag_v
-    rp --> pr_i -->|merge| tag_i
-    rp --> pr_n -->|merge| tag_n
-    rp --> pr_d -->|merge| tag_d
+    rp --> pr
+    pr -->|merge| tag_v
+    pr -->|merge| tag_i
+    pr -->|merge| tag_n
+    pr -->|merge| tag_d
 
     tag_v --> p_vscode[publish-vscode-modeler.yml]
     tag_v --> p_ovsx[publish-open-vsx-modeler.yml]
@@ -168,7 +173,8 @@ flowchart LR
 
 release-please is driven by two checked-in files:
 
-- **`release-please-config.json`** — four packages, `separate-pull-requests: true`:
+- **`release-please-config.json`** — four packages, `separate-pull-requests: false`
+  (one combined Release PR):
   - `"."` — `release-type: node`, `component: bpmn-modeler`,
     `include-component-in-tag: true` → tag `bpmn-modeler-v<version>`. The root
     catch-all: `exclude-paths` removes `apps`, `docs`, `.github` and the
@@ -204,15 +210,15 @@ release-please is driven by two checked-in files:
 1. Merge your feature/fix PRs into `main` with Conventional-Commit messages.
    The changed file paths — not the commit scope — decide which line(s) a PR
    lands on (see "How commits are routed" above).
-2. release-please opens/updates a **Release PR** per affected line
-   (`chore(main): release <component> <version>`). Review the version + changelog.
-3. **Merge the Release PR.** It pushes the version bumps, tags the line
-   (`vscode-v<version>` or `intellij-v<version>`), and creates the GitHub
-   Release — which triggers that line's publish jobs automatically.
+2. release-please opens/updates **one Release PR** (`chore: release main`)
+   with a section per affected line. Review the versions + changelogs.
+3. **Merge the Release PR.** It pushes the version bumps, tags every included
+   line (e.g. `vscode-v<version>`, `intellij-v<version>`), and creates their
+   GitHub Releases — which triggers their publish jobs after one approval.
 
 ### 2. Publishing (automatic, per line)
 
-Merging a Release PR fans out via `release-please.yml`:
+Merging the Release PR fans out via `release-please.yml` to every released line:
 
 | Line | Auto-publishes | Notes |
 |---|---|---|
