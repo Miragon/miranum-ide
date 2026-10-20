@@ -1,7 +1,7 @@
 # Engineering practices
 
 - Status: accepted
-- Last reviewed: 2026-09-29
+- Last reviewed: 2026-10-20
 
 ## Context
 
@@ -13,6 +13,7 @@ need compatibility proof for the paths the build and plugin installer exercise.
 ## Contents
 
 - [Test environments](#test-environments)
+- [Coverage gates](#coverage-gates)
 - [Private upstream APIs](#private-upstream-apis)
 - [Dependency compatibility and security](#dependency-compatibility-and-security)
 - [Consequences](#consequences)
@@ -47,6 +48,23 @@ test pipelines. Check [browser configuration](../../packages/bpmn-modeler/vitest
 [shared aliases](../../packages/bpmn-modeler/vitest.aliases.ts) and
 [lifecycle contracts](../../packages/bpmn-modeler/src/lifecycleContract.browser.spec.ts)
 when upstream bundler/runtime behavior changes.
+
+### Coverage gates
+
+Each Vitest workspace owns its coverage target as `coverage.thresholds` in its
+`vitest.config.ts`, set a few points below the measured baseline. The test job
+fails below it, so the required `ci` check enforces the target without a
+separate coverage job, and the PR coverage comment reads the same numbers.
+Measure all `src/**/*.{ts,tsx}` files rather than only those a test imports,
+otherwise a new untested module does not lower the percentage. The BPMN package
+target is low because browser coverage is off (above).
+
+CI posts the per-module coverage comment and uploads to Codecov only when a PR
+changes that module's code files, matched by extension in the
+[build workflow](../../.github/workflows/build.yml)'s `*-src` filters. Listing
+excluded files instead let release-please changelog edits trigger reports.
+Codecov statuses stay advisory: path-filtered jobs skip uploads, so a required
+Codecov check would block unrelated PRs.
 
 ### Private upstream APIs
 
@@ -164,6 +182,7 @@ maintenance problem unresolved.
 
 ## Consequences
 
+Coverage targets are floors that only rise when someone raises them.
 Tests run in the environment capable of exposing the failure: browser layout in
 Chromium, pure logic in unit tests, private shapes against installed dependencies,
 and archive compatibility through real extraction. This adds browser/runtime

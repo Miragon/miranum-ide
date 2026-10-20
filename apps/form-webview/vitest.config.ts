@@ -20,7 +20,13 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reportsDirectory: "../../coverage/apps/form-webview",
-            reporter: ["text", "html", "lcov", "clover", "json"],
+            reporter: ["text", "html", "lcov", "clover", "json", "json-summary"],
+            // Without an explicit include only files a test imports are measured,
+            // so a new untested module would not lower the percentage.
+            include: ["src/**/*.{ts,tsx}"],
+            exclude: ["src/**/*.d.ts", "src/**/__fixtures__/**"],
+            // ~3 pts below the measured baseline so minor churn does not break CI.
+            thresholds: { statements: 80, branches: 67, functions: 72, lines: 82 },
         },
     },
 });
