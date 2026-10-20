@@ -1,10 +1,7 @@
 import { posix } from "path";
 
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
-import {
-    EngineInspectionFailedError,
-    UnresolvedEnvVariableError,
-} from "../../shared/domain/errors";
+import { EngineInspectionFailedError, EnvReferenceError } from "../../shared/domain/errors";
 import { DocumentPort, NotifierPort } from "../../shared/domain/hostPorts";
 import { EditorSessionStore } from "../../shared/infrastructure/EditorSessionStore";
 import { DeploymentTargetIdentity } from "../domain/deploymentLedger";
@@ -13,7 +10,6 @@ import { EngineInspectionPort } from "../domain/ports";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { DeploymentTargetService } from "./DeploymentTargetService";
 import { EnvValueResolver } from "./EnvValueResolver";
-import { expandEnvRefs } from "../domain/envRef";
 
 /**
  * On-demand reconciliation of the local deployment ledger against a Camunda 7
@@ -70,10 +66,14 @@ export class DeploymentVerificationService {
 
         try {
             const credentials = await this.deploymentTargetService.getCredentials(target, dir);
-            const lookup = await this.envResolver.createLookup(dir);
+            const lookup = await this.envResolver.createLookup(
+                "targetsFile",
+                dir,
+                target.connectionEnvRefs(),
+                credentials,
+            );
             const auth = credentials.expandEnvRefs(lookup);
-            const endpoint = expandEnvRefs(target.endpoint, lookup, "endpoint");
-            const tenantId = expandEnvRefs(target.tenantId, lookup, "tenantId");
+            const { endpoint, tenantId } = target.expandConnection(lookup);
             const snapshot = await this.notifier.withProgress(
                 `Verifying on "${target.name}"…`,
                 () =>
@@ -127,7 +127,7 @@ export class DeploymentVerificationService {
                 );
                 return;
             }
-            if (error instanceof UnresolvedEnvVariableError) {
+            if (error instanceof EnvReferenceError) {
                 this.notifier.showError(error.message);
                 return;
             }

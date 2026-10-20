@@ -4,6 +4,7 @@ const findFilesMock = vi.fn();
 const createDirectoryMock = vi.fn();
 const writeFileMock = vi.fn();
 const readFileMock = vi.fn();
+const statMock = vi.fn();
 const deleteMock = vi.fn();
 const createFileSystemWatcherMock = vi.fn();
 const readDirectoryMock = vi.fn();
@@ -14,6 +15,7 @@ vi.mock("vscode", () => ({
         fs: {
             readDirectory: (...args: unknown[]) => readDirectoryMock(...args),
             readFile: (...args: unknown[]) => readFileMock(...args),
+            stat: (...args: unknown[]) => statMock(...args),
             writeFile: (...args: unknown[]) => writeFileMock(...args),
             createDirectory: (...args: unknown[]) => createDirectoryMock(...args),
             delete: (...args: unknown[]) => deleteMock(...args),
@@ -50,7 +52,7 @@ vi.mock("vscode", () => ({
     FileType: { File: 1, Directory: 2, SymbolicLink: 64 },
 }));
 
-import { FileSystemError, workspace } from "vscode";
+import { FileSystemError, FileType, workspace } from "vscode";
 
 import { DirectoryNotFound, FileNotFound } from "@miragon/bpmn-modeler-core";
 import { VsCodeWorkspace } from "./VsCodeWorkspace";
@@ -68,6 +70,7 @@ beforeEach(() => {
     writeFileMock.mockReset();
     writeFileMock.mockResolvedValue(undefined);
     readFileMock.mockReset();
+    statMock.mockReset();
     deleteMock.mockReset();
     deleteMock.mockResolvedValue(undefined);
     createFileSystemWatcherMock.mockReset();
@@ -339,6 +342,37 @@ describe("VsCodeWorkspace.readFile", () => {
 
         await expect(sut.readFile("/work/x.txt")).rejects.not.toBeInstanceOf(FileNotFound);
         await expect(sut.readFile("/work/x.txt")).rejects.toThrow(/boom/);
+    });
+});
+
+describe("VsCodeWorkspace.isSymbolicLink", () => {
+    it("is true when the stat type carries the SymbolicLink bit", async () => {
+        statMock.mockResolvedValueOnce({ type: FileType.File | FileType.SymbolicLink });
+        const sut = new VsCodeWorkspace();
+
+        await expect(sut.isSymbolicLink("/work/.env")).resolves.toBe(true);
+        expect(statMock).toHaveBeenCalledWith(expect.objectContaining({ path: "/work/.env" }));
+    });
+
+    it("is false for a plain file", async () => {
+        statMock.mockResolvedValueOnce({ type: FileType.File });
+        const sut = new VsCodeWorkspace();
+
+        await expect(sut.isSymbolicLink("/work/.env")).resolves.toBe(false);
+    });
+
+    it("is false when the path does not exist", async () => {
+        statMock.mockRejectedValueOnce(new FileSystemError("FileNotFound"));
+        const sut = new VsCodeWorkspace();
+
+        await expect(sut.isSymbolicLink("/work/.env")).resolves.toBe(false);
+    });
+
+    it("rethrows a non-FileNotFound filesystem error", async () => {
+        statMock.mockRejectedValueOnce(new FileSystemError("NoPermissions"));
+        const sut = new VsCodeWorkspace();
+
+        await expect(sut.isSymbolicLink("/work/.env")).rejects.toThrow(/NoPermissions/);
     });
 });
 

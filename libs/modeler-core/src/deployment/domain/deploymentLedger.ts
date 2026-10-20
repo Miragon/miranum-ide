@@ -1,5 +1,12 @@
 import { DeploymentTarget } from "./deploymentTarget";
-import { EnvLookup, expandEnvRefsLeniently } from "./envRef";
+import {
+    containsEnvRef,
+    EnvLookup,
+    EnvReferencing,
+    envRefsIn,
+    expandEnvRefsLeniently,
+} from "./envRef";
+import { hostOf } from "./urlTemplate";
 
 /**
  * Freshness of the active editor content relative to what was last deployed to
@@ -65,16 +72,23 @@ export class DeploymentTargetIdentity {
      * identity — keying on the literal `${env:URL}` would report a false green.
      */
     static fromTarget(target: DeploymentTarget, lookup: EnvLookup): DeploymentTargetIdentity {
-        const endpoint = expandEnvRefsLeniently(target.endpoint, lookup);
         return new DeploymentTargetIdentity(
-            `target:${target.name.trim()}@${endpointHost(endpoint)}`,
+            `target:${target.name.trim()}@${hostKey(target.endpoint, lookup)}`,
         );
     }
 
+    /** The fields {@link fromTarget} keys on, so status refreshes skip `.env` otherwise. */
+    static envRefsOfTarget(target: DeploymentTarget): EnvReferencing {
+        return envRefsIn(target.endpoint);
+    }
+
+    static envRefsOfAdHoc(endpoint: string, tenantId: string): EnvReferencing {
+        return envRefsIn(endpoint, tenantId);
+    }
+
     static adHoc(endpoint: string, tenantId: string, lookup: EnvLookup): DeploymentTargetIdentity {
-        const host = endpointHost(expandEnvRefsLeniently(endpoint, lookup));
         return new DeploymentTargetIdentity(
-            `adhoc:${host}/${expandEnvRefsLeniently(tenantId, lookup)}`,
+            `adhoc:${hostKey(endpoint, lookup)}/${resolvedKey(tenantId, lookup)}`,
         );
     }
 
@@ -83,13 +97,23 @@ export class DeploymentTargetIdentity {
     }
 }
 
-/** Host of `endpoint` (never the full URL); falls back to the raw string when unparseable. */
-function endpointHost(endpoint: string): string {
-    try {
-        return new URL(endpoint).host || endpoint;
-    } catch {
-        return endpoint;
+/**
+ * Host of `endpoint` (never the full URL). Literal endpoints keep their
+ * historical key; resolved ones are fingerprinted so no `.env` value is ever
+ * written into persisted ledger keys.
+ */
+function hostKey(endpoint: string, lookup: EnvLookup): string {
+    if (!containsEnvRef(endpoint)) {
+        return hostOf(endpoint) ?? endpoint;
     }
+    const resolved = expandEnvRefsLeniently(endpoint, lookup);
+    return `env:${contentFingerprint(hostOf(resolved) ?? resolved)}`;
+}
+
+function resolvedKey(value: string, lookup: EnvLookup): string {
+    return containsEnvRef(value)
+        ? `env:${contentFingerprint(expandEnvRefsLeniently(value, lookup))}`
+        : value;
 }
 
 /**

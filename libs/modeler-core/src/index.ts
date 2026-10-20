@@ -32,7 +32,6 @@ export * from "./shared/infrastructure/webviewNotificationHandlers";
 export * from "./shared/infrastructure/orderedDocumentDispatch";
 export * from "./shared/infrastructure/webviewFocusHandlers";
 export * from "./shared/infrastructure/helpers";
-export * from "./shared/infrastructure/ProcessEnv";
 
 // ── modeler ─────────────────────────────────────────────────────────────────
 export * from "./modeler/bpmn/domain/model";
@@ -89,6 +88,7 @@ export * from "./migration/domain/MigrationPlan";
 export * from "./migration/service/BpmnMigrationService";
 
 // ── deployment ───────────────────────────────────────────────────────────────
+export * from "./deployment/domain/credentialRefs";
 export * from "./deployment/domain/deployment";
 export * from "./deployment/domain/deploymentLedger";
 export * from "./deployment/domain/deploymentTarget";

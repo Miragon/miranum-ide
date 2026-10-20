@@ -4,8 +4,8 @@
  * of the same key wins. Deliberately dependency-free — the modeler ships no
  * dotenv package and this covers the credential-ref use case.
  */
-export function parseDotEnv(content: string): Record<string, string> {
-    const result: Record<string, string> = {};
+export function parseDotEnv(content: string): Map<string, string> {
+    const result = new Map<string, string>();
 
     for (const rawLine of content.split(/\r?\n/)) {
         const line = rawLine.trim();
@@ -24,7 +24,7 @@ export function parseDotEnv(content: string): Record<string, string> {
             continue;
         }
 
-        result[key] = stripQuotes(withoutExport.slice(separator + 1).trim());
+        result.set(key, stripQuotes(withoutExport.slice(separator + 1).trim()));
     }
 
     return result;

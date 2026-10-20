@@ -134,12 +134,12 @@ export class ArtifactService {
     }
 
     /**
-     * Walks from `documentDir` to `workspaceRoot` (inclusive), nearest-first,
-     * returning the absolute path of the first `<configFolder>/<fileName>` that
-     * exists, or `undefined` if none does. The generalised sibling of
-     * {@link collectSubDirs} for single-file config lookups (deployment targets).
+     * Walks from `documentDir` to `workspaceRoot` (inclusive), nearest-first, and
+     * returns the first directory whose `<configFolder>/<fileName>` exists. The
+     * generalised sibling of {@link collectSubDirs} for single-file config
+     * lookups (deployment targets).
      */
-    async findConfigFile(
+    async findConfigBaseDir(
         documentDir: string,
         configFolder: string,
         fileName: string,
@@ -149,9 +149,8 @@ export class ArtifactService {
         let current = documentDir;
 
         while (current === root || current.startsWith(root + "/")) {
-            const candidate = posix.join(current, configFolder, fileName);
-            if (await this.fileExists(candidate)) {
-                return candidate;
+            if (await this.fileExists(posix.join(current, configFolder, fileName))) {
+                return current;
             }
 
             if (current === root) {

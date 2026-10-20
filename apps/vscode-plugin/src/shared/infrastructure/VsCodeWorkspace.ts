@@ -101,6 +101,18 @@ export class VsCodeWorkspace implements WorkspacePort {
         }
     }
 
+    async isSymbolicLink(path: string): Promise<boolean> {
+        try {
+            const stat = await fs.stat(toUri(path));
+            return (stat.type & FileType.SymbolicLink) !== 0;
+        } catch (error) {
+            if (error instanceof FileSystemError && error.code === "FileNotFound") {
+                return false;
+            }
+            throw error;
+        }
+    }
+
     /** Writes content to a file, creating it if it does not exist. */
     async writeFile(path: string, content: string): Promise<void> {
         const uri = toUri(path);

@@ -51,7 +51,7 @@ export class DeployFilesService {
         const auth = await this.deploymentTargetService.getCredentials(target, documentDir);
         await this.notifier.withProgress(
             `Deploying ${files.length} file(s) to "${target.name}"`,
-            () => this.deploymentService.deployFiles(files, target, auth),
+            () => this.deploymentService.deployFiles(files, target, auth, documentDir),
         );
         await this.deploymentStatusService.refreshActive();
     }

@@ -13,7 +13,6 @@ import {
     WorkspacePort,
 } from "../shared/domain/hostPorts";
 import { EditorSessionStore } from "../shared/infrastructure/EditorSessionStore";
-import { ProcessEnv } from "../shared/infrastructure/ProcessEnv";
 import { ArtifactService } from "../shared/service/ArtifactService";
 import { HttpClient } from "./domain/ports";
 import { AuthHeaderResolver } from "./infrastructure/camunda/AuthHeaderResolver";
@@ -80,17 +79,7 @@ export class DeploymentFeature {
             c7Client,
             new Camunda8RestClient(http, auth, ports.settings.getC8ApiVersion()),
         );
-        const envResolver = new EnvValueResolver(ports.artifacts, ports.workspace, new ProcessEnv());
 
-        const startInstance = new StartInstanceService(
-            ports.documents,
-            ports.workspace,
-            engines,
-            ports.notifier,
-            ports.picker,
-            ports.artifacts,
-            envResolver,
-        );
         this.targets = new DeploymentTargetService(
             ports.artifacts,
             ports.settings,
@@ -99,6 +88,16 @@ export class DeploymentFeature {
             ports.state,
             ports.picker,
             ports.notifier,
+        );
+        const envResolver = new EnvValueResolver(this.targets, ports.workspace);
+        const startInstance = new StartInstanceService(
+            ports.documents,
+            ports.workspace,
+            engines,
+            ports.notifier,
+            ports.picker,
+            ports.artifacts,
+            envResolver,
         );
         this.status = new DeploymentStatusService(
             ports.store,

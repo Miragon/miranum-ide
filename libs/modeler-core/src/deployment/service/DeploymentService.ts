@@ -12,6 +12,7 @@ import {
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import { DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { EnvLookup } from "../domain/envRef";
+import { loggableHost } from "../domain/urlTemplate";
 import {
     DeploymentStatePort,
     DocumentPort,
@@ -148,8 +149,8 @@ export class DeploymentService {
     /**
      * Executes the complete deployment workflow:
      *   1. Reads the main BPMN file and any additional files.
-     *   2. Issues the REST deployment request.
-     *   3. Persists the endpoint and tenant ID on success.
+     *   2. Issues the REST deployment request with `${env:…}` refs expanded.
+     *   3. On success, persists the literal config and records the ledger row.
      *
      * This method never throws; all errors are captured in the returned
      * {@link DeploymentResult} with `success: false`.
@@ -159,29 +160,43 @@ export class DeploymentService {
      *   credentials are persisted, under that slot, and the legacy connection
      *   state is left untouched (it lives in the targets file). When absent, the
      *   ad-hoc path persists connection + credentials to the legacy keys.
+     * @param target The named target the ledger row is keyed by; ad-hoc when absent.
      * @returns The outcome of the deployment attempt.
      */
     async deploy(
         config: DeploymentConfig,
         secretSlot?: string,
-        targetIdentity?: DeploymentTargetIdentity,
+        target?: DeploymentTarget,
     ): Promise<DeploymentResult> {
         try {
             const fileContents = await this.readFileContents(config);
-            const lookup = await this.envResolver.createLookup(path.dirname(config.mainFilePath));
-            const result = await this.restClient.deploy(config.expandEnvRefs(lookup), fileContents);
+            const lookup = await this.envResolver.createLookup(
+                target === undefined ? "workspaceFolder" : "targetsFile",
+                path.dirname(config.mainFilePath),
+                config,
+            );
+            const requestConfig = config.expandEnvRefs(lookup);
+
+            // Breadcrumb. Only host[:port] of the resolved URL is logged — never the
+            // full URL, which can carry credentials, and never the auth payload.
+            this.notifier.logInfo(
+                `Deployment started: ${path.basename(config.mainFilePath)} -> ${config.engine} @ ${loggableHost(requestConfig.deployUrl ?? requestConfig.endpoint)}`,
+            );
+            const result = await this.restClient.deploy(requestConfig, fileContents);
 
             if (result.success) {
                 await this.persistOnSuccess(config, secretSlot);
-                if (targetIdentity !== undefined) {
-                    const content = fileContents.get(path.basename(config.mainFilePath)) ?? "";
-                    await this.deploymentStatus.recordDeployment(
-                        config.mainFilePath,
-                        content,
-                        targetIdentity,
-                        result.deploymentId,
-                    );
-                }
+                const identity =
+                    target === undefined
+                        ? DeploymentTargetIdentity.adHoc(config.endpoint, config.tenantId, lookup)
+                        : DeploymentTargetIdentity.fromTarget(target, lookup);
+                const content = fileContents.get(path.basename(config.mainFilePath)) ?? "";
+                await this.deploymentStatus.recordDeployment(
+                    config.mainFilePath,
+                    content,
+                    identity,
+                    result.deploymentId,
+                );
             }
 
             return result;
@@ -198,19 +213,22 @@ export class DeploymentService {
      * file yields a failed {@link DeploymentResult} so the batch always completes
      * and the caller sees a per-file outcome. Credentials are assumed already
      * stored on the target, so nothing is persisted here.
+     *
+     * @param documentDir The directory `target` was resolved from. Its `.env`
+     *   serves the whole batch, even for files from other workspace folders, so
+     *   a target's endpoint and its variables always come from the same project.
      */
     async deployFiles(
         paths: string[],
         target: DeploymentTarget,
         auth: AuthConfig,
+        documentDir: string | undefined,
     ): Promise<DeploymentResult[]> {
         const results: DeploymentResult[] = [];
         let pendingLookup: Promise<EnvLookup> | undefined;
         for (const filePath of paths) {
             const name = path.basename(filePath, path.extname(filePath));
             try {
-                pendingLookup ??= this.envResolver.createLookup(path.dirname(filePath));
-                const envLookup = await pendingLookup;
                 const config = new DeploymentConfigBuilder()
                     .withDeploymentName(name)
                     .withTenantId(target.tenantId)
@@ -221,6 +239,8 @@ export class DeploymentService {
                     .withAuth(auth)
                     .withDeployUrl(target.deployUrl)
                     .build();
+                pendingLookup ??= this.envResolver.createLookup("targetsFile", documentDir, config);
+                const envLookup = await pendingLookup;
                 const fileContents = await this.readFileContents(config);
                 const result = await this.restClient.deploy(
                     config.expandEnvRefs(envLookup),
@@ -245,17 +265,18 @@ export class DeploymentService {
 
         const succeeded = results.filter((result) => result.success).length;
         const summary = `Deployed ${succeeded}/${results.length} file(s) to "${target.name}".`;
-        if (succeeded === results.length) {
+        const firstFailure = results.find((result) => !result.success);
+        if (firstFailure === undefined) {
             this.notifier.showInfo(summary);
         } else {
-            this.notifier.showError(summary);
+            this.notifier.showError(`${summary} ${firstFailure.message}`);
         }
         return results;
     }
 
     private async persistOnSuccess(config: DeploymentConfig, secretSlot?: string): Promise<void> {
         if (secretSlot !== undefined) {
-            await this.saveSecrets(config.auth.withoutWholeEnvRefs(), secretSlot);
+            await this.saveSecrets(config.auth, secretSlot);
             return;
         }
 

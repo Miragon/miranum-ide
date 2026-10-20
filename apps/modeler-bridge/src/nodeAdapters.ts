@@ -238,6 +238,17 @@ export class NodeWorkspace implements WorkspacePort {
         }
     }
 
+    async isSymbolicLink(path: string): Promise<boolean> {
+        try {
+            return (await fs.lstat(toFsPath(path))).isSymbolicLink();
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+                return false;
+            }
+            throw error;
+        }
+    }
+
     /**
      * Watches the workspace root via chokidar, firing the matching handler for
      * every changed path that matches `glob`, debounced ~50ms to coalesce an

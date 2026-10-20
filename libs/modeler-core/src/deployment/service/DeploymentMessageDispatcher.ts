@@ -20,7 +20,7 @@ import {
 
 import { posix } from "path";
 
-import { BasicAuth, DeploymentConfigBuilder, NoAuth, OAuth2Auth } from "../domain/deployment";
+import { AuthConfig, DeploymentConfigBuilder } from "../domain/deployment";
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import {
     DeploymentTargetChangedError,
@@ -31,7 +31,7 @@ import { EditorSessionStore } from "../../shared/infrastructure/EditorSessionSto
 import { routeWebviewLogCommand } from "../../shared/infrastructure/webviewLogHandlers";
 import { DeploymentService } from "./DeploymentService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
-import { DeploymentTargetService, toTargetPayload } from "./DeploymentTargetService";
+import { DeploymentTargetService, toAuthConfig, toTargetPayload } from "./DeploymentTargetService";
 import { StartInstanceService } from "./StartInstanceService";
 
 type DeploymentWebviewCommand = MessageOfType<
@@ -345,6 +345,7 @@ export class DeploymentMessageDispatcher {
 
     private async resolveRequestTarget(
         payload: DeployCommand["config"] | StartInstanceCommand["config"],
+        auth: AuthConfig,
         documentDir: string | undefined,
     ): Promise<DeploymentTarget | undefined> {
         if (!payload.targetName?.trim()) return undefined;
@@ -372,6 +373,11 @@ export class DeploymentMessageDispatcher {
         if (!matches) {
             throw new DeploymentTargetChangedError(
                 "The deployment target changed. Save or reload the target before continuing.",
+            );
+        }
+        if (!target.credentialRefs.admits(auth)) {
+            throw new DeploymentTargetChangedError(
+                "Credential environment references differ from the saved target. Save or reload the target before continuing.",
             );
         }
         return target;
@@ -446,13 +452,8 @@ export class DeploymentMessageDispatcher {
     ): Promise<void> {
         try {
             const documentDir = this.activeDocumentDir();
-            await this.resolveRequestTarget(configPayload, documentDir);
-            const auth = this.buildAuth(configPayload.auth);
-
-            // Breadcrumb. Host[:port] only — never the full URL or auth payload.
-            this.notifier.logInfo(
-                `Instance start requested: ${configPayload.processDefinitionKey} @ ${this.endpointHost(configPayload.startInstanceUrl ?? configPayload.endpoint)}`,
-            );
+            const auth = toAuthConfig(configPayload.auth);
+            const target = await this.resolveRequestTarget(configPayload, auth, documentDir);
 
             const result = await this.startInstanceService.startInstance(
                 configPayload.processDefinitionKey,
@@ -462,6 +463,7 @@ export class DeploymentMessageDispatcher {
                 configPayload.payloadFilePath,
                 configPayload.startInstanceUrl,
                 documentDir,
+                target === undefined ? "workspaceFolder" : "targetsFile",
             );
 
             if (result.success) {
@@ -498,7 +500,7 @@ export class DeploymentMessageDispatcher {
      */
     private async handleDeploy(configPayload: DeployCommand["config"]): Promise<void> {
         try {
-            const auth = this.buildAuth(configPayload.auth);
+            const auth = toAuthConfig(configPayload.auth);
 
             // Trust only the active editor's document for the file being deployed,
             // never the webview payload's mainFilePath.
@@ -517,27 +519,13 @@ export class DeploymentMessageDispatcher {
                 .build();
 
             const documentDir = posix.dirname(mainFilePath);
-            const target = await this.resolveRequestTarget(configPayload, documentDir);
+            const target = await this.resolveRequestTarget(configPayload, auth, documentDir);
             const secretSlot =
                 target === undefined
                     ? undefined
                     : await this.deploymentTargetService.resolveSlot(target.name, documentDir);
-            const identity =
-                target === undefined
-                    ? await this.deploymentStatusService.adHocIdentity(
-                          config.endpoint,
-                          config.tenantId,
-                          documentDir,
-                      )
-                    : await this.deploymentStatusService.targetIdentity(target, documentDir);
 
-            // Breadcrumb. Only host[:port] is logged (never the full URL, which can
-            // carry credentials, and never the auth payload) — see endpointHost.
-            this.notifier.logInfo(
-                `Deployment started: ${this.fileBasename(mainFilePath)} -> ${configPayload.engine} @ ${this.endpointHost(config.deployUrl ?? configPayload.endpoint)}`,
-            );
-
-            const result = await this.deploymentService.deploy(config, secretSlot, identity);
+            const result = await this.deploymentService.deploy(config, secretSlot, target);
 
             if (result.success) {
                 this.notifier.logInfo(`Deployment succeeded: ${result.message}`);
@@ -563,41 +551,5 @@ export class DeploymentMessageDispatcher {
             this.notifier.showError(message);
             this.post(new DeploymentResultQuery(false, message));
         }
-    }
-
-    /**
-     * Host[:port] of `endpoint` for a breadcrumb — never the path, query, or
-     * userinfo. `URL.host` deliberately excludes any `user:pass@` prefix, so a
-     * credentialled endpoint can't leak into the channel.
-     */
-    private endpointHost(endpoint: string): string {
-        try {
-            return new URL(endpoint).host || "unknown-host";
-        } catch {
-            return "unknown-host";
-        }
-    }
-
-    /** Basename for logging; separator-agnostic so Windows paths don't leak a full path. */
-    private fileBasename(filePath: string): string {
-        return filePath.split(/[\\/]/).pop() || filePath;
-    }
-
-    /** Maps the webview's auth payload to the domain auth value object. */
-    private buildAuth(
-        authPayload: DeployCommand["config"]["auth"],
-    ): NoAuth | BasicAuth | OAuth2Auth {
-        if (authPayload.authType === "basic") {
-            return new BasicAuth(authPayload.username ?? "", authPayload.password ?? "");
-        }
-        if (authPayload.authType === "oauth2") {
-            return new OAuth2Auth(
-                authPayload.clientId ?? "",
-                authPayload.clientSecret ?? "",
-                authPayload.tokenEndpoint ?? "",
-                authPayload.audience ?? "",
-            );
-        }
-        return new NoAuth();
     }
 }

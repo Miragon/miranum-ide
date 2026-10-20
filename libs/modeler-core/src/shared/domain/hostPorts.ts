@@ -137,11 +137,6 @@ export interface PickerPort {
     }): Promise<"switch" | "verify" | undefined>;
 }
 
-/** Keeps `process` out of the engine core and its specs. */
-export interface EnvPort {
-    get(name: string): string | undefined;
-}
-
 /**
  * Host clipboard access. Isolated so the sandboxed-iframe mediator pattern
  * (host reads/writes on behalf of the webview) stays confined to infrastructure.
@@ -211,6 +206,8 @@ export interface WorkspacePort {
     getDocumentDirectory(document: string): string;
     readDirectory(path: string): Promise<[string, "file" | "directory"][]>;
     readFile(path: string): Promise<string>;
+    /** `false` when `path` is absent; a dangling link still counts as a link. */
+    isSymbolicLink(path: string): Promise<boolean>;
     writeFile(path: string, content: string): Promise<void>;
     /**
      * Recursively removes the directory at `path`. A missing path is a no-op,

@@ -36,7 +36,8 @@ Credentials stay in the host secret store under `<targetsFilePath>::<name>`.
 The file path prevents same-named targets in different projects from sharing
 credentials in application-scoped IntelliJ PasswordSafe. Optional secret-store
 slots retain the legacy unnamed keys when absent; deletion/rename cleans up
-the target slot. Never write secrets into the shared file.
+the target slot. Never write secrets into the shared file; whole-value
+environment references (below) are the only credential values it may hold.
 
 Creating and updating are separate operations so a target is never overwritten
 by accident. **New** creates a target from the entered form data and rejects a
@@ -57,36 +58,79 @@ for `{processDefinitionKey}` in a start URL. Without overrides use conventional
 engine routes. Request bodies remain engine-specific: overrides are for gateways
 proxying that API, not a different deployment protocol.
 
-Any connection or auth field may embed `${env:VAR}` references, resolved from a
-workspace-root `.env` (preferred) then the host process environment. Store and
-display the literal reference everywhere upstream — secret store, targets file,
-webview prefill, target matching — and expand it only when the outbound request
-is built, inside the services that issue HTTP requests
-(`DeploymentService.deploy`/`deployFiles`, `StartInstanceService.startInstance`,
-`DeploymentVerificationService.verifyActive`). The expansion itself lives on the
-domain objects (`DeploymentConfig.expandEnvRefs`, `AuthConfig.expandEnvRefs`),
-which return a request-only copy; `EnvValueResolver` only builds the variable
-lookup. Expansion at the last moment is load-bearing: `persistOnSuccess` writes
-`config.auth` back to the secret store and the dispatcher matches the payload
-against the saved target literally — a resolved value there would persist a
-secret in cleartext or freeze it, and would break target matching. The ledger
-identity is the exception: it keys on the *resolved* endpoint host (unresolved
-refs stay verbatim), because keying on the literal ref would let a `.env` switch
-to another engine report a false green. A missing variable throws
-`UnresolvedEnvVariableError` (names the variable and field); it never falls back
-to the literal. Process env sits behind an `EnvPort` so domain code and specs
-never touch `process`.
+Any connection or auth field may embed `${env:MIRAGON_NAME}` references,
+resolved from one `.env` (`EnvScope`): for a named target, the one in the
+directory holding its targets file's config folder (`TargetsLocation.projectDir`);
+for an ad-hoc request, the one at the document's workspace folder, so a nearer,
+possibly vendored targets file can't supply variables for an endpoint the user
+typed. Store and display the literal
+reference everywhere upstream — secret store, targets file, webview prefill,
+target matching — and expand it only when the outbound request is built, inside
+the services that issue HTTP requests (`DeploymentService.deploy`/`deployFiles`,
+`StartInstanceService.startInstance`, `DeploymentVerificationService.verifyActive`).
+The expansion itself lives on the domain objects (`DeploymentConfig`,
+`StartInstanceConfig`, `AuthConfig`), which return a request-only copy;
+`EnvValueResolver` only builds the variable lookup. Expansion at the last moment
+is load-bearing: `persistOnSuccess` writes `config.auth` back to the secret store
+and the dispatcher matches the payload against the saved target literally — a
+resolved value there would persist a secret in cleartext or freeze it, and would
+break target matching. The ledger identity is the exception, see
+[Freshness ledger](#freshness-ledger). A missing variable throws
+`UnresolvedEnvVariableError` (names the variable, field and the `.env` searched);
+it never falls back to the literal. An expanded config is rebuilt through the
+same invariants as a typed one, so a variable set to an empty value behaves like
+an empty field.
+
+Resolution is scoped because a committed targets file chooses both the
+destination and the variables it embeds:
+
+- Only `MIRAGON_`-prefixed names are referenceable, enforced in the reference
+  grammar (`envRef.ts`): every `${env:` must open a well-formed, prefixed
+  reference, so a foreign or malformed one is rejected when the targets file is
+  parsed or a target is saved, and fails the request otherwise. Non-prefixed
+  `.env` entries are dropped on read. An open namespace would let a malicious or
+  careless targets change send any project secret to its own endpoint.
+- The process environment is not a source. It is shared by every project, so a
+  globally exported variable would be reachable from any repository's committed
+  targets file. This trades away Codespaces/devcontainer-injected variables.
+- The `.env` is tied to the targets file, not to the deployed document: a nested
+  targets file (a submodule, vendored content) reads its own project's `.env`,
+  never the workspace root's, and Deploy Files uses the active target's `.env`
+  for files from any folder. Documents outside every workspace folder resolve no
+  references — the git-root/document-directory fallback of config discovery could
+  otherwise reach a `.env` from an unrelated tree — and neither does a targets
+  file that a config folder such as `../x` places outside its project directory.
+- A symlinked `.env` is refused (`WorkspacePort.isSymbolicLink`), since a
+  repository can commit one pointing at another project's `.env`.
+- `.env` is read only when a value contains a reference, so a broken or
+  unrelated `.env` (a virtualenv directory) can't fail requests without
+  references; an unreadable one fails referencing requests with
+  `UnreadableDotEnvError`.
+- No resolved value is echoed: `DisallowedEnvReferenceError` names only the
+  field (the offending text may be part of a literal secret), and
+  `FetchHttpClient` replaces fetch's transport errors, which quote the full URL,
+  with `HttpTransportError` naming only the host.
+
+With these limits, a committed targets file can reach exactly the values the
+user put into this project's `.env` for the modeler — the same exposure as the
+credentials already stored for a target, which also go to whatever endpoint the
+file names.
 
 A whole-value env reference is not a secret, so a credential field whose entire
-trimmed value is a single `${env:VAR}` is persisted in the shared targets file
-(under `auth.username`/`password`/`clientId`/`clientSecret`, each schema-pinned
-to the env-ref pattern so a literal secret can never validate in) rather than the
-secret store. On save, per field: a whole-value ref goes to the JSON and blanks
-that field in the secret store; a literal or partial interpolation stays in the
-secret store and is omitted from the JSON. A successful deploy against a named
-target re-saves credentials through the same filter
-(`AuthConfig.withoutWholeEnvRefs`). On read, file references win over
-secret-store values. This lets a teammate clone, add a `.env`, and deploy with no
+trimmed value is a single prefixed reference is also persisted in the shared
+targets file (under `auth.username`/`password`/`clientId`/`clientSecret`, each
+schema-pinned to the reference pattern so a literal secret can never validate in;
+the parser rejects any other value under these keys, for every auth type).
+`CredentialRefs` owns that split. The secret store keeps every value as typed,
+refs included: storing a ref overwrites an older literal, and blanking it instead
+would break IntelliJ's PasswordSafe, which reads an empty half of a pair back as
+absent. On read, file references win over secret-store values and a ref held
+only by the store is ignored, so a ref a teammate removed from the file stays
+removed (`DeploymentTarget.authWith`); a whole ref is expanded in its trimmed form. A
+deploy or start request against a named target must carry exactly the target's
+credential refs (`CredentialRefs.admits`): deploy re-saves credentials only to the
+secret store, so an edited, added or removed ref would otherwise never reach the
+shared file. This lets a teammate clone, add a `.env`, and deploy with no
 per-machine credential setup.
 
 Both hosts expose target switching and multi-file deployment. Each selected
@@ -96,7 +140,8 @@ item opens the target/verification menu described below.
 ### Saved-target execution
 
 Connection changes to a named target must be saved before Deploy or Start
-Instance. Credential-only edits remain executable. Both actions share readiness
+Instance. Literal credential edits remain executable; credential environment
+references are part of the saved target and must be saved. Both actions share readiness
 state and are unavailable during target switches or secret loading.
 
 The core independently resolves the submitted target name within the captured
@@ -126,6 +171,7 @@ connections, not what this machine deployed.
 | --- | --- |
 | Named destination | `target:<name>@<endpoint-host>` |
 | Ad-hoc destination | `adhoc:<endpoint-host>/<tenantId>` |
+| With `${env:…}` refs | the resolved host / tenant is stored as `env:<fingerprint>` — a `.env` switch to another engine changes the key, yet no resolved value is ever persisted |
 | Ledger key | `<destination-identity>::<filePath>` |
 | Revision | `fingerprint`, `deployedAt`, optional `deploymentId`, `origin`, `verifiedAt` |
 | Host state key | `bpmn-modeler.deployment.ledger` in VS Code workspace state / IntelliJ PropertiesComponent |
@@ -192,6 +238,12 @@ states and timestamps.
   change the key.
 - Credentials remain private while connection definitions are reviewable.
   Saving target metadata is an intentional additional step before execution.
+- Environment references trade convenience for containment: no process-env or
+  Codespaces variables, a mandatory `MIRAGON_` prefix (existing `CAMUNDA_*`
+  entries must be duplicated), literal values may not contain `${env:`, and a
+  targets file carrying a literal under a credential key no longer loads. The
+  [envRef tests](../../libs/modeler-core/src/deployment/domain/envRef.spec.ts)
+  pin the grammar and a schema parity spec keeps the JSON schema patterns in step.
 - Core target validation and webview regression tests cover stale replies,
   readiness and context changes; [deployment tests](../../libs/modeler-core/src/deployment)
   cover identity, freshness and reconciliation, and the

@@ -94,17 +94,48 @@ export class DuplicateDeploymentTargetError extends Error {
     }
 }
 
-/** Names the variable and field so the failure is actionable where it surfaces. */
-export class UnresolvedEnvVariableError extends Error {
+/** Common base so callers can surface every `${env:…}` failure as a plain, actionable message. */
+export abstract class EnvReferenceError extends Error {}
+
+export class UnresolvedEnvVariableError extends EnvReferenceError {
+    /** @param dotEnvPath The file that was searched; absent when no `.env` applies. */
     constructor(
         readonly variable: string,
-        readonly field?: string,
+        readonly field: string,
+        dotEnvPath?: string,
     ) {
-        const where = field ? ` in "${field}"` : "";
-        super(
-            `Environment variable "${variable}"${where} is not set. Define it in a .env file at the workspace root or in the IDE's environment.`,
-        );
+        const remedy =
+            dotEnvPath === undefined
+                ? "References only resolve for diagrams inside a workspace folder."
+                : `Define it in ${dotEnvPath}.`;
+        super(`Environment variable "${variable}" in "${field}" is not set. ${remedy}`);
         this.name = "UnresolvedEnvVariableError";
+    }
+}
+
+/**
+ * Never echoes the offending text: in a credential field it can be part of a
+ * literal secret (`p${env:hunter2}rest`), and these messages get logged.
+ */
+export class DisallowedEnvReferenceError extends EnvReferenceError {
+    constructor(
+        readonly field: string,
+        prefix: string,
+    ) {
+        super(
+            `"${field}" contains an invalid environment reference. Use \${env:${prefix}NAME} — only variables prefixed ${prefix} from the project's .env are resolved, and literal values must not contain "\${env:".`,
+        );
+        this.name = "DisallowedEnvReferenceError";
+    }
+}
+
+export class UnreadableDotEnvError extends EnvReferenceError {
+    constructor(
+        readonly path: string,
+        reason: string,
+    ) {
+        super(`Could not read ${path}: ${reason}`);
+        this.name = "UnreadableDotEnvError";
     }
 }
 
@@ -164,5 +195,19 @@ export class StartInstanceFailedError extends Error {
     constructor(status: number, body: string) {
         super(`Start instance failed with HTTP ${status}: ${body}`);
         this.name = "StartInstanceFailedError";
+    }
+}
+
+/**
+ * A request that never got a response. The URL is deliberately left out of the
+ * message: it may embed `.env` values, and fetch's own errors echo it verbatim.
+ */
+export class HttpTransportError extends Error {
+    constructor(
+        readonly host: string,
+        readonly reason: string,
+    ) {
+        super(`Request to ${host} failed: ${reason}`);
+        this.name = "HttpTransportError";
     }
 }

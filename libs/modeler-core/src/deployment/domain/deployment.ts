@@ -1,5 +1,12 @@
 import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
-import { blankIfWholeEnvRef, EnvLookup, expandEnvRefs, expandOptionalEnvRefs } from "./envRef";
+import {
+    assertEnvRefsValid,
+    containsEnvRef,
+    EnvLookup,
+    expandCredentialEnvRefs,
+    expandEnvRefs,
+    expandOptionalEnvRefs,
+} from "./envRef";
 
 import { Engine } from "@miragon/bpmn-modeler-types";
 export type AuthConfig = NoAuth | BasicAuth | OAuth2Auth;
@@ -14,11 +21,15 @@ export class NoAuth {
         return {};
     }
 
-    expandEnvRefs(_lookup: EnvLookup): NoAuth {
-        return this;
+    referencesEnv(): boolean {
+        return false;
     }
 
-    withoutWholeEnvRefs(): NoAuth {
+    assertCredentialEnvRefsValid(): void {
+        // No credential fields that could carry a reference.
+    }
+
+    expandEnvRefs(_lookup: EnvLookup): NoAuth {
         return this;
     }
 }
@@ -44,16 +55,20 @@ export class BasicAuth {
         return { Authorization: `Basic ${credentials}` };
     }
 
-    expandEnvRefs(lookup: EnvLookup): BasicAuth {
-        return new BasicAuth(
-            expandEnvRefs(this.username, lookup, "username"),
-            expandEnvRefs(this.password, lookup, "password"),
-        );
+    referencesEnv(): boolean {
+        return containsEnvRef(this.username) || containsEnvRef(this.password);
     }
 
-    /** Whole-value refs live in the shared targets file, so the secret store must not shadow them. */
-    withoutWholeEnvRefs(): BasicAuth {
-        return new BasicAuth(blankIfWholeEnvRef(this.username), blankIfWholeEnvRef(this.password));
+    assertCredentialEnvRefsValid(): void {
+        assertEnvRefsValid(this.username, "auth.username");
+        assertEnvRefsValid(this.password, "auth.password");
+    }
+
+    expandEnvRefs(lookup: EnvLookup): BasicAuth {
+        return new BasicAuth(
+            expandCredentialEnvRefs(this.username, lookup, "auth.username"),
+            expandCredentialEnvRefs(this.password, lookup, "auth.password"),
+        );
     }
 }
 
@@ -71,22 +86,23 @@ export class OAuth2Auth {
         readonly audience: string,
     ) {}
 
-    expandEnvRefs(lookup: EnvLookup): OAuth2Auth {
-        return new OAuth2Auth(
-            expandEnvRefs(this.clientId, lookup, "clientId"),
-            expandEnvRefs(this.clientSecret, lookup, "clientSecret"),
-            expandEnvRefs(this.tokenEndpoint, lookup, "tokenEndpoint"),
-            expandEnvRefs(this.audience, lookup, "audience"),
+    referencesEnv(): boolean {
+        return [this.clientId, this.clientSecret, this.tokenEndpoint, this.audience].some(
+            containsEnvRef,
         );
     }
 
-    /** Whole-value refs live in the shared targets file, so the secret store must not shadow them. */
-    withoutWholeEnvRefs(): OAuth2Auth {
+    assertCredentialEnvRefsValid(): void {
+        assertEnvRefsValid(this.clientId, "auth.clientId");
+        assertEnvRefsValid(this.clientSecret, "auth.clientSecret");
+    }
+
+    expandEnvRefs(lookup: EnvLookup): OAuth2Auth {
         return new OAuth2Auth(
-            blankIfWholeEnvRef(this.clientId),
-            blankIfWholeEnvRef(this.clientSecret),
-            this.tokenEndpoint,
-            this.audience,
+            expandCredentialEnvRefs(this.clientId, lookup, "auth.clientId"),
+            expandCredentialEnvRefs(this.clientSecret, lookup, "auth.clientSecret"),
+            expandEnvRefs(this.tokenEndpoint, lookup, "auth.tokenEndpoint"),
+            expandEnvRefs(this.audience, lookup, "auth.audience"),
         );
     }
 }
@@ -118,21 +134,30 @@ export class DeploymentConfig {
         readonly deployUrl?: string,
     ) {}
 
+    referencesEnv(): boolean {
+        return (
+            [this.tenantId, this.endpoint, this.deployUrl].some(containsEnvRef) ||
+            this.auth.referencesEnv()
+        );
+    }
+
     /**
      * Request-only copy: the literal config stays the one that is persisted, so
-     * a resolved secret never reaches the secret store.
+     * a resolved secret never reaches the secret store. Rebuilt through the
+     * builder so a variable set to an empty value obeys the same rules as a
+     * typed one.
      */
     expandEnvRefs(lookup: EnvLookup): DeploymentConfig {
-        return new DeploymentConfig(
-            this.deploymentName,
-            expandEnvRefs(this.tenantId, lookup, "tenantId"),
-            expandEnvRefs(this.endpoint, lookup, "endpoint"),
-            this.engine,
-            this.mainFilePath,
-            this.additionalFilePaths,
-            this.auth.expandEnvRefs(lookup),
-            expandOptionalEnvRefs(this.deployUrl, lookup, "deployUrl"),
-        );
+        return new DeploymentConfigBuilder()
+            .withDeploymentName(this.deploymentName)
+            .withTenantId(expandEnvRefs(this.tenantId, lookup, "tenantId"))
+            .withEndpoint(expandEnvRefs(this.endpoint, lookup, "endpoint"))
+            .withEngine(this.engine)
+            .withMainFilePath(this.mainFilePath)
+            .withAdditionalFilePaths(this.additionalFilePaths)
+            .withAuth(this.auth.expandEnvRefs(lookup))
+            .withDeployUrl(expandOptionalEnvRefs(this.deployUrl, lookup, "endpoints.deploy"))
+            .build();
     }
 }
 

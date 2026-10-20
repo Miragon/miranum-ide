@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { posix } from "path";
+
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import {
     BasicAuth,
@@ -8,37 +10,114 @@ import {
     NoAuth,
     OAuth2Auth,
 } from "../domain/deployment";
+import { contentFingerprint } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
+import { ENV_VARIABLE_PREFIX } from "../domain/envRef";
+import { CamundaEnginePort } from "../domain/ports";
+import { FetchHttpClient } from "../infrastructure/FetchHttpClient";
+import { AuthHeaderResolver } from "../infrastructure/camunda/AuthHeaderResolver";
+import { Camunda7RestClient } from "../infrastructure/camunda/Camunda7RestClient";
 import { DeploymentService } from "./DeploymentService";
+import { DeploymentTargetService } from "./DeploymentTargetService";
 import { EnvValueResolver } from "./EnvValueResolver";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
-import { FileNotFound } from "../../shared/domain/errors";
+import {
+    DisallowedEnvReferenceError,
+    FileNotFound,
+    HttpTransportError,
+    InvalidDeploymentConfigError,
+    UnreadableDotEnvError,
+    UnresolvedEnvVariableError,
+} from "../../shared/domain/errors";
+import { Engine } from "@miragon/bpmn-modeler-types";
+
+/** `.env` variables, or the error reading that `.env` fails with. */
+type DotEnvFile = Record<string, string> | Error;
 
 /**
- * A real {@link EnvValueResolver} backed by controllable `.env` + process env, so
- * a test can assert what the REST client vs. the secret store see.
+ * A real {@link EnvValueResolver} over a fake filesystem in which, by default,
+ * every document directory is its own workspace folder and project (the
+ * directory holding its targets file). `.env` files are keyed by directory; one
+ * without an entry has no `.env`.
  */
-function createEnvResolver(
-    dotEnv: Record<string, string> = {},
-    processEnv: Record<string, string> = {},
-): EnvValueResolver {
-    const artifactService = {
-        getWorkspaceRoot: vi.fn().mockResolvedValue("/work"),
+function createEnvResolver(dotEnvFiles: Record<string, DotEnvFile>) {
+    const targetsLocator: Pick<DeploymentTargetService, "locateTargetsFile"> = {
+        locateTargetsFile: vi.fn(async (documentDir?: string) => {
+            const projectDir = documentDir ?? "/work";
+            return {
+                filePath: posix.join(projectDir, ".camunda", "deployment-targets.json"),
+                exists: true,
+                projectDir,
+            };
+        }),
     };
     const workspace = {
-        readFile: vi.fn().mockImplementation(async (path: string) => {
-            if (path.endsWith(".env")) {
-                return Object.entries(dotEnv)
-                    .map(([key, value]) => `${key}=${value}`)
-                    .join("\n");
+        findWorkspaceFolderForDocument: vi.fn((documentDir: string) => documentDir),
+        isSymbolicLink: vi.fn().mockResolvedValue(false),
+        readFile: vi.fn(async (filePath: string) => {
+            const dotEnv = dotEnvFiles[posix.dirname(filePath)];
+            if (dotEnv === undefined) {
+                throw new FileNotFound(filePath);
             }
-            throw new FileNotFound(path);
+            if (dotEnv instanceof Error) {
+                throw dotEnv;
+            }
+            return Object.entries(dotEnv)
+                .map(([key, value]) => `${key}=${value}`)
+                .join("\n");
         }),
-        getWorkspaceFolderPaths: vi.fn().mockReturnValue(["/work"]),
     };
-    const env = { get: (name: string) => processEnv[name] };
-    return new EnvValueResolver(artifactService as never, workspace as never, env as never);
+    const envResolver = new EnvValueResolver(targetsLocator, workspace as never);
+    return {
+        envResolver,
+        dotEnvReads: workspace.readFile,
+        locateTargetsFile: targetsLocator.locateTargetsFile as Mock,
+        findWorkspaceFolderForDocument: workspace.findWorkspaceFolderForDocument,
+    };
 }
+
+/** The production REST stack down to `fetch`, so a failure's message is the shipped one. */
+function createRealRestClient(): Camunda7RestClient {
+    const httpClient = new FetchHttpClient();
+    return new Camunda7RestClient(httpClient, new AuthHeaderResolver(httpClient));
+}
+
+function stubFetch(respond: (url: string) => Promise<Response>) {
+    const fetchStub = vi.fn(respond);
+    vi.stubGlobal("fetch", fetchStub);
+    return fetchStub;
+}
+
+/** undici refuses a URL with userinfo with a TypeError that quotes the whole URL. */
+function rejectCredentialledUrlsLikeUndici() {
+    return stubFetch(async (url) => {
+        throw new TypeError(
+            `Request cannot be constructed from a URL that includes credentials: ${url}`,
+        );
+    });
+}
+
+/** Every argument any notifier method received; errors contribute message, stack and cause. */
+function everythingNotified(notifier: Record<string, Mock>): string {
+    return Object.values(notifier)
+        .flatMap((notify) => notify.mock.calls.flat())
+        .map(describeNotified)
+        .join("\n");
+}
+
+function describeNotified(argument: unknown): string {
+    if (argument instanceof Error) {
+        const { cause } = argument as { cause?: unknown };
+        return [argument.message, argument.stack, describeNotified(cause)].join("\n");
+    }
+    return String(argument);
+}
+
+const CREDENTIALLED_ENDPOINT = "https://deployer:s3cret@camunda.invalid/engine-rest";
+const CREDENTIALLED_URL_REJECTED = new HttpTransportError(
+    "camunda.invalid",
+    "the URL must not contain credentials; use the authentication fields",
+);
 
 // A real, valid C8 document so `detectEngine` exercises the production
 // `BpmnDocument.detectPlatform` path instead of a stub.
@@ -47,9 +126,18 @@ const C8_XML = BpmnDocument.empty("c8", "8.8.0").xml;
 /**
  * Builds the service with fully mocked ports. Each port is a bare `vi.fn()`
  * record cast to the interface — the service only ever calls these methods, so
- * a structural double keeps the test free of any `vscode` surface.
+ * a structural double keeps the test free of any `vscode` surface. The env
+ * resolver is real, so a test can assert what the REST client vs. the secret
+ * store see and whether `.env` was read at all. `engineClient` replaces the
+ * REST client mock, e.g. with the real stack over a stubbed `fetch`.
  */
-function createService(envResolver: EnvValueResolver = createEnvResolver()) {
+function createService(
+    dotEnvFiles: Record<string, DotEnvFile> = {},
+    engineClient?: CamundaEnginePort,
+) {
+    const { envResolver, dotEnvReads, locateTargetsFile, findWorkspaceFolderForDocument } =
+        createEnvResolver(dotEnvFiles);
+    const createLookup = vi.spyOn(envResolver, "createLookup");
     const vsDocument = {
         getFilePath: vi.fn(),
         getContent: vi.fn(),
@@ -98,7 +186,7 @@ function createService(envResolver: EnvValueResolver = createEnvResolver()) {
         vsDocument as never,
         vsWorkspace as never,
         deploymentState as never,
-        restClient as never,
+        (engineClient ?? restClient) as never,
         notifier as never,
         picker as never,
         secretStore as never,
@@ -116,6 +204,10 @@ function createService(envResolver: EnvValueResolver = createEnvResolver()) {
         picker,
         secretStore,
         deploymentStatus,
+        createLookup,
+        dotEnvReads,
+        locateTargetsFile,
+        findWorkspaceFolderForDocument,
     };
 }
 
@@ -127,20 +219,34 @@ function buildConfig(
         additionalFilePaths: string[];
         endpoint: string;
         tenantId: string;
+        engine: Engine;
+        deployUrl: string;
     }> = {},
 ): DeploymentConfig {
     return new DeploymentConfigBuilder()
         .withDeploymentName("order-process")
         .withEndpoint(overrides.endpoint ?? "http://localhost:8080/engine-rest")
         .withTenantId(overrides.tenantId ?? "")
+        .withEngine(overrides.engine ?? "c7")
         .withMainFilePath(overrides.mainFilePath ?? "/work/order-process.bpmn")
         .withAdditionalFilePaths(overrides.additionalFilePaths ?? [])
         .withAuth(overrides.auth ?? new NoAuth())
+        .withDeployUrl(overrides.deployUrl)
         .build();
 }
 
+function targetAt(endpoint: string, tenantId = ""): DeploymentTarget {
+    return new DeploymentTarget("dev", "c7", endpoint, tenantId, "none", "", "");
+}
+
+const TARGET_SLOT = "/ws/.camunda/deployment-targets.json::dev";
+
 beforeEach(() => {
     vi.clearAllMocks();
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
 
 describe("DeploymentService.getFormDefaults", () => {
@@ -321,50 +427,144 @@ describe("DeploymentService.deploy", () => {
 
         await service.deploy(
             buildConfig({ auth: new BasicAuth("admin", "secret") }),
-            "/ws/.camunda/deployment-targets.json::dev",
+            TARGET_SLOT,
+            targetAt("http://localhost:8080/engine-rest"),
         );
 
-        expect(secretStore.saveBasicAuth).toHaveBeenCalledWith(
-            "admin",
-            "secret",
-            "/ws/.camunda/deployment-targets.json::dev",
-        );
+        expect(secretStore.saveBasicAuth).toHaveBeenCalledWith("admin", "secret", TARGET_SLOT);
         expect(deploymentState.save).not.toHaveBeenCalled();
         expect(deploymentState.saveAuthType).not.toHaveBeenCalled();
     });
 
-    it("keeps whole env refs out of the target slot so the targets file stays authoritative", async () => {
-        const { service, vsWorkspace, restClient, secretStore } = createService(
-            createEnvResolver({ CAMUNDA_USER: "admin" }),
-        );
+    it("persists a ref next to a literal to the target slot as typed, sending only the resolved value", async () => {
+        const { service, vsWorkspace, restClient, secretStore } = createService({
+            "/work": { MIRAGON_USER: "admin" },
+        });
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         await service.deploy(
-            buildConfig({ auth: new BasicAuth("${env:CAMUNDA_USER}", "secret") }),
-            "/ws/.camunda/deployment-targets.json::dev",
+            buildConfig({ auth: new BasicAuth("${env:MIRAGON_USER}", "s3cret") }),
+            TARGET_SLOT,
+            targetAt("http://localhost:8080/engine-rest"),
         );
 
-        expect(secretStore.saveBasicAuth).toHaveBeenCalledWith(
-            "",
-            "secret",
-            "/ws/.camunda/deployment-targets.json::dev",
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.auth).toMatchObject({ username: "admin", password: "s3cret" });
+        // Blanking the ref would leave an empty half, which a host store may drop with its literal.
+        expect(secretStore.saveBasicAuth).toHaveBeenCalledExactlyOnceWith(
+            "${env:MIRAGON_USER}",
+            "s3cret",
+            TARGET_SLOT,
         );
     });
 
-    it("passes a failed result through without persisting any state", async () => {
-        const { service, vsWorkspace, restClient, deploymentState } = createService();
+    it("sends the exact resolved secret for a whole ref padded with whitespace", async () => {
+        const { service, vsWorkspace, restClient } = createService({
+            "/work": { MIRAGON_PW: "s3cret" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await service.deploy(buildConfig({ auth: new BasicAuth("admin", "  ${env:MIRAGON_PW} ") }));
+
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect((sentConfig.auth as BasicAuth).password).toBe("s3cret");
+    });
+
+    it("records an ad-hoc deploy under the endpoint host and tenant", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus } = createService();
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok", "dep-1"));
+
+        await service.deploy(buildConfig({ endpoint: "https://c.example/api", tenantId: "acme" }));
+
+        expect(deploymentStatus.recordDeployment).toHaveBeenCalledOnce();
+        const [filePath, content, identity, deploymentId] =
+            deploymentStatus.recordDeployment.mock.calls[0];
+        expect(filePath).toBe("/work/order-process.bpmn");
+        expect(content).toBe("<xml/>");
+        expect(identity.key()).toBe("adhoc:c.example/acme");
+        expect(deploymentId).toBe("dep-1");
+    });
+
+    it("records a target deploy under the target's name and host", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus } = createService();
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok", "dep-1"));
+
+        await service.deploy(
+            buildConfig({ endpoint: "https://c.example/api" }),
+            TARGET_SLOT,
+            targetAt("https://c.example/api"),
+        );
+
+        expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
+            "target:dev@c.example",
+        );
+    });
+
+    it("keys the request and the ad-hoc ledger identity off a single .env read", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus, createLookup, dotEnvReads } =
+            createService({
+                "/work": { MIRAGON_URL: "https://prod.example.com/api", MIRAGON_TENANT: "acme" },
+            });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const config = buildConfig({
+            endpoint: "${env:MIRAGON_URL}",
+            tenantId: "${env:MIRAGON_TENANT}",
+        });
+
+        await service.deploy(config);
+
+        expect(createLookup).toHaveBeenCalledExactlyOnceWith("workspaceFolder", "/work", config);
+        expect(dotEnvReads).toHaveBeenCalledOnce();
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.endpoint).toBe("https://prod.example.com/api");
+        // Keyed off the resolved values, but only as fingerprints: the ledger is persisted.
+        expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
+            `adhoc:env:${contentFingerprint("prod.example.com")}/env:${contentFingerprint("acme")}`,
+        );
+    });
+
+    it("keys the request and the target ledger identity off a single .env read", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus, createLookup } = createService({
+            "/work": { MIRAGON_URL: "https://prod.example.com/api" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const config = buildConfig({ endpoint: "${env:MIRAGON_URL}" });
+
+        await service.deploy(config, TARGET_SLOT, targetAt("${env:MIRAGON_URL}"));
+
+        expect(createLookup).toHaveBeenCalledExactlyOnceWith("targetsFile", "/work", config);
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.endpoint).toBe("https://prod.example.com/api");
+        expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
+            `target:dev@env:${contentFingerprint("prod.example.com")}`,
+        );
+    });
+
+    it("passes a failed result through without persisting or recording anything", async () => {
+        const { service, vsWorkspace, restClient, deploymentState, deploymentStatus } =
+            createService();
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy.mockResolvedValue(new DeploymentResult(false, "rejected by server"));
 
-        const result = await service.deploy(buildConfig());
+        const result = await service.deploy(
+            buildConfig(),
+            TARGET_SLOT,
+            targetAt("http://localhost:8080/engine-rest"),
+        );
 
         expect(result.success).toBe(false);
         expect(deploymentState.save).not.toHaveBeenCalled();
+        expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
     });
 
     it("never throws: a rejected REST call becomes a failed result and is logged", async () => {
-        const { service, vsWorkspace, restClient, notifier } = createService();
+        const { service, vsWorkspace, restClient, notifier, deploymentStatus } = createService();
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy.mockRejectedValue(new Error("network down"));
 
@@ -373,6 +573,7 @@ describe("DeploymentService.deploy", () => {
         expect(result.success).toBe(false);
         expect(result.message).toBe("network down");
         expect(notifier.logError).toHaveBeenCalledOnce();
+        expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
     });
 
     it("never throws: a failed file read becomes a failed result", async () => {
@@ -386,38 +587,266 @@ describe("DeploymentService.deploy", () => {
         expect(restClient.deploy).not.toHaveBeenCalled();
     });
 
-    it("resolves ${env:VAR} for the REST request but stores the literal ref", async () => {
-        const { service, vsWorkspace, restClient, secretStore } = createService(
-            createEnvResolver({ CAMUNDA_PASSWORD: "s3cret" }),
+    it("logs the resolved endpoint host as a breadcrumb, never its credentials or path", async () => {
+        const { service, vsWorkspace, restClient, notifier } = createService({
+            "/work": { MIRAGON_URL: "https://admin:s3cret@camunda.prod.example:8443/engine-rest" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await service.deploy(buildConfig({ endpoint: "${env:MIRAGON_URL}", engine: "c8" }));
+
+        expect(notifier.logInfo).toHaveBeenCalledWith(
+            "Deployment started: order-process.bpmn -> c8 @ camunda.prod.example:8443",
         );
+        const logged = notifier.logInfo.mock.calls.flat().join("\n");
+        expect(logged).not.toMatch(/admin|s3cret|engine-rest|\$\{env:/);
+    });
+
+    it("logs the deploy override's host as the breadcrumb when one is set", async () => {
+        const { service, vsWorkspace, restClient, notifier } = createService();
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         await service.deploy(
-            buildConfig({ auth: new BasicAuth("admin", "${env:CAMUNDA_PASSWORD}") }),
+            buildConfig({
+                endpoint: "https://camunda.example/api",
+                deployUrl: "https://gateway.example/deploy",
+            }),
+        );
+
+        expect(notifier.logInfo).toHaveBeenCalledWith(
+            "Deployment started: order-process.bpmn -> c7 @ gateway.example",
+        );
+    });
+
+    it("resolves prefixed refs for the REST request but persists the literal refs", async () => {
+        const { service, vsWorkspace, restClient, secretStore, deploymentState } = createService({
+            "/work": { MIRAGON_STAGE: "prod", MIRAGON_PASSWORD: "s3cret" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await service.deploy(
+            buildConfig({
+                endpoint: "https://camunda.${env:MIRAGON_STAGE}.example/api",
+                auth: new BasicAuth("admin", "${env:MIRAGON_PASSWORD}"),
+            }),
         );
 
         const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.endpoint).toBe("https://camunda.prod.example/api");
         expect((sentConfig.auth as BasicAuth).password).toBe("s3cret");
-        // The secret store must keep the literal ref, never the resolved secret.
+        // Persisted state must keep the literal ref, never the resolved secret.
+        expect(deploymentState.save).toHaveBeenCalledWith(
+            "https://camunda.${env:MIRAGON_STAGE}.example/api",
+            "",
+        );
         expect(secretStore.saveBasicAuth).toHaveBeenCalledWith(
             "admin",
-            "${env:CAMUNDA_PASSWORD}",
+            "${env:MIRAGON_PASSWORD}",
             undefined,
         );
     });
 
-    it("returns a failed result naming the variable when a ${env:VAR} is unset", async () => {
-        const { service, vsWorkspace, restClient } = createService(createEnvResolver());
+    it("returns a failed result naming the variable when a referenced variable is unset", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus } = createService({
+            "/work": { MIRAGON_OTHER: "x" },
+        });
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
 
         const result = await service.deploy(
-            buildConfig({ auth: new BasicAuth("admin", "${env:MISSING_VAR}") }),
+            buildConfig({ auth: new BasicAuth("admin", "${env:MIRAGON_MISSING}") }),
         );
 
         expect(result.success).toBe(false);
-        expect(result.message).toContain("MISSING_VAR");
+        // The .env path is the remedy: it tells the user where to define the variable.
+        expect(result.message).toBe(
+            new UnresolvedEnvVariableError("MIRAGON_MISSING", "auth.password", "/work/.env")
+                .message,
+        );
         expect(restClient.deploy).not.toHaveBeenCalled();
+        expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
+    });
+
+    it("refuses a reference to a variable outside the modeler prefix before calling the engine", async () => {
+        const { service, vsWorkspace, restClient, notifier } = createService({
+            "/work": { GITHUB_TOKEN: "ghp_leak" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+
+        const result = await service.deploy(
+            buildConfig({ auth: new BasicAuth("admin", "${env:GITHUB_TOKEN}") }),
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(
+            new DisallowedEnvReferenceError("auth.password", ENV_VARIABLE_PREFIX).message,
+        );
+        expect(result.message).not.toContain("ghp_leak");
+        expect(restClient.deploy).not.toHaveBeenCalled();
+        expect(notifier.logInfo).not.toHaveBeenCalled();
+    });
+
+    it("rejects an endpoint whose variable is set to an empty value before calling the engine", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus } = createService({
+            "/work": { MIRAGON_URL: "" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+
+        const result = await service.deploy(buildConfig({ endpoint: "${env:MIRAGON_URL}" }));
+
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(new InvalidDeploymentConfigError(["endpoint"]).message);
+        expect(restClient.deploy).not.toHaveBeenCalled();
+        expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
+    });
+
+    it("posts to the convention deploy route when the override's variable is set to an empty value", async () => {
+        const fetchStub = stubFetch(
+            async () => new Response(JSON.stringify({ id: "dep-1" }), { status: 200 }),
+        );
+        const { service, vsWorkspace, notifier } = createService(
+            { "/work": { MIRAGON_DEPLOY: "" } },
+            createRealRestClient(),
+        );
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+
+        const result = await service.deploy(
+            buildConfig({
+                endpoint: "https://camunda.example/engine-rest",
+                deployUrl: "${env:MIRAGON_DEPLOY}",
+            }),
+        );
+
+        expect(result).toMatchObject({ success: true, deploymentId: "dep-1" });
+        expect(fetchStub).toHaveBeenCalledExactlyOnceWith(
+            "https://camunda.example/engine-rest/deployment/create",
+            expect.anything(),
+        );
+        expect(notifier.logInfo).toHaveBeenCalledWith(
+            "Deployment started: order-process.bpmn -> c7 @ camunda.example",
+        );
+    });
+
+    it("keeps credentials embedded in a resolved endpoint out of the result and every log when the request fails", async () => {
+        const fetchStub = rejectCredentialledUrlsLikeUndici();
+        const { service, vsWorkspace, notifier, deploymentStatus } = createService(
+            { "/work": { MIRAGON_URL: CREDENTIALLED_ENDPOINT } },
+            createRealRestClient(),
+        );
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+
+        const result = await service.deploy(buildConfig({ endpoint: "${env:MIRAGON_URL}" }));
+
+        // The rejection really quoted the secret, so its absence below is the redaction.
+        expect(fetchStub).toHaveBeenCalledExactlyOnceWith(
+            `${CREDENTIALLED_ENDPOINT}/deployment/create`,
+            expect.anything(),
+        );
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(CREDENTIALLED_URL_REJECTED.message);
+        expect(notifier.logError).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({
+                host: CREDENTIALLED_URL_REJECTED.host,
+                reason: CREDENTIALLED_URL_REJECTED.reason,
+            }),
+        );
+        expect(notifier.logError.mock.calls[0][0]).toBeInstanceOf(HttpTransportError);
+        expect(result.message).not.toContain("s3cret");
+        expect(everythingNotified(notifier)).not.toContain("s3cret");
+        expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
+    });
+
+    it("hands the config to the env resolver and never reads .env when nothing references it", async () => {
+        const { service, vsWorkspace, restClient, createLookup, dotEnvReads } = createService({
+            "/work": new Error("EISDIR: illegal operation on a directory, read"),
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const config = buildConfig({ auth: new BasicAuth("admin", "secret") });
+
+        const result = await service.deploy(config);
+
+        expect(result.success).toBe(true);
+        expect(createLookup).toHaveBeenCalledExactlyOnceWith("workspaceFolder", "/work", config);
+        expect(dotEnvReads).not.toHaveBeenCalled();
+    });
+
+    it("never reads .env for a named target whose only ref is outside the deploy request", async () => {
+        const startUrlRefTarget = new DeploymentTarget(
+            "dev",
+            "c7",
+            "http://localhost:8080/engine-rest",
+            "",
+            "none",
+            "",
+            "",
+            undefined,
+            "${env:MIRAGON_START_URL}",
+        );
+        const { service, vsWorkspace, restClient, deploymentStatus, dotEnvReads } = createService({
+            "/work": new Error("EISDIR: illegal operation on a directory, read"),
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        const result = await service.deploy(buildConfig(), TARGET_SLOT, startUrlRefTarget);
+
+        expect(result.success).toBe(true);
+        expect(dotEnvReads).not.toHaveBeenCalled();
+        expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
+            "target:dev@localhost:8080",
+        );
+    });
+});
+
+describe("DeploymentService.deploy .env scope", () => {
+    const NESTED_MAIN_FILE = "/work/team/order-process.bpmn";
+
+    /** Workspace folder `/work` holding a nested project `/work/team` with its own targets file. */
+    function createNestedProjectService() {
+        const context = createService({
+            "/work": { MIRAGON_URL: "https://workspace.example/api" },
+            "/work/team": { MIRAGON_URL: "https://team.example/api" },
+        });
+        context.findWorkspaceFolderForDocument.mockReturnValue("/work");
+        context.vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        context.restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        return context;
+    }
+
+    it("resolves an ad-hoc deploy from the workspace folder's .env, never a nested targets file's", async () => {
+        const { service, restClient, dotEnvReads, locateTargetsFile } =
+            createNestedProjectService();
+
+        await service.deploy(
+            buildConfig({ endpoint: "${env:MIRAGON_URL}", mainFilePath: NESTED_MAIN_FILE }),
+        );
+
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.endpoint).toBe("https://workspace.example/api");
+        expect(dotEnvReads).toHaveBeenCalledExactlyOnceWith("/work/.env");
+        expect(locateTargetsFile).not.toHaveBeenCalled();
+    });
+
+    it("resolves a named target's deploy from the .env beside its targets file", async () => {
+        const { service, restClient, deploymentStatus, dotEnvReads, locateTargetsFile } =
+            createNestedProjectService();
+
+        await service.deploy(
+            buildConfig({ endpoint: "${env:MIRAGON_URL}", mainFilePath: NESTED_MAIN_FILE }),
+            TARGET_SLOT,
+            targetAt("${env:MIRAGON_URL}"),
+        );
+
+        const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
+        expect(sentConfig.endpoint).toBe("https://team.example/api");
+        expect(locateTargetsFile).toHaveBeenCalledExactlyOnceWith("/work/team");
+        expect(dotEnvReads).toHaveBeenCalledExactlyOnceWith("/work/team/.env");
+        expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
+            `target:dev@env:${contentFingerprint("team.example")}`,
+        );
     });
 });
 
@@ -432,6 +861,7 @@ describe("DeploymentService.deployFiles", () => {
         "",
         "https://gw/deploy",
     );
+    const envTarget = targetAt("${env:MIRAGON_URL}");
 
     it("deploys each file named by basename and reports a full-success summary", async () => {
         const { service, vsWorkspace, restClient, notifier } = createService();
@@ -442,6 +872,7 @@ describe("DeploymentService.deployFiles", () => {
             ["/work/a.bpmn", "/work/b.dmn"],
             target,
             new NoAuth(),
+            "/work",
         );
 
         expect(results).toHaveLength(2);
@@ -453,62 +884,142 @@ describe("DeploymentService.deployFiles", () => {
         expect(notifier.showInfo).toHaveBeenCalledWith('Deployed 2/2 file(s) to "dev".');
     });
 
-    it("continues after a per-file failure and reports a partial summary", async () => {
+    it("continues after a per-file failure and appends the first failure to the summary", async () => {
         const { service, vsWorkspace, restClient, notifier } = createService();
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy
             .mockResolvedValueOnce(new DeploymentResult(true, "ok"))
-            .mockRejectedValueOnce(new Error("boom"));
+            .mockRejectedValueOnce(new Error("boom"))
+            .mockRejectedValueOnce(new Error("bang"));
 
         const results = await service.deployFiles(
-            ["/work/a.bpmn", "/work/b.bpmn"],
+            ["/work/a.bpmn", "/work/b.bpmn", "/work/c.bpmn"],
             target,
             new NoAuth(),
+            "/work",
         );
 
-        expect(results[0].success).toBe(true);
-        expect(results[1].success).toBe(false);
-        expect(results[1].message).toContain("boom");
-        expect(notifier.showError).toHaveBeenCalledWith('Deployed 1/2 file(s) to "dev".');
+        expect(results.map((r) => r.success)).toEqual([true, false, false]);
+        expect(results[1].message).toBe("b: boom");
+        expect(notifier.showError).toHaveBeenCalledExactlyOnceWith(
+            'Deployed 1/3 file(s) to "dev". b: boom',
+        );
     });
 
-    it("never throws: an unreadable .env fails every file and still reports a summary", async () => {
-        const envResolver = new EnvValueResolver(
-            { getWorkspaceRoot: vi.fn().mockResolvedValue("/work") } as never,
-            { readFile: vi.fn().mockRejectedValue(new Error("EACCES")) } as never,
-            { get: () => undefined },
-        );
-        const { service, restClient, notifier } = createService(envResolver);
+    it("never throws: an unreadable .env fails every file that references it and names the .env in the summary", async () => {
+        const { service, vsWorkspace, restClient, notifier, createLookup } = createService({
+            "/work": new Error("EACCES: permission denied"),
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
 
         const results = await service.deployFiles(
             ["/work/a.bpmn", "/work/b.bpmn"],
-            target,
+            envTarget,
             new NoAuth(),
+            "/work",
         );
 
+        const unreadable = new UnreadableDotEnvError("/work/.env", "EACCES: permission denied");
         expect(results.map((r) => r.success)).toEqual([false, false]);
-        expect(results[0].message).toContain("EACCES");
+        expect(results.map((r) => r.message)).toEqual([
+            `a: ${unreadable.message}`,
+            `b: ${unreadable.message}`,
+        ]);
+        expect(createLookup).toHaveBeenCalledOnce();
         expect(restClient.deploy).not.toHaveBeenCalled();
-        expect(notifier.showError).toHaveBeenCalledWith('Deployed 0/2 file(s) to "dev".');
+        expect(notifier.showError).toHaveBeenCalledExactlyOnceWith(
+            `Deployed 0/2 file(s) to "dev". a: ${unreadable.message}`,
+        );
+        expect(notifier.showError.mock.calls[0][0]).toContain("/work/.env");
     });
 
-    it("resolves env refs in the target's connection fields for every file", async () => {
-        const refTarget = new DeploymentTarget(
-            "dev",
-            "c7",
-            "${env:URL}",
-            "${env:TENANT}",
-            "none",
-            "",
-            "",
-        );
-        const { service, vsWorkspace, restClient, deploymentStatus } = createService(
-            createEnvResolver({ URL: "https://prod.example.com/api", TENANT: "acme" }),
-        );
+    it("ignores an unreadable .env when neither the target nor the auth references a variable", async () => {
+        const { service, vsWorkspace, restClient, notifier, dotEnvReads } = createService({
+            "/work": new Error("EISDIR: illegal operation on a directory, read"),
+        });
         vsWorkspace.readFile.mockResolvedValue("<xml/>");
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
-        await service.deployFiles(["/work/a.bpmn", "/work/b.bpmn"], refTarget, new NoAuth());
+        const results = await service.deployFiles(
+            ["/work/a.bpmn", "/work/b.bpmn"],
+            target,
+            new BasicAuth("admin", "secret"),
+            "/work",
+        );
+
+        expect(results.map((r) => r.success)).toEqual([true, true]);
+        expect(dotEnvReads).not.toHaveBeenCalled();
+        expect(notifier.showInfo).toHaveBeenCalledWith('Deployed 2/2 file(s) to "dev".');
+    });
+
+    it.each<[string, DeploymentTarget, NoAuth | BasicAuth]>([
+        [
+            "its start-instance URL",
+            new DeploymentTarget(
+                "dev",
+                "c7",
+                "https://c/api",
+                "",
+                "none",
+                "",
+                "",
+                undefined,
+                "${env:MIRAGON_START_URL}/{processDefinitionKey}/start",
+            ),
+            new NoAuth(),
+        ],
+        [
+            "the token endpoint left on a basic-auth target",
+            new DeploymentTarget(
+                "dev",
+                "c7",
+                "https://c/api",
+                "",
+                "basic",
+                "${env:MIRAGON_IDP}",
+                "",
+            ),
+            new BasicAuth("admin", "secret"),
+        ],
+    ])(
+        "deploys a target whose only ref is in %s without reading even a broken .env",
+        async (_location, refOutsideDeployTarget, auth) => {
+            const { service, vsWorkspace, restClient, notifier, createLookup, dotEnvReads } =
+                createService({
+                    "/work": new Error("EISDIR: illegal operation on a directory, read"),
+                });
+            vsWorkspace.readFile.mockResolvedValue("<xml/>");
+            restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+            const results = await service.deployFiles(
+                ["/work/a.bpmn", "/work/b.bpmn"],
+                refOutsideDeployTarget,
+                auth,
+                "/work",
+            );
+
+            expect(results.map((r) => r.success)).toEqual([true, true]);
+            expect(createLookup).toHaveBeenCalledOnce();
+            expect(dotEnvReads).not.toHaveBeenCalled();
+            expect(notifier.showError).not.toHaveBeenCalled();
+            expect(notifier.showInfo).toHaveBeenCalledWith('Deployed 2/2 file(s) to "dev".');
+        },
+    );
+
+    it("resolves env refs in the target's connection fields for every file", async () => {
+        const refTarget = targetAt("${env:MIRAGON_URL}", "${env:MIRAGON_TENANT}");
+        const { service, vsWorkspace, restClient, deploymentStatus } = createService({
+            "/work": { MIRAGON_URL: "https://prod.example.com/api", MIRAGON_TENANT: "acme" },
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await service.deployFiles(
+            ["/work/a.bpmn", "/work/b.bpmn"],
+            refTarget,
+            new NoAuth(),
+            "/work",
+        );
 
         const sentConfigs = restClient.deploy.mock.calls.map((call) => call[0] as DeploymentConfig);
         expect(sentConfigs.map((config) => config.endpoint)).toEqual([
@@ -517,7 +1028,128 @@ describe("DeploymentService.deployFiles", () => {
         ]);
         expect(sentConfigs[0].tenantId).toBe("acme");
         expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
-            "target:dev@prod.example.com",
+            `target:dev@env:${contentFingerprint("prod.example.com")}`,
         );
+    });
+
+    it("reads .env once to resolve a credential ref of a literal target for every file", async () => {
+        const literalTarget = new DeploymentTarget(
+            "dev",
+            "c7",
+            "https://c/api",
+            "",
+            "basic",
+            "",
+            "",
+        );
+        const auth = new BasicAuth("admin", "${env:MIRAGON_PW}");
+        const { service, vsWorkspace, restClient, secretStore, createLookup, dotEnvReads } =
+            createService({ "/work": { MIRAGON_PW: "s3cret" } });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await service.deployFiles(["/work/a.bpmn", "/work/b.bpmn"], literalTarget, auth, "/work");
+
+        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
+            "targetsFile",
+            "/work",
+            expect.objectContaining({ mainFilePath: "/work/a.bpmn", auth }),
+        );
+        expect(dotEnvReads).toHaveBeenCalledExactlyOnceWith("/work/.env");
+        const sentAuths = restClient.deploy.mock.calls.map(
+            (call) => (call[0] as DeploymentConfig).auth,
+        );
+        expect(sentAuths).toEqual([
+            expect.objectContaining({ username: "admin", password: "s3cret" }),
+            expect.objectContaining({ username: "admin", password: "s3cret" }),
+        ]);
+        expect(secretStore.saveBasicAuth).not.toHaveBeenCalled();
+    });
+
+    it("expands every file with the target project's .env, never the .env of the file's own folder", async () => {
+        const { service, vsWorkspace, restClient, deploymentStatus, createLookup, dotEnvReads } =
+            createService({
+                "/team-a": { MIRAGON_URL: "https://a.example/api" },
+                "/team-b": { MIRAGON_URL: "https://b.example/api" },
+            });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const auth = new NoAuth();
+
+        await service.deployFiles(["/team-a/a.bpmn", "/team-b/b.bpmn"], envTarget, auth, "/team-a");
+
+        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
+            "targetsFile",
+            "/team-a",
+            expect.objectContaining({
+                mainFilePath: "/team-a/a.bpmn",
+                endpoint: envTarget.endpoint,
+                auth,
+            }),
+        );
+        expect(dotEnvReads).toHaveBeenCalledExactlyOnceWith("/team-a/.env");
+        const sentConfigs = restClient.deploy.mock.calls.map((call) => call[0] as DeploymentConfig);
+        expect(sentConfigs.map((config) => config.endpoint)).toEqual([
+            "https://a.example/api",
+            "https://a.example/api",
+        ]);
+        const recordedKeys = deploymentStatus.recordDeployment.mock.calls.map((call) =>
+            call[2].key(),
+        );
+        const teamAKey = `target:dev@env:${contentFingerprint("a.example")}`;
+        expect(recordedKeys).toEqual([teamAKey, teamAKey]);
+    });
+
+    it("is unaffected by an unreadable .env in another file's folder", async () => {
+        const { service, vsWorkspace, restClient, notifier } = createService({
+            "/team-a": { MIRAGON_URL: "https://a.example/api" },
+            "/team-b": new Error("EACCES: permission denied"),
+        });
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        const results = await service.deployFiles(
+            ["/team-a/a.bpmn", "/team-b/b.bpmn"],
+            envTarget,
+            new NoAuth(),
+            "/team-a",
+        );
+
+        expect(results.map((r) => r.success)).toEqual([true, true]);
+        expect(restClient.deploy).toHaveBeenCalledTimes(2);
+        expect(notifier.showInfo).toHaveBeenCalledWith('Deployed 2/2 file(s) to "dev".');
+    });
+
+    it("keeps credentials embedded in a resolved endpoint out of every result, log and the summary when requests fail", async () => {
+        const fetchStub = rejectCredentialledUrlsLikeUndici();
+        const { service, vsWorkspace, notifier } = createService(
+            { "/work": { MIRAGON_URL: CREDENTIALLED_ENDPOINT } },
+            createRealRestClient(),
+        );
+        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+
+        const results = await service.deployFiles(
+            ["/work/a.bpmn", "/work/b.bpmn"],
+            envTarget,
+            new NoAuth(),
+            "/work",
+        );
+
+        // The rejections really quoted the secret, so its absence below is the redaction.
+        expect(fetchStub).toHaveBeenCalledTimes(2);
+        expect(fetchStub).toHaveBeenCalledWith(
+            `${CREDENTIALLED_ENDPOINT}/deployment/create`,
+            expect.anything(),
+        );
+        expect(results.map((r) => r.message)).toEqual([
+            `a: ${CREDENTIALLED_URL_REJECTED.message}`,
+            `b: ${CREDENTIALLED_URL_REJECTED.message}`,
+        ]);
+        expect(notifier.logWarning).toHaveBeenCalledTimes(2);
+        expect(notifier.showError).toHaveBeenCalledExactlyOnceWith(
+            `Deployed 0/2 file(s) to "dev". a: ${CREDENTIALLED_URL_REJECTED.message}`,
+        );
+        expect(results.map((r) => r.message).join("\n")).not.toContain("s3cret");
+        expect(everythingNotified(notifier)).not.toContain("s3cret");
     });
 });

@@ -11,8 +11,8 @@ import {
 import { CamundaEnginePort } from "../domain/ports";
 import { ArtifactService } from "../../shared/service/ArtifactService";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
-import { EnvValueResolver } from "./EnvValueResolver";
-import { expandEnvRefs, expandOptionalEnvRefs } from "../domain/envRef";
+import { EnvScope, EnvValueResolver } from "./EnvValueResolver";
+import { loggableHost } from "../domain/urlTemplate";
 
 import { Engine } from "@miragon/bpmn-modeler-types";
 /**
@@ -90,6 +90,7 @@ export class StartInstanceService {
      * @param payloadFilePath Absolute path to a JSON payload file, or empty string for no payload.
      * @param startInstanceUrl Optional full-URL override for the start-instance call.
      * @param documentDir Directory anchoring the `.env` lookup for env refs.
+     * @param envScope `targetsFile` for a named target, `workspaceFolder` for ad-hoc.
      * @returns The outcome of the start-instance attempt.
      */
     async startInstance(
@@ -98,8 +99,9 @@ export class StartInstanceService {
         engine: Engine,
         auth: AuthConfig,
         payloadFilePath: string,
-        startInstanceUrl?: string,
-        documentDir?: string,
+        startInstanceUrl: string | undefined,
+        documentDir: string | undefined,
+        envScope: EnvScope,
     ): Promise<StartInstanceResult> {
         try {
             let payload: Record<string, unknown> | null = null;
@@ -109,18 +111,22 @@ export class StartInstanceService {
                 payload = JSON.parse(content);
             }
 
-            // Expanded before the REST client substitutes {processDefinitionKey}.
-            const lookup = await this.envResolver.createLookup(documentDir);
             const config = new StartInstanceConfig(
                 processDefinitionKey,
-                expandEnvRefs(endpoint, lookup, "endpoint"),
+                endpoint,
                 engine,
-                auth.expandEnvRefs(lookup),
+                auth,
                 payload,
-                expandOptionalEnvRefs(startInstanceUrl, lookup, "startInstanceUrl"),
+                startInstanceUrl,
             );
+            const lookup = await this.envResolver.createLookup(envScope, documentDir, config);
+            const requestConfig = config.expandEnvRefs(lookup);
 
-            return await this.restClient.startInstance(config);
+            // Breadcrumb. Host[:port] of the resolved URL only — never the full URL or auth payload.
+            this.notifier.logInfo(
+                `Instance start requested: ${processDefinitionKey} @ ${loggableHost(requestConfig.startInstanceUrl ?? requestConfig.endpoint)}`,
+            );
+            return await this.restClient.startInstance(requestConfig);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             this.notifier.logError(error instanceof Error ? error : new Error(message));

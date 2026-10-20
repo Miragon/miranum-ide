@@ -1,4 +1,6 @@
+import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
 import { AuthConfig, NoAuth } from "./deployment";
+import { containsEnvRef, EnvLookup, expandEnvRefs, expandOptionalEnvRefs } from "./envRef";
 
 import { Engine } from "@miragon/bpmn-modeler-types";
 /**
@@ -24,6 +26,40 @@ export class StartInstanceConfig {
         readonly payload: Record<string, unknown> | null = null,
         readonly startInstanceUrl?: string,
     ) {}
+
+    referencesEnv(): boolean {
+        return (
+            containsEnvRef(this.endpoint) ||
+            containsEnvRef(this.startInstanceUrl) ||
+            this.auth.referencesEnv()
+        );
+    }
+
+    /**
+     * Request-only copy, expanded before the REST client substitutes
+     * `{processDefinitionKey}` into the URL. A variable set to an empty value
+     * obeys the same rules as a typed one: a blank override falls back to the
+     * convention route, a blank endpoint is rejected.
+     */
+    expandEnvRefs(lookup: EnvLookup): StartInstanceConfig {
+        const endpoint = expandEnvRefs(this.endpoint, lookup, "endpoint");
+        if (!endpoint.trim()) {
+            throw new InvalidDeploymentConfigError(["endpoint"]);
+        }
+        const startInstanceUrl = expandOptionalEnvRefs(
+            this.startInstanceUrl,
+            lookup,
+            "endpoints.startInstance",
+        )?.trim();
+        return new StartInstanceConfig(
+            this.processDefinitionKey,
+            endpoint,
+            this.engine,
+            this.auth.expandEnvRefs(lookup),
+            this.payload,
+            startInstanceUrl || undefined,
+        );
+    }
 }
 
 /**

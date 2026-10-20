@@ -7,6 +7,7 @@ import {
     PickerPort,
     StatusBarPort,
 } from "../../shared/domain/hostPorts";
+import { UnreadableDotEnvError } from "../../shared/domain/errors";
 import { EditorSessionStore } from "../../shared/infrastructure/EditorSessionStore";
 import {
     contentFingerprint,
@@ -17,8 +18,9 @@ import {
     ledgerKeyPrefixFor,
 } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
+import { EnvLookup, EnvReferencing, NO_ENV_VARIABLES } from "../domain/envRef";
 import { DeploymentTargetService } from "./DeploymentTargetService";
-import { EnvValueResolver } from "./EnvValueResolver";
+import { EnvScope, EnvValueResolver } from "./EnvValueResolver";
 
 /**
  * Owns the deployment status-bar item and the "what was last deployed where"
@@ -51,11 +53,15 @@ export class DeploymentStatusService {
     ): Promise<DeploymentTargetIdentity> {
         return DeploymentTargetIdentity.fromTarget(
             target,
-            await this.envResolver.createLookup(documentDir),
+            await this.identityLookup(
+                "targetsFile",
+                documentDir,
+                DeploymentTargetIdentity.envRefsOfTarget(target),
+            ),
         );
     }
 
-    async adHocIdentity(
+    private async adHocIdentity(
         endpoint: string,
         tenantId: string,
         documentDir?: string,
@@ -63,8 +69,32 @@ export class DeploymentStatusService {
         return DeploymentTargetIdentity.adHoc(
             endpoint,
             tenantId,
-            await this.envResolver.createLookup(documentDir),
+            await this.identityLookup(
+                "workspaceFolder",
+                documentDir,
+                DeploymentTargetIdentity.envRefsOfAdHoc(endpoint, tenantId),
+            ),
         );
+    }
+
+    /**
+     * An unreadable `.env` must not fail a status refresh or a ledger prune that
+     * runs after a target was already saved; unresolved refs then stay verbatim.
+     */
+    private async identityLookup(
+        scope: EnvScope,
+        documentDir: string | undefined,
+        subject: EnvReferencing,
+    ): Promise<EnvLookup> {
+        try {
+            return await this.envResolver.createLookup(scope, documentDir, subject);
+        } catch (error) {
+            if (error instanceof UnreadableDotEnvError) {
+                this.notifier.logDebug(`Deployment status keyed without .env: ${error.message}`);
+                return NO_ENV_VARIABLES;
+            }
+            throw error;
+        }
     }
 
     async recordDeployment(
