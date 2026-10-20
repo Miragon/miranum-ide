@@ -17,7 +17,15 @@ const PKG_SRC = __dirname;
 const REPO_ROOT = normalize(join(__dirname, "../../.."));
 const LIBS_ROOT = join(REPO_ROOT, "libs");
 
-function listSourceFiles(root: string): string[] {
+const isTsSource = (entry: string): boolean =>
+    /\.tsx?$/.test(entry) && !entry.endsWith(".d.ts") && !/\.(spec|test)\.tsx?$/.test(entry);
+
+const isStylesheet = (entry: string): boolean => entry.endsWith(".css");
+
+function listSourceFiles(
+    root: string,
+    isIncluded: (entry: string) => boolean = isTsSource,
+): string[] {
     const out: string[] = [];
     const SKIP_DIRS = new Set(["node_modules", "dist", "lib", "coverage"]);
     const walk = (absDir: string): void => {
@@ -26,11 +34,7 @@ function listSourceFiles(root: string): string[] {
             if (statSync(abs).isDirectory()) {
                 if (SKIP_DIRS.has(entry)) continue;
                 walk(abs);
-            } else if (
-                /\.tsx?$/.test(entry) &&
-                !entry.endsWith(".d.ts") &&
-                !/\.(spec|test)\.tsx?$/.test(entry)
-            ) {
+            } else if (isIncluded(entry)) {
                 out.push(abs);
             }
         }
@@ -50,6 +54,10 @@ function importedModules(content: string): string[] {
     return SPECIFIER_PATTERNS.flatMap((pattern) =>
         [...content.matchAll(pattern)].map((match) => match[1]),
     );
+}
+
+function cssImportSpecifier(importParams: string): string {
+    return /^(?:url\(\s*)?["']?([^"')\s]+)/.exec(importParams.trim())?.[1] ?? importParams;
 }
 
 // Value imports only — `import type` / `export type` are erased at build and so
@@ -148,6 +156,29 @@ describe("bpmn-modeler import direction", () => {
             `every top-level dark-theme rule must be scoped under ` +
                 `[data-bpmn-theme="dark"]:\n${offenders.join("\n")}`,
         ).toEqual([]);
+    });
+
+    it("plugin CSS comes from its own package, never another package's prebuilt copy", () => {
+        // camunda-bpmn-js and bpmn-js ship diagram-js/properties-panel/minimap CSS
+        // frozen at their own build, which drifts from the versions we pin.
+        const isPrebuiltCopy = (spec: string): boolean =>
+            spec.startsWith("camunda-bpmn-js/dist/") ||
+            spec === "bpmn-js/dist/assets/diagram-js.css";
+        const offenders: string[] = [];
+        const collectOffender = (file: string, spec: string): void => {
+            if (isPrebuiltCopy(spec)) offenders.push(`${file.slice(PKG_SRC.length + 1)} → ${spec}`);
+        };
+        for (const file of listSourceFiles(PKG_SRC, isStylesheet)) {
+            postcss.parse(readFileSync(file, "utf8")).walkAtRules("import", (rule) => {
+                collectOffender(file, cssImportSpecifier(rule.params));
+            });
+        }
+        for (const file of listSourceFiles(PKG_SRC)) {
+            for (const spec of importedModules(readFileSync(file, "utf8"))) {
+                collectOffender(file, spec);
+            }
+        }
+        expect(offenders, offenders.join("\n")).toEqual([]);
     });
 
     it("only src/bpmnlint/ value-imports the lint stack (#1407)", () => {

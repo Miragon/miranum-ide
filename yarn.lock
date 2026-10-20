@@ -2790,8 +2790,10 @@ __metadata:
     bpmn-auto-layout: "npm:2.0.0-alpha.2"
     bpmn-js: "npm:18.31.0"
     bpmn-js-bpmnlint: "npm:0.25.0"
+    bpmn-js-color-picker: "npm:0.7.2"
     bpmn-js-create-append-anything: "npm:2.1.0"
     bpmn-js-differ: "npm:3.2.0"
+    bpmn-js-element-templates: "npm:2.38.0"
     bpmn-js-native-copy-paste: "npm:0.3.0"
     bpmn-js-properties-panel: "npm:5.65.2"
     bpmn-js-token-simulation: "npm:1.0.0"
@@ -8241,7 +8243,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-color-picker@npm:^0.7.2":
+"bpmn-js-color-picker@npm:0.7.2, bpmn-js-color-picker@npm:^0.7.2":
   version: 0.7.2
   resolution: "bpmn-js-color-picker@npm:0.7.2"
   peerDependencies:
@@ -8281,7 +8283,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-element-templates@npm:^2.37.0":
+"bpmn-js-element-templates@npm:2.38.0, bpmn-js-element-templates@npm:^2.37.0":
   version: 2.38.0
   resolution: "bpmn-js-element-templates@npm:2.38.0"
   dependencies:
