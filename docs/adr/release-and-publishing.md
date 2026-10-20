@@ -1,15 +1,16 @@
 # Release and publishing
 
 - Status: accepted
-- Last reviewed: 2026-10-05
+- Last reviewed: 2026-10-20
 
 ## Context
 
-Published packages and IDE hosts have independent release cadences but bundle
+Published packages and IDE hosts have independent version lines but bundle
 shared source. Release routing must account for changes in those shared inputs
-without treating every package API break as a host break. npm publishing also
-needs installable tarballs, consumer validation and authentication without a
-standing CI token.
+without treating every package API break as a host break. Releases are cut
+occasionally and usually ship every component with pending changes. npm
+publishing also needs installable tarballs, consumer validation and
+authentication without a standing CI token.
 
 The standalone Linux app needs Git inside its Flatpak sandbox without requiring
 users to install a full development SDK or allowing host-command execution.
@@ -17,6 +18,7 @@ users to install a full development SDK or allowing host-command execution.
 ## Contents
 
 - [Release components and markers](#release-components-and-markers)
+- [Release pull request](#release-pull-request)
 - [Packing and publishing](#packing-and-publishing)
 - [Standalone Linux Git](#standalone-linux-git)
 - [Consequences](#consequences)
@@ -69,6 +71,29 @@ under-versioned and could major-release VS Code for package-only breaks.
 Generic patch or scheduled batch markers would lose meaningful changelog
 entries or attribute already-shipped changes to a later release. The accepted
 cost is a bot commit for each relevant shared feature/fix.
+
+### Release pull request
+
+Release-please maintains one combined Release PR for all components
+(`separate-pull-requests: false`). Tags, changelogs and manifest entries stay
+per component, and a component without releasable changes is simply absent from
+the PR. Merging it starts one release run behind one `release-approval` gate and
+publishes every included component. With one PR per component, every merge
+started its own run and approval, and occasional releasers had to work out which
+PRs to merge and in what order ([#1669](https://github.com/Miragon/bpmn-modeler/issues/1669)).
+
+There is no release order to model. The two npm packages inline their libraries
+and do not depend on each other, the hosts build the packages from source at
+their own tag through `workspace:` ranges rather than the registry, and every
+publish job in [release-please.yml](../../.github/workflows/release-please.yml)
+waits only for the release-please and approval jobs.
+
+The accepted cost is that a single component cannot be held back: once the
+combined PR merges, every component with releasable changes ships. `Release-As`
+only overrides a version, and release-please has no per-component skip. Holding
+a component back has not been needed so far. Keeping separate PRs and
+documenting them as order-independent was rejected because it keeps one run and
+one approval per component.
 
 ### Packing and publishing
 
@@ -140,10 +165,11 @@ Git to the host would require general host-command execution permission.
 ## Consequences
 
 Packages retain separate version lines while bundled feature/fix changes reach
-the hosts that ship them. Routing exclusions and marker input sets are maintained
-configuration, not inferred automatically from the module graph. npm publishing
-uses short-lived identity with provenance; package bootstrap and trusted
-publisher registration remain explicit setup steps.
+the hosts that ship them. They release together from one PR and one approval;
+a single line cannot be held back. Routing exclusions and marker input sets are
+maintained configuration, not inferred automatically from the module graph. npm
+publishing uses short-lived identity with provenance; package bootstrap and
+trusted publisher registration remain explicit setup steps.
 
 External dependencies permit consumer plugin interoperability but make version
 alignment and declared dependencies part of release correctness. BPMN currently
