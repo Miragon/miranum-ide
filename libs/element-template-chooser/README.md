@@ -21,23 +21,45 @@ classified (`classifyBinding`) and the implementation summary is derived
 
 ## Why this lives in its own library
 
-- **It is Preact JSX in a non-React webview.** The overlay is written in TSX
-  with a `/** @jsx h */` pragma; the surrounding `apps/bpmn-webview` code does
-  not bundle React/Preact globally. Isolating the UI as a source-only package
-  gives it its own JSX compilation boundary so the pragma doesn't leak into —
-  or break — the rest of the webview build. (Several other libs here, e.g.
-  `append-menu`, reuse this chooser's `ElementTemplate` types.)
 - **It is a self-contained properties-panel integration.** All it needs from the
   host is the bpmn-js `elementTemplates` service; keeping it separate keeps the
   overlay reusable in any bpmn-js application and lets its UX evolve
-  independently.
+  independently. `@miragon/bpmn-modeler` registers it in the `commonModules` of
+  `packages/bpmn-modeler/src/modeler.ts` (both engines) and inlines this
+  private, source-only package into its bundle
+  (`packages/bpmn-modeler/inlined-libraries.json`).
+- **Its template types are shared.** `append-menu` reuses the `ElementTemplate`
+  types. It is reachable from the engine-neutral `/design` entry, so its value
+  imports target chooser subpaths (e.g. `/types`), never the barrel, which pulls
+  in the DI module, minisearch, and the CSS
+  (`packages/bpmn-modeler/src/architecture.spec.ts`).
 
 ## Usage
 
+`@miragon/bpmn-modeler` already registers the module. On a plain bpmn-js
+`Modeler`, add it next to the properties panel and an element-templates module
+that provides `elementTemplates`. The Camunda 7 templates module below also
+needs the Camunda moddle extension (on Camunda 8, use
+`CloudElementTemplatesPropertiesProviderModule` with the Zeebe extension):
+
 ```ts
+import Modeler from "bpmn-js/lib/Modeler";
+import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule } from "bpmn-js-properties-panel";
+import { ElementTemplatesPropertiesProviderModule } from "bpmn-js-element-templates";
+import camundaModdle from "camunda-bpmn-moddle/resources/camunda.json";
 import { ElementTemplateChooserModule } from "@miragon/bpmn-modeler-element-template-chooser";
 
-new BpmnModeler({ additionalModules: [ElementTemplateChooserModule] });
+new Modeler({
+    container: "#canvas",
+    propertiesPanel: { parent: "#js-properties-panel" },
+    moddleExtensions: { camunda: camundaModdle },
+    additionalModules: [
+        BpmnPropertiesPanelModule,
+        BpmnPropertiesProviderModule,
+        ElementTemplatesPropertiesProviderModule,
+        ElementTemplateChooserModule,
+    ],
+});
 ```
 
 The DI container wires the service automatically; it subscribes to

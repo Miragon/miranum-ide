@@ -65,10 +65,6 @@ declare module "@bpmn-io/properties-panel/preact/jsx-runtime" {
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
-declare module "camunda-bpmn-js-behaviors/lib/util/ElementUtil" {
-    export const createElement;
-}
-
 declare module "bpmn-js-token-simulation" {
     export const TokenSimulationModule;
 }

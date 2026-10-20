@@ -9,37 +9,39 @@ This skill covers how the BPMN webview (`apps/bpmn-webview/`) uses the bpmn-js l
 
 ## Modeler Initialization
 
-The modeler is encapsulated in `packages/bpmn-modeler/src/modeler.ts` as a `BpmnModeler` class. It constructs `bpmn-js/lib/Modeler` itself from the selected engine stack.
+The modeler is encapsulated in `packages/bpmn-modeler/src/modeler.ts` as a `BpmnModeler` class, created through the public `createModeler(container, options)` factory (`createModeler.ts`). `BpmnModeler.init()` constructs `bpmn-js/lib/Modeler` itself from the selected engine stack.
 
 ### Engine Variants
 
-The modeler supports two Camunda engine variants, selected at initialization:
+The modeler supports two Camunda engine variants, selected by the `engine` option:
 
-Each engine stack (`packages/bpmn-modeler/src/engineStacks/c7.ts`, `c8.ts`) is data: the upstream plugin modules in camunda-bpmn-js's former registration order (wrapped by `composeUpstreamModules` with the shared leading/trailing modules), the engine moddle extension, and the properties-panel / popup-menu option defaults.
+Each engine stack (`packages/bpmn-modeler/src/engineStacks/c7.ts`, `c8.ts`) is data: the upstream plugin modules in camunda-bpmn-js's former registration order (wrapped by `composeUpstreamModules` with the shared leading/trailing modules), the engine-only modules, the engine moddle extension, and the properties-panel / popup-menu option defaults. `loadEngineStack(engine)` imports it dynamically, so a page only parses the stack it opens.
 
 - **Camunda 7** — `camunda` moddle extension. Engine modules: `CreateAppendElementTemplatesModule`, `CreateAppendC7ElementTemplatesModule`, `TransactionBoundariesModule`.
 - **Camunda 8** — `zeebe` moddle extension, `popupMenu.defaultTab`. No engine modules beyond its upstream set.
 
-Both variants share `TokenSimulationModule` and `ElementTemplateChooserModule` as common modules.
+Both variants share the `commonModules` array in `BpmnModeler.init()` — e.g. `TokenSimulationModule`, `ElementTemplateChooserModule`, `AppendMenuModule`, plus translation, lint, layout, and mode modules. Read the array for the full set.
 
 ### Lifecycle
 
-1. `window.onload` in `main.ts` registers the message listener, installs the select-all handler, and initialises the theme
-2. `main.ts` sends `GetBpmnFileCommand` to the extension host and awaits the `BpmnFileQuery` response
-3. `initializeModeler()` calls `BpmnModeler.create(engine)` to mount the modeler
-4. `BpmnModeler.loadDiagram(xml)` imports the BPMN XML
-5. Viewport is restored from `vscode.getState()` if available
-6. Event listeners are installed for `commandStack.changed` and `canvas.viewbox.changed`
-7. The clipboard interceptor and contenteditable polyfill are installed (production only — see below)
-8. Element templates and modeler settings are requested from the extension host
+1. `apps/bpmn-webview/src/main.ts` calls `bootstrap(getHostApi(), { extraModules })`; `bootstrap.ts` starts `run()` once the window has loaded
+2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` here)
+3. `createModeSession` builds the initial surface: View → `createViewer`, Design on an untagged model → `createDesigner`, otherwise `createModeler` (each lazily imported via `surfaceModules.ts`)
+4. `createModeler` constructs `BpmnModeler` and awaits `init()` — load the engine stack, build the module list, install the FEEL/contenteditable clipboard polyfill when `clipboard` is set, then construct `bpmn-js/lib/Modeler` — and afterwards applies the `elementTemplates`, `settings`, `theme`, and `locale` options
+5. The webview requests element templates (modeler only) and the lint config (designer/modeler only), then imports the XML via `loadDiagram(xml)` (`newDiagram()` for an empty file)
+6. `bindSurface` subscribes `commandStack.changed` to the debounced `SyncDocumentCommand` and creates the `WebviewStateManager`
+7. `WebviewStateManager` restores the viewport from `host.getState()`, then — once element templates and settings have arrived — the selection and panel UI state, and finally starts persisting viewport, selection, and drill-down changes
 
 ### Modeler Options
 
-The modeler is created with these configuration options (see `MODELER_OPTIONS` constant):
-- `container`: `"#js-canvas"` — DOM element for the diagram canvas
-- `propertiesPanel.parent`: `"#js-properties-panel"` — DOM element for the properties panel sidebar
-- `alignToOrigin`: `{ alignOnSave: false, offset: 150, tolerance: 50 }` — configures the auto-align plugin
-- `additionalModules`: Engine-specific modules (see Engine Variants above)
+`BpmnModeler.init()` passes these options to `new Modeler(...)`:
+- `container`: the element passed to `createModeler` (the webview's `#js-canvas`)
+- `propertiesPanel`: the stack's `propertiesPanelDefaults`, `parent` from the `propertiesPanel.parent` option (the webview's `#js-properties-panel-mount`), and `feelPopupContainer: container` so FEEL popups stay in the instance's theme scope
+- `popupMenu`: the stack's `popupMenuDefaults` (C8 only)
+- `alignToOrigin`: `ALIGN_TO_ORIGIN_OPTIONS` — `{ alignOnSave: false, offset: 150, tolerance: 50 }`
+- `moddleExtensions`: the stack's extension merged with the caller's `moddleExtensions`
+- `propertiesPanelMode`: the normalized `mode` option
+- `additionalModules`, in order: upstream (`engineStack.upstreamModules`) → common (`commonModules`) → engine (`engineStack.engineModules`) → capability (`capabilityModules(engine, capabilities)`) → clipboard (`createClipboardModules(...)`, only with a `clipboard` option) → the caller's `additionalModules`
 
 ## Core bpmn-js Services
 
@@ -59,13 +61,13 @@ Services are accessed via `modeler.get('serviceName')`. Key services used:
 
 ### Events This Project Listens To
 
-| Event                      | Where        | Purpose                                                                                                          |
-|----------------------------|--------------|------------------------------------------------------------------------------------------------------------------|
-| `commandStack.changed`     | `modeler.ts` | Triggered after any modeler command. Exports XML and sends `SyncDocumentCommand` to host.                        |
-| `canvas.viewbox.changed`   | `modeler.ts` | Triggered on scroll/zoom. Debounced (100ms), saves viewport to `vscode.setState()` for persistence.             |
-| `copyPaste.elementsCopied` | `modeler.ts` | Triggered when elements are copied. Intercepted to write descriptor JSON to system clipboard via extension host. |
-| `copyPaste.pasteElements`  | `modeler.ts` | Triggered when paste occurs. Intercepted to read descriptor JSON from system clipboard via extension host.       |
-| `elementTemplates.errors`  | `modeler.ts` | Triggered when element template loading produces errors. Forwarded to a callback for error reporting.            |
+| Event                      | Where                                                                    | Purpose                                                                                                          |
+|----------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `commandStack.changed`     | `apps/bpmn-webview/src/bootstrap.ts` (`bindSurface`)                     | Triggered after any modeler command. Exports XML and sends a debounced `SyncDocumentCommand` to host.            |
+| `canvas.viewbox.changed`   | `packages/bpmn-modeler/src/viewport.ts`                                  | Triggered on scroll/zoom. Debounced (100ms); `WebviewStateManager` (`state.ts`) persists it via `host.setState()`. |
+| `copyPaste.elementsCopied` | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when elements are copied. Intercepted to write descriptor JSON to system clipboard via extension host. |
+| `copyPaste.pasteElements`  | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when paste occurs. Intercepted to read descriptor JSON from system clipboard via extension host.       |
+| `elementTemplates.errors`  | `packages/bpmn-modeler/src/modeler.ts`                                   | Triggered when element template loading produces errors. Forwarded to the `onElementTemplatesErrors` callback.   |
 
 ### Event Priority System
 
@@ -86,7 +88,7 @@ the native browser clipboard** — the engine stacks and the designer register
 **host-bridge override**: bpmn-js DI modules in the shared `libs/bpmn-clipboard`
 package (`@miragon/bpmn-modeler-clipboard`), built by its `createClipboardModules({
 element, text? })` factory and registered only when the webview can't reach the
-system clipboard; the third is a webview-local polyfill. `apps/bpmn-webview/src/bootstrap.ts`
+system clipboard; the third is a document-level polyfill the package installs outside bpmn-js DI. `apps/bpmn-webview/src/bootstrap.ts`
 selects between them (native for dev / `clipboard: "native"`, otherwise the
 protocol bridge). The two DI modules receive their host bridges through didi
 value injection — `elementClipboardBridge` (element JSON) and
@@ -175,10 +177,11 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 
 ## Key Files
 
-- **Modeler wrapper**: `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
-- **Webview entry** (installs the clipboard modules): `apps/bpmn-webview/src/main.ts`
+- **Public factory**: `packages/bpmn-modeler/src/createModeler.ts`
+- **Modeler wrapper** (builds the clipboard modules via `createClipboardModules`): `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
+- **Webview session** (chooses the `clipboard` option): `apps/bpmn-webview/src/bootstrap.ts` (entry: `main.ts`)
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`
-- **Barrel exports**: `apps/bpmn-webview/src/app/index.ts`
-- **Host API wrapper + dev mock** (`getHostApi`/`MockHost`): `apps/bpmn-webview/src/app/host.ts`
+- **Barrel exports**: `apps/bpmn-webview/src/index.ts`
+- **Host API wrapper + dev mock** (`getHostApi`/`MockHost`): `apps/bpmn-webview/src/host.ts`

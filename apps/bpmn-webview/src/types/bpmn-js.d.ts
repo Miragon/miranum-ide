@@ -14,24 +14,12 @@ declare module "@bpmn-io/properties-panel/preact/jsx-runtime" {
     export const Fragment: any;
 }
 
-declare module "camunda-bpmn-js-behaviors/lib/util/ElementUtil" {
-    export const createElement;
-}
-
-declare module "@bpmn-io/element-template-chooser" {
-    export const ElementTemplateChooserModule;
-}
-
 declare module "bpmn-js-token-simulation" {
     export const TokenSimulationModule;
 }
 
 declare module "bpmn-js-create-append-anything" {
     export const CreateAppendElementTemplatesModule;
-}
-
-declare module "camunda-transaction-boundaries" {
-    export const TransactionBoundariesModule;
 }
 
 declare module "bpmn-js-native-copy-paste/lib/PasteUtil.js" {
