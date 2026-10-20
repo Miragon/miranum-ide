@@ -1,4 +1,4 @@
-import "bpmn-js/dist/assets/diagram-js.css";
+import "diagram-js/assets/diagram-js.css";
 
 import Modeler from "bpmn-js/lib/Modeler";
 import type EventBus from "diagram-js/lib/core/EventBus";
