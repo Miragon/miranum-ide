@@ -362,7 +362,7 @@ jobs:
           always() && github.event_name == 'pull_request' &&
           needs.detect-changes.outputs.vscode-plugin-src == 'true'
         continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@c4bbc33a89b7ace0e63d35f1f7d4bcee31155a73 # v2.13.0
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
         with:
           working-directory: apps/vscode-plugin
           json-summary-path: ../../coverage/apps/vscode-plugin/coverage-summary.json
@@ -405,7 +405,7 @@ jobs:
           always() && github.event_name == 'pull_request' &&
           needs.detect-changes.outputs.modeler-core-src == 'true'
         continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@c4bbc33a89b7ace0e63d35f1f7d4bcee31155a73 # v2.13.0
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
         with:
           working-directory: libs/modeler-core
           json-summary-path: ../../coverage/libs/modeler-core/coverage-summary.json
@@ -449,7 +449,7 @@ jobs:
           always() && github.event_name == 'pull_request' &&
           needs.detect-changes.outputs.modeler-bridge-src == 'true'
         continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@c4bbc33a89b7ace0e63d35f1f7d4bcee31155a73 # v2.13.0
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
         with:
           working-directory: apps/modeler-bridge
           json-summary-path: ../../coverage/apps/modeler-bridge/coverage-summary.json
@@ -473,7 +473,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup JDK 21
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '21'
