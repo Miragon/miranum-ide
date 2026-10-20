@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1](https://github.com/Miragon/bpmn-modeler/compare/vscode-v1.16.0...vscode-v1.16.1) (2026-10-20)
+
+
+### 🐞 Bug Fixes
+
+* **bpmn-modeler:** import plugin css at the pinned versions ([#1675](https://github.com/Miragon/bpmn-modeler/issues/1675)) [sync b0c2e84] ([9115a99](https://github.com/Miragon/bpmn-modeler/commit/9115a997a62228547f77c6576b00d56e89e03cda))
+
 ## [1.16.0](https://github.com/Miragon/bpmn-modeler/compare/vscode-v1.15.0...vscode-v1.16.0) (2026-10-16)
 
 
