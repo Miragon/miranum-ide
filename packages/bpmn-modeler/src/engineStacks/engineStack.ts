@@ -1,8 +1,11 @@
-import type Modeler from "camunda-bpmn-js/lib/base/Modeler";
-import type { BaseViewerOptions } from "bpmn-js/lib/BaseViewer";
+import type { ModuleDeclaration } from "didi";
 
 export interface EngineStack {
-    readonly Modeler: new (options: BaseViewerOptions) => Modeler;
+    /** Upstream engine plugins, in the order camunda-bpmn-js registered them. */
+    readonly upstreamModules: readonly ModuleDeclaration[];
     /** DI modules only this engine registers, placed right after the common modules. */
     readonly engineModules: readonly unknown[];
+    readonly moddleExtensions: Readonly<Record<string, unknown>>;
+    readonly propertiesPanelDefaults: Readonly<Record<string, unknown>>;
+    readonly popupMenuDefaults?: Readonly<Record<string, unknown>>;
 }

@@ -2,9 +2,10 @@ declare module "bpmn-js-properties-panel" {
     export const useService;
     export const BpmnPropertiesPanelModule;
     export const BpmnPropertiesProviderModule;
-    // Engine provider modules, consumed only by the upstream-shape pin test.
     export const CamundaPlatformPropertiesProviderModule;
     export const ZeebePropertiesProviderModule;
+    export const CamundaPlatformTooltipProvider;
+    export const ZeebeTooltipProvider;
 }
 
 declare module "@bpmn-io/properties-panel" {
@@ -84,6 +85,7 @@ declare module "bpmn-js-token-simulation/lib/viewer" {
 declare module "bpmn-js-create-append-anything" {
     export const CreateAppendElementTemplatesModule;
     export const CreateAppendAnythingModule;
+    export const RemoveTemplatesModule;
 }
 
 declare module "camunda-transaction-boundaries/lib/index.js" {
@@ -103,4 +105,77 @@ declare module "bpmn-js-native-copy-paste/lib/PasteUtil.js" {
 declare module "bpmn-js-native-copy-paste" {
     const NativeCopyPasteModule;
     export default NativeCopyPasteModule;
+}
+
+declare module "diagram-js-grid" {
+    const GridModule;
+    export default GridModule;
+}
+
+declare module "@bpmn-io/align-to-origin" {
+    const AlignToOriginModule;
+    export default AlignToOriginModule;
+}
+
+declare module "bpmn-js-executable-fix" {
+    const ExecutableFixModule;
+    export default ExecutableFixModule;
+}
+
+declare module "bpmn-js-color-picker" {
+    const ColorPickerModule;
+    export default ColorPickerModule;
+}
+
+declare module "@bpmn-io/element-template-icon-renderer" {
+    const ElementTemplateIconRendererModule;
+    export default ElementTemplateIconRendererModule;
+}
+
+declare module "@camunda/example-data-properties-provider" {
+    const ExampleDataPropertiesProviderModule;
+    export default ExampleDataPropertiesProviderModule;
+}
+
+declare module "camunda-bpmn-js-behaviors/lib/camunda-platform" {
+    const CamundaPlatformBehaviorsModule;
+    export default CamundaPlatformBehaviorsModule;
+}
+
+declare module "camunda-bpmn-js-behaviors/lib/camunda-cloud" {
+    const CamundaCloudBehaviorsModule;
+    export default CamundaCloudBehaviorsModule;
+}
+
+declare module "camunda-bpmn-js/lib/base/features/element-descriptions" {
+    const ElementDescriptionsModule;
+    export default ElementDescriptionsModule;
+}
+
+declare module "camunda-bpmn-js/lib/base/features/create-append-tabs" {
+    const CreateAppendTabsModule;
+    export default CreateAppendTabsModule;
+}
+
+declare module "camunda-bpmn-js/lib/camunda-cloud/features/popup-menu" {
+    const CamundaDetailsPopupMenuModule;
+    export default CamundaDetailsPopupMenuModule;
+}
+
+declare module "camunda-bpmn-js/lib/base/features/create-append-tabs/tabs" {
+    export const BPMN_TAB;
+}
+
+declare module "bpmn-js-copy-as-image" {
+    export const CopyAsImageModule;
+}
+
+declare module "bpmn-js-element-templates" {
+    export const ElementTemplatesPropertiesProviderModule;
+    export const CloudElementTemplatesPropertiesProviderModule;
+}
+
+declare module "@bpmn-io/variable-resolver" {
+    export const CamundaVariableResolverModule;
+    export const ZeebeVariableResolverModule;
 }

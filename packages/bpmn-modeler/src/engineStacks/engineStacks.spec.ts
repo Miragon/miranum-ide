@@ -5,11 +5,11 @@ const loaded = vi.hoisted(() => ({ c7: vi.fn(), c8: vi.fn() }));
 
 vi.mock("./c7", () => {
     loaded.c7();
-    return { c7Stack: { Modeler: class {}, engineModules: ["c7-only"] } };
+    return { c7Stack: { upstreamModules: [], engineModules: ["c7-only"] } };
 });
 vi.mock("./c8", () => {
     loaded.c8();
-    return { c8Stack: { Modeler: class {}, engineModules: [] } };
+    return { c8Stack: { upstreamModules: [], engineModules: [] } };
 });
 
 import { loadEngineStack } from "./index";

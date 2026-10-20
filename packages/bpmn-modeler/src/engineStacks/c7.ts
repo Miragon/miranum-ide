@@ -1,15 +1,42 @@
-import BpmnModeler7 from "camunda-bpmn-js/lib/camunda-platform/Modeler";
-import { CreateAppendElementTemplatesModule } from "bpmn-js-create-append-anything";
+import camundaModdle from "camunda-bpmn-moddle/resources/camunda.json";
+import CamundaPlatformBehaviorsModule from "camunda-bpmn-js-behaviors/lib/camunda-platform";
+import {
+    CamundaPlatformPropertiesProviderModule,
+    CamundaPlatformTooltipProvider,
+} from "bpmn-js-properties-panel";
+import { ElementTemplatesPropertiesProviderModule } from "bpmn-js-element-templates";
+import { CamundaVariableResolverModule } from "@bpmn-io/variable-resolver";
+import ColorPickerModule from "bpmn-js-color-picker";
+import {
+    CreateAppendAnythingModule,
+    CreateAppendElementTemplatesModule,
+    RemoveTemplatesModule,
+} from "bpmn-js-create-append-anything";
+import ElementDescriptionsModule from "camunda-bpmn-js/lib/base/features/element-descriptions";
 import { CreateAppendC7ElementTemplatesModule } from "@miragon/create-append-c7";
 // The CJS entry wraps the ESM module in a default export, preventing DI registration under Vite.
 import TransactionBoundariesModule from "camunda-transaction-boundaries/lib/index.js";
+import { sharedLeadingModules, sharedTrailingModules } from "./sharedModules";
 import type { EngineStack } from "./engineStack";
 
 export const c7Stack: EngineStack = {
-    Modeler: BpmnModeler7,
+    upstreamModules: [
+        ...sharedLeadingModules,
+        CamundaPlatformBehaviorsModule,
+        CamundaPlatformPropertiesProviderModule,
+        ElementTemplatesPropertiesProviderModule,
+        ColorPickerModule,
+        CreateAppendAnythingModule,
+        ElementDescriptionsModule,
+        CamundaVariableResolverModule,
+        RemoveTemplatesModule,
+        ...sharedTrailingModules,
+    ],
     engineModules: [
         CreateAppendElementTemplatesModule,
         CreateAppendC7ElementTemplatesModule,
         TransactionBoundariesModule,
     ],
+    moddleExtensions: { camunda: camundaModdle },
+    propertiesPanelDefaults: { tooltip: CamundaPlatformTooltipProvider },
 };

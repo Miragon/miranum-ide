@@ -3,7 +3,7 @@ import type { EngineStack } from "./engineStack";
 
 export type { EngineStack } from "./engineStack";
 
-// Dynamic so a page only parses the camunda-bpmn-js stack of the engine it opens.
+// Dynamic so a page only parses the plugin stack of the engine it opens.
 export async function loadEngineStack(engine: Engine): Promise<EngineStack> {
     switch (engine) {
         case "c7":
