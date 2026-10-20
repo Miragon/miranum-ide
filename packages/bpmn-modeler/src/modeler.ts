@@ -1,4 +1,4 @@
-import type Modeler from "camunda-bpmn-js/lib/base/Modeler";
+import Modeler from "bpmn-js/lib/Modeler";
 import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
 import type { ModuleDeclaration } from "didi";
 import TokenSimulationModule from "bpmn-js-token-simulation";
@@ -52,7 +52,7 @@ import {
     type ViewState,
 } from "./viewState";
 import { deriveEngines } from "./engines";
-import { loadEngineStack, type EngineStack } from "./engineStacks";
+import { loadEngineStack } from "./engineStacks";
 import { initialDiagram } from "./initialDiagram";
 import { applyMode, normalizeMode, MODE_ATTRIBUTE, type ModePorts, type ModelerMode } from "./mode";
 import { ModeUiModule } from "./modeModules";
@@ -200,7 +200,7 @@ export class BpmnModeler {
     }
 
     /**
-     * @internal Loads the engine's camunda-bpmn-js stack before constructing it.
+     * @internal Loads the engine's module stack before constructing it.
      * @throws {UnsupportedEngineError} If the engine string is not recognised.
      */
     async init(): Promise<void> {
@@ -266,19 +266,22 @@ export class BpmnModeler {
         const modelerOptions = {
             container: this.container,
             propertiesPanel: {
+                ...engineStack.propertiesPanelDefaults,
                 parent: this.options.propertiesPanel.parent,
                 // Keep popups within this instance's theme scope instead of document.body.
                 feelPopupContainer: this.container,
             },
+            popupMenu: engineStack.popupMenuDefaults,
             alignToOrigin: ALIGN_TO_ORIGIN_OPTIONS,
-            moddleExtensions: this.options.moddleExtensions,
+            moddleExtensions: { ...engineStack.moddleExtensions, ...this.options.moddleExtensions },
             // The panel defaults to design if this config is absent.
             propertiesPanelMode: normalizeMode(this.options.mode),
         };
 
         this.engine = engine;
 
-        this.allocateModeler(engineStack, modelerOptions, [
+        this.allocateModeler(modelerOptions, [
+            ...engineStack.upstreamModules,
             ...commonModules,
             ...engineStack.engineModules,
             ...capModules,
@@ -346,13 +349,9 @@ export class BpmnModeler {
         });
     }
 
-    private allocateModeler(
-        engineStack: EngineStack,
-        modelerOptions: object,
-        additionalModules: unknown[],
-    ): void {
+    private allocateModeler(modelerOptions: object, additionalModules: unknown[]): void {
         try {
-            this.modeler = new engineStack.Modeler({
+            this.modeler = new Modeler({
                 ...modelerOptions,
                 additionalModules: additionalModules as ModuleDeclaration[],
             });

@@ -440,7 +440,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bpmn-io/align-to-origin@npm:^0.7.0":
+"@bpmn-io/align-to-origin@npm:0.7.0, @bpmn-io/align-to-origin@npm:^0.7.0":
   version: 0.7.0
   resolution: "@bpmn-io/align-to-origin@npm:0.7.0"
   checksum: 10c0/f0a2f7e4cca8b9384941a2ab041ce4196e29f36e19f99a98f95d5f01a66b1041f95da3ad193574740ad4dac27784b315033121c0c8ff4c070422a5744bb21d6f
@@ -509,7 +509,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bpmn-io/element-template-icon-renderer@npm:^1.0.0":
+"@bpmn-io/element-template-icon-renderer@npm:1.0.0, @bpmn-io/element-template-icon-renderer@npm:^1.0.0":
   version: 1.0.0
   resolution: "@bpmn-io/element-template-icon-renderer@npm:1.0.0"
   dependencies:
@@ -831,7 +831,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bpmn-io/variable-resolver@npm:^3.3.0":
+"@bpmn-io/variable-resolver@npm:3.3.0, @bpmn-io/variable-resolver@npm:^3.3.0":
   version: 3.3.0
   resolution: "@bpmn-io/variable-resolver@npm:3.3.0"
   dependencies:
@@ -901,7 +901,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@camunda/example-data-properties-provider@npm:^1.5.2":
+"@camunda/example-data-properties-provider@npm:1.5.2, @camunda/example-data-properties-provider@npm:^1.5.2":
   version: 1.5.2
   resolution: "@camunda/example-data-properties-provider@npm:1.5.2"
   dependencies:
@@ -2763,8 +2763,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler@workspace:packages/bpmn-modeler"
   dependencies:
+    "@bpmn-io/align-to-origin": "npm:0.7.0"
     "@bpmn-io/cm-theme": "npm:0.2.2"
+    "@bpmn-io/element-template-icon-renderer": "npm:1.0.0"
     "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/variable-resolver": "npm:3.3.0"
+    "@camunda/example-data-properties-provider": "npm:1.5.2"
     "@lezer/lr": "npm:1.4.11"
     "@microsoft/api-extractor": "npm:7.59.4"
     "@miragon/bpmn-model-navigation": "workspace:*"
@@ -2791,9 +2795,11 @@ __metadata:
     bpmn-js: "npm:18.31.0"
     bpmn-js-bpmnlint: "npm:0.25.0"
     bpmn-js-color-picker: "npm:0.7.2"
+    bpmn-js-copy-as-image: "npm:0.4.1"
     bpmn-js-create-append-anything: "npm:2.1.0"
     bpmn-js-differ: "npm:3.2.0"
     bpmn-js-element-templates: "npm:2.38.0"
+    bpmn-js-executable-fix: "npm:0.2.2"
     bpmn-js-native-copy-paste: "npm:0.3.0"
     bpmn-js-properties-panel: "npm:5.65.2"
     bpmn-js-token-simulation: "npm:1.0.0"
@@ -2804,6 +2810,7 @@ __metadata:
     camunda-bpmn-moddle: "npm:8.0.2"
     camunda-transaction-boundaries: "npm:1.1.2"
     diagram-js: "npm:15.28.1"
+    diagram-js-grid: "npm:2.1.0"
     diagram-js-minimap: "npm:5.6.0"
     didi: "npm:12.0.0"
     ids: "npm:3.0.2"
@@ -8252,7 +8259,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-copy-as-image@npm:^0.4.1":
+"bpmn-js-copy-as-image@npm:0.4.1, bpmn-js-copy-as-image@npm:^0.4.1":
   version: 0.4.1
   resolution: "bpmn-js-copy-as-image@npm:0.4.1"
   dependencies:
@@ -8309,7 +8316,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-executable-fix@npm:^0.2.2":
+"bpmn-js-executable-fix@npm:0.2.2, bpmn-js-executable-fix@npm:^0.2.2":
   version: 0.2.2
   resolution: "bpmn-js-executable-fix@npm:0.2.2"
   peerDependencies:
@@ -10322,7 +10329,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diagram-js-grid@npm:^2.1.0":
+"diagram-js-grid@npm:2.1.0, diagram-js-grid@npm:^2.1.0":
   version: 2.1.0
   resolution: "diagram-js-grid@npm:2.1.0"
   dependencies:

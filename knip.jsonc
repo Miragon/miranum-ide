@@ -99,10 +99,7 @@
                 // Temporary upstream manifest workarounds, verified by the
                 // nested packed-consumer smoke rather than package imports.
                 "@lezer/lr",
-                "tiny-svg",
-                // Reached only through a CSS @import (styles/engineModeler.css),
-                // which knip does not parse.
-                "bpmn-js-color-picker"
+                "tiny-svg"
             ]
         },
         "packages/dmn-modeler": {

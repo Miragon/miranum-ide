@@ -15,7 +15,9 @@
 import type { ElementTemplate } from "@miragon/bpmn-modeler-element-template-chooser";
 
 export interface TemplateTypeActionServices {
-    elementTemplates: { createElement(template: ElementTemplate): unknown };
+    elementTemplates: {
+        createElement(template: ElementTemplate, options?: { presetId?: string }): unknown;
+    };
     autoPlace?: { append(source: unknown, element: unknown): void };
     create: { start(event: Event, element: unknown, context?: { source?: unknown }): void };
     mouse?: { getLastMoveEvent(): Event };
@@ -37,12 +39,13 @@ export function executeTemplateTypeAction(
     template: ElementTemplate,
     bpmnType: string,
     event: Event,
+    presetId: string | undefined,
 ): void {
     const { elementTemplates, autoPlace, create, mouse } = services;
     const { providerId, target } = context;
 
     const typed: ElementTemplate = { ...template, elementType: { value: bpmnType } };
-    const newElement = elementTemplates.createElement(typed);
+    const newElement = elementTemplates.createElement(typed, { presetId });
 
     if (providerId === "bpmn-append" && autoPlace && !NON_AUTO_PLACEABLE.has(bpmnType)) {
         autoPlace.append(target, newElement);

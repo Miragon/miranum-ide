@@ -119,13 +119,14 @@ The BPMN `WebviewMessageRouter` dispatches incoming `GetClipboardCommand` / `Set
 
 ### Webview Side — Two DI Modules
 
-The webview installs two **bpmn-js DI modules** (from the shared
+The webview runs two **bpmn-js DI modules** (from the shared
 `libs/bpmn-clipboard` package, `@miragon/bpmn-modeler-clipboard`) because diagram
-elements and contenteditable labels have different event handling. Both are
-passed as `additionalModules` in `apps/bpmn-webview/src/main.ts`; each receives
-its host bridge through didi value injection — a `{ requestClipboard,
-writeClipboard }` pair — rather than the old `installClipboardInterceptor(...)`
-call, which no longer exists.
+elements and contenteditable labels have different event handling. The webview
+only supplies the `clipboard` option (`apps/bpmn-webview/src/bootstrap.ts`);
+`@miragon/bpmn-modeler` builds the DI modules from it via
+`createClipboardModules` in `packages/bpmn-modeler/src/modeler.ts`. Each module
+receives its host bridge through didi value injection — a `{ requestClipboard,
+writeClipboard }` pair.
 
 **1. Diagram element copy/paste** (`BridgedClipboardModule`,
 `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`, injected
@@ -149,36 +150,43 @@ calls `stopPropagation()`.
 - **Cmd/Ctrl+V**: Reads via `textClipboardBridge` → `GetTextClipboardCommand`, dispatches a synthetic `ClipboardEvent("paste")`, falls back to `document.execCommand("insertText")`.
 
 See the `bpmn-js` skill for the full three-layer copy-paste architecture (the
-third layer is a webview-local FEEL-editor polyfill).
+third layer is a document-level FEEL-editor polyfill outside bpmn-js DI, also
+installed by `@miragon/bpmn-modeler` from the `clipboard` option).
 
 ### Wiring (bridge override only)
 
 The native browser clipboard is the default (#1374); the bridge modules are only
 built when the webview can't reach the system clipboard. `apps/bpmn-webview/src/bootstrap.ts`
-wires the bridges with a promise-based resolver pattern and hands them to
-`createClipboardModules`, which returns the two DI modules + their `value`
-bindings:
+wires the bridges with a promise-based resolver pattern into a `ClipboardOptions`
+value and passes it as `clipboard` to `createModeler` / `createDesigner`:
 
 ```typescript
 const requestElementClipboard = async (): Promise<string> => {
     elementClipboardResolver = createResolver<ClipboardQuery>();
     host.postMessage(new GetClipboardCommand());
-    return (await elementClipboardResolver.wait())?.text ?? "";
+    const q = await elementClipboardResolver.wait();
+    return q?.text ?? "";
 };
 const writeElementClipboard = (text: string): void => {
     host.postMessage(new SetClipboardCommand(text));
 };
 // (text bridge mirrors this with the *Text* commands / TextClipboardQuery)
 
-clipboardModules = createClipboardModules({
-    element: { requestClipboard: requestElementClipboard, writeClipboard: writeElementClipboard },
+clipboard = {
+    bridge: { requestClipboard: requestElementClipboard, writeClipboard: writeElementClipboard },
     text: { requestClipboard: requestTextClipboard, writeClipboard: writeTextClipboard },
-});
+};
 ```
 
-bootstrap selects the native path (no modules) for dev builds and for a
-`clipboard: "native"` consumer (the demo); a real host gets the protocol bridge
-above. The single-bridge public override (`clipboard: { bridge }`) maps onto both
+`BpmnModeler.init()` turns that into
+`createClipboardModules({ element: clip.bridge, text: clip.text })` and installs
+the FEEL/contenteditable polyfill off `text ?? bridge`; `BpmnDesigner`
+(`packages/bpmn-modeler/src/design/designer.ts`) does the same.
+
+bootstrap passes no `clipboard` option (native path) for dev builds and for a
+`clipboard: "native"` caller; a real host gets the protocol bridge above. The
+demo skips bootstrap and calls `createModeler` without a `clipboard` option,
+which is the native path too. The single-bridge public override (`clipboard: { bridge }`) maps onto both
 channels because `createClipboardModules` defaults `text` to `element`.
 
 ## Webview Theming
@@ -198,7 +206,7 @@ Webviews **must** respect the user's VS Code theme:
 - Respect VS Code's `editor.fontSize` and zoom level
 - The properties panel uses standard HTML form elements with labels
 - Keyboard shortcuts (Cmd/Ctrl+C/V/A) work in both diagram and properties panel via the polyfills described above
-- The select-all handler (`main.ts`) ensures Cmd/Ctrl+A works correctly in contenteditable fields
+- The select-all guard (`onSelectAllKeydown` in `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`) ensures Cmd/Ctrl+A works correctly in contenteditable fields
 
 ### `setContext` for Keybinding Visibility
 

@@ -39,14 +39,22 @@ the port's implementation posts the corresponding protocol commands.
 
 ## Usage
 
-Camunda-7 only — register the aggregate on the C7 modeler's `additionalModules`
-(the C8 modeler leaves it unregistered):
+Camunda-7 only. Consumers enable it through `@miragon/bpmn-modeler` by passing
+the port as `capabilities.scripting`; C8 modelers ignore it:
 
 ```ts
-import { createInlineScriptingModules } from "@miragon/bpmn-modeler-inline-scripting";
+import { createModeler } from "@miragon/bpmn-modeler";
 
-new BpmnModeler7({ additionalModules: [...createInlineScriptingModules(port)] });
+const modeler = await createModeler(container, {
+    engine: "c7",
+    propertiesPanel: { parent: panelElement },
+    capabilities: { scripting: port },
+});
 ```
+
+`packages/bpmn-modeler/src/capabilityModules.ts` then spreads
+`createInlineScriptingModules(port)` into the modeler's modules; the factory is
+package-internal wiring, not a consumer entry point.
 
 `createInlineScriptingModules(port)` embeds the `InlineScriptingPort` as the
 `inlineScriptingPort` DI value, so the cluster can only be registered together
@@ -54,7 +62,8 @@ with its host capability.
 
 ## Known coupling
 
-`ScriptEditorButtons` hardcodes the `#js-properties-panel` DOM id (the app's
-panel container) to observe where to inject its icons. That is an app-shell
-assumption, not a bpmn-js one; extracting it into a config value is out of scope
-for this relocation.
+`ScriptEditorButtons` observes the panel element given as the optional
+`propertiesPanelRoot` DI value, which `@miragon/bpmn-modeler` registers per
+instance so two modelers on one page each watch their own panel. Without it, the
+buttons fall back to the `#js-properties-panel` DOM id — an app-shell
+assumption, not a bpmn-js one.

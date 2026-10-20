@@ -33,9 +33,7 @@ describe("classifyEntries", () => {
         expect(bpmnGroups.find((g) => g.id === "gateways")?.entries).toHaveLength(1);
     });
 
-    it("flattens camunda-5.33 drill-in categories, synthesizing a group from the category", () => {
-        // Children lost their `group` marker when the upstream provider nested
-        // them; the category entry carries no `action`.
+    it("flattens drill-in categories, synthesizing a group from the category", () => {
         const { bpmnGroups } = classifyEntries({
             "append-tasks": {
                 label: "Tasks",
@@ -55,7 +53,7 @@ describe("classifyEntries", () => {
         ]);
     });
 
-    it("routes nested template-category children to the templates panel", () => {
+    it("routes template children of a drill-in category to the templates panel", () => {
         const template = {
             id: "my-template",
             appliesTo: [],
@@ -82,9 +80,119 @@ describe("classifyEntries", () => {
         expect(templates[0].template).toBe(template);
     });
 
+    describe("stepped templates", () => {
+        const templatesGroup = { id: "templates", name: "Templates" };
+        const icon = "data:image/svg+xml;base64,PHN2Zy8+";
+
+        const rest = {
+            id: "rest",
+            name: "REST",
+            description: "Call an API",
+            documentationRef: "https://docs.example/rest",
+            keywords: ["http"],
+            appliesTo: ["bpmn:ServiceTask"],
+            properties: [],
+            steps: [
+                { name: "GET", description: "Fetch a resource", presetId: "get" },
+                {
+                    name: "Auth",
+                    keywords: ["login"],
+                    steps: [{ name: "Basic", presetId: "basic" }],
+                },
+            ],
+        };
+        const mail = {
+            id: "mail",
+            name: "Mail",
+            appliesTo: ["bpmn:SendTask"],
+            properties: [],
+            steps: [{ name: "Send", presetId: "send" }],
+        };
+
+        // What bpmn-js-create-append-anything's buildEntry emits for `rest` and `mail`.
+        const entries = (getAction = noop, basicAction = noop): Record<string, PopupMenuEntry> => ({
+            "append.template-rest": {
+                label: "REST",
+                description: "Call an API",
+                documentationRef: "https://docs.example/rest",
+                imageUrl: icon,
+                search: ["http"],
+                group: templatesGroup,
+                entries: {
+                    "step-0": {
+                        label: "GET",
+                        description: "Fetch a resource",
+                        imageUrl: icon,
+                        action: getAction,
+                    },
+                    "step-1": {
+                        label: "Auth",
+                        imageUrl: icon,
+                        search: ["login"],
+                        entries: {
+                            "step-0": { label: "Basic", imageUrl: icon, action: basicAction },
+                        },
+                    },
+                },
+            },
+            "append.template-mail": {
+                label: "Mail",
+                group: templatesGroup,
+                entries: {
+                    "step-0": { label: "Send", action: noop },
+                },
+            },
+        });
+
+        it("exposes every preset leaf as a uniquely identified template entry", () => {
+            const getAction = vi.fn();
+            const basicAction = vi.fn();
+
+            const { templates, bpmnGroups } = classifyEntries(entries(getAction, basicAction), [
+                rest,
+                mail,
+            ] as never);
+
+            expect(bpmnGroups).toHaveLength(0);
+            expect(templates.map((t) => [t.id, t.entry.label, t.entry.action])).toEqual([
+                ["append.template-rest/step-0", "REST › GET", getAction],
+                ["append.template-rest/step-1/step-0", "REST › Auth › Basic", basicAction],
+                ["append.template-mail/step-0", "Mail › Send", noop],
+            ]);
+        });
+
+        it("keeps the template and resolves each leaf's preset", () => {
+            const { templates } = classifyEntries(entries(), [rest, mail] as never);
+
+            expect(templates.map((t) => [t.template, t.presetId])).toEqual([
+                [rest, "get"],
+                [rest, "basic"],
+                [mail, "send"],
+            ]);
+        });
+
+        it("inherits the template's details and its ancestors' search terms", () => {
+            const { templates } = classifyEntries(entries(), [rest, mail] as never);
+            const basic = templates.find((t) => t.id === "append.template-rest/step-1/step-0");
+
+            expect(basic?.entry).toMatchObject({
+                description: "Call an API",
+                documentationRef: "https://docs.example/rest",
+                search: ["http", "login"],
+            });
+        });
+
+        it("keeps a step's own description over the inherited one", () => {
+            const { templates } = classifyEntries(entries(), [rest, mail] as never);
+            const get = templates.find((t) => t.id === "append.template-rest/step-0");
+
+            expect(get?.entry.description).toBe("Fetch a resource");
+        });
+    });
+
     it("drops entries that have neither an action nor children", () => {
         const { bpmnGroups, templates } = classifyEntries({
-            "bpmn-tab": { label: "BPMN" },
+            "append.custom": { label: "Custom" },
             "append.user-task": leaf("User Task", { id: "tasks", name: "Tasks" }),
         });
 

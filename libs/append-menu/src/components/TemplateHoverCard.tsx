@@ -8,6 +8,7 @@
 // Deep import: the chooser barrel value-imports the DI module (and with it
 // minisearch), which must stay out of the engine-neutral /design graph.
 import {
+    applyTemplatePreset,
     classifyBinding,
     extractImplementationDetail,
     type TemplateProperty,
@@ -41,7 +42,9 @@ export function TemplateHoverCard({
     onMouseEnter,
     onMouseLeave,
 }: TemplateHoverCardProps) {
-    const { entry, template } = enrichedEntry;
+    const { entry, presetId } = enrichedEntry;
+    const template =
+        enrichedEntry.template && applyTemplatePreset(enrichedEntry.template, presetId);
 
     const implDetail = template ? extractImplementationDetail(template.properties) : undefined;
 

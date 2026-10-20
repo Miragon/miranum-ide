@@ -10,15 +10,9 @@
  * lock provider refreshes). {@link InlineScriptingPortForwarder} bridges the
  * first two onto the {@link InlineScriptingPort} the consumer supplies.
  *
- * Register the whole cluster on the Camunda-7 modeler (the C8 modeler leaves it
- * unregistered). Because the port is embedded in the returned bundle,
- * registering the cluster without a host is unrepresentable:
- *
- * ```ts
- * import { createInlineScriptingModules } from "@miragon/bpmn-modeler-inline-scripting";
- *
- * new BpmnModeler7({ additionalModules: [...createInlineScriptingModules(port)] });
- * ```
+ * Register the whole cluster on Camunda-7 modelers only. Because the port is
+ * embedded in the returned bundle, registering the cluster without a host is
+ * unrepresentable.
  */
 import "./inlineScripting.css";
 

@@ -2,6 +2,7 @@ export type Translate = (template: string, replacements?: Record<string, string>
 
 /** A single property (input/output, binding, or user-configurable field) an element template applies. */
 export interface TemplateProperty {
+    id?: string;
     label?: string;
     type: string;
     value?: string;
@@ -27,6 +28,21 @@ export interface TemplateProperty {
     };
 }
 
+/** A node of a template's `steps` menu: a category (nested `steps`) or a preset leaf. */
+export interface TemplateStep {
+    name: string;
+    description?: string;
+    keywords?: string[];
+    presetId?: string;
+    steps?: TemplateStep[];
+}
+
+/** Property values a leaf step's `presetId` applies on top of the template defaults. */
+export interface TemplatePreset {
+    id: string;
+    properties: Record<string, TemplateProperty["value"]>;
+}
+
 /** A Camunda element template as loaded from a JSON file. */
 export interface ElementTemplate {
     $schema?: string;
@@ -45,6 +61,29 @@ export interface ElementTemplate {
     };
     keywords?: string[];
     properties: TemplateProperty[];
+    presets?: TemplatePreset[];
+    steps?: TemplateStep[];
+}
+
+// Mirrors bpmn-js-element-templates' `applyPreset`, so a preview shows the values
+// the element will actually be created with.
+export function applyTemplatePreset(
+    template: ElementTemplate,
+    presetId: string | undefined,
+): ElementTemplate {
+    const preset = presetId ? template.presets?.find(({ id }) => id === presetId) : undefined;
+    if (!preset) {
+        return template;
+    }
+    return {
+        ...template,
+        properties: template.properties.map((property) =>
+            property.id !== undefined &&
+            Object.prototype.hasOwnProperty.call(preset.properties, property.id)
+                ? { ...property, value: preset.properties[property.id] }
+                : property,
+        ),
+    };
 }
 
 /** Binding-type groupings used to classify template properties for the preview panel. */

@@ -48,9 +48,8 @@ const fallbackTranslate: Translate = (template, replacements = {}) =>
     template.replace(/{([^}]+)}/g, (_, key) => replacements[key] ?? `{${key}}`);
 
 interface ElementTemplatesLike {
-    getAll(): ElementTemplate[];
-    isCompatible(template: ElementTemplate): boolean;
-    createElement(template: ElementTemplate): unknown;
+    getLatest(): ElementTemplate[];
+    createElement(template: ElementTemplate, options?: { presetId?: string }): unknown;
 }
 
 // Provider IDs that this override intercepts.
@@ -127,19 +126,13 @@ class AppendMenuOverride {
             // Collect entries from all registered providers.
             const context = getPopupMenuContext(popupMenu, target, providerId);
 
-            // Gather full template objects for enrichment. `getAll()` ignores
-            // engine compatibility (unlike `getLatest()`), so filter by the
-            // diagram's execution platform version here — otherwise templates
-            // requiring a newer Camunda version than the diagram targets would
-            // still be appendable. Templates without `engines` pass `isCompatible`.
+            // The upstream providers build their entries from `getLatest()` (latest
+            // engine-compatible version per id); enriching from any other set could
+            // pair an entry with another version and resolve the wrong step preset.
             let allTemplates: ElementTemplate[] = [];
             if (elementTemplates) {
                 try {
-                    allTemplates = elementTemplates
-                        .getAll()
-                        .filter((template: ElementTemplate) =>
-                            elementTemplates.isCompatible(template),
-                        );
+                    allTemplates = elementTemplates.getLatest();
                 } catch {
                     // elementTemplates service may not have templates loaded yet.
                 }
@@ -199,6 +192,7 @@ class AppendMenuOverride {
                 template: ElementTemplate,
                 bpmnType: string,
                 event: Event,
+                presetId: string | undefined,
             ) => {
                 const create = injector.get<{
                     start(event: Event, element: unknown, context?: { source?: unknown }): void;
@@ -224,6 +218,7 @@ class AppendMenuOverride {
                         template,
                         bpmnType,
                         event,
+                        presetId,
                     ),
                 );
             };
