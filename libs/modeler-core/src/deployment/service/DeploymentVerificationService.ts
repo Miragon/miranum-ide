@@ -1,12 +1,19 @@
 import { posix } from "path";
 
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
-import { EngineInspectionFailedError, EnvReferenceError } from "../../shared/domain/errors";
+import {
+    CredentialDestinationError,
+    EngineInspectionFailedError,
+    EnvReferenceError,
+} from "../../shared/domain/errors";
 import { DocumentPort, NotifierPort } from "../../shared/domain/hostPorts";
 import { EditorSessionStore } from "../../shared/infrastructure/EditorSessionStore";
 import { DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { reconcile } from "../domain/deploymentVerification";
 import { EngineInspectionPort } from "../domain/ports";
+import { sensitiveDestinations } from "../domain/deployment";
+import { recordingLookup } from "../domain/envRef";
+import { CredentialApprovalService } from "./CredentialApprovalService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { DeploymentTargetService } from "./DeploymentTargetService";
 import { EnvValueResolver } from "./EnvValueResolver";
@@ -28,6 +35,7 @@ export class DeploymentVerificationService {
         private readonly inspection: EngineInspectionPort,
         private readonly notifier: NotifierPort,
         private readonly envResolver: EnvValueResolver,
+        private readonly credentialApproval: CredentialApprovalService,
     ) {}
 
     /**
@@ -72,8 +80,15 @@ export class DeploymentVerificationService {
                 target.connectionEnvRefs(),
                 credentials,
             );
-            const auth = credentials.expandEnvRefs(lookup);
-            const { endpoint, tenantId } = target.expandConnection(lookup);
+            const recording = recordingLookup(lookup);
+            const auth = credentials.expandEnvRefs(recording);
+            const { endpoint, tenantId } = target.expandConnection(recording);
+            const envValues = [...recording.resolved];
+            await this.credentialApproval.ensureApproved(
+                target,
+                dir,
+                sensitiveDestinations(endpoint, auth, envValues),
+            );
             const snapshot = await this.notifier.withProgress(
                 `Verifying on "${target.name}"…`,
                 () =>
@@ -82,6 +97,7 @@ export class DeploymentVerificationService {
                         tenantId,
                         processKey,
                         auth,
+                        envValues,
                     }),
             );
 
@@ -127,7 +143,7 @@ export class DeploymentVerificationService {
                 );
                 return;
             }
-            if (error instanceof EnvReferenceError) {
+            if (error instanceof EnvReferenceError || error instanceof CredentialDestinationError) {
                 this.notifier.showError(error.message);
                 return;
             }

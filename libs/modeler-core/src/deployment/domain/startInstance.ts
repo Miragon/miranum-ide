@@ -1,6 +1,15 @@
 import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
-import { AuthConfig, NoAuth } from "./deployment";
-import { containsEnvRef, EnvLookup, expandEnvRefs, expandOptionalEnvRefs } from "./envRef";
+import { CredentialDestinations } from "./credentialDestinations";
+import { AuthConfig, NoAuth, sensitiveDestinations } from "./deployment";
+import {
+    containsEnvRef,
+    EnvLookup,
+    expandEnvRefs,
+    expandOptionalEnvRefs,
+    recordingLookup,
+} from "./envRef";
+import { SecretRedactor } from "./secretRedactor";
+import { expandUrlTemplate } from "./urlTemplate";
 
 import { Engine } from "@miragon/bpmn-modeler-types";
 /**
@@ -17,6 +26,8 @@ export class StartInstanceConfig {
      * @param payload Parsed JSON payload to pass as process variables, or `null` for no payload.
      * @param startInstanceUrl Optional full-URL override for the start-instance
      *   call; `{processDefinitionKey}` is substituted before the request.
+     * @param envValues The `.env` values an expanded copy carries; empty for a
+     *   literal config.
      */
     constructor(
         readonly processDefinitionKey: string,
@@ -25,6 +36,7 @@ export class StartInstanceConfig {
         readonly auth: AuthConfig = new NoAuth(),
         readonly payload: Record<string, unknown> | null = null,
         readonly startInstanceUrl?: string,
+        readonly envValues: readonly string[] = [],
     ) {}
 
     referencesEnv(): boolean {
@@ -36,28 +48,53 @@ export class StartInstanceConfig {
     }
 
     /**
+     * The override is expanded first: `{processDefinitionKey}` may sit in its
+     * host. A conventional route is appended to `endpoint`, which keeps its origin.
+     */
+    sensitiveDestinations(): CredentialDestinations {
+        const requestUrl = this.startInstanceUrl
+            ? expandUrlTemplate(this.startInstanceUrl, {
+                  processDefinitionKey: this.processDefinitionKey,
+              })
+            : this.endpoint;
+        return sensitiveDestinations(requestUrl, this.auth, this.envValues);
+    }
+
+    carriesEnvValues(): boolean {
+        return this.envValues.length > 0;
+    }
+
+    /** What a server must not be able to echo back from this request. */
+    redactor(): SecretRedactor {
+        return this.auth.redactor().and(SecretRedactor.of(...this.envValues));
+    }
+
+    /**
      * Request-only copy, expanded before the REST client substitutes
      * `{processDefinitionKey}` into the URL. A variable set to an empty value
      * obeys the same rules as a typed one: a blank override falls back to the
      * convention route, a blank endpoint is rejected.
      */
     expandEnvRefs(lookup: EnvLookup): StartInstanceConfig {
-        const endpoint = expandEnvRefs(this.endpoint, lookup, "endpoint");
+        const recording = recordingLookup(lookup);
+        const endpoint = expandEnvRefs(this.endpoint, recording, "endpoint");
         if (!endpoint.trim()) {
             throw new InvalidDeploymentConfigError(["endpoint"]);
         }
         const startInstanceUrl = expandOptionalEnvRefs(
             this.startInstanceUrl,
-            lookup,
+            recording,
             "endpoints.startInstance",
         )?.trim();
+        const auth = this.auth.expandEnvRefs(recording);
         return new StartInstanceConfig(
             this.processDefinitionKey,
             endpoint,
             this.engine,
-            this.auth.expandEnvRefs(lookup),
+            auth,
             this.payload,
             startInstanceUrl || undefined,
+            [...recording.resolved],
         );
     }
 }

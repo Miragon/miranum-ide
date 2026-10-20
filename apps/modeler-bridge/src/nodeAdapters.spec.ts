@@ -173,6 +173,28 @@ describe("NodeWorkspace folder lookups", () => {
         );
     });
 
+    it.each([
+        ["outer first", ["/ws", "/ws/nested"]],
+        ["inner first", ["/ws/nested", "/ws"]],
+    ])("resolves the innermost of nested roots (%s)", (_order, roots) => {
+        const ws = new NodeWorkspace();
+        roots.forEach((nestedRoot) => ws.registerRoot(nestedRoot));
+
+        expect(ws.findWorkspaceFolderForDocument("/ws/nested/sub/file.bpmn")).toBe("/ws/nested");
+        expect(ws.getWorkspaceFolderForDocument("file:///ws/nested/file.bpmn")).toBe(
+            "file:///ws/nested",
+        );
+        expect(ws.findWorkspaceFolderForDocument("/ws/other/file.bpmn")).toBe("/ws");
+    });
+
+    it("does not treat a sibling sharing a name prefix as nested", () => {
+        const ws = new NodeWorkspace();
+        ws.registerRoot("/ws");
+        ws.registerRoot("/ws/nested");
+
+        expect(ws.findWorkspaceFolderForDocument("/ws/nested-other/file.bpmn")).toBe("/ws");
+    });
+
     it("getWorkspaceFolderForDocument still throws when no root encloses the document", () => {
         const ws = workspace();
         // ArtifactService relies on this exact error class to trigger its git-root
@@ -586,6 +608,23 @@ describe("EnvValueResolver over a real NodeWorkspace", () => {
 
         expect(lookup("MIRAGON_TOKEN")).toBeUndefined();
         expect(lookup.source).toBe(join(root, ".env"));
+    });
+
+    it("reads an ad-hoc reference from the innermost registered root's .env", async () => {
+        const nestedRoot = join(root, "nested");
+        await fs.mkdir(nestedRoot);
+        await fs.writeFile(join(root, ".env"), "MIRAGON_TOKEN=outer");
+        await fs.writeFile(join(nestedRoot, ".env"), "MIRAGON_TOKEN=inner");
+        workspace.registerRoot(nestedRoot);
+
+        const lookup = await resolver.createLookup(
+            "workspaceFolder",
+            join(nestedRoot, "processes"),
+            REFERENCES_ENV,
+        );
+
+        expect(lookup("MIRAGON_TOKEN")).toBe("inner");
+        expect(lookup.source).toBe(join(nestedRoot, ".env"));
     });
 
     it.each(SCOPES)(

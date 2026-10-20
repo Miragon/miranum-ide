@@ -11,6 +11,7 @@ import {
     WorkspacePort,
 } from "../../shared/domain/hostPorts";
 import { ArtifactService } from "../../shared/service/ArtifactService";
+import { CredentialDestinations } from "../domain/credentialDestinations";
 import { AuthConfig, BasicAuth, NoAuth, OAuth2Auth } from "../domain/deployment";
 import {
     DeploymentTarget,
@@ -127,7 +128,7 @@ export class DeploymentTargetService {
         auth: AuthConfigPayload,
         documentDir?: string,
     ): Promise<void> {
-        await this.persistTarget(payload, auth, documentDir, (targets, target) =>
+        await this.persistTarget(payload, auth, documentDir, undefined, (targets, target) =>
             targets.add(target),
         );
     }
@@ -149,6 +150,7 @@ export class DeploymentTargetService {
             payload,
             auth,
             documentDir,
+            previousName ?? payload.name,
             (targets, next) => targets.upsert(next, previousName),
         );
         if (previousName !== undefined && previousName.trim() !== target.name) {
@@ -156,10 +158,12 @@ export class DeploymentTargetService {
         }
     }
 
+    /** @param savedName The name the target had before this save; `undefined` for a create. */
     private async persistTarget(
         payload: DeploymentTargetPayload,
         auth: AuthConfigPayload,
         documentDir: string | undefined,
+        savedName: string | undefined,
         apply: (targets: DeploymentTargets, target: DeploymentTarget) => DeploymentTarget[],
     ): Promise<{ location: TargetsLocation; target: DeploymentTarget }> {
         const location = await this.locateTargetsFile(documentDir);
@@ -173,15 +177,43 @@ export class DeploymentTargetService {
         draft.assertEnvRefsValid();
         // Round-tripping through the parser applies every remaining file rule.
         const [target] = parseDeploymentTargetsFile({ targets: [draft.toJson()] });
-        const current = await this.readTargets(location);
-        const next = apply(new DeploymentTargets(current), target);
+        const current = new DeploymentTargets(await this.readTargets(location));
+        const saved = savedName === undefined ? undefined : current.find(savedName);
+        const next = apply(current, target);
         await this.workspace.writeFile(location.filePath, serializeDeploymentTargets(next));
 
         // Refs are stored too: they overwrite any older literal, and a backend that
         // reads an empty half back as null would drop the literal next to it.
-        await this.saveSecrets(this.slotFor(location.filePath, target.name), credentials);
+        const slot = this.slotFor(location.filePath, target.name);
+        await this.saveSecrets(slot, credentials);
+        await this.approveTypedDestinations(slot, target, saved, current, location.filePath);
         await this.setActiveTarget(target.name);
         return { location, target };
+    }
+
+    /**
+     * Saving approves only the hosts the user typed. A host any target in the
+     * shared file already names may have reached the form from there — the
+     * sidebar's New starts from the selected target — so it still asks at first
+     * use. A create starts from no approvals, so a stale slot can't lend its own.
+     */
+    private async approveTypedDestinations(
+        slot: string,
+        target: DeploymentTarget,
+        saved: DeploymentTarget | undefined,
+        current: DeploymentTargets,
+        filePath: string,
+    ): Promise<void> {
+        const inherited =
+            saved === undefined
+                ? CredentialDestinations.none()
+                : CredentialDestinations.fromOrigins(
+                      await this.secretStore.getApprovedDestinations(
+                          this.slotFor(filePath, saved.name),
+                      ),
+                  );
+        const typed = target.knownCredentialDestinations().without(current.knownDestinations());
+        await this.secretStore.saveApprovedDestinations(slot, [...inherited.union(typed).origins]);
     }
 
     async deleteTarget(name: string, documentDir?: string): Promise<boolean> {

@@ -18,6 +18,9 @@ const WHOLE_ENV_REF_PATTERN = new RegExp(`^\\$\\{env:${ENV_VARIABLE_PREFIX}[A-Za
 /** `source` names the `.env` that was searched, for an actionable "not set" message. */
 export type EnvLookup = ((name: string) => string | undefined) & { readonly source?: string };
 
+/** `resolved`: every non-blank value handed out, which is what a request built from it carries. */
+export type RecordingEnvLookup = EnvLookup & { readonly resolved: ReadonlySet<string> };
+
 export const NO_ENV_VARIABLES: EnvLookup = () => undefined;
 
 export interface EnvReferencing {
@@ -119,6 +122,18 @@ export function referenceableVariables(
         [...variables].filter(([name]) => isReferenceableEnvVariable(name)),
     );
     return Object.assign((name: string) => referenceable.get(name), { source });
+}
+
+export function recordingLookup(lookup: EnvLookup): RecordingEnvLookup {
+    const resolved = new Set<string>();
+    const record = (name: string): string | undefined => {
+        const value = lookup(name);
+        if (value !== undefined && value.trim() !== "") {
+            resolved.add(value);
+        }
+        return value;
+    };
+    return Object.assign(record, { source: lookup.source, resolved });
 }
 
 export function emptyEnvLookup(source: string): EnvLookup {

@@ -380,23 +380,23 @@ describe("DeploymentMessageDispatcher start-instance auth construction", () => {
         expect(c.startInstanceService.startInstance.mock.calls[0][6]).toBe("/work/trusted");
     });
 
+    const savedTarget = new DeploymentTarget(
+        "dev",
+        "c7",
+        "http://localhost:8080/engine-rest",
+        "",
+        "none",
+        "",
+        "",
+    );
+
     it.each([
-        { mode: "a named target", targetName: "dev", envScope: "targetsFile" },
-        { mode: "an ad-hoc request", targetName: "", envScope: "workspaceFolder" },
-    ])("resolves env refs for $mode from the $envScope .env", async ({ targetName, envScope }) => {
+        { mode: "a named target", targetName: "dev", target: savedTarget },
+        { mode: "an ad-hoc request", targetName: "", target: undefined },
+    ])("passes the validated target for $mode", async ({ targetName, target }) => {
         const c = createDispatcher();
         c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
-        c.deploymentTargetService.getTarget.mockResolvedValue(
-            new DeploymentTarget(
-                "dev",
-                "c7",
-                "http://localhost:8080/engine-rest",
-                "",
-                "none",
-                "",
-                "",
-            ),
-        );
+        c.deploymentTargetService.getTarget.mockResolvedValue(savedTarget);
 
         await c.dispatcher.handle({
             type: "StartInstanceCommand",
@@ -411,7 +411,7 @@ describe("DeploymentMessageDispatcher start-instance auth construction", () => {
             "",
             undefined,
             "/work/trusted",
-            envScope,
+            target,
         );
         expect(postedQuery(c.post, StartInstanceResultQuery).success).toBe(true);
     });

@@ -1,19 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import {
+    CredentialDestinationNotApprovedError,
     DisallowedEnvReferenceError,
     EngineInspectionFailedError,
     EnvReferenceError,
     FileNotFound,
     HttpTransportError,
+    InvalidCredentialDestinationError,
     UnreadableDotEnvError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
 import { AuthConfig, BasicAuth, NoAuth } from "../domain/deployment";
 import { contentFingerprint, DeploymentTargetIdentity } from "../domain/deploymentLedger";
-import { DeploymentTarget } from "../domain/deploymentTarget";
+import { DeploymentTarget, parseDeploymentTargetsFile } from "../domain/deploymentTarget";
 import { EngineDeploymentSnapshot } from "../domain/deploymentVerification";
 import { EnvLookup } from "../domain/envRef";
+import { EngineInspectionPort } from "../domain/ports";
+import { FetchHttpClient } from "../infrastructure/FetchHttpClient";
+import { AuthHeaderResolver } from "../infrastructure/camunda/AuthHeaderResolver";
+import { Camunda7RestClient } from "../infrastructure/camunda/Camunda7RestClient";
 import { DeploymentVerificationService } from "./DeploymentVerificationService";
 import { EnvValueResolver } from "./EnvValueResolver";
 
@@ -48,6 +54,46 @@ interface EnvFailureCase {
     error: EnvReferenceError;
 }
 
+/** Every argument any notifier method received; errors contribute message, stack and cause. */
+function everythingNotified(notifier: Record<string, Mock>): string {
+    return Object.values(notifier)
+        .flatMap((notify) => notify.mock.calls.flat())
+        .map(describeNotified)
+        .join("\n");
+}
+
+function describeNotified(argument: unknown): string {
+    if (argument instanceof Error) {
+        const { cause } = argument as { cause?: unknown };
+        return [argument.message, argument.stack, describeNotified(cause)].join("\n");
+    }
+    return String(argument);
+}
+
+/** The production REST stack down to `fetch`, so a failure's message is the shipped one. */
+function createRealRestClient(): Camunda7RestClient {
+    const httpClient = new FetchHttpClient();
+    return new Camunda7RestClient(httpClient, new AuthHeaderResolver(httpClient));
+}
+
+function stubFetch(respond: (url: string, init?: RequestInit) => Promise<Response>) {
+    const fetchStub = vi.fn(respond);
+    vi.stubGlobal("fetch", fetchStub);
+    return fetchStub;
+}
+
+/** An engine failing the lookup by quoting the request back: its URL and the decoded basic credentials. */
+function failQuotingRequest() {
+    return stubFetch(async (url, init) => {
+        const { Authorization = "" } = init?.headers as Record<string, string>;
+        const credentials = Buffer.from(Authorization.replace(/^Basic /, ""), "base64").toString();
+        return new Response(
+            JSON.stringify({ message: `Lookup of ${url} as ${credentials} failed` }),
+            { status: 500 },
+        );
+    });
+}
+
 const FILE_PATH = "/work/order-process.bpmn";
 const XML = '<bpmn:process id="order"/>';
 
@@ -72,7 +118,10 @@ const snapshot = (overrides: Partial<EngineDeploymentSnapshot> = {}): EngineDepl
     ...overrides,
 });
 
-function createService(dotEnv: Record<string, string> = {}) {
+function createService(
+    dotEnv: Record<string, string> = {},
+    inspectionClient?: EngineInspectionPort,
+) {
     const workspace = createDotEnvWorkspace(dotEnv);
     const editorStore = {
         getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
@@ -105,19 +154,24 @@ function createService(dotEnv: Record<string, string> = {}) {
         notifyError: vi.fn(),
         withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
     };
+    const credentialApproval = {
+        ensureApproved: vi.fn().mockResolvedValue(undefined),
+    };
 
     const service = new DeploymentVerificationService(
         editorStore as never,
         documentPort as never,
         deploymentTargetService as never,
         deploymentStatusService as never,
-        inspection as never,
+        (inspectionClient ?? inspection) as never,
         notifier as never,
         new EnvValueResolver(deploymentTargetService as never, workspace as never),
+        credentialApproval as never,
     );
 
     return {
         service,
+        credentialApproval,
         editorStore,
         documentPort,
         deploymentTargetService,
@@ -129,6 +183,10 @@ function createService(dotEnv: Record<string, string> = {}) {
 }
 
 beforeEach(() => vi.clearAllMocks());
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 
 describe("DeploymentVerificationService.verifyActive", () => {
     it("reports when no diagram is focused", async () => {
@@ -196,6 +254,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
             tenantId: "",
             processKey: "order",
             auth: expect.any(NoAuth),
+            envValues: [],
         });
         expect(c.deploymentStatusService.adoptRevision).toHaveBeenCalledWith(
             FILE_PATH,
@@ -377,6 +436,23 @@ describe("DeploymentVerificationService.verifyActive", () => {
                 "",
             ),
         ],
+        [
+            "the token endpoint and audience a basic-auth target's file still carries",
+            parseDeploymentTargetsFile({
+                targets: [
+                    {
+                        name: "dev",
+                        engine: "c7",
+                        endpoint: c7Target.endpoint,
+                        auth: {
+                            type: "basic",
+                            tokenEndpoint: "${env:MIRAGON_IDP}",
+                            audience: "${env:MIRAGON_AUD}",
+                        },
+                    },
+                ],
+            })[0],
+        ],
     ])(
         "verifies a target whose only refs are in %s without touching even a broken .env",
         async (_location, refOutsideConnectionTarget) => {
@@ -396,7 +472,13 @@ describe("DeploymentVerificationService.verifyActive", () => {
                 tenantId: "",
                 processKey: "order",
                 auth: new BasicAuth("admin", "pw"),
+                envValues: [],
             });
+            expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
+                refOutsideConnectionTarget,
+                "/work",
+                expect.objectContaining({ origins: ["http://localhost:8080"] }),
+            );
             expect(c.notifier.showError).not.toHaveBeenCalled();
             expect(c.notifier.notifyError).not.toHaveBeenCalled();
             expect(c.deploymentTargetService.locateTargetsFile).not.toHaveBeenCalled();
@@ -410,8 +492,8 @@ describe("DeploymentVerificationService.verifyActive", () => {
         },
     );
 
-    it("resolves env refs in endpoint and credentials before the lookup", async () => {
-        const dotEnv = { MIRAGON_STAGE: "prod", MIRAGON_PW: "p@ss" };
+    it("resolves env refs in endpoint and credentials before the lookup, carrying only the values it used", async () => {
+        const dotEnv = { MIRAGON_STAGE: "prod", MIRAGON_PW: "p@ss", MIRAGON_UNUSED: "sp4re" };
         const refTarget = new DeploymentTarget(
             "dev",
             "c7",
@@ -429,12 +511,15 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledWith({
+        expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledExactlyOnceWith({
             endpoint: "https://camunda.prod/rest",
             tenantId: "",
             processKey: "order",
             auth: new BasicAuth("admin", "p@ss"),
+            envValues: expect.any(Array),
         });
+        const [{ envValues }] = c.inspection.fetchLatestDefinition.mock.calls[0];
+        expect([...envValues].sort()).toEqual(["p@ss", "prod"]);
     });
 
     it("reads and adopts the ledger row under the fingerprinted identity of a resolved endpoint", async () => {
@@ -569,4 +654,105 @@ describe("DeploymentVerificationService.verifyActive", () => {
             expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
         },
     );
+});
+
+describe("DeploymentVerificationService.verifyActive credential approval", () => {
+    it("asks to approve the origin the target's endpoint resolves to before the lookup", async () => {
+        const envTarget = c7TargetWith("${env:MIRAGON_URL}");
+        const c = createService({ MIRAGON_URL: "https://camunda.prod:8443/engine-rest" });
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(envTarget);
+        c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
+
+        await c.service.verifyActive("/work");
+
+        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
+            envTarget,
+            "/work",
+            expect.objectContaining({ origins: ["https://camunda.prod:8443"] }),
+        );
+        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledBefore(
+            c.inspection.fetchLatestDefinition,
+        );
+    });
+
+    it("asks to approve the endpoint origin for a target without credentials whose tenant comes from .env", async () => {
+        const tenantTarget = c7TargetWith(
+            "https://camunda.prod/engine-rest",
+            "${env:MIRAGON_TENANT}",
+        );
+        const c = createService({ MIRAGON_TENANT: "acme" });
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(tenantTarget);
+
+        await c.service.verifyActive("/work");
+
+        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
+            tenantTarget,
+            "/work",
+            expect.objectContaining({ origins: ["https://camunda.prod"] }),
+        );
+        expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledWith(
+            expect.objectContaining({ tenantId: "acme", envValues: ["acme"] }),
+        );
+    });
+
+    it("shows the decline without a lookup, leaving the ledger untouched", async () => {
+        const declined = new CredentialDestinationNotApprovedError("dev");
+        const c = createService();
+        c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
+        c.credentialApproval.ensureApproved.mockRejectedValue(declined);
+
+        await c.service.verifyActive("/work");
+
+        expect(c.notifier.showError).toHaveBeenCalledExactlyOnceWith(declined.message);
+        expect(c.notifier.notifyError).not.toHaveBeenCalled();
+        expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.refreshActive).not.toHaveBeenCalled();
+    });
+
+    it("refuses to send credentials to an endpoint without a host, before asking", async () => {
+        const c = createService();
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(
+            c7TargetWith("localhost:8080/engine-rest"),
+        );
+        c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
+
+        await c.service.verifyActive("/work");
+
+        expect(c.notifier.showError).toHaveBeenCalledExactlyOnceWith(
+            new InvalidCredentialDestinationError().message,
+        );
+        expect(c.credentialApproval.ensureApproved).not.toHaveBeenCalled();
+        expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
+    });
+
+    it("masks a resolved .env value and a literal password in everything notified when the engine quotes the request", async () => {
+        const apiKey = "key-5c4b3a";
+        const literalPassword = "lit-pa55word";
+        const fetchStub = failQuotingRequest();
+        const c = createService({ MIRAGON_KEY: apiKey }, createRealRestClient());
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(
+            c7TargetWith("https://gw.example/keys/${env:MIRAGON_KEY}/engine-rest"),
+        );
+        c.deploymentTargetService.getCredentials.mockResolvedValue(
+            new BasicAuth("admin", literalPassword),
+        );
+
+        await c.service.verifyActive("/work");
+
+        expect(fetchStub).toHaveBeenCalledExactlyOnceWith(
+            `https://gw.example/keys/${apiKey}/engine-rest/process-definition/key/order`,
+            expect.anything(),
+        );
+        const [, reported] = c.notifier.notifyError.mock.calls[0] as [string, Error];
+        expect(reported.message).toBe(
+            "Deployment verification failed with HTTP 500: Lookup of https://gw.example/keys/***/engine-rest/process-definition/key/order as ***:*** failed",
+        );
+        for (const secret of [apiKey, literalPassword]) {
+            expect(everythingNotified(c.notifier)).not.toContain(secret);
+        }
+    });
 });

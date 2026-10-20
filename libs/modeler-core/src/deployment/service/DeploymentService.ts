@@ -23,6 +23,7 @@ import {
 } from "../../shared/domain/hostPorts";
 import { CamundaEnginePort } from "../domain/ports";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
+import { CredentialApprovalService } from "./CredentialApprovalService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { EnvValueResolver } from "./EnvValueResolver";
 
@@ -59,6 +60,7 @@ export class DeploymentService {
         private readonly secretStore: SecretStorePort,
         private readonly deploymentStatus: DeploymentStatusService,
         private readonly envResolver: EnvValueResolver,
+        private readonly credentialApproval: CredentialApprovalService,
     ) {}
 
     /**
@@ -170,12 +172,21 @@ export class DeploymentService {
     ): Promise<DeploymentResult> {
         try {
             const fileContents = await this.readFileContents(config);
+            const documentDir = path.dirname(config.mainFilePath);
             const lookup = await this.envResolver.createLookup(
                 target === undefined ? "workspaceFolder" : "targetsFile",
-                path.dirname(config.mainFilePath),
+                documentDir,
                 config,
             );
             const requestConfig = config.expandEnvRefs(lookup);
+            // A typed ad-hoc request is the user's own choice; one carrying `.env` values is not.
+            if (target !== undefined || requestConfig.carriesEnvValues()) {
+                await this.credentialApproval.ensureApproved(
+                    target,
+                    documentDir,
+                    requestConfig.sensitiveDestinations(),
+                );
+            }
 
             // Breadcrumb. Only host[:port] of the resolved URL is logged — never the
             // full URL, which can carry credentials, and never the auth payload.
@@ -226,6 +237,7 @@ export class DeploymentService {
     ): Promise<DeploymentResult[]> {
         const results: DeploymentResult[] = [];
         let pendingLookup: Promise<EnvLookup> | undefined;
+        let pendingApproval: Promise<void> | undefined;
         for (const filePath of paths) {
             const name = path.basename(filePath, path.extname(filePath));
             try {
@@ -241,11 +253,16 @@ export class DeploymentService {
                     .build();
                 pendingLookup ??= this.envResolver.createLookup("targetsFile", documentDir, config);
                 const envLookup = await pendingLookup;
-                const fileContents = await this.readFileContents(config);
-                const result = await this.restClient.deploy(
-                    config.expandEnvRefs(envLookup),
-                    fileContents,
+                const requestConfig = config.expandEnvRefs(envLookup);
+                // One answer covers the batch: every file goes to the same target.
+                pendingApproval ??= this.credentialApproval.ensureApproved(
+                    target,
+                    documentDir,
+                    requestConfig.sensitiveDestinations(),
                 );
+                await pendingApproval;
+                const fileContents = await this.readFileContents(config);
+                const result = await this.restClient.deploy(requestConfig, fileContents);
                 if (result.success) {
                     await this.deploymentStatus.recordDeployment(
                         filePath,

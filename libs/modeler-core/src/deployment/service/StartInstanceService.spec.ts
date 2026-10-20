@@ -3,6 +3,7 @@ import { posix } from "path";
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 import { BasicAuth, NoAuth } from "../domain/deployment";
+import { DeploymentTarget } from "../domain/deploymentTarget";
 import { ENV_VARIABLE_PREFIX } from "../domain/envRef";
 import { StartInstanceConfig, StartInstanceResult } from "../domain/startInstance";
 import { CamundaEnginePort } from "../domain/ports";
@@ -11,9 +12,10 @@ import { AuthHeaderResolver } from "../infrastructure/camunda/AuthHeaderResolver
 import { Camunda7RestClient } from "../infrastructure/camunda/Camunda7RestClient";
 import { StartInstanceService } from "./StartInstanceService";
 import { DeploymentTargetService } from "./DeploymentTargetService";
-import { EnvScope, EnvValueResolver } from "./EnvValueResolver";
+import { EnvValueResolver } from "./EnvValueResolver";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
 import {
+    CredentialDestinationNotApprovedError,
     DisallowedEnvReferenceError,
     FileNotFound,
     HttpTransportError,
@@ -25,6 +27,8 @@ import {
 type DotEnvFile = Record<string, string> | Error;
 
 const PROJECT_DIR = "/work";
+
+const NAMED_TARGET = new DeploymentTarget("dev", "c7", "${env:MIRAGON_URL}", "", "none", "", "");
 
 /** A real {@link EnvValueResolver} whose project `/work` holds `dotEnv`, if any. */
 function createEnvResolver(dotEnv?: DotEnvFile) {
@@ -64,7 +68,7 @@ function createRealRestClient(): Camunda7RestClient {
     return new Camunda7RestClient(httpClient, new AuthHeaderResolver(httpClient));
 }
 
-function stubFetch(respond: (url: string) => Promise<Response>) {
+function stubFetch(respond: (url: string, init?: RequestInit) => Promise<Response>) {
     const fetchStub = vi.fn(respond);
     vi.stubGlobal("fetch", fetchStub);
     return fetchStub;
@@ -93,6 +97,18 @@ function describeNotified(argument: unknown): string {
         return [argument.message, argument.stack, describeNotified(cause)].join("\n");
     }
     return String(argument);
+}
+
+/** A gateway refusing the request by quoting it back: its URL and the decoded basic credentials. */
+function refuseQuotingRequest() {
+    return stubFetch(async (url, init) => {
+        const { Authorization = "" } = init?.headers as Record<string, string>;
+        const credentials = Buffer.from(Authorization.replace(/^Basic /, ""), "base64").toString();
+        return new Response(
+            JSON.stringify({ message: `Gateway refused ${url} for ${credentials}` }),
+            { status: 403 },
+        );
+    });
 }
 
 // A real C7 document so `getProcessDefinitionKey` exercises the production
@@ -131,6 +147,9 @@ function createService(dotEnv?: DotEnvFile, engineClient?: CamundaEnginePort) {
     const artifactService = {
         getPayloadPaths: vi.fn(),
     };
+    const credentialApproval = {
+        ensureApproved: vi.fn().mockResolvedValue(undefined),
+    };
 
     const service = new StartInstanceService(
         vsDocument as never,
@@ -140,10 +159,12 @@ function createService(dotEnv?: DotEnvFile, engineClient?: CamundaEnginePort) {
         picker as never,
         artifactService as never,
         envResolver,
+        credentialApproval as never,
     );
 
     return {
         service,
+        credentialApproval,
         vsDocument,
         vsWorkspace,
         restClient,
@@ -235,7 +256,7 @@ describe("StartInstanceService.startInstance", () => {
             "/work/payloads/a.json",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result).toBe(success);
@@ -257,7 +278,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
@@ -278,7 +299,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result).toBe(failure);
@@ -297,7 +318,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result.success).toBe(false);
@@ -317,7 +338,7 @@ describe("StartInstanceService.startInstance", () => {
             "/work/payloads/bad.json",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result.success).toBe(false);
@@ -341,7 +362,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             "https://gw.${env:MIRAGON_STAGE}.example/{processDefinitionKey}/start",
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
@@ -369,7 +390,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             "${env:MIRAGON_GATEWAY}/gateway-path/{processDefinitionKey}/start",
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(notifier.logInfo).toHaveBeenCalledWith(
@@ -391,7 +412,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             undefined,
-            "workspaceFolder",
+            undefined,
         );
 
         expect(notifier.logInfo).toHaveBeenCalledWith(
@@ -411,7 +432,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result.success).toBe(false);
@@ -436,7 +457,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result.success).toBe(false);
@@ -460,7 +481,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
@@ -478,7 +499,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result.success).toBe(false);
@@ -500,7 +521,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             "${env:MIRAGON_START}",
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result).toMatchObject({ success: true, processInstanceId: "pi-1" });
@@ -533,7 +554,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             undefined,
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         // The rejection really quoted the secret, so its absence below is the redaction.
@@ -554,6 +575,40 @@ describe("StartInstanceService.startInstance", () => {
         expect(everythingNotified(notifier)).not.toContain("s3cret");
     });
 
+    it("masks a resolved .env value and a literal password in the result and every log when the engine quotes the request", async () => {
+        const token = "tok-9f8e7d";
+        const literalPassword = "lit-pa55word";
+        const fetchStub = refuseQuotingRequest();
+        const { service, notifier } = createService(
+            { MIRAGON_TOKEN: token },
+            createRealRestClient(),
+        );
+
+        const result = await service.startInstance(
+            "Process_1",
+            "https://camunda.example/engine-rest",
+            "c7",
+            new BasicAuth("admin", literalPassword),
+            "",
+            "https://gw.example/hooks/${env:MIRAGON_TOKEN}/{processDefinitionKey}/start",
+            "/work",
+            undefined,
+        );
+
+        expect(fetchStub).toHaveBeenCalledExactlyOnceWith(
+            `https://gw.example/hooks/${token}/Process_1/start`,
+            expect.anything(),
+        );
+        expect(result.success).toBe(false);
+        expect(result.message).toBe(
+            "Start instance failed with HTTP 403: Gateway refused https://gw.example/hooks/***/Process_1/start for ***:***",
+        );
+        for (const secret of [token, literalPassword]) {
+            expect(result.message).not.toContain(secret);
+            expect(everythingNotified(notifier)).not.toContain(secret);
+        }
+    });
+
     it("never reads .env when nothing references it, so a broken .env can't fail the start", async () => {
         const { service, restClient, dotEnvReads } = createService(
             new Error("EISDIR: illegal operation on a directory, read"),
@@ -569,7 +624,7 @@ describe("StartInstanceService.startInstance", () => {
             "",
             "https://gw.example/{processDefinitionKey}/start",
             "/work",
-            "workspaceFolder",
+            undefined,
         );
 
         expect(result).toBe(success);
@@ -594,7 +649,10 @@ describe("StartInstanceService.startInstance .env scope", () => {
         return context;
     }
 
-    const startWithEndpointRef = (service: StartInstanceService, envScope: EnvScope) =>
+    const startWithEndpointRef = (
+        service: StartInstanceService,
+        target: DeploymentTarget | undefined,
+    ) =>
         service.startInstance(
             "Process_1",
             "${env:MIRAGON_URL}",
@@ -603,14 +661,14 @@ describe("StartInstanceService.startInstance .env scope", () => {
             "",
             undefined,
             NESTED_PROJECT_DIR,
-            envScope,
+            target,
         );
 
     it("reads the workspace folder's .env for the workspaceFolder scope, never a nested targets file's", async () => {
         const { service, createLookup, locateTargetsFile, dotEnvReads } =
             createNestedProjectService();
 
-        await startWithEndpointRef(service, "workspaceFolder");
+        await startWithEndpointRef(service, undefined);
 
         expect(createLookup).toHaveBeenCalledExactlyOnceWith(
             "workspaceFolder",
@@ -625,7 +683,7 @@ describe("StartInstanceService.startInstance .env scope", () => {
         const { service, restClient, createLookup, locateTargetsFile, dotEnvReads } =
             createNestedProjectService();
 
-        await startWithEndpointRef(service, "targetsFile");
+        await startWithEndpointRef(service, NAMED_TARGET);
 
         expect(createLookup).toHaveBeenCalledExactlyOnceWith(
             "targetsFile",
@@ -636,5 +694,144 @@ describe("StartInstanceService.startInstance .env scope", () => {
         expect(dotEnvReads).toHaveBeenCalledExactlyOnceWith("/work/team/.env");
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
         expect(config.endpoint).toBe("https://camunda.example/engine-rest");
+    });
+});
+
+describe("StartInstanceService.startInstance credential approval", () => {
+    const DECLINED = new CredentialDestinationNotApprovedError("dev");
+
+    it("asks to approve the origin a named target's start URL resolves to before starting", async () => {
+        const { service, restClient, credentialApproval } = createService({
+            MIRAGON_URL: "https://camunda.example/engine-rest",
+            MIRAGON_GATEWAY: "https://gw.example:8443",
+        });
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+
+        await service.startInstance(
+            "Process_1",
+            "${env:MIRAGON_URL}",
+            "c7",
+            new BasicAuth("admin", "s3cret"),
+            "",
+            "${env:MIRAGON_GATEWAY}/{processDefinitionKey}/start",
+            PROJECT_DIR,
+            NAMED_TARGET,
+        );
+
+        expect(credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
+            NAMED_TARGET,
+            PROJECT_DIR,
+            expect.objectContaining({ origins: ["https://gw.example:8443"] }),
+        );
+        expect(credentialApproval.ensureApproved).toHaveBeenCalledBefore(restClient.startInstance);
+    });
+
+    it("starts nothing when the user declines the destination", async () => {
+        const { service, restClient, credentialApproval } = createService({
+            MIRAGON_URL: "https://moved.example/engine-rest",
+        });
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+        credentialApproval.ensureApproved.mockRejectedValue(DECLINED);
+
+        const result = await service.startInstance(
+            "Process_1",
+            "${env:MIRAGON_URL}",
+            "c7",
+            new BasicAuth("admin", "s3cret"),
+            "",
+            undefined,
+            PROJECT_DIR,
+            NAMED_TARGET,
+        );
+
+        expect(result).toMatchObject({ success: false, message: DECLINED.message });
+        expect(restClient.startInstance).not.toHaveBeenCalled();
+    });
+
+    it("never asks on an ad-hoc start whose values are all typed, even beside a .env", async () => {
+        const { service, restClient, credentialApproval } = createService({
+            MIRAGON_URL: "https://from-env.example/engine-rest",
+        });
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+
+        const result = await service.startInstance(
+            "Process_1",
+            "https://typed.example/engine-rest",
+            "c7",
+            new BasicAuth("admin", "s3cret"),
+            "",
+            undefined,
+            PROJECT_DIR,
+            undefined,
+        );
+
+        expect(result.success).toBe(true);
+        expect(credentialApproval.ensureApproved).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [
+            "its endpoint",
+            { MIRAGON_URL: "https://from-env.example:8443/engine-rest" },
+            "${env:MIRAGON_URL}",
+            new NoAuth(),
+            "https://from-env.example:8443",
+        ],
+        [
+            "its password",
+            { MIRAGON_PW: "s3cret" },
+            "https://typed.example/engine-rest",
+            new BasicAuth("admin", "${env:MIRAGON_PW}"),
+            "https://typed.example",
+        ],
+    ])(
+        "asks under the ad-hoc approvals before an ad-hoc start takes %s from .env",
+        async (_field, dotEnv, endpoint, auth, origin) => {
+            const { service, restClient, credentialApproval } = createService(dotEnv);
+            restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+
+            await service.startInstance(
+                "Process_1",
+                endpoint,
+                "c7",
+                auth,
+                "",
+                undefined,
+                PROJECT_DIR,
+                undefined,
+            );
+
+            expect(credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
+                undefined,
+                PROJECT_DIR,
+                expect.objectContaining({ origins: [origin] }),
+            );
+            expect(credentialApproval.ensureApproved).toHaveBeenCalledBefore(
+                restClient.startInstance,
+            );
+        },
+    );
+
+    it("starts nothing when the user declines an ad-hoc endpoint from .env", async () => {
+        const declinedAdHoc = new CredentialDestinationNotApprovedError("ad-hoc");
+        const { service, restClient, credentialApproval } = createService({
+            MIRAGON_URL: "https://from-env.example/engine-rest",
+        });
+        restClient.startInstance.mockResolvedValue(new StartInstanceResult(true, "started"));
+        credentialApproval.ensureApproved.mockRejectedValue(declinedAdHoc);
+
+        const result = await service.startInstance(
+            "Process_1",
+            "${env:MIRAGON_URL}",
+            "c7",
+            new BasicAuth("admin", "s3cret"),
+            "",
+            undefined,
+            PROJECT_DIR,
+            undefined,
+        );
+
+        expect(result).toMatchObject({ success: false, message: declinedAdHoc.message });
+        expect(restClient.startInstance).not.toHaveBeenCalled();
     });
 });

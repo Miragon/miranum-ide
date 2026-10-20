@@ -6,10 +6,12 @@ import {
     InvalidDeploymentConfigError,
     InvalidDeploymentTargetsFileError,
 } from "../../shared/domain/errors";
+import { CredentialDestinations } from "./credentialDestinations";
 import { CredentialRefs } from "./credentialRefs";
 import { AuthConfig, BasicAuth, NoAuth, OAuth2Auth } from "./deployment";
 import {
     assertEnvRefsValid,
+    containsEnvRef,
     ENV_VARIABLE_PREFIX,
     EnvLookup,
     EnvReferencing,
@@ -96,6 +98,20 @@ export class DeploymentTarget {
         return { endpoint, tenantId: expandEnvRefs(this.tenantId, lookup, "tenantId") };
     }
 
+    /**
+     * Where this target may send credentials, as far as is known without its
+     * `.env`: what saving it through the form can approve.
+     */
+    knownCredentialDestinations(): CredentialDestinations {
+        const urls = [this.endpoint, this.deployUrl, this.startInstanceUrl];
+        if (this.authType === "oauth2") {
+            urls.push(this.tokenEndpoint);
+        }
+        return CredentialDestinations.ofKnown(
+            ...urls.filter((url): url is string => url !== undefined && !containsEnvRef(url)),
+        );
+    }
+
     /** @throws {DisallowedEnvReferenceError} naming the JSON field of the offending reference. */
     assertEnvRefsValid(): void {
         assertEnvRefsValid(this.endpoint, "endpoint");
@@ -147,6 +163,13 @@ export class DeploymentTargets {
     find(name: string): DeploymentTarget | undefined {
         const normalized = name.trim();
         return this.targets.find((target) => target.name === normalized);
+    }
+
+    knownDestinations(): CredentialDestinations {
+        return this.targets.reduce(
+            (destinations, target) => destinations.union(target.knownCredentialDestinations()),
+            CredentialDestinations.none(),
+        );
     }
 
     /**
@@ -288,10 +311,14 @@ function parseAuth(raw: unknown, index: number): ParsedAuth {
             `targets[${index}] "auth.type" must be "none", "basic", or "oauth2"`,
         );
     }
+    const tokenEndpoint = parseOptionalString(auth.tokenEndpoint, index, "auth.tokenEndpoint");
+    const audience = parseOptionalString(auth.audience, index, "auth.audience");
+    // Kept only where they are used: a hidden token endpoint would otherwise be
+    // prefilled and count as typed once the form switches the target to OAuth2.
     return {
         authType: type,
-        tokenEndpoint: parseOptionalString(auth.tokenEndpoint, index, "auth.tokenEndpoint") ?? "",
-        audience: parseOptionalString(auth.audience, index, "auth.audience") ?? "",
+        tokenEndpoint: type === "oauth2" ? (tokenEndpoint ?? "") : "",
+        audience: type === "oauth2" ? (audience ?? "") : "",
         credentialRefs: parseCredentialRefs(auth, type, index),
     };
 }

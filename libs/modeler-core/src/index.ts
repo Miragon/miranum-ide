@@ -88,6 +88,7 @@ export * from "./migration/domain/MigrationPlan";
 export * from "./migration/service/BpmnMigrationService";
 
 // ── deployment ───────────────────────────────────────────────────────────────
+export * from "./deployment/domain/credentialDestinations";
 export * from "./deployment/domain/credentialRefs";
 export * from "./deployment/domain/deployment";
 export * from "./deployment/domain/deploymentLedger";
@@ -96,8 +97,10 @@ export * from "./deployment/domain/deploymentVerification";
 export * from "./deployment/domain/dotEnv";
 export * from "./deployment/domain/envRef";
 export * from "./deployment/domain/ports";
+export * from "./deployment/domain/secretRedactor";
 export * from "./deployment/domain/startInstance";
 export * from "./deployment/domain/urlTemplate";
+export * from "./deployment/service/CredentialApprovalService";
 export * from "./deployment/service/DeployActiveDiagramService";
 export * from "./deployment/service/DeployFilesService";
 export * from "./deployment/service/DeploymentService";

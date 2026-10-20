@@ -463,7 +463,7 @@ export class DeploymentMessageDispatcher {
                 configPayload.payloadFilePath,
                 configPayload.startInstanceUrl,
                 documentDir,
-                target === undefined ? "workspaceFolder" : "targetsFile",
+                target,
             );
 
             if (result.success) {

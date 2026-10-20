@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
     DisallowedEnvReferenceError,
+    InvalidCredentialDestinationError,
     InvalidDeploymentConfigError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
 
 import { BasicAuth, DeploymentConfigBuilder, NoAuth, OAuth2Auth } from "./deployment";
+import { referenceableVariables } from "./envRef";
 
 function completeBuilder(): DeploymentConfigBuilder {
     return new DeploymentConfigBuilder()
@@ -30,6 +32,19 @@ describe("NoAuth", () => {
             expect(new NoAuth().toHeaders()).toEqual({});
         });
     });
+
+    describe("destinationsFor", () => {
+        it("has no destination to approve, even for an unparseable URL", () => {
+            expect(new NoAuth().destinationsFor("https://camunda.example").isEmpty()).toBe(true);
+            expect(new NoAuth().destinationsFor("not a url").isEmpty()).toBe(true);
+        });
+    });
+
+    describe("redactor", () => {
+        it("masks nothing", () => {
+            expect(new NoAuth().redactor().redact("admin s3cret")).toBe("admin s3cret");
+        });
+    });
 });
 
 describe("BasicAuth", () => {
@@ -50,6 +65,76 @@ describe("BasicAuth", () => {
             expect(new BasicAuth("user:name", "p@ss:wörd").toHeaders()).toEqual({
                 Authorization: `Basic ${expected}`,
             });
+        });
+    });
+
+    describe("destinationsFor", () => {
+        it("is the origin of the request URL", () => {
+            expect(
+                new BasicAuth("admin", "secret").destinationsFor(
+                    "https://camunda.example:8443/engine-rest/deployment/create",
+                ).origins,
+            ).toEqual(["https://camunda.example:8443"]);
+        });
+
+        it("throws for a request URL without a host", () => {
+            expect(() => new BasicAuth("admin", "secret").destinationsFor("/engine-rest")).toThrow(
+                InvalidCredentialDestinationError,
+            );
+        });
+    });
+
+    describe("redactor", () => {
+        it("masks the username and the password", () => {
+            expect(
+                new BasicAuth("admin", "s3cret").redactor().redact("user admin, password s3cret"),
+            ).toBe("user ***, password ***");
+        });
+
+        it("skips a blank username instead of masking every space", () => {
+            expect(new BasicAuth(" ", "s3cret").redactor().redact("bad password s3cret")).toBe(
+                "bad password ***",
+            );
+        });
+    });
+});
+
+describe("OAuth2Auth", () => {
+    const auth = new OAuth2Auth(
+        "client-1",
+        "s3cret",
+        "https://idp.example/oauth/token",
+        "zeebe-api",
+    );
+
+    describe("destinationsFor", () => {
+        it("is the request origin and the token endpoint origin", () => {
+            expect(auth.destinationsFor("https://zeebe.example/v2/deployments").origins).toEqual([
+                "https://idp.example",
+                "https://zeebe.example",
+            ]);
+        });
+
+        it("collapses a token endpoint on the request origin", () => {
+            expect(auth.destinationsFor("https://idp.example/v2/deployments").origins).toEqual([
+                "https://idp.example",
+            ]);
+        });
+
+        it("throws for a token endpoint without a host", () => {
+            const withoutTokenEndpoint = new OAuth2Auth("client-1", "s3cret", "", "zeebe-api");
+
+            expect(() =>
+                withoutTokenEndpoint.destinationsFor("https://zeebe.example/v2/deployments"),
+            ).toThrow(InvalidCredentialDestinationError);
+        });
+    });
+
+    describe("redactor", () => {
+        it("masks the client id and secret but not the token endpoint or audience", () => {
+            expect(
+                auth.redactor().redact("client-1 s3cret https://idp.example/oauth/token zeebe-api"),
+            ).toBe("*** *** https://idp.example/oauth/token zeebe-api");
         });
     });
 });
@@ -443,6 +528,149 @@ describe("env references", () => {
             const config = completeBuilder().withTenantId("${env:MIRAGON_TENANT}").build();
 
             expect(config.expandEnvRefs(lookup({ MIRAGON_TENANT: "" })).tenantId).toBe("");
+        });
+    });
+});
+
+describe("DeploymentConfig", () => {
+    const envFile = (variables: Record<string, string>) =>
+        referenceableVariables(new Map(Object.entries(variables)), "/ws/.env");
+
+    describe("sensitiveDestinations", () => {
+        it("is the endpoint origin, which the conventional route keeps", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://camunda.example:8443/engine-rest")
+                .withAuth(new BasicAuth("admin", "secret"))
+                .build();
+
+            expect(config.sensitiveDestinations().origins).toEqual([
+                "https://camunda.example:8443",
+            ]);
+        });
+
+        it("prefers the deploy URL override over the endpoint", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://camunda.example/engine-rest")
+                .withDeployUrl("https://gateway.example/deploy")
+                .withAuth(new BasicAuth("admin", "secret"))
+                .build();
+
+            expect(config.sensitiveDestinations().origins).toEqual(["https://gateway.example"]);
+        });
+
+        it("adds the token endpoint for oauth2", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://zeebe.example")
+                .withAuth(new OAuth2Auth("cid", "s", "https://idp.example/token", "aud"))
+                .build();
+
+            expect(config.sensitiveDestinations().origins).toEqual([
+                "https://idp.example",
+                "https://zeebe.example",
+            ]);
+        });
+
+        it("is empty for a literal config without credentials", () => {
+            expect(completeBuilder().build().sensitiveDestinations().isEmpty()).toBe(true);
+        });
+
+        it.each([
+            [
+                "a literal config beside a .env with values",
+                completeBuilder(),
+                { MIRAGON_HOST: "camunda.example" },
+            ],
+            [
+                "a config whose only ref resolves to an empty value",
+                completeBuilder().withTenantId("${env:MIRAGON_TENANT}"),
+                { MIRAGON_TENANT: "" },
+            ],
+        ])(
+            "is empty for %s without credentials, as the request carries no .env value",
+            (_case, builder, variables) => {
+                const expanded = builder.build().expandEnvRefs(envFile(variables));
+
+                expect(expanded.carriesEnvValues()).toBe(false);
+                expect(expanded.sensitiveDestinations().isEmpty()).toBe(true);
+            },
+        );
+
+        it("is the request origin for a config without credentials whose only ref is the tenant", () => {
+            const config = completeBuilder().withTenantId("${env:MIRAGON_TENANT}").build();
+
+            const expanded = config.expandEnvRefs(envFile({ MIRAGON_TENANT: "acme" }));
+
+            expect(expanded.carriesEnvValues()).toBe(true);
+            expect(expanded.sensitiveDestinations().origins).toEqual(["https://camunda.example"]);
+        });
+
+        it("is the request origin for a config without credentials expanded from .env values", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://${env:MIRAGON_HOST}/engine-rest")
+                .build();
+
+            expect(
+                config
+                    .expandEnvRefs(envFile({ MIRAGON_HOST: "camunda.example" }))
+                    .sensitiveDestinations().origins,
+            ).toEqual(["https://camunda.example"]);
+        });
+
+        it("is the deploy URL origin for a config carrying .env values", () => {
+            const config = completeBuilder()
+                .withDeployUrl("https://gateway.example/deploy?token=${env:MIRAGON_TOKEN}")
+                .build();
+
+            expect(
+                config.expandEnvRefs(envFile({ MIRAGON_TOKEN: "t0ken" })).sensitiveDestinations()
+                    .origins,
+            ).toEqual(["https://gateway.example"]);
+        });
+
+        it("is the resolved host once env refs are expanded", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://${env:MIRAGON_HOST}/engine-rest")
+                .withAuth(new BasicAuth("admin", "secret"))
+                .build();
+
+            expect(
+                config
+                    .expandEnvRefs((name) => (name === "MIRAGON_HOST" ? "evil.example" : undefined))
+                    .sensitiveDestinations().origins,
+            ).toEqual(["https://evil.example"]);
+        });
+    });
+
+    describe("redactor", () => {
+        it("masks the literal credentials", () => {
+            const config = completeBuilder().withAuth(new BasicAuth("admin", "s3cret")).build();
+
+            expect(config.redactor().redact("admin:s3cret rejected")).toBe("***:*** rejected");
+        });
+
+        it("masks the expanded credentials and the .env values the request used, but no other", () => {
+            const config = completeBuilder()
+                .withEndpoint("https://${env:MIRAGON_HOST}/engine-rest")
+                .withAuth(new BasicAuth("admin", "${env:MIRAGON_PASSWORD}"))
+                .build();
+
+            const redactor = config
+                .expandEnvRefs(
+                    envFile({
+                        MIRAGON_HOST: "camunda.example",
+                        MIRAGON_PASSWORD: "s3cret",
+                        MIRAGON_UNUSED: "sp4re",
+                    }),
+                )
+                .redactor();
+
+            expect(redactor.redact("admin s3cret camunda.example sp4re")).toBe("*** *** *** sp4re");
+        });
+
+        it("masks nothing for a literal config without credentials", () => {
+            const message = "https://camunda.example/engine-rest rejected";
+
+            expect(completeBuilder().build().redactor().redact(message)).toBe(message);
         });
     });
 });

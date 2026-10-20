@@ -139,6 +139,25 @@ export class UnreadableDotEnvError extends EnvReferenceError {
     }
 }
 
+/** Common base for credentials withheld because their destination could not be trusted. */
+export abstract class CredentialDestinationError extends Error {}
+
+export class InvalidCredentialDestinationError extends CredentialDestinationError {
+    constructor() {
+        super(
+            "Credentials and .env values are only sent to a URL with a host. Check the endpoint, the URL overrides and the token endpoint.",
+        );
+        this.name = "InvalidCredentialDestinationError";
+    }
+}
+
+export class CredentialDestinationNotApprovedError extends CredentialDestinationError {
+    constructor(readonly targetName: string) {
+        super("Nothing was sent: the host is not approved.");
+        this.name = "CredentialDestinationNotApprovedError";
+    }
+}
+
 /**
  * Thrown when fetching an OAuth2 access token fails.
  */
@@ -156,12 +175,9 @@ export class TokenFetchError extends Error {
  * Thrown by {@link CamundaRestClient} when the REST API returns a non-2xx status.
  */
 export class DeploymentFailedError extends Error {
-    /**
-     * @param status HTTP status code returned by the server.
-     * @param body Response body text for diagnostic purposes.
-     */
-    constructor(status: number, body: string) {
-        super(`Deployment failed with HTTP ${status}: ${body}`);
+    /** @param detail The server's redacted explanation, never its raw body. */
+    constructor(status: number, detail?: string) {
+        super(`Deployment failed with HTTP ${status}${detailSuffix(detail)}`);
         this.name = "DeploymentFailedError";
     }
 }
@@ -171,11 +187,12 @@ export class DeploymentFailedError extends Error {
  * non-2xx, non-404 status (404 means "not deployed", not an error).
  */
 export class EngineInspectionFailedError extends Error {
+    /** @param detail The server's redacted explanation, never its raw body. */
     constructor(
         readonly status: number,
-        body: string,
+        detail?: string,
     ) {
-        super(`Deployment verification failed with HTTP ${status}: ${body}`);
+        super(`Deployment verification failed with HTTP ${status}${detailSuffix(detail)}`);
         this.name = "EngineInspectionFailedError";
     }
 
@@ -188,12 +205,9 @@ export class EngineInspectionFailedError extends Error {
  * Thrown by {@link CamundaRestClient} when starting a process instance returns a non-2xx status.
  */
 export class StartInstanceFailedError extends Error {
-    /**
-     * @param status HTTP status code returned by the server.
-     * @param body Response body text for diagnostic purposes.
-     */
-    constructor(status: number, body: string) {
-        super(`Start instance failed with HTTP ${status}: ${body}`);
+    /** @param detail The server's redacted explanation, never its raw body. */
+    constructor(status: number, detail?: string) {
+        super(`Start instance failed with HTTP ${status}${detailSuffix(detail)}`);
         this.name = "StartInstanceFailedError";
     }
 }
@@ -210,4 +224,8 @@ export class HttpTransportError extends Error {
         super(`Request to ${host} failed: ${reason}`);
         this.name = "HttpTransportError";
     }
+}
+
+function detailSuffix(detail: string | undefined): string {
+    return detail === undefined ? "." : `: ${detail}`;
 }

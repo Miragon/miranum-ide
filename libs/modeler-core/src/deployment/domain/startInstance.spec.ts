@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
     DisallowedEnvReferenceError,
+    InvalidCredentialDestinationError,
     InvalidDeploymentConfigError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
 
-import { BasicAuth, NoAuth } from "./deployment";
+import { BasicAuth, NoAuth, OAuth2Auth } from "./deployment";
+import { referenceableVariables } from "./envRef";
 import { StartInstanceConfig } from "./startInstance";
 
 const lookup = (map: Record<string, string>) => (name: string) => map[name];
+
+const envFile = (variables: Record<string, string>) =>
+    referenceableVariables(new Map(Object.entries(variables)), "/ws/.env");
 
 function errorFrom(action: () => unknown): unknown {
     try {
@@ -60,6 +65,138 @@ describe("StartInstanceConfig", () => {
         });
     });
 
+    describe("sensitiveDestinations", () => {
+        const basic = new BasicAuth("admin", "secret");
+
+        it("is the endpoint origin, which the conventional route keeps", () => {
+            expect(
+                startConfig({
+                    endpoint: "https://camunda.example:8443/engine-rest",
+                    auth: basic,
+                }).sensitiveDestinations().origins,
+            ).toEqual(["https://camunda.example:8443"]);
+        });
+
+        it("prefers the start URL override over the endpoint", () => {
+            expect(
+                startConfig({
+                    auth: basic,
+                    startInstanceUrl: "https://gateway.example/{processDefinitionKey}/start",
+                }).sensitiveDestinations().origins,
+            ).toEqual(["https://gateway.example"]);
+        });
+
+        it("expands the process definition key in the override's host first", () => {
+            expect(
+                startConfig({
+                    processDefinitionKey: "Invoice",
+                    auth: basic,
+                    startInstanceUrl: "https://{processDefinitionKey}.tenant.example/start",
+                }).sensitiveDestinations().origins,
+            ).toEqual(["https://invoice.tenant.example"]);
+        });
+
+        it("throws when the expanded key leaves the override without a valid host", () => {
+            const config = startConfig({
+                processDefinitionKey: "a/b",
+                auth: basic,
+                startInstanceUrl: "https://{processDefinitionKey}.tenant.example/start",
+            });
+
+            expect(() => config.sensitiveDestinations()).toThrow(InvalidCredentialDestinationError);
+        });
+
+        it("adds the token endpoint for oauth2", () => {
+            expect(
+                startConfig({
+                    endpoint: "https://zeebe.example",
+                    auth: new OAuth2Auth("cid", "s", "https://idp.example/token", "aud"),
+                }).sensitiveDestinations().origins,
+            ).toEqual(["https://idp.example", "https://zeebe.example"]);
+        });
+
+        it("is empty for a literal config without credentials", () => {
+            expect(startConfig().sensitiveDestinations().isEmpty()).toBe(true);
+        });
+
+        it.each([
+            [
+                "a literal config beside a .env with values",
+                startConfig(),
+                { MIRAGON_HOST: "camunda.example" },
+            ],
+            [
+                "a config whose only ref resolves to an empty value",
+                startConfig({ startInstanceUrl: "${env:MIRAGON_START_URL}" }),
+                { MIRAGON_START_URL: "" },
+            ],
+        ])(
+            "is empty for %s without credentials, as the request carries no .env value",
+            (_case, config, variables) => {
+                const expanded = config.expandEnvRefs(envFile(variables));
+
+                expect(expanded.carriesEnvValues()).toBe(false);
+                expect(expanded.sensitiveDestinations().isEmpty()).toBe(true);
+            },
+        );
+
+        it("is the request origin for a config without credentials expanded from .env values", () => {
+            const config = startConfig({ endpoint: "https://${env:MIRAGON_HOST}/engine-rest" });
+
+            expect(
+                config
+                    .expandEnvRefs(envFile({ MIRAGON_HOST: "camunda.example" }))
+                    .sensitiveDestinations().origins,
+            ).toEqual(["https://camunda.example"]);
+        });
+
+        it("is the expanded start URL origin for a config carrying .env values", () => {
+            const config = startConfig({
+                processDefinitionKey: "Invoice",
+                startInstanceUrl:
+                    "https://{processDefinitionKey}.tenant.example/start?token=${env:MIRAGON_TOKEN}",
+            });
+
+            expect(
+                config.expandEnvRefs(envFile({ MIRAGON_TOKEN: "t0ken" })).sensitiveDestinations()
+                    .origins,
+            ).toEqual(["https://invoice.tenant.example"]);
+        });
+    });
+
+    describe("redactor", () => {
+        it("masks the literal credentials", () => {
+            const config = startConfig({ auth: new BasicAuth("admin", "s3cret") });
+
+            expect(config.redactor().redact("admin:s3cret rejected")).toBe("***:*** rejected");
+        });
+
+        it("masks the expanded credentials and the .env values the request used, but no other", () => {
+            const config = startConfig({
+                endpoint: "https://${env:MIRAGON_HOST}/engine-rest",
+                auth: new BasicAuth("admin", "${env:MIRAGON_PASSWORD}"),
+            });
+
+            const redactor = config
+                .expandEnvRefs(
+                    envFile({
+                        MIRAGON_HOST: "camunda.example",
+                        MIRAGON_PASSWORD: "s3cret",
+                        MIRAGON_UNUSED: "sp4re",
+                    }),
+                )
+                .redactor();
+
+            expect(redactor.redact("admin s3cret camunda.example sp4re")).toBe("*** *** *** sp4re");
+        });
+
+        it("masks nothing for a literal config without credentials", () => {
+            const message = "https://camunda.example/engine-rest rejected";
+
+            expect(startConfig().redactor().redact(message)).toBe(message);
+        });
+    });
+
     describe("expandEnvRefs", () => {
         it("expands endpoint, auth and startInstanceUrl but not the key or payload", () => {
             const payload = { note: "${env:MIRAGON_NOTE}" };
@@ -90,9 +227,11 @@ describe("StartInstanceConfig", () => {
                     new BasicAuth("u", "p"),
                     { note: "${env:MIRAGON_NOTE}" },
                     "https://c.example/{processDefinitionKey}/start",
+                    expect.any(Array),
                 ),
             );
             expect(resolved.payload).toBe(payload);
+            expect([...resolved.envValues].sort()).toEqual(["https://c.example", "p", "u"]);
         });
 
         it("leaves the original config literal", () => {

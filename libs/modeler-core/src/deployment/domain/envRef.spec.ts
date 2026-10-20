@@ -15,6 +15,7 @@ import {
     expandOptionalEnvRefs,
     isWholeEnvRef,
     NO_ENV_VARIABLES,
+    recordingLookup,
     referenceableVariables,
     wholeEnvRefOf,
 } from "./envRef";
@@ -347,6 +348,84 @@ describe("referenceableVariables", () => {
 
         expect(resolve("MIRAGON_TENANT")).toBe("");
         expect(expandEnvRefs("${env:MIRAGON_TENANT}", resolve, "tenantId")).toBe("");
+    });
+});
+
+describe("recordingLookup", () => {
+    const dotEnv = () =>
+        referenceableVariables(
+            new Map([
+                ["MIRAGON_URL", "https://camunda.example"],
+                ["MIRAGON_PASSWORD", "s3cret"],
+                ["MIRAGON_EMPTY", ""],
+                ["MIRAGON_BLANK", "  "],
+            ]),
+            DOT_ENV_PATH,
+        );
+
+    it("hands out the wrapped lookup's values unchanged", () => {
+        const recording = recordingLookup(dotEnv());
+
+        expect(recording("MIRAGON_URL")).toBe("https://camunda.example");
+        expect(recording("MIRAGON_BLANK")).toBe("  ");
+        expect(recording("MIRAGON_MISSING")).toBeUndefined();
+    });
+
+    it("records only the values it handed out, not the rest of the .env", () => {
+        const recording = recordingLookup(dotEnv());
+
+        expect(expandEnvRefs("${env:MIRAGON_URL}/engine-rest", recording, "endpoint")).toBe(
+            "https://camunda.example/engine-rest",
+        );
+
+        expect([...recording.resolved]).toEqual(["https://camunda.example"]);
+    });
+
+    it("records a value once however often it is handed out", () => {
+        const recording = recordingLookup(dotEnv());
+
+        recording("MIRAGON_PASSWORD");
+        recording("MIRAGON_PASSWORD");
+
+        expect([...recording.resolved]).toEqual(["s3cret"]);
+    });
+
+    it("records no empty or whitespace-only value", () => {
+        const recording = recordingLookup(dotEnv());
+
+        recording("MIRAGON_EMPTY");
+        recording("MIRAGON_BLANK");
+
+        expect(recording.resolved.size).toBe(0);
+    });
+
+    it("records nothing for an unresolved name and still names the searched .env", () => {
+        const recording = recordingLookup(dotEnv());
+
+        const error = errorFrom(() =>
+            expandEnvRefs("${env:MIRAGON_MISSING}", recording, "endpoint"),
+        );
+
+        expect(error).toBeInstanceOf(UnresolvedEnvVariableError);
+        expect((error as Error).message).toContain(`Define it in ${DOT_ENV_PATH}.`);
+        expect(recording.resolved.size).toBe(0);
+    });
+
+    it("forwards the wrapped lookup's source, or none", () => {
+        expect(recordingLookup(dotEnv()).source).toBe(DOT_ENV_PATH);
+        expect(recordingLookup(NO_ENV_VARIABLES).source).toBeUndefined();
+    });
+
+    it("keeps a separate record per wrapper over the same lookup", () => {
+        const lookupOfFile = dotEnv();
+        const first = recordingLookup(lookupOfFile);
+        const second = recordingLookup(lookupOfFile);
+
+        first("MIRAGON_URL");
+        second("MIRAGON_PASSWORD");
+
+        expect([...first.resolved]).toEqual(["https://camunda.example"]);
+        expect([...second.resolved]).toEqual(["s3cret"]);
     });
 });
 

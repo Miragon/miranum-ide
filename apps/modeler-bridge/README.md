@@ -25,7 +25,7 @@ isn't talking to VS Code.
 | core → host | `editor/postMessage`                    | `EditorHandle.postMessage` (Query/Command → webview)                                          |
 | core → host | `notifier/*`                            | `NotifierPort` → IntelliJ `Notifications.Bus` + IDE log                                       |
 | core → host | `statusBar/*`                           | `StatusBarPort` → `StatusBarWidget`s (engine version + template count; active deployment target) |
-| core → host | `secretStore/*`                         | `SecretStorePort` → `PasswordSafe` (application-scoped, encrypted); `slot` scopes a named target, `delete` removes one |
+| core → host | `secretStore/*`                         | `SecretStorePort` → `PasswordSafe` (application-scoped, encrypted); `slot` scopes a named target, `delete` removes one with its approved destinations |
 | host → core | `deploymentState/seed`                  | seeds the `DeploymentStatePort` mirror (synchronous getters; see BridgeSettings)              |
 | host → core | `deployment/open`                       | deployment tool-window visibility → refresh form defaults on open                             |
 | host → core | `deployment/webviewMessage`             | inbound deployment `Command` → the core `DeploymentFeature`'s panel                            |

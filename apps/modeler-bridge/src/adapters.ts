@@ -54,6 +54,9 @@ import {
     ConfirmShowResult,
     PickerShowParams,
     PickerShowResult,
+    SecretApprovedDestinations,
+    SecretGetApprovedDestinationsParams,
+    SecretSaveApprovedDestinationsParams,
     TokenPromptShowResult,
     TokenStoreGetResult,
 } from "./protocol/types";
@@ -508,7 +511,7 @@ export class RpcClipboard implements ClipboardPort {
 
 /**
  * Routes the core's {@link SecretStorePort} to the host's PasswordSafe-backed
- * credential store. Unlike the fire-and-forget Notifier/StatusBar ports, all four
+ * credential store. Unlike the fire-and-forget Notifier/StatusBar ports, all
  * calls are **requests**: the deployment service awaits a save before reporting
  * success and awaits a read before pre-filling the form, so each must resolve only
  * once the host has actually persisted/fetched the secret. A read maps a `null`
@@ -537,6 +540,20 @@ export class RpcSecretStore implements SecretStorePort {
             slot,
         })) as OAuth2Credentials | null;
         return result ?? undefined;
+    }
+
+    async getApprovedDestinations(slot: string): Promise<string[]> {
+        const result = (await this.rpc.request(METHODS.secretStoreGetApprovedDestinations, {
+            slot,
+        } satisfies SecretGetApprovedDestinationsParams)) as SecretApprovedDestinations | null;
+        return result?.origins ?? [];
+    }
+
+    async saveApprovedDestinations(slot: string, origins: string[]): Promise<void> {
+        await this.rpc.request(METHODS.secretStoreSaveApprovedDestinations, {
+            slot,
+            origins,
+        } satisfies SecretSaveApprovedDestinationsParams);
     }
 
     async delete(slot: string): Promise<void> {

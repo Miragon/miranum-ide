@@ -6,7 +6,7 @@ import { DisallowedEnvReferenceError } from "../../shared/domain/errors";
 import { CredentialRefs } from "../domain/credentialRefs";
 import { BasicAuth, NoAuth, OAuth2Auth } from "../domain/deployment";
 import { serializeDeploymentTargets, DeploymentTarget } from "../domain/deploymentTarget";
-import { DeploymentTargetService } from "./DeploymentTargetService";
+import { DeploymentTargetService, toTargetPayload } from "./DeploymentTargetService";
 
 const CONFIG_FOLDER = ".camunda";
 const TARGETS_FILE_NAME = "deployment-targets.json";
@@ -66,6 +66,8 @@ function createService() {
         getBasicAuth: vi.fn(),
         saveOAuth2: vi.fn().mockResolvedValue(undefined),
         getOAuth2: vi.fn(),
+        getApprovedDestinations: vi.fn().mockResolvedValue([]),
+        saveApprovedDestinations: vi.fn().mockResolvedValue(undefined),
         delete: vi.fn().mockResolvedValue(undefined),
     };
     const deploymentState = {
@@ -1031,5 +1033,328 @@ describe("DeploymentTargetService.resolveSlot", () => {
         c.artifactService.findConfigBaseDir.mockResolvedValue(WORKSPACE_ROOT);
 
         expect(await c.service.resolveSlot("dev", DOC_DIR)).toBe(`${FILE_PATH}::dev`);
+    });
+});
+
+describe("DeploymentTargetService approved credential destinations", () => {
+    const DEV_SLOT = `${FILE_PATH}::dev`;
+    const BASIC_AUTH: AuthConfigPayload = { authType: "basic", username: "u", password: "p" };
+
+    function serviceWithTargets(...targets: DeploymentTarget[]) {
+        const c = createService();
+        c.artifactService.findConfigBaseDir.mockResolvedValue(WORKSPACE_ROOT);
+        c.workspace.readFile.mockResolvedValue(fileWith(...targets));
+        return c;
+    }
+
+    function withApprovalStore(
+        c: ReturnType<typeof createService>,
+        initial: Record<string, string[]> = {},
+    ): Map<string, string[]> {
+        const approvals = new Map(Object.entries(initial));
+        c.secretStore.getApprovedDestinations.mockImplementation(
+            async (slot: string) => approvals.get(slot) ?? [],
+        );
+        c.secretStore.saveApprovedDestinations.mockImplementation(
+            async (slot: string, origins: string[]) => {
+                approvals.set(slot, origins);
+            },
+        );
+        c.secretStore.delete.mockImplementation(async (slot: string) => {
+            approvals.delete(slot);
+        });
+        return approvals;
+    }
+
+    it("approves on create the typed origins of the endpoint, URL overrides and oauth2 token endpoint", async () => {
+        const c = serviceWithTargets();
+        const approvals = withApprovalStore(c);
+        const oauth = { tokenEndpoint: "https://idp.example.com/oauth/token", audience: "api" };
+
+        await c.service.createTarget(
+            {
+                name: "dev",
+                engine: "c8",
+                endpoint: "https://engine.example.com/v2",
+                tenantId: "",
+                authType: "oauth2",
+                ...oauth,
+                deployUrl: "https://deploy.example.com:8443/deployments",
+                startInstanceUrl:
+                    "https://start.example.com/process-definition/key/{processDefinitionKey}/start",
+            },
+            { authType: "oauth2", clientId: "cid", clientSecret: "secret", ...oauth },
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual([
+            "https://deploy.example.com:8443",
+            "https://engine.example.com",
+            "https://idp.example.com",
+            "https://start.example.com",
+        ]);
+    });
+
+    it("replaces stale approvals left under the slot instead of inheriting them on create", async () => {
+        const c = serviceWithTargets();
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: ["https://stale.example.com"] });
+
+        await c.service.createTarget(
+            {
+                name: "dev",
+                engine: "c7",
+                endpoint: "https://engine.example.com/engine-rest",
+                tenantId: "",
+                authType: "basic",
+            },
+            BASIC_AUTH,
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual(["https://engine.example.com"]);
+    });
+
+    it("leaves the existing target's approvals untouched when a create collides with its name", async () => {
+        const c = serviceWithTargets(
+            target("dev", { endpoint: "https://trusted.example.com/engine-rest" }),
+        );
+        withApprovalStore(c, { [DEV_SLOT]: ["https://trusted.example.com"] });
+
+        await expect(
+            c.service.createTarget(
+                {
+                    name: "dev",
+                    engine: "c7",
+                    endpoint: "https://evil.example.com/engine-rest",
+                    tenantId: "",
+                    authType: "basic",
+                },
+                BASIC_AUTH,
+                DOC_DIR,
+            ),
+        ).rejects.toThrow(/already exists/);
+        expect(c.secretStore.saveApprovedDestinations).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        "https://${env:MIRAGON_CAMUNDA_HOST}/engine-rest",
+        // Parses to engine.example.com, but a value like "evil.example.com/" moves the host.
+        "https://${env:MIRAGON_CAMUNDA_USER}@engine.example.com/engine-rest",
+    ])("never approves an endpoint holding an env ref at save time: %s", async (endpoint) => {
+        const c = serviceWithTargets();
+        const approvals = withApprovalStore(c);
+
+        await c.service.createTarget(
+            {
+                name: "dev",
+                engine: "c7",
+                endpoint,
+                tenantId: "",
+                authType: "basic",
+                deployUrl: "https://deploy.example.com/deploy",
+            },
+            BASIC_AUTH,
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual(["https://deploy.example.com"]);
+    });
+
+    it("re-saves only the inherited approvals when a save changes no destination", async () => {
+        const saved = target("dev", {
+            authType: "basic",
+            endpoint: "https://engine.example.com/engine-rest",
+        });
+        const c = serviceWithTargets(saved);
+        const inherited = ["https://engine.example.com", "https://resolved-from-env.example.com"];
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: inherited });
+
+        await c.service.saveTarget(
+            { ...toTargetPayload(saved), tenantId: "tenant-a" },
+            BASIC_AUTH,
+            "dev",
+            DOC_DIR,
+        );
+
+        expect(c.secretStore.saveApprovedDestinations).toHaveBeenCalledExactlyOnceWith(
+            DEV_SLOT,
+            inherited,
+        );
+        expect(approvals.get(DEV_SLOT)).toEqual(inherited);
+    });
+
+    it("approves a new endpoint host typed into the form and keeps the inherited approvals", async () => {
+        const saved = target("dev", {
+            authType: "basic",
+            endpoint: "https://old.example.com/engine-rest",
+        });
+        const c = serviceWithTargets(saved);
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: ["https://old.example.com"] });
+
+        await c.service.saveTarget(
+            { ...toTargetPayload(saved), endpoint: "https://new.example.com/engine-rest" },
+            BASIC_AUTH,
+            "dev",
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual([
+            "https://new.example.com",
+            "https://old.example.com",
+        ]);
+    });
+
+    it("does not approve a committed host the form merely carried over from the file", async () => {
+        const committedByTeammate = target("dev", {
+            authType: "basic",
+            endpoint: "https://evil.example.com/engine-rest",
+        });
+        const c = serviceWithTargets(committedByTeammate);
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: ["https://trusted.example.com"] });
+
+        await c.service.saveTarget(
+            {
+                ...toTargetPayload(committedByTeammate),
+                tenantId: "tenant-a",
+                deployUrl: "https://deploy.trusted.example.com/deploy",
+            },
+            BASIC_AUTH,
+            "dev",
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual([
+            "https://deploy.trusted.example.com",
+            "https://trusted.example.com",
+        ]);
+    });
+
+    describe("when New starts the form from another committed target", () => {
+        const PROD_SLOT = `${FILE_PATH}::prod`;
+        const PROD_B_SLOT = `${FILE_PATH}::prod-b`;
+        const committedProd = target("prod", {
+            authType: "basic",
+            endpoint: "https://prod.example.com/engine-rest",
+            deployUrl: "https://attacker.example.com/deploy",
+        });
+
+        it("approves none of that target's hosts for the new target", async () => {
+            const c = serviceWithTargets(committedProd);
+            const approvals = withApprovalStore(c, { [PROD_SLOT]: ["https://prod.example.com"] });
+
+            await c.service.createTarget(
+                { ...toTargetPayload(committedProd), name: "prod-b" },
+                BASIC_AUTH,
+                DOC_DIR,
+            );
+
+            expect(approvals.get(PROD_B_SLOT)).toEqual([]);
+            expect(approvals.get(PROD_SLOT)).toEqual(["https://prod.example.com"]);
+        });
+
+        it("approves a host the user typed over the prefill, and only that one", async () => {
+            const c = serviceWithTargets(committedProd);
+            const approvals = withApprovalStore(c, { [PROD_SLOT]: ["https://prod.example.com"] });
+
+            await c.service.createTarget(
+                {
+                    ...toTargetPayload(committedProd),
+                    name: "prod-b",
+                    endpoint: "https://prod-b.example.com/engine-rest",
+                },
+                BASIC_AUTH,
+                DOC_DIR,
+            );
+
+            expect(approvals.get(PROD_B_SLOT)).toEqual(["https://prod-b.example.com"]);
+        });
+    });
+
+    it("does not approve a host another committed target already names when a save switches to it", async () => {
+        const saved = target("dev", {
+            authType: "basic",
+            endpoint: "https://dev.example.com/engine-rest",
+        });
+        const committedStaging = target("staging", {
+            authType: "basic",
+            endpoint: "https://staging.example.com/engine-rest",
+        });
+        const c = serviceWithTargets(saved, committedStaging);
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: ["https://dev.example.com"] });
+
+        await c.service.saveTarget(
+            {
+                ...toTargetPayload(saved),
+                endpoint: "https://staging.example.com/engine-rest",
+            },
+            BASIC_AUTH,
+            "dev",
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual(["https://dev.example.com"]);
+    });
+
+    it("does not approve a token endpoint hidden under a basic target once the form switches it to oauth2", async () => {
+        const c = createService();
+        c.artifactService.findConfigBaseDir.mockResolvedValue(WORKSPACE_ROOT);
+        c.workspace.readFile.mockResolvedValue(
+            JSON.stringify({
+                targets: [
+                    {
+                        name: "dev",
+                        engine: "c8",
+                        endpoint: "https://trusted.example.com/v2",
+                        tenantId: "",
+                        auth: { type: "basic", tokenEndpoint: "https://evil.example.com/token" },
+                    },
+                ],
+            }),
+        );
+        const approvals = withApprovalStore(c, { [DEV_SLOT]: ["https://trusted.example.com"] });
+        const [committedByTeammate] = await c.service.listTargets(DOC_DIR);
+        const formPayload = {
+            ...toTargetPayload(committedByTeammate),
+            authType: "oauth2" as const,
+        };
+
+        await c.service.saveTarget(
+            formPayload,
+            {
+                authType: "oauth2",
+                clientId: "cid",
+                clientSecret: "secret",
+                tokenEndpoint: formPayload.tokenEndpoint,
+                audience: "",
+            },
+            "dev",
+            DOC_DIR,
+        );
+
+        expect(approvals.get(DEV_SLOT)).toEqual(["https://trusted.example.com"]);
+    });
+
+    it("carries the approvals of the old slot to the renamed target and drops the old slot", async () => {
+        const OLD_SLOT = `${FILE_PATH}::old`;
+        const NEW_SLOT = `${FILE_PATH}::new`;
+        const saved = target("old", {
+            authType: "basic",
+            endpoint: "https://engine.example.com/engine-rest",
+        });
+        const c = serviceWithTargets(saved);
+        const approvals = withApprovalStore(c, {
+            [OLD_SLOT]: ["https://engine.example.com"],
+            [NEW_SLOT]: ["https://stale.example.com"],
+        });
+
+        await c.service.saveTarget(
+            { ...toTargetPayload(saved), name: "new" },
+            BASIC_AUTH,
+            "old",
+            DOC_DIR,
+        );
+
+        expect(approvals.get(NEW_SLOT)).toEqual(["https://engine.example.com"]);
+        expect(approvals.has(OLD_SLOT)).toBe(false);
     });
 });

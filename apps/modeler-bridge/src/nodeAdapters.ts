@@ -163,17 +163,26 @@ export class NodeWorkspace implements WorkspacePort {
      * variants below: returns the enclosing registered root re-prefixed into
      * `document`'s own scheme space (URI in → URI out, clean in → clean out),
      * or `undefined` when no root covers it.
+     *
+     * The innermost root wins regardless of registration order, as in VS Code:
+     * an outer root would widen config and `.env` discovery to a tree the
+     * document's own project does not own.
      */
     private enclosingRoot(document: string): string | undefined {
         const hadScheme = document.startsWith("file://");
         const normDoc = toFsPath(document);
+        let innermostRoot: string | undefined;
         for (const root of this.roots.keys()) {
             const normRoot = toFsPath(root);
-            if (normDoc === normRoot || normDoc.startsWith(normRoot + "/")) {
-                return hadScheme ? "file://" + normRoot : normRoot;
+            const encloses = normDoc === normRoot || normDoc.startsWith(normRoot + "/");
+            if (encloses && normRoot.length > (innermostRoot?.length ?? -1)) {
+                innermostRoot = normRoot;
             }
         }
-        return undefined;
+        if (innermostRoot === undefined) {
+            return undefined;
+        }
+        return hadScheme ? "file://" + innermostRoot : innermostRoot;
     }
 
     /**

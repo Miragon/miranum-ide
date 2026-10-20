@@ -208,6 +208,28 @@ describe("parseDeploymentTargetsFile", () => {
         expect(none.credentialRefs).toEqual(CredentialRefs.none());
     });
 
+    it.each(["basic", "none"])(
+        "drops the token endpoint and audience a %s target's file carries",
+        (type) => {
+            const parsed = parseSecondTarget({
+                auth: {
+                    type,
+                    tokenEndpoint: "https://${env:MIRAGON_IDP}/token",
+                    audience: "aud",
+                },
+            });
+
+            expect(parsed.tokenEndpoint).toBe("");
+            expect(parsed.audience).toBe("");
+        },
+    );
+
+    it("still rejects a non-string token endpoint on a target that drops it", () => {
+        expect(() => parseSecondTarget({ auth: { type: "basic", tokenEndpoint: 42 } })).toThrow(
+            'targets[1] "auth.tokenEndpoint" must be a string',
+        );
+    });
+
     describe.each([
         ["a literal secret", "plain-secret"],
         ["partial interpolation", "user-${env:MIRAGON_PW}"],
@@ -544,6 +566,57 @@ describe("DeploymentTarget", () => {
                 expect(error).toMatchObject({ field });
             },
         );
+    });
+
+    describe("knownCredentialDestinations", () => {
+        it("lists the endpoint and both overrides of a basic target", () => {
+            expect(
+                target("dev", {
+                    authType: "basic",
+                    endpoint: "https://camunda.example/engine-rest",
+                    deployUrl: "https://deploy.example/deploy",
+                    startInstanceUrl: "https://start.example/{processDefinitionKey}/start",
+                    tokenEndpoint: "https://idp.example/token",
+                }).knownCredentialDestinations().origins,
+            ).toEqual([
+                "https://camunda.example",
+                "https://deploy.example",
+                "https://start.example",
+            ]);
+        });
+
+        it("adds the token endpoint only for oauth2", () => {
+            expect(
+                target("dev", {
+                    authType: "oauth2",
+                    endpoint: "https://zeebe.example",
+                    tokenEndpoint: "https://idp.example/token",
+                }).knownCredentialDestinations().origins,
+            ).toEqual(["https://idp.example", "https://zeebe.example"]);
+        });
+
+        it("skips every URL that references the .env, whose value only a request knows", () => {
+            expect(
+                target("dev", {
+                    authType: "oauth2",
+                    endpoint: "${env:MIRAGON_URL}",
+                    deployUrl: "https://${env:MIRAGON_HOST}/deploy",
+                    startInstanceUrl: "https://start.example/${env:MIRAGON_PATH}",
+                    tokenEndpoint: "https://idp.example/token",
+                }).knownCredentialDestinations().origins,
+            ).toEqual(["https://idp.example"]);
+        });
+
+        it("skips a host templated with the process definition key and an unparseable URL", () => {
+            expect(
+                target("dev", {
+                    authType: "oauth2",
+                    endpoint: "https://camunda.example",
+                    startInstanceUrl: "https://{processDefinitionKey}.example/start",
+                    tokenEndpoint: "",
+                }).knownCredentialDestinations().origins,
+            ).toEqual(["https://camunda.example"]);
+        });
     });
 
     describe("assertEnvRefsValid", () => {

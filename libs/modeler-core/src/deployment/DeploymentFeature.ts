@@ -20,6 +20,7 @@ import { Camunda7RestClient } from "./infrastructure/camunda/Camunda7RestClient"
 import { Camunda8RestClient } from "./infrastructure/camunda/Camunda8RestClient";
 import { CamundaEngineRouter } from "./infrastructure/camunda/CamundaEngineRouter";
 import { FetchHttpClient } from "./infrastructure/FetchHttpClient";
+import { CredentialApprovalService } from "./service/CredentialApprovalService";
 import { DeployActiveDiagramService } from "./service/DeployActiveDiagramService";
 import { DeployFilesService } from "./service/DeployFilesService";
 import { DeploymentMessageDispatcher } from "./service/DeploymentMessageDispatcher";
@@ -90,6 +91,11 @@ export class DeploymentFeature {
             ports.notifier,
         );
         const envResolver = new EnvValueResolver(this.targets, ports.workspace);
+        const credentialApproval = new CredentialApprovalService(
+            this.targets,
+            ports.secrets,
+            ports.picker,
+        );
         const startInstance = new StartInstanceService(
             ports.documents,
             ports.workspace,
@@ -98,6 +104,7 @@ export class DeploymentFeature {
             ports.picker,
             ports.artifacts,
             envResolver,
+            credentialApproval,
         );
         this.status = new DeploymentStatusService(
             ports.store,
@@ -117,6 +124,7 @@ export class DeploymentFeature {
             c7Client,
             ports.notifier,
             envResolver,
+            credentialApproval,
         );
         const deployment = new DeploymentService(
             ports.documents,
@@ -128,6 +136,7 @@ export class DeploymentFeature {
             ports.secrets,
             this.status,
             envResolver,
+            credentialApproval,
         );
         this.deployActiveDiagram = new DeployActiveDiagramService(
             ports.store,

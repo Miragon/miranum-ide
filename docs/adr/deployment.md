@@ -1,7 +1,7 @@
 # Deployment
 
 - Status: accepted
-- Last reviewed: 2026-09-18
+- Last reviewed: 2026-10-20
 
 ## Context
 
@@ -63,7 +63,9 @@ resolved from one `.env` (`EnvScope`): for a named target, the one in the
 directory holding its targets file's config folder (`TargetsLocation.projectDir`);
 for an ad-hoc request, the one at the document's workspace folder, so a nearer,
 possibly vendored targets file can't supply variables for an endpoint the user
-typed. Store and display the literal
+typed. With nested workspace folders the innermost one encloses a document on
+both hosts — the bridge matches the longest registered root, as VS Code does —
+so an outer folder can't widen discovery to a tree the project does not own. Store and display the literal
 reference everywhere upstream — secret store, targets file, webview prefill,
 target matching — and expand it only when the outbound request is built, inside
 the services that issue HTTP requests (`DeploymentService.deploy`/`deployFiles`,
@@ -110,11 +112,52 @@ destination and the variables it embeds:
   field (the offending text may be part of a literal secret), and
   `FetchHttpClient` replaces fetch's transport errors, which quote the full URL,
   with `HttpTransportError` naming only the host.
+- No request secret is echoed back either. A gateway in front of the engine may
+  repeat the request in its error body, so the REST clients surface only a
+  known message field (`message`, `detail`, `title`, `error_description`,
+  `error`) or a plain-text body, drop HTML and any other JSON, and cap it at one
+  1000-character line (`engineErrorDetail`). Before that, `SecretRedactor` masks
+  in it what the request carried: its credentials, the `.env` values substituted
+  into it (the expanded config records them as `envValues`), the
+  `Authorization` values, and URL userinfo and query values — raw, percent-
+  (also twice and with lowercase hex), form-, URL-path- and JSON-encoded. Only
+  the server's text is masked; the modeler's own messages never contain a
+  resolved secret — only a transport error's resolved host — so a short `.env`
+  value can't garble a status code. A successful token response is never
+  echoed: an unparseable one may still hold the token.
 
 With these limits, a committed targets file can reach exactly the values the
-user put into this project's `.env` for the modeler — the same exposure as the
-credentials already stored for a target, which also go to whatever endpoint the
-file names.
+user put into this project's `.env` for the modeler, and only toward hosts this
+developer approved for the target (below).
+
+A named target's credentials and the `.env` values its requests carry are bound
+to the origins (`scheme://host[:port]`) its developer approved for the target;
+the scheme counts because a switch to `http:` exposes them on the wire. `.env`
+values count even without credentials: a committed `auth.type: "none"` target
+could otherwise put `${env:MIRAGON_PASSWORD}` into a new host's query. Before
+deploy, start instance or verify sends either, the core resolves the request's
+destinations — `deployUrl`/`startInstanceUrl` (after `{processDefinitionKey}`
+substitution) or `endpoint`, plus the OAuth2 token endpoint — and
+`CredentialApprovalService` asks through the host's confirm dialog for any origin
+not yet approved; declining sends nothing. Destinations are computed from the resolved request, so a changed
+`.env` value is caught too, and a URL without a host is refused outright: what
+`https:` plus a conventional route would reach (WHATWG parsing skips the extra
+slashes and takes the route's first segment as the host) can't be checked.
+Saving a target through the form approves only the origins the user typed:
+literal ones that no target in the shared file names yet. A host the form merely
+carried over still asks — from the saved target, or from the selected one that
+**New** starts from.
+`${env:…}` URLs are never approved on save, and the parser drops
+`tokenEndpoint`/`audience` from a target that isn't OAuth2, so a hidden token
+endpoint can't be prefilled and pass as typed when the form switches the target
+to OAuth2. Approvals live in the secret store
+beside the credentials under the same slot (`getApprovedDestinations` /
+`saveApprovedDestinations`), so a resolved host is never persisted in
+cleartext, `delete` removes them with the credentials, and a rename carries them
+over. Ad-hoc requests are gated only once a `.env` value is substituted into
+them, under one shared `ad-hoc` slot like their credentials: a typed endpoint is
+the user's own choice, one from `.env` is not. The prompt leads with the hosts
+and shows the target name, which comes from the shared file, sanitized.
 
 A whole-value env reference is not a secret, so a credential field whose entire
 trimmed value is a single prefixed reference is also persisted in the shared
@@ -238,6 +281,21 @@ states and timestamps.
   change the key.
 - Credentials remain private while connection definitions are reviewable.
   Saving target metadata is an intentional additional step before execution.
+- Approval adds one confirmation per target and host on first use, including
+  once for every existing target with credentials or `.env` references after
+  upgrading, because no approval predates the feature. A host that another
+  target in the file already uses asks once even when typed. A fresh clone whose
+  credentials are pure `${env:…}` references confirms the target's host once as
+  well. Approvals are per secret slot, so they follow the targets-file path like
+  the credentials do.
+- Error messages trade detail for containment: a gateway's plain-text or
+  structured message survives, but an HTML page or an unrecognised JSON body
+  shows only the HTTP status, and a short substituted `.env` value or query
+  value is masked wherever it appears in the server's text. A draft loaded while
+  the file named a host and saved after that host was removed counts it as
+  typed: the save sees only the file's current state.
+- A non-OAuth2 target loses a hand-written `auth.tokenEndpoint`/`audience` on
+  load; the file never round-tripped them anyway.
 - Environment references trade convenience for containment: no process-env or
   Codespaces variables, a mandatory `MIRAGON_` prefix (existing `CAMUNDA_*`
   entries must be duplicated), literal values may not contain `${env:`, and a
