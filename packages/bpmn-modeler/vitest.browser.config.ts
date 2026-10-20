@@ -7,7 +7,6 @@ import { bpmnModelerTestAliases } from "./vitest.aliases";
  * Second project for the modeler package: the view-state contract (delayed
  * initial fit, hidden-then-visible restore, selection clearing) only reproduces
  * against a real bpmn-js canvas and a real ResizeObserver, which jsdom lacks.
- * Coverage is intentionally off — v8-coverage-in-browser merge is not worth it here.
  */
 export default defineConfig({
     oxc: { jsx: { development: false } },

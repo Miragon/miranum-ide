@@ -1,7 +1,7 @@
 # Engineering practices
 
 - Status: accepted
-- Last reviewed: 2026-09-29
+- Last reviewed: 2026-10-20
 
 ## Context
 
@@ -13,6 +13,7 @@ need compatibility proof for the paths the build and plugin installer exercise.
 ## Contents
 
 - [Test environments](#test-environments)
+- [Coverage gates](#coverage-gates)
 - [Private upstream APIs](#private-upstream-apis)
 - [Dependency compatibility and security](#dependency-compatibility-and-security)
 - [Consequences](#consequences)
@@ -35,18 +36,36 @@ new-diagram round trips, readonly/designer contracts and bridged clipboard.
 The mode-session recreate transaction itself remains tested with jsdom doubles;
 real-viewer restore tests cover the post-import viewport behavior it relies on.
 
-Browser coverage collection is off to avoid combining a separate browser V8
-coverage stream. Unit coverage remains enabled. The browser project incurs a
-Chromium installation and startup cost; a separate Playwright test runner would
-duplicate the Vite module graph, aliases and test conventions. Manual demo
+The package `vitest.config.ts` runs both projects in one invocation so their V8
+coverage merges into a single report; measured separately, code that only the
+browser specs exercise (modeler composition, engine stacks, linting) reads as
+uncovered. The browser project incurs a Chromium installation and startup cost;
+a separate Playwright test runner would duplicate the Vite module graph, aliases
+and test conventions. Manual demo
 testing remains useful but does not replace automated timing-sensitive cases.
 
 The vendored properties panel requires production Preact JSX transforms in both
 test pipelines. Check [browser configuration](../../packages/bpmn-modeler/vitest.browser.config.ts),
-[unit configuration](../../packages/bpmn-modeler/vitest.config.ts),
+[unit configuration](../../packages/bpmn-modeler/vitest.unit.config.ts),
 [shared aliases](../../packages/bpmn-modeler/vitest.aliases.ts) and
 [lifecycle contracts](../../packages/bpmn-modeler/src/lifecycleContract.browser.spec.ts)
 when upstream bundler/runtime behavior changes.
+
+### Coverage gates
+
+Each Vitest workspace owns its coverage target as `coverage.thresholds` in its
+`vitest.config.ts`, set a few points below the measured baseline. The test job
+fails below it, so the required `ci` check enforces the target without a
+separate coverage job, and the PR coverage comment reads the same numbers.
+Measure all `src/**/*.{ts,tsx}` files rather than only those a test imports,
+otherwise a new untested module does not lower the percentage.
+
+CI posts the per-module coverage comment and uploads to Codecov only when a PR
+changes that module's code files, matched by extension in the
+[build workflow](../../.github/workflows/build.yml)'s `*-src` filters. Listing
+excluded files instead let release-please changelog edits trigger reports.
+Codecov statuses stay advisory: path-filtered jobs skip uploads, so a required
+Codecov check would block unrelated PRs.
 
 ### Private upstream APIs
 
@@ -164,6 +183,7 @@ maintenance problem unresolved.
 
 ## Consequences
 
+Coverage targets are floors that only rise when someone raises them.
 Tests run in the environment capable of exposing the failure: browser layout in
 Chromium, pure logic in unit tests, private shapes against installed dependencies,
 and archive compatibility through real extraction. This adds browser/runtime

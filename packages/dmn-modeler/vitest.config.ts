@@ -22,7 +22,13 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reportsDirectory: "../../coverage/packages/dmn-modeler",
-            reporter: ["text", "html", "lcov", "clover", "json"],
+            reporter: ["text", "html", "lcov", "clover", "json", "json-summary"],
+            // Without an explicit include only files a test imports are measured,
+            // so a new untested module would not lower the percentage.
+            include: ["src/**/*.{ts,tsx}"],
+            exclude: ["src/**/*.d.ts", "src/**/__fixtures__/**"],
+            // ~3 pts below the measured baseline so minor churn does not break CI.
+            thresholds: { statements: 89, branches: 79, functions: 83, lines: 90 },
         },
     },
 });

@@ -26,11 +26,7 @@ jobs:
       modeler-core: ${{ steps.filter.outputs.modeler-core }}
       modeler-bridge: ${{ steps.filter.outputs.modeler-bridge }}
       vscode-plugin: ${{ steps.filter.outputs.vscode-plugin }}
-      vscode-plugin-src: ${{ steps.filter-src.outputs.vscode-plugin-src }}
       intellij-plugin: ${{ steps.filter.outputs.intellij-plugin }}
-      intellij-plugin-src: ${{ steps.filter-src.outputs.intellij-plugin-src }}
-      modeler-core-src: ${{ steps.filter-src.outputs.modeler-core-src }}
-      modeler-bridge-src: ${{ steps.filter-src.outputs.modeler-bridge-src }}
       bpmn-modeler: ${{ steps.filter.outputs.bpmn-modeler }}
       dmn-modeler: ${{ steps.filter.outputs.dmn-modeler }}
       dep-alignment: ${{ steps.filter.outputs.dep-alignment }}
@@ -40,18 +36,21 @@ jobs:
       deployment-webview: ${{ steps.filter.outputs.deployment-webview }}
       standalone-extension: ${{ steps.filter.outputs.standalone-extension }}
       docs: ${{ steps.filter.outputs.docs }}
+      vscode-plugin-src: ${{ steps.filter.outputs.vscode-plugin-src }}
+      intellij-plugin-src: ${{ steps.filter.outputs.intellij-plugin-src }}
+      modeler-core-src: ${{ steps.filter.outputs.modeler-core-src }}
+      modeler-bridge-src: ${{ steps.filter.outputs.modeler-bridge-src }}
+      bpmn-modeler-src: ${{ steps.filter.outputs.bpmn-modeler-src }}
+      dmn-modeler-src: ${{ steps.filter.outputs.dmn-modeler-src }}
+      bpmn-webview-src: ${{ steps.filter.outputs.bpmn-webview-src }}
+      dmn-webview-src: ${{ steps.filter.outputs.dmn-webview-src }}
+      form-webview-src: ${{ steps.filter.outputs.form-webview-src }}
+      bpmn-i18n-extras-src: ${{ steps.filter.outputs.bpmn-i18n-extras-src }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Two filter steps because the quantifier is per-step: the OR-style
-      # filters below need `some` (any pattern may match a changed file),
-      # while the negation `*-src` filters in the second step need `every`
-      # (a file must match the positive glob AND the exclusion). Under
-      # `every`, a filter listing several positive globs can never match —
-      # that silently skipped the bpmn-modeler build/test jobs (#1505).
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
-          predicate-quantifier: 'some'
           filters: |
             shared:
               - 'libs/shared/**'
@@ -132,28 +131,29 @@ jobs:
               - 'yarn.lock'
             docs:
               - 'docs/**'
-      # `*-src` mirror the package filters above but drop the file
-      # release-please bumps (package.json, or gradle.properties for the
-      # IntelliJ plugin), so a version-bump-only PR skips the Codecov
-      # coverage report while build+test still run via the broad filters.
-      # `every` makes each changed file honour the negation pattern too.
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: filter-src
-        with:
-          predicate-quantifier: 'every'
-          filters: |
+            # `*-src` gate the coverage reports on code changes only, so the
+            # release-please PR (CHANGELOG.md, package.json, gradle.properties)
+            # gets none while build+test still run via the broad filters above.
             vscode-plugin-src:
-              - 'apps/vscode-plugin/**'
-              - '!apps/vscode-plugin/package.json'
+              - 'apps/vscode-plugin/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
             intellij-plugin-src:
-              - 'apps/intellij-plugin/**'
-              - '!apps/intellij-plugin/gradle.properties'
+              - 'apps/intellij-plugin/src/**'
             modeler-core-src:
-              - 'libs/modeler-core/**'
-              - '!libs/modeler-core/package.json'
+              - 'libs/modeler-core/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
             modeler-bridge-src:
-              - 'apps/modeler-bridge/**'
-              - '!apps/modeler-bridge/package.json'
+              - 'apps/modeler-bridge/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            bpmn-modeler-src:
+              - 'packages/bpmn-modeler/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            dmn-modeler-src:
+              - 'packages/dmn-modeler/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            bpmn-webview-src:
+              - 'apps/bpmn-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            dmn-webview-src:
+              - 'apps/dmn-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            form-webview-src:
+              - 'apps/form-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+            bpmn-i18n-extras-src:
+              - 'libs/bpmn-i18n-extras/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
 
   lint:
     runs-on: ubuntu-latest
@@ -567,6 +567,9 @@ jobs:
       needs.detect-changes.outputs.bpmn-clipboard == 'true' ||
       needs.detect-changes.outputs.model-navigation == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -577,7 +580,19 @@ jobs:
       - name: Install dependencies (focused)
         run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler @miragon/bpmn-modeler-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras @miragon/bpmn-modeler-append-menu @miragon/bpmn-modeler-element-template-chooser @miragon/bpmn-modeler-clipboard
       - run: yarn workspace @miragon/bpmn-modeler-webview test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.bpmn-webview-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: apps/bpmn-webview
+          json-summary-path: ../../coverage/apps/bpmn-webview/coverage-summary.json
+          json-final-path: ../../coverage/apps/bpmn-webview/coverage-final.json
+          name: bpmn-webview
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.bpmn-webview-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -595,6 +610,9 @@ jobs:
       needs.detect-changes.outputs.shared == 'true' ||
       needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -605,7 +623,19 @@ jobs:
       - name: Install dependencies (focused)
         run: yarn workspaces focus @miragon/dmn-modeler-webview @miragon/dmn-modeler @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras
       - run: yarn workspace @miragon/dmn-modeler-webview test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.dmn-webview-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: apps/dmn-webview
+          json-summary-path: ../../coverage/apps/dmn-webview/coverage-summary.json
+          json-final-path: ../../coverage/apps/dmn-webview/coverage-final.json
+          name: dmn-webview
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.dmn-webview-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -621,6 +651,9 @@ jobs:
       needs.detect-changes.outputs.form-webview == 'true' ||
       needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -631,7 +664,19 @@ jobs:
       - name: Install dependencies (focused)
         run: yarn workspaces focus bpmn-modeler @miragon/form-modeler-webview @miragon/bpmn-modeler-shared
       - run: yarn workspace @miragon/form-modeler-webview test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.form-webview-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: apps/form-webview
+          json-summary-path: ../../coverage/apps/form-webview/coverage-summary.json
+          json-final-path: ../../coverage/apps/form-webview/coverage-final.json
+          name: form-webview
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.form-webview-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -663,6 +708,9 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -673,7 +721,19 @@ jobs:
       - name: Install dependencies (focused)
         run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler-i18n-extras
       - run: yarn workspace @miragon/bpmn-modeler-i18n-extras test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.bpmn-i18n-extras-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: libs/bpmn-i18n-extras
+          json-summary-path: ../../coverage/libs/bpmn-i18n-extras/coverage-summary.json
+          json-final-path: ../../coverage/libs/bpmn-i18n-extras/coverage-final.json
+          name: bpmn-i18n-extras
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.bpmn-i18n-extras-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -710,6 +770,9 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.bpmn-modeler == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -722,7 +785,19 @@ jobs:
       - name: Install Playwright Chromium (browser-mode tests)
         run: yarn workspace @miragon/bpmn-modeler exec playwright install chromium --with-deps
       - run: yarn workspace @miragon/bpmn-modeler test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.bpmn-modeler-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: packages/bpmn-modeler
+          json-summary-path: ../../coverage/packages/bpmn-modeler/coverage-summary.json
+          json-final-path: ../../coverage/packages/bpmn-modeler/coverage-final.json
+          name: bpmn-modeler
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.bpmn-modeler-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -775,6 +850,9 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.dmn-modeler == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: corepack enable
@@ -785,7 +863,19 @@ jobs:
       - name: Install dependencies (focused)
         run: yarn workspaces focus @miragon/dmn-modeler
       - run: yarn workspace @miragon/dmn-modeler test
+      - name: Report coverage on the PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          needs.detect-changes.outputs.dmn-modeler-src == 'true'
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: packages/dmn-modeler
+          json-summary-path: ../../coverage/packages/dmn-modeler/coverage-summary.json
+          json-final-path: ../../coverage/packages/dmn-modeler/coverage-final.json
+          name: dmn-modeler
       - name: Upload coverage to Codecov
+        if: needs.detect-changes.outputs.dmn-modeler-src == 'true'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
