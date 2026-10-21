@@ -247,8 +247,8 @@ export function initResizer(opts: PropertiesPanelResizerOptions): PropertiesPane
      * the way down to 0 so the collapse/expand logic can use
      * {@link MIN_PANEL_WIDTH} as the snap threshold:
      *
-     * - Below MIN_PANEL_WIDTH while open → panel keeps its width and collapses
-     *   only once targetWidth reaches 0.
+     * - Below MIN_PANEL_WIDTH while open → panel is held at MIN_PANEL_WIDTH and
+     *   collapses only once targetWidth reaches 0.
      * - Below MIN_PANEL_WIDTH, collapsed, and dragging left → panel appears
      *   immediately at MIN_PANEL_WIDTH (preview). It stays at that width until
      *   targetWidth catches up and exceeds MIN_PANEL_WIDTH.
@@ -280,6 +280,8 @@ export function initResizer(opts: PropertiesPanelResizerOptions): PropertiesPane
                  * User dragged all the way back to the starting point — collapse.
                  */
                 collapse();
+            } else if (!isCollapsed) {
+                panel.style.width = `${MIN_PANEL_WIDTH}px`;
             }
         } else {
             if (isCollapsed) {
