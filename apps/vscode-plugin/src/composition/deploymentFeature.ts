@@ -37,8 +37,8 @@ export interface DeploymentHandles {
  * from `deps`.
  */
 export function register(context: ExtensionContext, deps: SharedDeps): DeploymentHandles {
-    const deploymentState = new VsCodeDeploymentState();
-    const secretStore = new VsCodeSecretStore();
+    const deploymentState = new VsCodeDeploymentState(context.workspaceState);
+    const secretStore = new VsCodeSecretStore(context.secrets);
     const httpClient = new FetchHttpClient();
     const authResolver = new AuthHeaderResolver(httpClient);
     const c7Client = new Camunda7RestClient(httpClient, authResolver);
