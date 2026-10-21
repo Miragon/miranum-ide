@@ -12,8 +12,9 @@ import { AppendMenuOverlay } from "./components/AppendMenuOverlay";
 import { classifyEntries, executeEntryAction } from "./types";
 import { executeTemplateTypeAction } from "./templateTypeAction";
 import { getPopupMenuContext } from "./popupMenuInternals";
-import type { PopupMenuEntryAction } from "./types";
+import type { PopupMenuEntryAction, Translate } from "./types";
 import type { ElementTemplate } from "@miragon/bpmn-modeler-element-template-chooser";
+import { fallbackTranslate } from "@miragon/bpmn-modeler-element-template-chooser/types";
 
 interface MenuPosition {
     x: number;
@@ -39,13 +40,6 @@ interface EventBusLike {
 interface InjectorLike {
     get<T = unknown>(name: string, strict: false): T | null;
 }
-
-type Translate = (template: string, replacements?: Record<string, string>) => string;
-
-// Fallback when no TranslateModule is registered (third-party bpmn-js setups):
-// echo the template while still resolving {placeholders}, matching diagram-js.
-const fallbackTranslate: Translate = (template, replacements = {}) =>
-    template.replace(/{([^}]+)}/g, (_, key) => replacements[key] ?? `{${key}}`);
 
 interface ElementTemplatesLike {
     getLatest(): ElementTemplate[];

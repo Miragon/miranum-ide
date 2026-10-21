@@ -9,8 +9,9 @@
 // minisearch), which must stay out of the engine-neutral /design graph.
 import {
     applyTemplatePreset,
-    classifyBinding,
     extractImplementationDetail,
+    partitionVisibleProperties,
+    propertyDisplayLabel,
     type TemplateProperty,
 } from "@miragon/bpmn-modeler-element-template-chooser/types";
 import type { EnrichedTemplateEntry, Translate } from "../types";
@@ -48,18 +49,7 @@ export function TemplateHoverCard({
 
     const implDetail = template ? extractImplementationDetail(template.properties) : undefined;
 
-    const inputs =
-        template?.properties.filter(
-            (p) => classifyBinding(p.binding) === "input" && p.type !== "Hidden",
-        ) ?? [];
-    const outputs =
-        template?.properties.filter(
-            (p) => classifyBinding(p.binding) === "output" && p.type !== "Hidden",
-        ) ?? [];
-    const props =
-        template?.properties.filter(
-            (p) => classifyBinding(p.binding) === "property" && p.type !== "Hidden",
-        ) ?? [];
+    const { properties, inputs, outputs } = partitionVisibleProperties(template?.properties ?? []);
 
     return (
         <div
@@ -115,10 +105,10 @@ export function TemplateHoverCard({
 
                 {/* Parameter sections */}
                 <div class="am-hover-card-params">
-                    {props.length > 0 && (
+                    {properties.length > 0 && (
                         <ParameterSection
                             title={translate("Properties")}
-                            items={props}
+                            items={properties}
                             translate={translate}
                         />
                     )}
@@ -136,7 +126,7 @@ export function TemplateHoverCard({
                             translate={translate}
                         />
                     )}
-                    {props.length === 0 && inputs.length === 0 && outputs.length === 0 && (
+                    {properties.length === 0 && inputs.length === 0 && outputs.length === 0 && (
                         <p class="am-hover-card-no-params">{translate("No visible parameters")}</p>
                     )}
                 </div>
@@ -168,7 +158,7 @@ function ParameterSection({
                     <li key={i} class="am-hover-param-item">
                         <div class="am-hover-param-header">
                             <span class="am-hover-param-label">
-                                {p.label ?? p.binding.name ?? p.binding.key ?? translate("Unnamed")}
+                                {propertyDisplayLabel(p) ?? translate("Unnamed")}
                             </span>
                             <div class="am-hover-param-badges">
                                 {p.constraints?.notEmpty && (
