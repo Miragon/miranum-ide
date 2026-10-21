@@ -216,4 +216,21 @@ describe("with upstream create-append-anything entries", () => {
             ]),
         ).toBe("bpmn:ServiceTask");
     });
+
+    it.each([
+        ["append-user-task", "Benutzer-Aufgabe", "bpmn:UserTask"],
+        ["append-service-task", "Serviceaufgabe", "bpmn:ServiceTask"],
+        ["append-task", "Aufgabe", "bpmn:Task"],
+    ])(
+        "resolves the translated %s to its own type, not the bpmn:Task its id also contains",
+        (entryId, translatedLabel, bpmnType) => {
+            expect(
+                resolveSelectedType(entryId, translatedLabel, [
+                    "bpmn:Task",
+                    "bpmn:UserTask",
+                    "bpmn:ServiceTask",
+                ]),
+            ).toBe(bpmnType);
+        },
+    );
 });

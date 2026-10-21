@@ -145,24 +145,24 @@ function entryMatchesFilter(entry: BpmnElementEntry, filter: Set<string>): boole
  *
  * The match order matters: exact-normalized-label equality is checked against
  * *all* candidate types first, then id-substring — otherwise `bpmn:Task` would
- * shadow `bpmn:UserTask` via `id.includes("task")`.
+ * shadow `bpmn:UserTask` via `id.includes("task")`. Upstream labels arrive
+ * translated, so the id fallback must also prefer the most specific type.
  */
 export function resolveSelectedType(
     id: string,
     label: string,
     appliesTo: string[],
 ): string | undefined {
+    const shortNameOf = (bpmnType: string) => bpmnType.split(":")[1]?.toLowerCase() ?? "";
     const normalizedLabel = label.toLowerCase().replace(/[\s-]/g, "");
-    const byLabel = appliesTo.find(
-        (bpmnType) => (bpmnType.split(":")[1]?.toLowerCase() ?? "") === normalizedLabel,
-    );
+    const byLabel = appliesTo.find((bpmnType) => shortNameOf(bpmnType) === normalizedLabel);
     if (byLabel) {
         return byLabel;
     }
     const normalizedId = id.toLowerCase().replace(/[\s-]/g, "");
-    return appliesTo.find((bpmnType) =>
-        normalizedId.includes(bpmnType.split(":")[1]?.toLowerCase() ?? ""),
-    );
+    return appliesTo
+        .filter((bpmnType) => normalizedId.includes(shortNameOf(bpmnType)))
+        .sort((a, b) => shortNameOf(b).length - shortNameOf(a).length)[0];
 }
 
 /**
