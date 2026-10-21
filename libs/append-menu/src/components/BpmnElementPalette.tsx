@@ -7,7 +7,13 @@
  * buttons and reflects the highlighted key.
  */
 import { useEffect, useRef } from "preact/hooks";
-import type { ProcessedEntry, ProcessedGroup } from "../filtering";
+import {
+    favouriteNavKey,
+    groupNavKey,
+    isEntryDisabled,
+    type ProcessedEntry,
+    type ProcessedGroup,
+} from "../filtering";
 import type { Translate } from "../types";
 
 interface BpmnElementPaletteProps {
@@ -91,10 +97,10 @@ export function BpmnElementPalette({
                         {expanded && <h4 class="am-bpmn-group-title">{translate("Favourites")}</h4>}
                         <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
                             {favouriteEntries.map((processed) => {
-                                const { id, entry, disabled, hidden } = processed;
+                                const { id, entry, hidden } = processed;
                                 if (hidden) return null;
-                                const navKey = `fav:${id}`;
-                                const isDisabled = disabled || !!entry.disabled;
+                                const navKey = favouriteNavKey(id);
+                                const isDisabled = isEntryDisabled(processed);
                                 const isFocused = navKey === highlightedKey;
                                 return (
                                     <button
@@ -136,9 +142,9 @@ export function BpmnElementPalette({
                             )}
                             <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
                                 {visibleEntries.map((processed) => {
-                                    const { id, entry, disabled } = processed;
-                                    const navKey = `grp:${group.id}:${id}`;
-                                    const isDisabled = disabled || !!entry.disabled;
+                                    const { id, entry } = processed;
+                                    const navKey = groupNavKey(group.id, id);
+                                    const isDisabled = isEntryDisabled(processed);
                                     const isFocused = navKey === highlightedKey;
                                     return (
                                         <button
