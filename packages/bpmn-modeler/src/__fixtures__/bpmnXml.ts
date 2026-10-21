@@ -1,4 +1,4 @@
-/** Untagged diagrams shared by the browser specs. */
+/** Diagrams shared by the browser specs; all are untagged unless passed through {@link tagAsCamunda7}. */
 
 /** The smallest diagram a surface can round-trip: one start event near the origin. */
 export const START_EVENT_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -40,3 +40,11 @@ export const FAR_FROM_ORIGIN_XML = `<?xml version="1.0" encoding="UTF-8"?>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
+
+/** Stamps the Camunda 7 execution platform onto an untagged diagram, so `detectEngine` reports `c7`. */
+export function tagAsCamunda7(xml: string): string {
+    return xml.replace(
+        "<bpmn:definitions ",
+        '<bpmn:definitions xmlns:modeler="http://camunda.org/schema/modeler/1.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0" ',
+    );
+}
