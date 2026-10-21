@@ -6,6 +6,7 @@ import {
     Camunda8RestClient,
     CamundaEngineRouter,
     DeployActiveDiagramService,
+    DeployFilesService,
     DeploymentMessageDispatcher,
     DeploymentService,
     DeploymentStatusService,
@@ -101,6 +102,13 @@ export function register(deps: BridgeSharedDeps): void {
         deploymentTargetService,
         deploymentService,
         deploymentStatusService,
+        deps.notifier,
+    );
+    const deployFilesService = new DeployFilesService(
+        deploymentTargetService,
+        deploymentService,
+        deploymentStatusService,
+        deps.picker,
         deps.notifier,
     );
     const deploymentDispatcher = new DeploymentMessageDispatcher(
@@ -216,31 +224,9 @@ export function register(deps: BridgeSharedDeps): void {
     );
 
     deps.rpc.on(METHODS.deploymentDeployFiles, (params: DeploymentWorkspaceRootParams) =>
-        withDeploymentContext(params, async (documentDir) => {
-            let target = await deploymentTargetService.getActiveTarget(documentDir);
-            if (target === undefined) {
-                await deploymentTargetService.switchActiveTarget(documentDir);
-                await deploymentStatusService.refreshActive();
-                await deploymentDispatcher.sendTargets();
-                target = await deploymentTargetService.getActiveTarget(documentDir);
-                if (target === undefined) return;
-            }
-
-            const files = await deps.picker.pickWorkspaceFiles({
-                glob: "**/*.{bpmn,dmn}",
-                exclude: "**/node_modules/**",
-                placeholder: `Select files to deploy to "${target.name}"`,
-            });
-            if (files.length === 0) return;
-
-            const resolvedTarget = target;
-            const auth = await deploymentTargetService.getCredentials(resolvedTarget, documentDir);
-            await deps.notifier.withProgress(
-                `Deploying ${files.length} file(s) to "${resolvedTarget.name}"`,
-                () => deploymentService.deployFiles(files, resolvedTarget, auth),
-            );
-            await deploymentStatusService.refreshActive();
-        }),
+        withDeploymentContext(params, (documentDir) =>
+            deployFilesService.deployFiles(documentDir, () => deploymentDispatcher.sendTargets()),
+        ),
     );
 
     deps.rpc.on(METHODS.deploymentDeployActive, (params: DeploymentWorkspaceRootParams) =>

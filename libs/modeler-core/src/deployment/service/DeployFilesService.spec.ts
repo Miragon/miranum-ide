@@ -1,0 +1,164 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { BasicAuth } from "../domain/deployment";
+import { DeploymentTarget } from "../domain/deploymentTarget";
+import { DeployFilesService } from "./DeployFilesService";
+
+const DOCUMENT_DIR = "/work/processes";
+const PICKED_FILES = ["/work/processes/order.bpmn", "/work/decisions/discount.dmn"];
+
+const devTarget = new DeploymentTarget(
+    "dev",
+    "c7",
+    "http://localhost:8080/engine-rest",
+    "",
+    "basic",
+    "",
+    "",
+);
+
+function createService() {
+    const calls: string[] = [];
+    const credentials = new BasicAuth("demo", "demo");
+    const deploymentTargetService = {
+        getActiveTarget: vi.fn().mockResolvedValue(devTarget),
+        switchActiveTarget: vi.fn(async () => void calls.push("switchTarget")),
+        getCredentials: vi.fn().mockResolvedValue(credentials),
+    };
+    const deploymentService = {
+        deployFiles: vi.fn(async () => {
+            calls.push("deploy");
+            return [];
+        }),
+    };
+    const deploymentStatusService = {
+        refreshActive: vi.fn(async () => void calls.push("refreshStatus")),
+    };
+    const picker = {
+        pickWorkspaceFiles: vi.fn(async () => {
+            calls.push("pickFiles");
+            return PICKED_FILES;
+        }),
+    };
+    const notifier = {
+        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
+    };
+    const afterTargetPicker = vi.fn(async () => void calls.push("afterTargetPicker"));
+
+    const service = new DeployFilesService(
+        deploymentTargetService as never,
+        deploymentService as never,
+        deploymentStatusService as never,
+        picker as never,
+        notifier as never,
+    );
+
+    return {
+        service,
+        calls,
+        credentials,
+        deploymentTargetService,
+        deploymentService,
+        deploymentStatusService,
+        picker,
+        notifier,
+        afterTargetPicker,
+    };
+}
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("DeployFilesService.deployFiles", () => {
+    it("deploys the picked BPMN/DMN files to the active target, then refreshes the status", async () => {
+        const c = createService();
+
+        await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
+
+        expect(c.picker.pickWorkspaceFiles).toHaveBeenCalledWith({
+            glob: "**/*.{bpmn,dmn}",
+            exclude: "**/node_modules/**",
+            placeholder: 'Select files to deploy to "dev"',
+        });
+        expect(c.deploymentTargetService.getCredentials).toHaveBeenCalledWith(
+            devTarget,
+            DOCUMENT_DIR,
+        );
+        expect(c.notifier.withProgress).toHaveBeenCalledWith(
+            'Deploying 2 file(s) to "dev"',
+            expect.any(Function),
+        );
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledWith(
+            PICKED_FILES,
+            devTarget,
+            c.credentials,
+        );
+        expect(c.calls).toEqual(["pickFiles", "deploy", "refreshStatus"]);
+    });
+
+    it("runs the target picker first when no target is active and deploys to the picked one", async () => {
+        const c = createService();
+        c.deploymentTargetService.getActiveTarget
+            .mockResolvedValueOnce(undefined)
+            .mockResolvedValueOnce(devTarget);
+
+        await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
+
+        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(DOCUMENT_DIR);
+        expect(c.calls).toEqual([
+            "switchTarget",
+            "refreshStatus",
+            "afterTargetPicker",
+            "pickFiles",
+            "deploy",
+            "refreshStatus",
+        ]);
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledWith(
+            PICKED_FILES,
+            devTarget,
+            c.credentials,
+        );
+    });
+
+    it("stops after the target picker when it leaves no active target", async () => {
+        const c = createService();
+        c.deploymentTargetService.getActiveTarget.mockResolvedValue(undefined);
+
+        await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
+
+        expect(c.calls).toEqual(["switchTarget", "refreshStatus", "afterTargetPicker"]);
+        expect(c.picker.pickWorkspaceFiles).not.toHaveBeenCalled();
+        expect(c.deploymentService.deployFiles).not.toHaveBeenCalled();
+    });
+
+    it("skips the target picker when a target is already active", async () => {
+        const c = createService();
+
+        await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
+
+        expect(c.deploymentTargetService.switchActiveTarget).not.toHaveBeenCalled();
+        expect(c.afterTargetPicker).not.toHaveBeenCalled();
+    });
+
+    it("deploys nothing when the file picker is dismissed", async () => {
+        const c = createService();
+        c.picker.pickWorkspaceFiles.mockResolvedValue([]);
+
+        await c.service.deployFiles(DOCUMENT_DIR);
+
+        expect(c.deploymentTargetService.getCredentials).not.toHaveBeenCalled();
+        expect(c.deploymentService.deployFiles).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.refreshActive).not.toHaveBeenCalled();
+    });
+
+    it("works without a host hook or a focused document", async () => {
+        const c = createService();
+        c.deploymentTargetService.getActiveTarget
+            .mockResolvedValueOnce(undefined)
+            .mockResolvedValueOnce(devTarget);
+
+        await c.service.deployFiles(undefined);
+
+        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(undefined);
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledOnce();
+    });
+});
