@@ -10,7 +10,7 @@ import type { BpmnModeler } from "./modeler";
  * webview round trip the bridge exists for. The async bridge re-entry only
  * exercises real bpmn-js copy/paste rules, so it runs in the browser project
  * (see docs/adr/engineering-practices.md#test-environments). The wire format
- * stays covered by the jsdom `bridgedClipboard.spec.ts`.
+ * stays covered by `libs/bpmn-clipboard/src/BridgedClipboardModule.spec.ts`.
  */
 
 const XML = `<?xml version="1.0" encoding="UTF-8"?>

@@ -1,16 +1,16 @@
 import { defineConfig } from "vitest/config";
-import { resolve } from "node:path";
+
+import { coveragePreset, workspaceAliases } from "../../vitest.shared";
 
 export default defineConfig({
+    resolve: { alias: workspaceAliases },
     test: {
-        name: "context-pad-code-link",
+        name: "code-link",
         environment: "node",
-        include: ["src/**/*.{spec,test}.ts"],
-        alias: {
-            "@miragon/bpmn-modeler-types": resolve(
-                __dirname,
-                "../../libs/modeler-types/src/index.ts",
-            ),
+        include: ["src/**/*.{spec,test}.{ts,tsx}"],
+        coverage: {
+            ...coveragePreset(__dirname),
+            thresholds: { statements: 94, branches: 93, functions: 89, lines: 94 },
         },
     },
 });

@@ -34,7 +34,8 @@ corepack yarn install           # Install dependencies
 corepack yarn build             # Build everything (libs → webviews + plugin)
 corepack yarn build:libs        # Build shared libraries only
 corepack yarn watch             # Development watch mode (F5 Extension Host)
-corepack yarn test              # Test (Vitest)
+corepack yarn test              # Test every Vitest project (no coverage)
+corepack yarn test:coverage     # Each workspace's `test`: coverage + thresholds as in CI
 corepack yarn lint              # Lint
 
 # IntelliJ plugin: build the webview/bridge artefacts, then launch a sandbox IDE
@@ -47,6 +48,9 @@ corepack yarn workspace @miragon/bpmn-modeler-webview build
 
 # Run a single test file
 corepack yarn test libs/modeler-core/src/shared/domain/BpmnDocument.spec.ts
+
+# One workspace with its coverage gate (what its CI test leg runs)
+corepack yarn workspace @miragon/bpmn-modeler-core test
 ```
 
 For the full IntelliJ dev/verify loop (prerequisites, sandbox behaviour, and how
@@ -124,12 +128,14 @@ build → package plugin → bundle → start chain.
 
 - **Extension host**: Webpack + `ts-loader` — `apps/vscode-plugin/webpack.config.js`
 - **Webviews**: Vite — `apps/{bpmn,dmn,form,deployment}-webview/vite.config.mts`
-- **Tests**: Vitest — root `vitest.config.ts` aggregates per-workspace projects
-  (vscode-plugin, modeler-bridge, bpmn-webview, form-webview, append-menu,
-  bpmn-i18n-extras, code-link, definition-search, element-template-chooser,
-  inline-scripting, modeler-core, modeler-types, shared, flow-navigation,
-  model-navigation); root
-  `test` = `vitest run --coverage`
+- **Tests**: Vitest — root `vitest.config.ts` globs every `apps/*`, `libs/*` and
+  `packages/*` config into one multi-project run (the bpmn-modeler aggregator
+  config is swapped for its unit and browser projects). Each workspace config takes
+  its aliases (generated from `tsconfig.base.json` paths) and coverage preset
+  from the root `vitest.shared.ts`, keeping its thresholds literal. CI runs one
+  matrix leg per workspace listed in `.github/vitest-targets.json`;
+  `.github/scripts/check-vitest-targets.mjs` (lint job and pre-push) fails when
+  a Vitest workspace is missing there or its trigger paths miss a dependency
 - **Output**: `dist/apps/vscode-plugin/`
 
 ## Path Aliases (`tsconfig.base.json`)
@@ -151,7 +157,8 @@ Each `@miragon/...` alias maps to `libs/<dir>/src/index.ts`:
 - `@miragon/bpmn-modeler-code-link` → `libs/code-link`
 - `@miragon/bpmn-modeler-definition-search` → `libs/definition-search`
 - `@miragon/bpmn-modeler-inline-scripting` → `libs/inline-scripting`
-- Resolved by `TsconfigPathsPlugin` (webpack) and `vite-tsconfig-paths` (Vite)
+- Resolved by `TsconfigPathsPlugin` (webpack), `vite-tsconfig-paths` (Vite) and
+  the generated `workspaceAliases` in `vitest.shared.ts` (Vitest)
 
 ## Configuration Namespace
 

@@ -237,19 +237,23 @@ bundle.
 ## Testing & Linting
 
 ```bash
-# Run all tests (includes coverage by default)
+# Run all tests
 yarn test
 
 # Run a single test file
-yarn test apps/vscode-plugin/src/shared/domain/BpmnDocument.spec.ts
+yarn test libs/modeler-core/src/shared/domain/BpmnDocument.spec.ts
+
+# Run every workspace with its coverage thresholds, as CI does
+yarn test:coverage
 
 # Lint
 yarn lint
 ```
 
-Coverage reports are uploaded
-to [Codecov](https://app.codecov.io/gh/Miragon/bpmn-modeler)
-on CI.
+CI runs one test job per affected workspace, each failing below the
+thresholds in its `vitest.config.ts`. A new Vitest workspace must be added to
+`.github/vitest-targets.json`; the lint job fails otherwise. Coverage reports
+are uploaded to [Codecov](https://app.codecov.io/gh/Miragon/bpmn-modeler).
 
 ## Performance harness
 

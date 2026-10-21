@@ -1,57 +1,40 @@
 import { defineConfig } from "vitest/config";
-import { resolve } from "node:path";
+
+import { coveragePreset, workspaceAliases } from "../../vitest.shared";
+
+// Kept apart so the PR coverage action, which regex-reads the first unquoted
+// `statements:` in this file, reports the global gate rather than a glob tier.
+const overallThresholds = { statements: 70, branches: 64, functions: 62, lines: 71 };
 
 export default defineConfig({
+    resolve: { alias: workspaceAliases },
     test: {
         name: "vscode-plugin",
         environment: "node",
         // archunit's vitest adapter extends `expect` on import; it needs the
         // global `expect` to exist, so enable Vitest's globals for this project.
         globals: true,
-        include: ["src/**/*.{spec,test}.ts"],
+        include: ["src/**/*.{spec,test}.{ts,tsx}"],
         // `@miragon/bpmnlint-plugin-rules`' pre-built ESM has one extensionless deep
         // import (`bpmnlint/lib/resolver/static-resolver`) that strict native
         // Node ESM rejects; inline it through Vite's resolver (as webpack/Bun do).
         server: { deps: { inline: [/@miragon\/bpmnlint-plugin-rules/] } },
-        alias: {
-            "@miragon/bpmn-modeler-shared": resolve(__dirname, "../../libs/shared/src/index.ts"),
-            "@miragon/bpmn-modeler-types": resolve(
-                __dirname,
-                "../../libs/modeler-types/src/index.ts",
-            ),
-            // modeler-core imports the diff data layer; alias it to source so
-            // the plugin's specs resolve it without a built artifact.
-            "@miragon/bpmn-modeler-diff": resolve(__dirname, "../../libs/bpmn-diff/src/index.ts"),
-            "@miragon/bpmn-modeler-core": resolve(
-                __dirname,
-                "../../libs/modeler-core/src/index.ts",
-            ),
-        },
         coverage: {
-            provider: "v8",
-            reportsDirectory: "../../coverage/apps/vscode-plugin",
-            // `json-summary` + `json` feed the PR coverage-comment action
-            // (totals + per-file deltas); `lcov` feeds Codecov; `html`/`text`
-            // are for local inspection.
-            reporter: ["text", "html", "lcov", "clover", "json", "json-summary"],
+            ...coveragePreset(__dirname, {
+                // Wiring only; the Extension-Host smoke test (test/e2e) covers it,
+                // and feature barrels are re-exports enforced by architecture.spec.
+                exclude: ["src/composition/**", "src/**/index.ts"],
+            }),
             // Per-layer gates, tiered by how much logic each layer carries and
-            // how cheaply it can be tested. The host-agnostic domain/service core
-            // moved to `@miragon/bpmn-modeler-core` and is gated there; what
-            // remains here is host code — controllers mix routing with vscode
+            // how cheaply it can be tested. Controllers mix routing with vscode
             // glue; infrastructure is thin adapter code where only a floor is
             // worth enforcing (the complex parts — Camunda REST — have their own
-            // integration tests). Thresholds sit a few points below the measured
-            // values so they lock coverage in without breaking on minor churn.
-            // composition/ and main.ts match no glob and are intentionally
-            // ungated (wiring, covered indirectly by the activation smoke test).
+            // integration tests).
             thresholds: {
-                "**/controller/**": { statements: 78, branches: 62, functions: 70, lines: 78 },
-                "**/infrastructure/**": {
-                    statements: 28,
-                    branches: 25,
-                    functions: 25,
-                    lines: 28,
-                },
+                ...overallThresholds,
+                "**/controller/**": { statements: 84, branches: 78, functions: 79, lines: 86 },
+                "**/editor-session/**": { statements: 76, branches: 65, functions: 78, lines: 83 },
+                "**/infrastructure/**": { statements: 43, branches: 42, functions: 34, lines: 43 },
             },
         },
     },

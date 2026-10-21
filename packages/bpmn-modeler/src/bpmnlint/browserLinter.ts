@@ -1,7 +1,12 @@
-import type { BpmnlintConfig, LintResults, LintRunEvent } from "@miragon/bpmn-modeler-types";
+import {
+    staticUnresolvedModdleExtensions,
+    type BpmnlintConfig,
+    type LintResults,
+    type LintRunEvent,
+} from "@miragon/bpmn-modeler-types";
 import { Linter } from "bpmnlint";
 
-import { RecordingBrowserResolver, staticUnresolvedModdleExtensions } from "./browserResolver";
+import { RecordingBrowserResolver } from "./browserResolver";
 
 /**
  * Runs bpmnlint against the *live* bpmn-js definitions tree, in the browser.

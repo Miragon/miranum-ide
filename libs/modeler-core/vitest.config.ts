@@ -1,25 +1,27 @@
 import { defineConfig } from "vitest/config";
-import { resolve } from "node:path";
+
+import { coveragePreset, workspaceAliases } from "../../vitest.shared";
+
+// Kept apart so the PR coverage action, which regex-reads the first unquoted
+// `statements:` in this file, reports the global gate rather than a glob tier.
+const overallThresholds = { statements: 89, branches: 81, functions: 89, lines: 90 };
 
 export default defineConfig({
+    resolve: { alias: workspaceAliases },
     test: {
         name: "modeler-core",
         environment: "node",
         globals: true,
-        include: ["src/**/*.{spec,test}.ts"],
+        include: ["src/**/*.{spec,test}.{ts,tsx}"],
         server: { deps: { inline: [/@miragon\/bpmnlint-plugin-rules/] } },
-        alias: {
-            "@miragon/bpmn-modeler-shared": resolve(__dirname, "../shared/src/index.ts"),
-            "@miragon/bpmn-modeler-types": resolve(__dirname, "../modeler-types/src/index.ts"),
-            "@miragon/bpmn-modeler-diff": resolve(__dirname, "../bpmn-diff/src/index.ts"),
-        },
         coverage: {
-            provider: "v8",
-            reportsDirectory: "../../coverage/libs/modeler-core",
-            reporter: ["text", "html", "lcov", "clover", "json", "json-summary"],
+            // Re-export barrel; no spec imports it.
+            ...coveragePreset(__dirname, { exclude: ["src/index.ts"] }),
             thresholds: {
-                "**/domain/**": { statements: 92, branches: 82, functions: 88, lines: 92 },
-                "**/service/**": { statements: 88, branches: 76, functions: 80, lines: 88 },
+                ...overallThresholds,
+                "**/domain/**": { statements: 94, branches: 90, functions: 96, lines: 94 },
+                "**/service/**": { statements: 87, branches: 76, functions: 87, lines: 88 },
+                "**/infrastructure/**": { statements: 89, branches: 83, functions: 85, lines: 90 },
             },
         },
     },

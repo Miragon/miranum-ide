@@ -4,7 +4,8 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "build": "tsc --noEmit"
+        "build": "tsc --noEmit",
+        "test": "vitest run --coverage"
     },
     "dependencies": {
         "bpmn-js-native-copy-paste": "0.3.0"
@@ -14,7 +15,13 @@
     },
     "devDependencies": {
         "@typescript/native": "npm:typescript@7.0.2",
+        "@vitest/coverage-v8": "5.0.5",
+        "bpmn-moddle": "10.3.1",
         "diagram-js": "15.28.1",
-        "typescript": "npm:@typescript/typescript6@6.0.2"
+        "didi": "12.0.0",
+        "jsdom": "30.1.3",
+        "typescript": "npm:@typescript/typescript6@6.0.2",
+        "vite": "8.3.4",
+        "vitest": "5.0.5"
     }
 }

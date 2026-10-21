@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Injector } from "didi";
 import { BpmnModdle } from "bpmn-moddle";
 import NativeCopyPasteModule from "bpmn-js-native-copy-paste";
-import { createClipboardModules, type ClipboardBridge } from "@miragon/bpmn-modeler-clipboard";
+import { createClipboardModules, type ClipboardBridge } from "./index";
 
 /**
  * Plain bpmn-js lacks `nativeCopyPaste`, which the bridge requires to disable
