@@ -5,6 +5,7 @@ import {
     DeploymentResultQuery,
     DeploymentTargetsQuery,
     FormDefaultsQuery,
+    HostApiImpl,
     MissingStateError,
     ProcessDefinitionKeyQuery,
     SelectedPayloadFileQuery,
@@ -16,6 +17,7 @@ import {
     type RequestStoredCredentialsCommand,
 } from "@miragon/bpmn-modeler-shared";
 
+import type { WebviewState } from "./app/host";
 import { bootstrap, routeHostMessage } from "./bootstrap";
 
 type Posted = { type: string } & Record<string, unknown>;
@@ -126,9 +128,8 @@ describe("deployment webview bootstrap", () => {
     });
 
     describe("tabs", () => {
-        it("switches to the clicked tab and remembers it next to the other state", () => {
-            const host = fakeHost({ collapsedSections: ["advanced"] });
-            bootstrap(host as never);
+        it("switches to the clicked tab", () => {
+            bootstrap(fakeHost() as never);
 
             tabButton("start-instance").click();
 
@@ -136,10 +137,6 @@ describe("deployment webview bootstrap", () => {
             expect(isActive(element("tab-start-instance"))).toBe(true);
             expect(isActive(tabButton("deploy"))).toBe(false);
             expect(isActive(element("tab-deploy"))).toBe(false);
-            expect(host.setState).toHaveBeenCalledWith({
-                collapsedSections: ["advanced"],
-                activeTab: "start-instance",
-            });
         });
 
         it("reopens the tab that was active before a reload", () => {
@@ -147,6 +144,64 @@ describe("deployment webview bootstrap", () => {
 
             expect(isActive(tabButton("start-instance"))).toBe(true);
             expect(isActive(element("tab-deploy"))).toBe(false);
+        });
+
+        describe("against the production host API", () => {
+            let persisted: WebviewState | undefined;
+
+            beforeEach(() => {
+                persisted = undefined;
+                vi.stubGlobal("acquireVsCodeApi", () => ({
+                    getState: () => persisted,
+                    setState: (state: WebviewState) => {
+                        persisted = state;
+                    },
+                    postMessage: vi.fn(),
+                }));
+            });
+
+            afterEach(() => {
+                vi.unstubAllGlobals();
+            });
+
+            const productionHost = () => new HostApiImpl<WebviewState, Command | Query>();
+
+            it("remembers the first tab switch in a fresh webview", () => {
+                const uncaught = vi.fn();
+                window.addEventListener("error", uncaught);
+                bootstrap(productionHost());
+
+                tabButton("start-instance").click();
+
+                expect(uncaught).not.toHaveBeenCalled();
+                expect(persisted).toEqual({ activeTab: "start-instance" });
+            });
+
+            it("remembers the tab next to the other saved state", () => {
+                persisted = { collapsedSections: ["advanced"] };
+                bootstrap(productionHost());
+
+                tabButton("start-instance").click();
+
+                expect(persisted).toEqual({
+                    collapsedSections: ["advanced"],
+                    activeTab: "start-instance",
+                });
+            });
+
+            it("keeps the active tab when a section is collapsed", () => {
+                bootstrap(productionHost());
+                tabButton("start-instance").click();
+
+                document
+                    .querySelector<HTMLElement>('.section-header[data-section="connection"]')!
+                    .click();
+
+                expect(persisted).toEqual({
+                    activeTab: "start-instance",
+                    collapsedSections: ["connection", "advanced"],
+                });
+            });
         });
 
         it("starts on the deploy tab on a first-ever open", () => {

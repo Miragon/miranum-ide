@@ -1,6 +1,7 @@
 import {
     AuthConfigPayload,
     Command,
+    createWebviewStateStore,
     CreateTargetCommand,
     DeleteTargetCommand,
     DeployCommand,
@@ -118,7 +119,7 @@ export class DeploymentForm {
     /**
      * @throws {Error} If any expected DOM element is missing.
      */
-    constructor(private readonly host: HostApi<unknown, Command | Query>) {
+    constructor(private readonly host: HostApi<WebviewState, Command | Query>) {
         this.deploymentNameInput = this.requireElement<HTMLInputElement>("#deployment-name");
         this.targetSelect = this.requireElement<HTMLSelectElement>("#target-select");
         this.targetNewBtn = this.requireElement<HTMLButtonElement>("#target-new");
@@ -443,7 +444,7 @@ export class DeploymentForm {
             }
         }
 
-        this.host.setState({ collapsedSections } as WebviewState);
+        createWebviewStateStore(this.host).merge({ collapsedSections });
     }
 
     private defaultCollapsedSections(): string[] {
