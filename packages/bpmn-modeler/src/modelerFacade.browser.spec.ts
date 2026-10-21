@@ -61,6 +61,10 @@ interface FlowElement {
     script?: string;
 }
 
+interface BpmnReplaceService {
+    replaceElement(element: unknown, target: { type: string }): unknown;
+}
+
 interface ShapeBounds {
     x: number;
     y: number;
@@ -166,6 +170,36 @@ describe("BpmnModeler inline-script sync (C7 with a scripting port)", () => {
         expect(onWarning).toHaveBeenCalledExactlyOnceWith(warning);
         expect(modeler.getService("commandStack").canUndo()).toBe(false);
     });
+
+    it.each([
+        {
+            field: "content",
+            push: (handle: BpmnModeler) =>
+                handle.updateScriptContent("ScriptTask_1", "script-task", undefined, "x = 2"),
+        },
+        {
+            field: "format",
+            push: (handle: BpmnModeler) =>
+                handle.updateScriptFormat("ScriptTask_1", "script-task", undefined, "javascript"),
+        },
+    ])(
+        "drops a script $field push for a task the user turned into a user task",
+        async ({ push }) => {
+            const scriptTask = modeler.getService("elementRegistry").get("ScriptTask_1");
+            // A replace-menu morph keeps the element id, so a late push still finds it.
+            modeler.getService<BpmnReplaceService>("bpmnReplace").replaceElement(scriptTask, {
+                type: "bpmn:UserTask",
+            });
+
+            push(modeler);
+
+            const xml = await modeler.exportDiagram();
+            const userTaskTag = xml.match(/<bpmn:userTask id="ScriptTask_1"[^>]*>/)?.[0];
+            expect(userTaskTag).toBeDefined();
+            expect(userTaskTag).not.toContain("script");
+            expect(onWarning).toHaveBeenCalledExactlyOnceWith("ScriptTask_1 has no inline script");
+        },
+    );
 
     it("reports model-side changes to an open script tab but never echoes the tab's own edits", () => {
         modeler.applyOpenScriptEditors([

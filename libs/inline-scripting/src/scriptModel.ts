@@ -69,7 +69,8 @@ export function findListenerAt(
  * The write counterpart of {@link readScriptContent}: where a host edit of a
  * script's content or format lands. A script task carries both on itself; a
  * listener carries them on its nested `camunda:Script`. `undefined` means the
- * addressed listener has no inline script to write to.
+ * addressed surface has no inline script to write to — mirroring
+ * {@link readScriptContent}, which reports the same surfaces as absent.
  */
 export function resolveScriptWriteTarget(
     bo: ScriptTaskBusinessObject,
@@ -78,6 +79,11 @@ export function resolveScriptWriteTarget(
     field: ScriptField,
 ): ScriptWriteTarget | undefined {
     if (kind === "script-task") {
+        // A replace-menu morph keeps the element id; writing anyway would leave a
+        // stray `script`/`scriptFormat` attribute on the new element type.
+        if (bo.$type !== "bpmn:ScriptTask") {
+            return undefined;
+        }
         // The plain BPMN `scriptFormat`: the panel ignores `camunda:scriptFormat`.
         return { moddleElement: bo, propertyName: field === "content" ? "script" : "scriptFormat" };
     }
