@@ -239,14 +239,34 @@ describe("BridgedClipboard copy event", () => {
         eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
         const nameField = document.createElement("input");
         document.body.appendChild(nameField);
+        nameField.focus();
 
         const fieldCopy = dispatchCopyObservedByHost(nameField);
+        nameField.blur();
         const laterCopy = dispatchCopyObservedByHost();
 
         expect(fieldCopy.event.defaultPrevented).toBe(false);
         expect(fieldCopy.event.clipboardData.getData("text/plain")).toBe("");
         expect(fieldCopy.hostCopyHandler).toHaveBeenCalledTimes(1);
         expect(laterCopy.event.defaultPrevented).toBe(false);
+    });
+
+    it("puts canvas-copied elements on the clipboard while a text selection lingers in a field", () => {
+        const { eventBus } = instantiate(bridgeSpies("").bridge);
+        const nameField = document.createElement("input");
+        const canvasSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        canvasSvg.setAttribute("tabindex", "0");
+        document.body.append(nameField, canvasSvg);
+        // Clicking the user-select:none canvas moves focus but keeps the field's
+        // selection, and Chromium targets the copy event at that selection.
+        canvasSvg.focus();
+        eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+
+        const { event, hostCopyHandler } = dispatchCopyObservedByHost(nameField);
+
+        expect(event.defaultPrevented).toBe(true);
+        expect(event.clipboardData.getData("text/plain")).toBe(CLIP_PREFIX + JSON.stringify(TREE));
+        expect(hostCopyHandler).not.toHaveBeenCalled();
     });
 
     it("marks the copy handled even when bpmn-js passed no hints", () => {

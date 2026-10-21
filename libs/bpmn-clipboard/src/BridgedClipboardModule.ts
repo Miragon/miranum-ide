@@ -49,11 +49,11 @@ interface PasteElementsContext {
 
 const CLIP_PREFIX = "bpmn-js-clip----";
 
-function isTextEditingTarget(target: EventTarget | null): boolean {
+function isTextEditingElement(element: Element | null): boolean {
     return (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        (target as HTMLElement | null)?.isContentEditable === true
+        element instanceof HTMLInputElement ||
+        element instanceof HTMLTextAreaElement ||
+        (element as HTMLElement | null)?.isContentEditable === true
     );
 }
 
@@ -109,7 +109,9 @@ class BridgedClipboard {
             pendingClipData = null;
             // Hosts that swallow the canvas Cmd+C keydown fire no copy event for
             // it, so the payload may be stale; a text-field copy is the user's text.
-            if (!elementsPayload || isTextEditingTarget(e.target)) {
+            // Focus decides, not e.target: Chromium targets the copy at the DOM
+            // selection, which stays in a field after the user clicks the canvas.
+            if (!elementsPayload || isTextEditingElement(document.activeElement)) {
                 return;
             }
             e.preventDefault();
@@ -188,7 +190,7 @@ class BridgedClipboard {
                 if (!document.hasFocus()) {
                     return;
                 }
-                if (isTextEditingTarget(document.activeElement)) {
+                if (isTextEditingElement(document.activeElement)) {
                     return;
                 }
                 canvas.focus();
