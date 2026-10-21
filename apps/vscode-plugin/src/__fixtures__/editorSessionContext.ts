@@ -4,7 +4,6 @@ import type { DocumentChangeEvent } from "@miragon/bpmn-modeler-core";
 
 import type { EditorSessionContext } from "../modeler/editor-session/EditorSessionParticipant";
 
-/** Session context double that records the document-change and dispose callbacks. */
 export function createSessionContext(editorId: string) {
     const captured: {
         documentChange?: (event: DocumentChangeEvent) => void;
@@ -22,7 +21,6 @@ export function createSessionContext(editorId: string) {
     return { context, captured };
 }
 
-/** A content change to `documentUri` at `documentPath`, overridable per field. */
 export function documentChangeEvent(
     documentUri: string,
     documentPath: string,

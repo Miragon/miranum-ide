@@ -35,7 +35,6 @@ import {
     VERIFY_DEPLOYMENT_CMD,
 } from "./DeploymentController";
 
-/** Fake `WebviewView` capturing the message, visibility and dispose listeners and posted queries. */
 function createWebviewView() {
     const postMessage = vi.fn();
     const onDidReceiveMessage = vi.fn();
@@ -179,7 +178,6 @@ describe("DeploymentController.register", () => {
     });
 });
 
-/** Registers commands and returns the handler registered for `commandId`. */
 function registeredHandler(
     c: ReturnType<typeof createController>,
     commandId: string,
@@ -190,7 +188,6 @@ function registeredHandler(
     return call[1] as () => Promise<void>;
 }
 
-/** Posted target lists, i.e. what the sidebar's target select was refreshed with. */
 function postedTargetLists(postMessage: ReturnType<typeof vi.fn>): DeploymentTargetsQuery[] {
     return postMessage.mock.calls
         .map(([query]) => query)

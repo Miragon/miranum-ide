@@ -110,8 +110,7 @@ interface ShownItem {
     description?: string;
 }
 
-/** Simulates the user accepting the quick-pick item whose label starts with `labelPrefix`. */
-function choose(labelPrefix: string): void {
+function acceptQuickPickItemStartingWith(labelPrefix: string): void {
     showQuickPickMock.mockImplementation(async (items: (ShownItem | string)[]) =>
         items.find((item) =>
             (typeof item === "string" ? item : item.label).startsWith(labelPrefix),
@@ -380,7 +379,7 @@ describe("VsCodePicker cancel conventions", () => {
 
 describe("VsCodePicker.pickNewModelEngine", () => {
     it("returns the id of the chosen engine", async () => {
-        choose("Engine-neutral");
+        acceptQuickPickItemStartingWith("Engine-neutral");
 
         await expect(new VsCodePicker(stubWorkspace()).pickNewModelEngine("Engine")).resolves.toBe(
             "neutral",
@@ -394,7 +393,7 @@ describe("VsCodePicker.pickMigrationScope", () => {
         ["Camunda 8", "c8"],
         ["Both", "both"],
     ])("maps the %s entry to the %s scope", async (labelPrefix, scope) => {
-        choose(labelPrefix);
+        acceptQuickPickItemStartingWith(labelPrefix);
 
         await expect(new VsCodePicker(stubWorkspace()).pickMigrationScope(1, 2)).resolves.toBe(
             scope,
@@ -402,7 +401,7 @@ describe("VsCodePicker.pickMigrationScope", () => {
     });
 
     it("counts the diagrams per engine in singular and plural", async () => {
-        choose("Both");
+        acceptQuickPickItemStartingWith("Both");
 
         await new VsCodePicker(stubWorkspace()).pickMigrationScope(1, 0);
 
@@ -416,7 +415,7 @@ describe("VsCodePicker.pickMigrationScope", () => {
 
 describe("VsCodePicker.pickPayloadFile", () => {
     it("returns the chosen payload's path and file name", async () => {
-        choose("invoice.json");
+        acceptQuickPickItemStartingWith("invoice.json");
 
         await expect(
             new VsCodePicker(stubWorkspace()).pickPayloadFile([
@@ -429,7 +428,7 @@ describe("VsCodePicker.pickPayloadFile", () => {
 
 describe("VsCodePicker.pickScriptLanguage", () => {
     it("offers every supported language with its file extension", async () => {
-        choose("Python");
+        acceptQuickPickItemStartingWith("Python");
 
         const format = await new VsCodePicker(stubWorkspace()).pickScriptLanguage("");
 
@@ -443,7 +442,7 @@ describe("VsCodePicker.pickScriptLanguage", () => {
     });
 
     it("pins the diagram's current language first, ignoring case and whitespace", async () => {
-        choose("Groovy");
+        acceptQuickPickItemStartingWith("Groovy");
 
         await new VsCodePicker(stubWorkspace()).pickScriptLanguage(" Groovy ");
 
@@ -453,7 +452,7 @@ describe("VsCodePicker.pickScriptLanguage", () => {
 
 describe("VsCodePicker.pickDeploymentTarget", () => {
     it("offers ad-hoc mode above the saved targets", async () => {
-        choose("(none");
+        acceptQuickPickItemStartingWith("(none");
 
         const picked = await new VsCodePicker(stubWorkspace()).pickDeploymentTarget([
             "dev",
@@ -469,7 +468,7 @@ describe("VsCodePicker.pickDeploymentTarget", () => {
     });
 
     it("returns the name of a chosen target", async () => {
-        choose("prod");
+        acceptQuickPickItemStartingWith("prod");
 
         await expect(
             new VsCodePicker(stubWorkspace()).pickDeploymentTarget(["dev", "prod"]),
@@ -479,7 +478,7 @@ describe("VsCodePicker.pickDeploymentTarget", () => {
 
 describe("VsCodePicker.pickDeploymentStatusAction", () => {
     it("offers verification only for a target that supports it", async () => {
-        choose("$(cloud)");
+        acceptQuickPickItemStartingWith("$(cloud)");
 
         const action = await new VsCodePicker(stubWorkspace()).pickDeploymentStatusAction({
             targetName: "dev",
@@ -495,7 +494,7 @@ describe("VsCodePicker.pickDeploymentStatusAction", () => {
     });
 
     it("offers only switching when no target is selected", async () => {
-        choose("$(arrow-swap)");
+        acceptQuickPickItemStartingWith("$(arrow-swap)");
 
         const action = await new VsCodePicker(stubWorkspace()).pickDeploymentStatusAction({
             canVerify: false,
