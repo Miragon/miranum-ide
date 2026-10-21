@@ -71,6 +71,25 @@ describe("ArtifactService.findConfigFile", () => {
 });
 
 describe("ArtifactService.getWorkspaceRoot", () => {
+    type DirectoryEntry = [string, "file" | "directory"];
+
+    function createServiceOutsideWorkspaceFolders(
+        readableDirectories: Record<string, DirectoryEntry[]>,
+    ) {
+        const { service, vsWorkspace } = createService();
+        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
+            throw new NoWorkspaceFolderFoundError();
+        });
+        vsWorkspace.readDirectory.mockImplementation(async (path: string) => {
+            const entries = readableDirectories[path];
+            if (entries === undefined) {
+                throw new DirectoryNotFound(path);
+            }
+            return entries;
+        });
+        return service;
+    }
+
     it("returns the VS Code workspace folder when one exists", async () => {
         const { service, vsWorkspace } = createService();
         vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
@@ -79,26 +98,54 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         expect(vsWorkspace.readDirectory).not.toHaveBeenCalled();
     });
 
-    it("falls back to the enclosing git repo when no workspace folder is found", async () => {
-        const { service, vsWorkspace } = createService();
-        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
-            throw new NoWorkspaceFolderFoundError();
-        });
-        vsWorkspace.readDirectory.mockImplementation(async (path: string) =>
-            path === "/repo" ? [[".git", "directory"]] : [],
-        );
+    it("falls back to the document directory when it holds the git repository", async () => {
+        const service = createServiceOutsideWorkspaceFolders({ "/repo": [[".git", "directory"]] });
 
-        await expect(service.getWorkspaceRoot("/repo/sub")).resolves.toBe("/repo");
+        await expect(service.getWorkspaceRoot("/repo")).resolves.toBe("/repo");
     });
 
-    it("falls back to the document directory when neither folder nor git root exist", async () => {
-        const { service, vsWorkspace } = createService();
-        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
-            throw new NoWorkspaceFolderFoundError();
+    it("falls back to the nearest enclosing git repository", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/repo/processes/orders": [["order.bpmn", "file"]],
+            "/repo/processes": [["orders", "directory"]],
+            "/repo": [
+                [".git", "directory"],
+                ["processes", "directory"],
+            ],
+            "/": [[".git", "directory"]],
         });
-        vsWorkspace.readDirectory.mockResolvedValue([]);
 
-        await expect(service.getWorkspaceRoot("/some/dir")).resolves.toBe("/some/dir");
+        await expect(service.getWorkspaceRoot("/repo/processes/orders")).resolves.toBe("/repo");
+    });
+
+    it("recognises the .git file of a worktree or submodule as the repository root", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/worktrees/feature/src": [],
+            "/worktrees/feature": [[".git", "file"]],
+        });
+
+        await expect(service.getWorkspaceRoot("/worktrees/feature/src")).resolves.toBe(
+            "/worktrees/feature",
+        );
+    });
+
+    it("falls back to the document directory when no git repository encloses it", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/tmp/loose": [],
+            "/tmp": [],
+            "/": [],
+        });
+
+        await expect(service.getWorkspaceRoot("/tmp/loose")).resolves.toBe("/tmp/loose");
+    });
+
+    it("falls back to the document directory when an ancestor cannot be read", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/repo/sub": [],
+            "/": [[".git", "directory"]],
+        });
+
+        await expect(service.getWorkspaceRoot("/repo/sub")).resolves.toBe("/repo/sub");
     });
 
     it("rethrows errors that are not NoWorkspaceFolderFoundError", async () => {

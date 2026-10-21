@@ -2,7 +2,6 @@ import { posix } from "path";
 
 import { DirectoryNotFound, FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
 import { LoggerPort, SettingsPort, WorkspacePort } from "../domain/hostPorts";
-import { findGitRoot } from "./findGitRoot";
 
 /**
  * Implemented by {@link import("../../modeler/bpmn/service/BpmnElementTemplatesService").BpmnElementTemplatesService}
@@ -45,10 +44,35 @@ export class ArtifactService {
             return this.vsWorkspace.getWorkspaceFolderForDocument(documentDir);
         } catch (error) {
             if (error instanceof NoWorkspaceFolderFoundError) {
-                const gitRoot = await findGitRoot(this.vsWorkspace, documentDir);
+                const gitRoot = await this.findGitRoot(documentDir);
                 return gitRoot ?? documentDir;
             }
             throw error;
+        }
+    }
+
+    /**
+     * `.git` is a directory in a clone and a file in worktrees and submodules.
+     * Gives up at the filesystem root or at the first directory it cannot read.
+     */
+    private async findGitRoot(startDir: string): Promise<string | undefined> {
+        let current = startDir;
+        while (true) {
+            let entries: [string, "file" | "directory"][];
+            try {
+                entries = await this.vsWorkspace.readDirectory(current);
+            } catch {
+                return undefined;
+            }
+            if (entries.some(([name]) => name === ".git")) {
+                return current;
+            }
+
+            const parent = posix.dirname(current);
+            if (parent === current) {
+                return undefined;
+            }
+            current = parent;
         }
     }
 
