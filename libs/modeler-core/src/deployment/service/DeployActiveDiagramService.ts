@@ -5,7 +5,7 @@ import { EditorSessionStore } from "../../shared/infrastructure/EditorSessionSto
 import { DeploymentService } from "./DeploymentService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { DeploymentTargetService } from "./DeploymentTargetService";
-import { resolveOrPickActiveTarget } from "./resolveActiveTarget";
+import { resolveOrPickActiveTarget } from "./resolveOrPickActiveTarget";
 
 const DEPLOYABLE_EXTENSIONS = [".bpmn", ".dmn"];
 

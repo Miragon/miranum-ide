@@ -2,7 +2,7 @@ import { NotifierPort, PickerPort } from "../../shared/domain/hostPorts";
 import { DeploymentService } from "./DeploymentService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { DeploymentTargetService } from "./DeploymentTargetService";
-import { resolveOrPickActiveTarget } from "./resolveActiveTarget";
+import { resolveOrPickActiveTarget } from "./resolveOrPickActiveTarget";
 
 const DEPLOYABLE_FILES_GLOB = "**/*.{bpmn,dmn}";
 const DEPENDENCY_FOLDERS_GLOB = "**/node_modules/**";
