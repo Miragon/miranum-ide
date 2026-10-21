@@ -1,9 +1,8 @@
 import { LogErrorCommand } from "./messages";
 
 /**
- * Forwards uncaught errors and unhandled rejections to the host's output
- * channel. Event-bus and DOM callbacks run outside any per-message try/catch,
- * so without this their failures only ever reach the webview console.
+ * Event-bus and DOM callbacks run outside any per-message try/catch, so without
+ * this their failures only ever reach the webview console.
  *
  * @returns Removes both listeners again.
  */
