@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Injector } from "didi";
 import { BpmnModdle } from "bpmn-moddle";
 import { createClipboardModules, type ClipboardBridge } from "./index";
+import { createCopyEvent } from "./__fixtures__/clipboardEvents";
 
 /**
  * Behavioural spec for the bridge-path clipboard module (`BridgedClipboard`).
@@ -52,12 +53,16 @@ function bridgeSpies(clipboardText: string): {
     return { bridge: { requestClipboard, writeClipboard }, requestClipboard, writeClipboard };
 }
 
+const liveEventBuses: FakeEventBus[] = [];
+
 function instantiate(bridge: ClipboardBridge): {
     eventBus: FakeEventBus;
     copyPaste: { paste: ReturnType<typeof vi.fn> };
     nativeCopyPaste: { toggle: ReturnType<typeof vi.fn> };
+    canvas: { focus: ReturnType<typeof vi.fn> };
 } {
     const eventBus = new FakeEventBus();
+    liveEventBuses.push(eventBus);
     const copyPaste = { paste: vi.fn() };
     const nativeCopyPaste = { toggle: vi.fn() };
     const canvas = { focus: vi.fn() };
@@ -78,7 +83,17 @@ function instantiate(bridge: ClipboardBridge): {
     ] as never);
     injector.init();
 
-    return { eventBus, copyPaste, nativeCopyPaste };
+    return { eventBus, copyPaste, nativeCopyPaste, canvas };
+}
+
+/** Stands in for VS Code's own webview `copy` handler, which runs after the capture phase. */
+function dispatchCopyObservedByHost(target: EventTarget = document.body) {
+    const event = createCopyEvent();
+    const hostCopyHandler = vi.fn();
+    document.addEventListener("copy", hostCopyHandler);
+    target.dispatchEvent(event);
+    document.removeEventListener("copy", hostCopyHandler);
+    return { event, hostCopyHandler };
 }
 
 /** A minimal but real copyTree: one bpmn:Task descriptor at depth 0. */
@@ -87,7 +102,11 @@ const TREE = {
 };
 
 afterEach(() => {
+    // Detach every instance's document copy listener so no pending payload
+    // leaks into the next test.
+    liveEventBuses.splice(0).forEach((eventBus) => eventBus.fire("diagram.destroy", {}));
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     document.body.innerHTML = "";
 });
 
@@ -177,5 +196,103 @@ describe("BridgedClipboard", () => {
         expect(result).toBeUndefined();
         expect(requestClipboard).not.toHaveBeenCalled();
         expect(copyPaste.paste).not.toHaveBeenCalled();
+    });
+});
+
+describe("BridgedClipboard copy event", () => {
+    it("puts the copied elements on the clipboard ahead of the host's copy handler", () => {
+        const { eventBus } = instantiate(bridgeSpies("").bridge);
+        eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+
+        const { event, hostCopyHandler } = dispatchCopyObservedByHost();
+
+        expect(event.defaultPrevented).toBe(true);
+        expect(event.clipboardData.getData("text/plain")).toBe(CLIP_PREFIX + JSON.stringify(TREE));
+        expect(hostCopyHandler).not.toHaveBeenCalled();
+    });
+
+    it("hands the copied elements to a single copy event only", () => {
+        const { eventBus } = instantiate(bridgeSpies("").bridge);
+        eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+        dispatchCopyObservedByHost();
+
+        const { event, hostCopyHandler } = dispatchCopyObservedByHost();
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(event.clipboardData.getData("text/plain")).toBe("");
+        expect(hostCopyHandler).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a plain text copy alone when no elements were copied", () => {
+        instantiate(bridgeSpies("").bridge);
+
+        const { event, hostCopyHandler } = dispatchCopyObservedByHost();
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(hostCopyHandler).toHaveBeenCalledTimes(1);
+    });
+
+    it("marks the copy handled even when bpmn-js passed no hints", () => {
+        const { eventBus } = instantiate(bridgeSpies("").bridge);
+        const context: { tree: unknown; hints?: { clip?: boolean } } = { tree: TREE };
+
+        eventBus.fire("copyPaste.elementsCopied", context);
+
+        expect(context.hints).toEqual({ clip: false });
+    });
+});
+
+describe("BridgedClipboard focus repair", () => {
+    function selectionChangedWhileWebviewFocused(webviewHasFocus: boolean) {
+        vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+            callback(0);
+            return 0;
+        });
+        vi.spyOn(document, "hasFocus").mockReturnValue(webviewHasFocus);
+        const { eventBus, canvas } = instantiate(bridgeSpies("").bridge);
+        return {
+            canvas,
+            changeSelection: () => eventBus.fire("selection.changed", {}),
+        };
+    }
+
+    it("returns focus to the canvas after a selection change so Cmd+C keeps working", () => {
+        const { canvas, changeSelection } = selectionChangedWhileWebviewFocused(true);
+
+        changeSelection();
+
+        expect(canvas.focus).toHaveBeenCalledTimes(1);
+    });
+
+    it("never pulls focus out of another pane, e.g. a side-by-side text editor", () => {
+        const { canvas, changeSelection } = selectionChangedWhileWebviewFocused(false);
+
+        changeSelection();
+
+        expect(canvas.focus).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["an input", () => document.createElement("input")],
+        ["a textarea", () => document.createElement("textarea")],
+        [
+            "a contenteditable element",
+            () => {
+                const editable = document.createElement("div");
+                editable.tabIndex = 0;
+                // jsdom does not implement isContentEditable.
+                Object.defineProperty(editable, "isContentEditable", { value: true });
+                return editable;
+            },
+        ],
+    ])("leaves focus in %s the user is typing in", (_, createField) => {
+        const { canvas, changeSelection } = selectionChangedWhileWebviewFocused(true);
+        const field = createField();
+        document.body.appendChild(field);
+        field.focus();
+
+        changeSelection();
+
+        expect(canvas.focus).not.toHaveBeenCalled();
     });
 });
