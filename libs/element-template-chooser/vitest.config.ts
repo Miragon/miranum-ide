@@ -6,7 +6,7 @@ export default defineConfig({
     resolve: { alias: workspaceAliases },
     test: {
         name: "element-template-chooser",
-        environment: "node",
+        environment: "jsdom",
         include: ["src/**/*.{spec,test}.{ts,tsx}"],
         coverage: {
             ...coveragePreset(__dirname),

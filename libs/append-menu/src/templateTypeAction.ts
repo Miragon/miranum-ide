@@ -52,10 +52,8 @@ export function executeTemplateTypeAction(
         return;
     }
 
-    // `KeyboardEvent` guarded with `typeof` because the modeler runs in browsers
-    // where it is global, but not in the node test environment.
-    const isKeyboard = typeof KeyboardEvent !== "undefined" && event instanceof KeyboardEvent;
-    const startEvent = isKeyboard ? (mouse?.getLastMoveEvent() ?? event) : event;
+    const startEvent =
+        event instanceof KeyboardEvent ? (mouse?.getLastMoveEvent() ?? event) : event;
 
     create.start(
         startEvent,
