@@ -83,7 +83,6 @@ vi.mock("./diffMode", () => ({
 }));
 vi.mock("./hostEditorActions", () => ({ installHostEditorActions: vi.fn() }));
 vi.mock("./state", () => ({
-    readSavedPanelVisibility: vi.fn(() => undefined),
     readSavedMode: vi.fn(() => mocks.savedMode),
     WebviewStateManager: class {
         constructor() {

@@ -9,6 +9,7 @@ import {
     createFlushResponder,
     createHostThemeAdapter,
     createResolver,
+    createWebviewStateStore,
     DmnFileQuery,
     DmnModelerSettingQuery,
     FlushDocumentQuery,
@@ -24,7 +25,9 @@ import {
     LogErrorCommand,
     LogWarningCommand,
     PropertiesPanelStateQuery,
+    PropertiesPanelUiStateAdapter,
     Query,
+    readSavedPanelVisibility,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
     resolveHostThemeKind,
@@ -40,7 +43,6 @@ import {
     type DmnModelerHandle,
 } from "@miragon/dmn-modeler";
 
-import { readSavedPanelVisibility, WebviewStateManager } from "./state";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { WebviewState } from "./webviewState";
 
@@ -175,7 +177,7 @@ let modelerIsInitialized = false;
 /**
  * Upper bound (ms) on how long bootstrap waits for a host reply before
  * continuing without it, so a dropped settings / panel-state reply can no longer
- * stall the restore chain (`restorePanelUiState` / `startPersisting`).
+ * stall the restore chain (`restoreGroupsAndScroll` / `startPersisting`).
  */
 const RESOLVER_TIMEOUT_MS = 5000;
 
@@ -189,7 +191,10 @@ const RESOLVER_TIMEOUT_MS = 5000;
 async function run(): Promise<void> {
     const canvas = requireElement("#js-canvas");
     const propertiesPanel = requireElement("#js-properties-panel");
-    const stateManager = new WebviewStateManager(host, propertiesPanel);
+    const panelUiState = new PropertiesPanelUiStateAdapter(
+        createWebviewStateStore(host),
+        propertiesPanel,
+    );
     window.addEventListener("message", onReceiveMessage);
 
     // Theme is host policy: drive the page-level scope (host chrome, keyed off
@@ -263,10 +268,10 @@ async function run(): Promise<void> {
     // Registered after restore so the restore itself can't echo back.
     if (savedPanelVisible === undefined) {
         const panelState = await panelStateResolver.wait(RESOLVER_TIMEOUT_MS);
-        stateManager.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
+        panelUiState.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
     }
     propertiesPanelHandle.onVisibilityChanged((visible) => {
-        stateManager.persistPanelVisibility(visible);
+        panelUiState.persistPanelVisibility(visible);
         host.postMessage(new SetPropertiesPanelStateCommand(visible));
     });
 
@@ -284,8 +289,8 @@ async function run(): Promise<void> {
     installCanvasAutoFocus({ focusCanvas });
     host.postMessage(new RequestFocusCommand());
 
-    stateManager.restorePanelUiState();
-    stateManager.startPersisting();
+    panelUiState.restoreGroupsAndScroll();
+    panelUiState.startPersisting();
 }
 
 async function initializeModeler(dmnFile: string | undefined, documentRevision = 0) {
