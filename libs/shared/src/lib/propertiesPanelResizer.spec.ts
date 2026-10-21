@@ -220,7 +220,7 @@ describe("initResizer", () => {
             expect(panel.style.width).toBe("1600px");
         });
 
-        it("stops narrowing at the minimum width and keeps the panel open", () => {
+        it("never narrows the open panel below the minimum width", () => {
             const { resizer, panel, handle, visibilityChanges } = setUp({ width: 300 });
 
             pressAt(resizer, 500);

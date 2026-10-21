@@ -90,15 +90,12 @@ const NOOP_HANDLE: PropertiesPanelHandle = {
  * {@link PropertiesPanelHandle} that exposes the panel's visibility as
  * observable state.
  *
- * Dragging left widens the panel; dragging right narrows it.
- * Width is clamped between {@link MIN_PANEL_WIDTH} and {@link MAX_PANEL_WIDTH}
- * when the panel is visible.
- *
- * Narrowing stops at {@link MIN_PANEL_WIDTH}; dragging on until the intended
- * width reaches zero collapses the panel (hidden). The resizer stays visible so
- * the user can drag it back to the left: the panel reappears at
- * {@link MIN_PANEL_WIDTH} right away and follows the pointer once the intended
- * width exceeds it.
+ * Dragging left widens the panel up to {@link MAX_PANEL_WIDTH}; dragging right
+ * narrows it, but a drag never renders the open panel narrower than
+ * {@link MIN_PANEL_WIDTH}. Dragging on until the intended width reaches zero
+ * collapses the panel (hidden). The resizer stays visible so the user can drag
+ * it back to the left: the panel reappears at {@link MIN_PANEL_WIDTH} right
+ * away and follows the pointer once the intended width exceeds it.
  *
  * Strategy: track the intended width in `targetWidth` (initialised once at
  * mousedown from `panel.offsetWidth`) and accumulate incremental deltas on it.
