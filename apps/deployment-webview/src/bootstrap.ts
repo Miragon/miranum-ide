@@ -37,14 +37,11 @@ type StartInstanceFormPort = Pick<
     "setProcessDefinitionKey" | "setPayloadFile" | "showResult"
 >;
 
-/**
- * Renders the deployment and start-instance forms, restores the active tab and
- * requests the defaults. Every host shell ships only `<div id="app">`.
- */
 export function bootstrap(host: DeploymentHost): void {
     let form: DeploymentForm;
     let startForm: StartInstanceForm;
 
+    // Every host shell ships only an empty `#app`, so the single-source markup is injected here.
     const app = document.getElementById("app");
     if (app) {
         app.innerHTML = FORM_TEMPLATE;
