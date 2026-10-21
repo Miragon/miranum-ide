@@ -21,7 +21,6 @@ import {
     ShowInfoCommand,
     SyncDocumentCommand,
     TakeFocusQuery,
-    TextClipboardQuery,
     HostApi,
     HostApiImpl,
     MockHostApi,
@@ -180,15 +179,6 @@ class MockHost extends MockHostApi<StateType, MessageType> {
                 console.debug("[DEBUG] SetClipboardCommand", message);
                 break;
             }
-            case message.type === "GetTextClipboardCommand": {
-                console.debug("[DEBUG] GetTextClipboardCommand", message);
-                dispatchEvent(new TextClipboardQuery(""));
-                break;
-            }
-            case message.type === "SetTextClipboardCommand": {
-                console.debug("[DEBUG] SetTextClipboardCommand", message);
-                break;
-            }
             case message.type === "SyncDocumentCommand": {
                 console.debug(
                     "[DEBUG] SyncDocumentCommand",
@@ -277,14 +267,12 @@ class MockHost extends MockHostApi<StateType, MessageType> {
                 console.debug("[DEBUG] UpdateScriptVariablesCommand", message);
                 break;
             }
-            // No real host behind the preview to act on these.
-            case message.type === "DiagramFormattedCommand":
-            case message.type === "CleanupReportCommand":
-            case message.type === "OpenScriptEditorsCommand":
-            case message.type === "UpdateLintResultsCommand":
-            case message.type === "GetFormReferenceStatusCommand":
+            case message.type === "DiagramFormattedCommand": {
+                console.debug("[DEBUG] DiagramFormattedCommand", message);
+                break;
+            }
             case message.type === "SwapCompareSidesCommand": {
-                console.debug(`[DEBUG] ${message.type}`, message);
+                console.debug("[DEBUG] SwapCompareSidesCommand (no partner in dev)", message);
                 break;
             }
             case message.type === "SearchWorkspaceDefinitionsCommand": {
