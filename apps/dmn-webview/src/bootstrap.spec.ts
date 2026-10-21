@@ -30,32 +30,12 @@ const mocks = vi.hoisted(() => {
         initResizer: vi.fn(() => panelHandle),
         installPanelShortcuts: vi.fn(),
         installCanvasAutoFocus: vi.fn(),
-        stateManagerCtor: vi.fn(),
-        stateManager: {
-            restorePanelVisibility: vi.fn(),
-            persistPanelVisibility: vi.fn(),
-            restorePanelUiState: vi.fn(),
-            startPersisting: vi.fn(),
-        },
         setLanguage: vi.fn(),
         getLocale: vi.fn(() => "en"),
     };
 });
 
 vi.mock("@miragon/dmn-modeler", () => ({ createModeler: mocks.createModeler }));
-
-vi.mock("./state", () => ({
-    readSavedPanelVisibility: vi.fn(() => undefined),
-    WebviewStateManager: class {
-        constructor(...args: unknown[]) {
-            mocks.stateManagerCtor(...args);
-        }
-        restorePanelVisibility = mocks.stateManager.restorePanelVisibility;
-        persistPanelVisibility = mocks.stateManager.persistPanelVisibility;
-        restorePanelUiState = mocks.stateManager.restorePanelUiState;
-        startPersisting = mocks.stateManager.startPersisting;
-    },
-}));
 
 vi.mock("@miragon/bpmn-modeler-i18n", () => ({
     i18n: {
@@ -135,8 +115,6 @@ describe("DMN bootstrap", () => {
             canvas,
             expect.objectContaining({ propertiesPanel: { parent: panel }, theme: "light" }),
         );
-        // The state manager is scoped to the properties-panel element, not `document`.
-        expect(mocks.stateManagerCtor).toHaveBeenCalledWith(host, panel);
         // The host adapter scoped the page on `<html>` off the (light) VS Code signal.
         expect(document.documentElement.getAttribute("data-dmn-theme")).toBe("light");
         expect(mocks.createModeler.mock.invocationCallOrder[0]).toBeLessThan(

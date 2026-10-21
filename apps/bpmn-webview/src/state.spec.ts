@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { HostApiImpl } from "@miragon/bpmn-modeler-shared";
+
 import { readSavedMode, WebviewStateManager } from "./state";
+import type { WebviewState } from "./webviewState";
 
 /**
  * Builds a `WebviewStateManager` wired to spies for the collaborators
@@ -10,6 +13,7 @@ function setup(
     savedState: unknown,
     applied = true,
     panelRoot: HTMLElement = document.createElement("div"),
+    realHost?: HostApiImpl<WebviewState, never>,
 ) {
     const getState = vi.fn().mockReturnValue(savedState);
     const updateState = vi.fn();
@@ -32,7 +36,7 @@ function setup(
         selectedElementIds: [],
     });
     const applyViewState = vi.fn();
-    const host = { getState, updateState, setState } as any;
+    const host = realHost ?? ({ getState, updateState, setState } as any);
     const modeler = {
         viewport: { setViewport, fitViewport, getViewport, onViewportChanged },
         rootElement: { setRootElementById, getRootElementId, onRootChanged },
@@ -52,6 +56,9 @@ function setup(
         captureViewState,
         applyViewState,
         updateState,
+        onRootChanged,
+        onViewportChanged,
+        onSelectionChanged,
     };
 }
 
@@ -353,5 +360,67 @@ describe("WebviewStateManager panel visibility", () => {
         manager.persistPanelVisibility(true);
 
         expect(updateState).toHaveBeenCalledWith({ panelVisible: true });
+    });
+});
+
+describe("WebviewStateManager.restoreSelection", () => {
+    it("re-selects the saved elements", () => {
+        const { manager, selectElementsByIds } = setup({
+            selectedElementIds: ["Task_1", "Task_2"],
+        });
+
+        manager.restoreSelection();
+
+        expect(selectElementsByIds).toHaveBeenCalledWith(["Task_1", "Task_2"]);
+    });
+
+    it.each([
+        ["an empty saved selection", { selectedElementIds: [] }],
+        ["no saved state", undefined],
+    ])("keeps the selection untouched for %s", (_, saved) => {
+        const { manager, selectElementsByIds } = setup(saved);
+
+        manager.restoreSelection();
+
+        expect(selectElementsByIds).not.toHaveBeenCalled();
+    });
+});
+
+describe("WebviewStateManager.startPersisting", () => {
+    it("persists the plane, viewbox, and selection the canvas reports", () => {
+        const { manager, updateState, onRootChanged, onViewportChanged, onSelectionChanged } =
+            setup(undefined);
+        const viewport = { x: 1, y: 2, width: 300, height: 200 };
+
+        manager.startPersisting();
+        onRootChanged.mock.calls[0][0]("SubProcess_1_plane");
+        onViewportChanged.mock.calls[0][0](viewport);
+        onSelectionChanged.mock.calls[0][0](["Task_1"]);
+
+        expect(updateState.mock.calls).toEqual([
+            [{ rootElementId: "SubProcess_1_plane" }],
+            [{ viewport }],
+            [{ selectedElementIds: ["Task_1"] }],
+        ]);
+    });
+});
+
+describe("WebviewStateManager on a first-ever open", () => {
+    it("seeds the persisted state with the first write", () => {
+        let persisted: WebviewState | undefined;
+        vi.stubGlobal("acquireVsCodeApi", () => ({
+            getState: () => persisted,
+            setState: (state: WebviewState) => {
+                persisted = state;
+            },
+            postMessage: vi.fn(),
+        }));
+        const { manager } = setup(undefined, true, undefined, new HostApiImpl());
+
+        manager.persistMode("view");
+        manager.persistPanelVisibility(false);
+
+        expect(persisted).toEqual({ mode: "view", panelVisible: false });
+        vi.unstubAllGlobals();
     });
 });

@@ -58,6 +58,7 @@ import {
     initResizer,
     installCanvasAutoFocus,
     installPanelShortcuts,
+    readSavedPanelVisibility,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
 import {
@@ -99,7 +100,7 @@ import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { MessageGate } from "./messageGate";
-import { readSavedMode, readSavedPanelVisibility, WebviewStateManager } from "./state";
+import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
     loadLintModule,
