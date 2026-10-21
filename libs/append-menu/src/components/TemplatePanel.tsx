@@ -107,10 +107,6 @@ export function TemplatePanel({
         hideTimeoutRef.current = window.setTimeout(() => setHoveredIndex(-1), HOVER_HIDE_DELAY);
     }, []);
 
-    /**
-     * Computes the fixed position for the hover card based on the
-     * active card's bounding rect and the panel's right edge.
-     */
     const hoverCardStyle = useMemo(() => {
         if (activePreviewIndex < 0 || !listRef.current || !panelRef.current) {
             return null;
