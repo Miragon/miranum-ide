@@ -35,6 +35,7 @@ import type { InlineScriptingPort } from "./InlineScriptingPort";
 import {
     collectInlineScriptTasks,
     describeScriptSurface,
+    findListenerAt,
     resolveScriptWriteTarget,
 } from "./scriptModel";
 import type { ScriptField } from "./scriptModel";
@@ -54,6 +55,7 @@ export {
     InlineScriptingPortForwarder,
     collectInlineScriptTasks,
     describeScriptSurface,
+    findListenerAt,
     resolveScriptWriteTarget,
 };
 export type { OpenScriptEditorEvent, ScriptSourceChangedEvent, InlineScriptingPort, ScriptField };
