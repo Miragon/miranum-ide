@@ -2,7 +2,8 @@
 
 <!-- Required: link an `accepted` issue. PRs whose linked issue is not yet
      `accepted` are put on hold — see CONTRIBUTING → The Acceptance Gate. For a
-     trivial fix with nothing to discuss, add the `no-issue` label instead. -->
+     trivial fix with nothing to discuss, add the `no-issue` label instead.
+     Use `Part of #` instead of `Closes #` if this PR delivers only part of the issue. -->
 Closes #
 
 ## Description

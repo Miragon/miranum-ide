@@ -48,8 +48,10 @@ The flow for any non-trivial change:
 2. **A maintainer triages it.** We discuss scope and fit with you and either
    mark it `accepted` (green light) or close it with a short reason.
 3. **Only then is an implementation PR reviewed.** A PR must link an `accepted`
-   issue (`Closes #123`). PRs whose linked issue is still `needs-triage` are
-   labelled `blocked: awaiting-acceptance` and put on hold until the issue is accepted.
+   issue: `Closes #123` when it completes the issue, or `Part of #123` /
+   `Refs #123` when it delivers only part of it. PRs whose linked issue is
+   still `needs-triage` are labelled `blocked: awaiting-acceptance` and put on
+   hold until the issue is accepted.
 
 Please **do not open a PR before the issue is accepted.** Doing so wastes your
 effort if we decide the change isn't a fit. Trivial, obviously-correct fixes
