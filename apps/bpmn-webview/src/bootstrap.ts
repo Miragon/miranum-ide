@@ -57,6 +57,7 @@ import {
     extractProcessVariables,
     initResizer,
     installCanvasAutoFocus,
+    installGlobalErrorForwarding,
     installPanelShortcuts,
     readSavedPanelVisibility,
     takeFocus,
@@ -439,27 +440,6 @@ function startSession(
         },
         (reply) => host.postMessage(reply),
     );
-
-    // Global safety net for throws the per-message try/catch in onReceiveMessage
-    // can't reach — bpmn-js event-bus callbacks (e.g. onCommandStackChanged) run
-    // outside it, so an error there would otherwise vanish into the webview
-    // console and never reach the output channel.
-    function registerGlobalErrorHandlers(): void {
-        window.addEventListener("error", (event: ErrorEvent) => {
-            host.postMessage(
-                new LogErrorCommand(`Unhandled error: ${event.message}`, event.error?.stack),
-            );
-        });
-        window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-            const reason: unknown = event.reason;
-            host.postMessage(
-                new LogErrorCommand(
-                    `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-                    reason instanceof Error ? reason.stack : undefined,
-                ),
-            );
-        });
-    }
 
     /**
      * Re-imports the XML while preserving the user's drill-down plane, viewbox,
@@ -1656,7 +1636,7 @@ function startSession(
         }
     });
 
-    registerGlobalErrorHandlers();
+    installGlobalErrorForwarding((command) => host.postMessage(command));
     if (document.readyState === "complete") {
         void run();
     } else {

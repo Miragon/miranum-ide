@@ -20,6 +20,7 @@ import {
     type HostThemeMode,
     initResizer,
     installCanvasAutoFocus,
+    installGlobalErrorForwarding,
     installPanelShortcuts,
     LanguageQuery,
     LogErrorCommand,
@@ -63,26 +64,6 @@ let host: HostApi<WebviewState, Command | Query>;
 let bootstrapOpts: BootstrapOptions = {};
 let modeler: DmnModelerHandle | undefined;
 let themeAdapter: HostThemeAdapter | undefined;
-
-// Global safety net for throws outside the per-message try/catch below — dmn-js
-// event-bus callbacks run outside it, so an error there would otherwise vanish
-// into the webview console instead of reaching the output channel.
-function registerGlobalErrorHandlers(): void {
-    window.addEventListener("error", (event: ErrorEvent) => {
-        host.postMessage(
-            new LogErrorCommand(`Unhandled error: ${event.message}`, event.error?.stack),
-        );
-    });
-    window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-        const reason: unknown = event.reason;
-        host.postMessage(
-            new LogErrorCommand(
-                `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-                reason instanceof Error ? reason.stack : undefined,
-            ),
-        );
-    });
-}
 
 /**
  * Debounce the openXML function to avoid multiple calls when the user types fast.
@@ -418,7 +399,7 @@ export function bootstrap(
 ): void {
     host = injectedHost;
     bootstrapOpts = opts;
-    registerGlobalErrorHandlers();
+    installGlobalErrorForwarding((command) => host.postMessage(command));
     if (document.readyState === "complete") {
         void run();
     } else {

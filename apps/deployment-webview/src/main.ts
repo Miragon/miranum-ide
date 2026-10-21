@@ -6,6 +6,7 @@ import {
     DeploymentResultQuery,
     DeploymentTargetsQuery,
     FormDefaultsQuery,
+    installGlobalErrorForwarding,
     LogErrorCommand,
     ProcessDefinitionKeyQuery,
     Query,
@@ -23,22 +24,8 @@ import { getHostApi } from "./app/host";
 
 const host = getHostApi();
 
-// Global safety net: the deployment webview had no error forwarding at all, so a
-// throw in a DOM callback or a rejected promise vanished into the webview console
-// and never reached the output channel. Mirrors the bpmn-webview hooks; registered
-// eagerly so failures during form bootstrap are covered too.
-window.addEventListener("error", (event: ErrorEvent) => {
-    host.postMessage(new LogErrorCommand(`Unhandled error: ${event.message}`, event.error?.stack));
-});
-window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-    const reason: unknown = event.reason;
-    host.postMessage(
-        new LogErrorCommand(
-            `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-            reason instanceof Error ? reason.stack : undefined,
-        ),
-    );
-});
+// Registered eagerly so failures during form bootstrap are forwarded too.
+installGlobalErrorForwarding((command) => host.postMessage(command));
 
 /**
  * Entry point: initialises the deployment and start-instance forms once the
