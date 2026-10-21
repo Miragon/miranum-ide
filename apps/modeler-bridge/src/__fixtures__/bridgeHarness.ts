@@ -3,7 +3,6 @@ export async function settle(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-/** Polls for a frame matching `predicate`, or rejects after `timeoutMs`. */
 export async function waitForFrame(
     frames: any[],
     predicate: (frame: any) => boolean,
@@ -37,17 +36,14 @@ export function registerParams(
     };
 }
 
-/** A Host→Core notification line, as the stdio transport delivers it. */
 export function hostNotification(method: string, params: unknown): string {
     return JSON.stringify({ method, params });
 }
 
-/** The host's answer to a Core→Host request. */
 export function hostReply(id: number, result: unknown): string {
     return JSON.stringify({ id, result });
 }
 
-/** The host's failure answer to a Core→Host request. */
 export function hostErrorReply(id: number, error: string): string {
     return JSON.stringify({ id, error });
 }

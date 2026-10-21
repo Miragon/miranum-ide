@@ -39,7 +39,6 @@ const isShowInfo = (message: string) => (f: any) =>
 const postedQueries = (frames: any[], type: string) =>
     frames.filter((f) => f.method === "editor/postMessage" && f.params.message?.type === type);
 
-/** Index of the first offered version that differs from the diagram's current one. */
 function otherVersionIndex(picker: any): number {
     return picker.params.items.findIndex((item: any) => item.label !== C7_VERSION);
 }
