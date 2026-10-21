@@ -15,7 +15,6 @@ vi.mock("vscode", () => ({
 import { commands, window, workspace } from "vscode";
 import {
     ADD_MARKETPLACE_CMD,
-    expandHomePath,
     REMOVE_MARKETPLACE_CMD,
     TemplateMarketplaceController,
     UPDATE_MARKETPLACES_CMD,
@@ -76,23 +75,6 @@ beforeEach(() => {
     // Default to an empty window: the scope pick resolves to "user" without a
     // quick pick, so add tests unrelated to scope stay focused.
     setWorkspaceOpen(false);
-});
-
-describe("expandHomePath", () => {
-    it("expands a bare ~ to the home directory", () => {
-        expect(expandHomePath("~")).toBe(homedir());
-    });
-
-    it("expands ~/sub to a home-relative absolute path", () => {
-        expect(expandHomePath("~/templates")).toBe(join(homedir(), "templates"));
-        expect(expandHomePath("~\\templates")).toBe(join(homedir(), "templates"));
-    });
-
-    it("leaves ~user and non-tilde inputs untouched", () => {
-        expect(expandHomePath("~bob/x")).toBe("~bob/x");
-        expect(expandHomePath("/abs/path")).toBe("/abs/path");
-        expect(expandHomePath("https://github.com/a/b")).toBe("https://github.com/a/b");
-    });
 });
 
 describe("TemplateMarketplaceController.addMarketplace", () => {

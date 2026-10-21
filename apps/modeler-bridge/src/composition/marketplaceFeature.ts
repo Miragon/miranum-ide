@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import {
     BpmnElementTemplatesService,
+    expandHomePath,
     FetchHttpClient,
     GitHubSource,
     GitLabSource,
@@ -40,23 +41,6 @@ export interface MarketplaceOptions {
     cacheRoot: string;
     /** Injected home dir so `~` in a pasted path / local source resolves host-side. */
     homeDir: string;
-}
-
-/**
- * Expands a leading `~` at the host boundary — a shell convention neither the
- * filesystem APIs nor the host-agnostic core resolve — so the core only ever sees
- * an absolute path. `~user` is left untouched (not portably resolvable) so the
- * parser rejects it. Mirrors the VS Code controller's `expandHomePath`, but
- * against the injected `homeDir` rather than `os.homedir()`.
- */
-function expandHomePath(input: string, homeDir: string): string {
-    if (input === "~") {
-        return homeDir;
-    }
-    if (input.startsWith("~/") || input.startsWith("~\\")) {
-        return join(homeDir, input.slice(2));
-    }
-    return input;
 }
 
 /**
@@ -159,7 +143,7 @@ async function addMarketplace(
     deps.notifier.logInfo("Add Marketplace command invoked");
     // Persist the expanded path so a re-fetch via Update (which re-reads settings)
     // never sees a `~`.
-    const location = expandHomePath(rawLocation.trim(), handles.homeDir);
+    const location = expandHomePath(rawLocation.trim(), handles.homeDir, join);
     try {
         await deps.notifier.withProgress("Adding marketplace…", () =>
             handles.marketplaceSvc.addMarketplace(location),
