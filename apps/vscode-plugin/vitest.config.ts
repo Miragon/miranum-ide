@@ -23,7 +23,7 @@ export default defineConfig({
             ...coveragePreset(__dirname, {
                 // Wiring only; the Extension-Host smoke test (test/e2e) covers it,
                 // and feature barrels are re-exports enforced by architecture.spec.
-                exclude: ["src/composition/**", "src/**/index.ts"],
+                exclude: ["src/main.ts", "src/composition/**", "src/**/index.ts"],
             }),
             // Per-layer gates, tiered by how much logic each layer carries and
             // how cheaply it can be tested. Controllers mix routing with vscode
