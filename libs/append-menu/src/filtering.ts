@@ -242,6 +242,18 @@ export interface PaletteNavItem {
     hidden: boolean;
 }
 
+export function favouriteNavKey(entryId: string): string {
+    return `fav:${entryId}`;
+}
+
+export function groupNavKey(groupId: string, entryId: string): string {
+    return `grp:${groupId}:${entryId}`;
+}
+
+export function isEntryDisabled(processed: ProcessedEntry): boolean {
+    return processed.disabled || !!processed.entry.disabled;
+}
+
 /**
  * Flattens the processed palette into the exact render order: favourites
  * first, then each group's entries. Feeds both the keyboard navigation
@@ -254,20 +266,20 @@ export function flattenPaletteItems(processed: ProcessedPalette): PaletteNavItem
     const items: PaletteNavItem[] = [];
     for (const e of processed.favouriteEntries) {
         items.push({
-            key: `fav:${e.id}`,
+            key: favouriteNavKey(e.id),
             id: e.id,
             entry: e.entry,
-            disabled: e.disabled || !!e.entry.disabled,
+            disabled: isEntryDisabled(e),
             hidden: e.hidden,
         });
     }
     for (const group of processed.groups) {
         for (const e of group.entries) {
             items.push({
-                key: `grp:${group.id}:${e.id}`,
+                key: groupNavKey(group.id, e.id),
                 id: e.id,
                 entry: e.entry,
-                disabled: e.disabled || !!e.entry.disabled,
+                disabled: isEntryDisabled(e),
                 hidden: e.hidden,
             });
         }

@@ -34,6 +34,7 @@ import {
     type Highlight,
     type NavColumns,
 } from "../navigation";
+import { clampToCanvas } from "../positioning";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
 
@@ -52,34 +53,6 @@ interface AppendMenuOverlayProps {
         presetId: string | undefined,
     ) => void;
     onCancel: () => void;
-}
-
-// Margin from viewport edges when clamping the panel position.
-const VIEWPORT_MARGIN = 8;
-
-/**
- * Clamps the panel position so it stays within the canvas area.
- *
- * Uses the canvas container's bounds rather than the full viewport
- * to avoid overlapping the properties panel on the right.
- *
- * @param pos The desired top-left position in viewport coordinates.
- * @param panelRect The panel's bounding rect after initial render.
- * @param canvasBounds The right and bottom edges of the canvas container.
- * @returns Clamped `{ left, top }` values for CSS.
- */
-function clampToCanvas(
-    pos: { x: number; y: number },
-    panelRect: { width: number; height: number },
-    canvasBounds: { right: number; bottom: number },
-): { left: number; top: number } {
-    const maxLeft = canvasBounds.right - panelRect.width - VIEWPORT_MARGIN;
-    const maxTop = canvasBounds.bottom - panelRect.height - VIEWPORT_MARGIN;
-
-    return {
-        left: Math.max(VIEWPORT_MARGIN, Math.min(pos.x, maxLeft)),
-        top: Math.max(VIEWPORT_MARGIN, Math.min(pos.y, maxTop)),
-    };
 }
 
 /**
