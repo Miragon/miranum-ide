@@ -134,10 +134,10 @@ export function buildFlowOrder(root: ModdleElement): Map<string, FlowPosition> {
         }
     }
 
-    // Orphans: sub-graphs without a reachable start event (e.g. event
-    // sub-processes triggered by error/escalation, or genuinely disconnected
-    // nodes).  Append in visual reading order so they at least step
-    // predictably even though the flow position is unknown.
+    // Orphans: elements no start event reaches (e.g. boundary-event paths, the
+    // shape of an event sub-process — its content is walked from its own start
+    // event — or disconnected nodes).  Append in visual reading order so they at
+    // least step predictably even though the flow position is unknown.
     const orphans: ModdleElement[] = [];
     for (const [id, fe] of flowElementsById) {
         if (!order.has(id)) orphans.push(fe);
