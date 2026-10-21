@@ -7,6 +7,7 @@ import { getDirectEditingContent } from "@miragon/bpmn-modeler-clipboard";
 import { getPopupMenuContext } from "@miragon/bpmn-modeler-append-menu";
 
 import { LintingInternals } from "./bpmnlint/lintingInternals";
+import { mountCanvas, removeMounts } from "./__fixtures__/surfaceMount";
 
 /**
  * Pins the private upstream shapes the typed adapters (WP1) reach into against
@@ -32,16 +33,10 @@ const XML = `<?xml version="1.0" encoding="UTF-8"?>
 </bpmn:definitions>`;
 
 let modeler: Modeler | undefined;
-let container: HTMLElement | undefined;
 
 beforeEach(async () => {
-    container = document.createElement("div");
-    container.style.width = "800px";
-    container.style.height = "600px";
-    container.style.position = "absolute";
-    document.body.appendChild(container);
     modeler = new Modeler({
-        container,
+        container: mountCanvas(),
         additionalModules: [bpmnLintingModule as ModuleDeclaration],
     });
     await modeler.importXML(XML);
@@ -49,9 +44,8 @@ beforeEach(async () => {
 
 afterEach(() => {
     modeler?.destroy();
-    container?.remove();
     modeler = undefined;
-    container = undefined;
+    removeMounts();
 });
 
 function task(): unknown {

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createDesigner } from "./createDesigner";
 import type { BpmnDesigner } from "./designer";
+import { mountWithPanel, removeMounts } from "../__fixtures__/surfaceMount";
 
 /**
  * The designer's runtime contract — editable services present, Camunda
@@ -11,27 +12,15 @@ import type { BpmnDesigner } from "./designer";
  */
 
 let designer: BpmnDesigner | undefined;
-const nodes: HTMLElement[] = [];
-
-function mount(): { container: HTMLElement; panel: HTMLElement } {
-    const container = document.createElement("div");
-    const panel = document.createElement("div");
-    container.style.cssText = "position:absolute;width:800px;height:600px";
-    document.body.append(container, panel);
-    nodes.push(container, panel);
-    return { container, panel };
-}
-
 afterEach(() => {
     designer?.destroy();
     designer = undefined;
-    nodes.forEach((node) => node.remove());
-    nodes.length = 0;
+    removeMounts();
 });
 
 describe("createDesigner (runtime contract)", () => {
     it("exposes the editable core services (inverse of the viewer's readonly proof)", async () => {
-        const { container, panel } = mount();
+        const { container, panel } = mountWithPanel();
         designer = await createDesigner(container, { propertiesPanel: { parent: panel } });
         // The panel attaches on import, so give it a diagram to render against.
         await designer.newDiagram();

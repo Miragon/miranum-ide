@@ -5,6 +5,8 @@ import { isUsableViewbox } from "@miragon/bpmn-modeler-types";
 import { createViewer } from "./createViewer";
 import type { BpmnViewer } from "./viewer";
 import type { ViewState } from "../viewState";
+import { FAR_FROM_ORIGIN_XML } from "../__fixtures__/bpmnXml";
+import { mountCanvas, removeMounts, settleObserver } from "../__fixtures__/surfaceMount";
 
 /**
  * The #1490 view-state contract only reproduces against a real bpmn-js canvas
@@ -13,54 +15,13 @@ import type { ViewState } from "../viewState";
  * no ResizeObserver, so this runs in Vitest browser mode (headless Chromium).
  */
 
-const XML = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_1" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1" />
-    <bpmn:task id="Task_1" name="A" />
-    <bpmn:task id="Task_2" name="B" />
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="5000" y="4000" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_1_di" bpmnElement="Task_1">
-        <dc:Bounds x="5100" y="3980" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_2_di" bpmnElement="Task_2">
-        <dc:Bounds x="5300" y="3980" width="100" height="80" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>`;
-
 const SNAPSHOT: ViewState = {
     viewport: { x: 5000, y: 3900, width: 640, height: 480 },
     selectedElementIds: ["Task_1"],
 };
 
-const raf = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-// ResizeObserver deliveries land before paint; a handful of frames guarantees
-// at least one initial delivery (and any follow-up) has been processed.
-async function settleObserver(): Promise<void> {
-    for (let i = 0; i < 6; i++) {
-        await raf();
-    }
-}
-
 let viewer: BpmnViewer | undefined;
 let container: HTMLElement | undefined;
-
-function mount(width: number, height: number): HTMLElement {
-    const el = document.createElement("div");
-    el.style.width = `${width}px`;
-    el.style.height = `${height}px`;
-    el.style.position = "absolute";
-    document.body.appendChild(el);
-    return el;
-}
 
 function expectViewportMatches(actual: { x: number; y: number; width: number; height: number }) {
     expect(actual.x).toBeCloseTo(SNAPSHOT.viewport.x, 0);
@@ -72,15 +33,15 @@ function expectViewportMatches(actual: { x: number; y: number; width: number; he
 afterEach(() => {
     viewer?.destroy();
     viewer = undefined;
-    container?.remove();
     container = undefined;
+    removeMounts();
 });
 
 describe("BpmnViewer view-state restore (real ResizeObserver)", () => {
     it("keeps a restored viewport across the delayed initial fit (#1490)", async () => {
-        container = mount(800, 600);
+        container = mountCanvas(800, 600);
         viewer = await createViewer(container);
-        await viewer.loadDiagram(XML);
+        await viewer.loadDiagram(FAR_FROM_ORIGIN_XML);
 
         viewer.applyViewState(SNAPSHOT);
         await settleObserver();
@@ -90,9 +51,9 @@ describe("BpmnViewer view-state restore (real ResizeObserver)", () => {
     });
 
     it("applies the snapshot viewport once a hidden container is sized", async () => {
-        container = mount(0, 0);
+        container = mountCanvas(0, 0);
         viewer = await createViewer(container);
-        await viewer.loadDiagram(XML);
+        await viewer.loadDiagram(FAR_FROM_ORIGIN_XML);
 
         viewer.applyViewState(SNAPSHOT);
         await settleObserver();
@@ -106,9 +67,9 @@ describe("BpmnViewer view-state restore (real ResizeObserver)", () => {
     });
 
     it("does not re-fit a restored viewport when the container is resized", async () => {
-        container = mount(800, 600);
+        container = mountCanvas(800, 600);
         viewer = await createViewer(container);
-        await viewer.loadDiagram(XML);
+        await viewer.loadDiagram(FAR_FROM_ORIGIN_XML);
 
         viewer.applyViewState(SNAPSHOT);
         await settleObserver();
@@ -129,9 +90,9 @@ describe("BpmnViewer view-state restore (real ResizeObserver)", () => {
     });
 
     it("still fits on a fresh open once the container is sized (regression guard)", async () => {
-        container = mount(0, 0);
+        container = mountCanvas(0, 0);
         viewer = await createViewer(container);
-        await viewer.loadDiagram(XML);
+        await viewer.loadDiagram(FAR_FROM_ORIGIN_XML);
         await settleObserver();
 
         container.style.width = "800px";
@@ -148,9 +109,9 @@ describe("BpmnViewer view-state restore (real ResizeObserver)", () => {
     });
 
     it("clears the selection when the snapshot has none", async () => {
-        container = mount(800, 600);
+        container = mountCanvas(800, 600);
         viewer = await createViewer(container);
-        await viewer.loadDiagram(XML);
+        await viewer.loadDiagram(FAR_FROM_ORIGIN_XML);
 
         viewer.selection.selectElementsByIds(["Task_1", "Task_2"]);
         expect(viewer.selection.getSelectedElementIds()).toHaveLength(2);
