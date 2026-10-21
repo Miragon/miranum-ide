@@ -119,6 +119,21 @@ describe("extractImplementationDetail", () => {
         expect(detail).toEqual({ label: "Task Type", value: "io.camunda:http-json:1" });
     });
 
+    it("does not mistake another long-form task definition field for the task type", () => {
+        const retries = property(
+            { type: "zeebe:taskDefinition", property: "retries" },
+            { type: "Hidden", value: "3" },
+        );
+        const taskType = (value: string) =>
+            property({ type: "zeebe:taskDefinition", property: "type" }, { value });
+
+        expect(extractImplementationDetail([retries, taskType("io.camunda:http-json:1")])).toEqual({
+            label: "Task Type",
+            value: "io.camunda:http-json:1",
+        });
+        expect(extractImplementationDetail([retries, taskType("")])).toBeUndefined();
+    });
+
     it("returns undefined when no property names the implementation", () => {
         const detail = extractImplementationDetail([
             property({ type: "property", name: "camunda:asyncBefore" }, { value: "true" }),
