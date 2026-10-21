@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -28,6 +31,16 @@ vi.mock("@miragon/bpmn-modeler/diff", async (importOriginal) => {
 });
 
 type Reply = { type: string } & Record<string, unknown>;
+
+/** Every command type the webview constructs, so a new one cannot ship without a preview case. */
+function commandTypesPostedBy(...files: string[]): string[] {
+    const types = files.flatMap((file) =>
+        [...readFileSync(resolve(__dirname, file), "utf8").matchAll(/new (\w+Command)\(/g)].map(
+            ([, type]) => type,
+        ),
+    );
+    return [...new Set(types)].sort();
+}
 
 describe("getHostApi", () => {
     afterEach(() => {
@@ -215,5 +228,25 @@ describe("development preview host", () => {
             expect(computeDiff).not.toHaveBeenCalled();
             expect(replies).toEqual([]);
         });
+    });
+
+    it.each(commandTypesPostedBy("bootstrap.ts", "diffMode.ts"))(
+        "accepts a %s from the webview",
+        (type) => {
+            for (const level of ["debug", "info", "warn", "error"] as const) {
+                vi.spyOn(console, level).mockImplementation(() => undefined);
+            }
+            const host = previewHost();
+
+            expect(() => host.postMessage({ type } as Command)).not.toThrow(/Unknown message type/);
+        },
+    );
+
+    it("answers a text clipboard request like the element clipboard", () => {
+        previewHost().postMessage({ type: "GetTextClipboardCommand" } as Command);
+
+        expect(replies).toEqual([
+            expect.objectContaining({ type: "TextClipboardQuery", text: "" }),
+        ]);
     });
 });
