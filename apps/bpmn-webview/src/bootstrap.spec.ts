@@ -3,18 +3,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     BpmnFileQuery,
     BpmnlintInPageQuery,
+    BpmnlintResultsQuery,
     BpmnModelerSettingQuery,
+    CleanupDiagramQuery,
+    ClipboardQuery,
     ElementTemplatesQuery,
     FlushDocumentQuery,
     FocusElementQuery,
+    FormatDiagramQuery,
+    FormReferenceStatusQuery,
+    GetDiagramAsSVGCommand,
     installCanvasAutoFocus,
     LanguageQuery,
+    OpenAllScriptTasksQuery,
     PropertiesPanelStateQuery,
     ReleaseDocumentFlushQuery,
     TakeFocusQuery,
+    TextClipboardQuery,
     UpdateOpenScriptEditorsQuery,
+    UpdateScriptContentQuery,
+    WorkspaceDefinitionsQuery,
 } from "@miragon/bpmn-modeler-shared";
 import { i18n } from "@miragon/bpmn-modeler-i18n";
+import { UnsupportedEngineError } from "@miragon/bpmn-modeler-types";
+import type { ClipboardOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
 
 const mocks = vi.hoisted(() => ({
     createModeler: vi.fn(),
@@ -24,6 +36,8 @@ const mocks = vi.hoisted(() => ({
     reload: vi.fn(),
     flushViewport: vi.fn(),
     persistMode: vi.fn(),
+    persistPanelVisibility: vi.fn(),
+    restorePanelVisibility: vi.fn(),
     savedMode: undefined as string | undefined,
     initResizer: vi.fn(() => ({
         setVisible: vi.fn(),
@@ -94,8 +108,8 @@ vi.mock("./state", () => ({
         markViewportRestored = vi.fn();
         restoreSelection = vi.fn();
         restorePanelUiState = vi.fn();
-        restorePanelVisibility = vi.fn();
-        persistPanelVisibility = vi.fn();
+        restorePanelVisibility = mocks.restorePanelVisibility;
+        persistPanelVisibility = mocks.persistPanelVisibility;
         persistMode = mocks.persistMode;
         startPersisting = vi.fn();
         flushViewport = mocks.flushViewport;
@@ -103,6 +117,7 @@ vi.mock("./state", () => ({
 }));
 
 import { bootstrap } from "./bootstrap";
+import { installHostEditorActions } from "./hostEditorActions";
 import { loadDesignerModule, loadViewerModule } from "./surfaceModules";
 
 function dispatch(data: unknown): void {
@@ -1179,6 +1194,540 @@ describe("bootstrap mode switching", () => {
 
             expect(i18n.setLanguage).toHaveBeenCalledWith("fr");
             expect(sentTypes(host)).not.toContain("LogErrorCommand");
+        });
+    });
+
+    type Posted = { type: string } & Record<string, unknown>;
+
+    const sentOfType = (host: { postMessage: ReturnType<typeof vi.fn> }, type: string): Posted[] =>
+        host.postMessage.mock.calls
+            .map(([message]) => message as Posted)
+            .filter((message) => message.type === type);
+
+    const tagged = (engine: "c7" | "c8" = "c7") =>
+        new BpmnFileQuery("<tagged />", engine, "modeler", 1);
+
+    function modelerWithServices(
+        services: Record<string, unknown>,
+        overrides: Record<string, unknown> = {},
+    ) {
+        const canvas = makeCanvas();
+        return makeModeler({
+            getService: vi.fn((name: string) => services[name] ?? canvas),
+            ...overrides,
+        });
+    }
+
+    describe("production defaults", () => {
+        interface DefaultModelerOptions {
+            capabilities: Required<ModelerCapabilities>;
+            clipboard?: Required<ClipboardOptions>;
+            onLintResults: (event: { results: unknown; unresolved: readonly string[] }) => void;
+            onLintingToggled: (enabled: boolean) => void;
+        }
+
+        beforeEach(() => {
+            vi.stubEnv("NODE_ENV", "production");
+        });
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        // Mirrors main.ts: no capabilities, clipboard or linting options.
+        async function bootLikeMain(file = tagged(), modeler = makeModeler()) {
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeHost(file);
+            bootstrap(host as never);
+            await drainAsyncWork();
+            const options = mocks.createModeler.mock.calls[0][1] as DefaultModelerOptions;
+            return { host, modeler, options, ports: options.capabilities };
+        }
+
+        it("routes navigation, code-link and scripting ports to host commands", async () => {
+            const definitions = {
+                rootElements: [
+                    {
+                        $type: "bpmn:Process",
+                        flowElements: [
+                            { $type: "bpmn:ScriptTask", id: "Task_1", resultVariable: "total" },
+                        ],
+                    },
+                ],
+            };
+            const { host, ports } = await bootLikeMain(
+                tagged(),
+                makeModeler({ getDefinitions: vi.fn(() => definitions) }),
+            );
+
+            ports.modelNavigation.openReference({ id: "Form_1", kind: "form" });
+            ports.codeLink.navigateToImplementation("com.example.Delegate", "javaClass");
+            ports.codeLink.syncActivities([]);
+            ports.scripting.openScriptEditor({
+                elementId: "Task_1",
+                kind: "script-task",
+                listenerIndex: undefined,
+                eventName: undefined,
+                scriptFormat: "javascript",
+                content: "total = 1",
+            });
+            ports.scripting.scriptSourceChanged({
+                elementId: "Task_1",
+                kind: "script-task",
+                listenerIndex: undefined,
+                content: "total = 2",
+            });
+
+            expect(sentOfType(host, "NavigateToReferencedModelCommand")).toEqual([
+                expect.objectContaining({ referenceId: "Form_1", referenceKind: "form" }),
+            ]);
+            expect(sentOfType(host, "NavigateToImplementationCommand")).toEqual([
+                expect.objectContaining({ reference: "com.example.Delegate", kind: "javaClass" }),
+            ]);
+            expect(sentOfType(host, "SyncActivitiesCommand")).toHaveLength(1);
+            const [openEditor] = sentOfType(host, "OpenScriptEditorCommand");
+            expect(openEditor).toMatchObject({ elementId: "Task_1", content: "total = 1" });
+            expect(openEditor.variables).toEqual([expect.objectContaining({ name: "total" })]);
+            expect(sentOfType(host, "UpdateScriptSourceCommand")).toEqual([
+                expect.objectContaining({ elementId: "Task_1", content: "total = 2" }),
+            ]);
+        });
+
+        it("offers form references only once the host reports the form exists", async () => {
+            const { host, ports } = await bootLikeMain(tagged("c8"));
+            const { modelNavigation } = ports;
+            const availabilityChanged = vi.fn();
+            const stopListening =
+                modelNavigation.onReferenceAvailabilityChanged!(availabilityChanged);
+
+            expect(sentOfType(host, "GetFormReferenceStatusCommand")).toHaveLength(1);
+            expect(
+                modelNavigation.isReferenceAvailable!({ id: "Process_1", kind: "process" }),
+            ).toBe(true);
+            expect(modelNavigation.isReferenceAvailable!({ id: "Form_1", kind: "form" })).toBe(
+                false,
+            );
+
+            dispatch(new FormReferenceStatusQuery(["Form_1"]));
+            dispatch(new FormReferenceStatusQuery(["Form_1"]));
+            await drainMicrotasks();
+
+            expect(modelNavigation.isReferenceAvailable!({ id: "Form_1", kind: "form" })).toBe(
+                true,
+            );
+            expect(availabilityChanged).toHaveBeenCalledOnce();
+
+            dispatch(new FormReferenceStatusQuery(["Form_2"]));
+            await drainMicrotasks();
+            expect(availabilityChanged).toHaveBeenCalledTimes(2);
+
+            stopListening();
+            dispatch(new FormReferenceStatusQuery([]));
+            await drainMicrotasks();
+            expect(availabilityChanged).toHaveBeenCalledTimes(2);
+        });
+
+        it("asks for form reference status only for Camunda 8 diagrams", async () => {
+            const { host } = await bootLikeMain(tagged("c7"));
+
+            expect(sentOfType(host, "GetFormReferenceStatusCommand")).toHaveLength(0);
+        });
+
+        it("settles each workspace search with the reply carrying its request id", async () => {
+            const { host, ports } = await bootLikeMain();
+            const orderDefinition = {
+                kind: "message" as const,
+                name: "OrderPlaced",
+                source: { path: "order.bpmn", label: "order.bpmn" },
+                usages: [],
+            };
+
+            const first = ports.definitionSearch.search({ kind: "message", text: "pay" });
+            const second = ports.definitionSearch.search({ kind: "message", text: "order" });
+            const requestIds = sentOfType(host, "SearchWorkspaceDefinitionsCommand").map(
+                (command) => command.requestId,
+            );
+            dispatch(new WorkspaceDefinitionsQuery(99, []));
+            dispatch(new WorkspaceDefinitionsQuery(requestIds[1] as number, [orderDefinition]));
+            dispatch(new WorkspaceDefinitionsQuery(requestIds[0] as number, [], true));
+
+            expect(new Set(requestIds).size).toBe(2);
+            await expect(second).resolves.toEqual([orderDefinition]);
+            await expect(first).rejects.toThrow("The host could not search other models");
+        });
+
+        it("copies and pastes through separate host channels for elements and text", async () => {
+            const { host, options } = await bootLikeMain();
+            const { bridge, text } = options.clipboard!;
+
+            const elementPaste = bridge.requestClipboard();
+            dispatch(new TextClipboardQuery("label text"));
+            dispatch(new ClipboardQuery("<bpmn-elements />"));
+            const textPaste = text.requestClipboard();
+            dispatch(new TextClipboardQuery(undefined as unknown as string));
+            bridge.writeClipboard("<copied />");
+            text.writeClipboard("copied label");
+
+            await expect(elementPaste).resolves.toBe("<bpmn-elements />");
+            await expect(textPaste).resolves.toBe("");
+            expect(sentOfType(host, "GetClipboardCommand")).toHaveLength(1);
+            expect(sentOfType(host, "GetTextClipboardCommand")).toHaveLength(1);
+            expect(sentOfType(host, "SetClipboardCommand")).toEqual([
+                expect.objectContaining({ text: "<copied />" }),
+            ]);
+            expect(sentOfType(host, "SetTextClipboardCommand")).toEqual([
+                expect.objectContaining({ text: "copied label" }),
+            ]);
+        });
+
+        it("keeps the browser clipboard in the development preview", async () => {
+            vi.stubEnv("NODE_ENV", "development");
+
+            const { options } = await bootLikeMain();
+
+            expect(options.clipboard).toBeUndefined();
+        });
+
+        it("pairs every lint run with the config token the host sent last", async () => {
+            const { host, modeler, options } = await bootLikeMain();
+            const config = { extends: ["bpmnlint:recommended"] };
+
+            dispatch(new BpmnlintInPageQuery(config, "tok-7"));
+            await drainMicrotasks();
+            options.onLintResults({ results: {}, unresolved: ["missing-plugin"] });
+            options.onLintingToggled(false);
+
+            expect(modeler.startInPageLinting).toHaveBeenCalledWith(config, "tok-7");
+            expect(sentOfType(host, "UpdateLintResultsCommand")).toEqual([
+                expect.objectContaining({ unresolved: ["missing-plugin"], configToken: "tok-7" }),
+            ]);
+            expect(sentOfType(host, "SetLintingEnabledCommand")).toEqual([
+                expect.objectContaining({ enabled: false }),
+            ]);
+        });
+    });
+
+    describe("host requests", () => {
+        function formattableModeler(overrides: Record<string, unknown> = {}) {
+            const eventBus = { on: vi.fn() };
+            const modeler = modelerWithServices(
+                { eventBus },
+                {
+                    formatDiagram: vi.fn(async () => undefined),
+                    cleanupDiagram: vi.fn(() => ({ status: "clean", items: [] })),
+                    ...overrides,
+                },
+            );
+            return { modeler, eventBus };
+        }
+
+        async function bootWith(surface: unknown, file = tagged()) {
+            if ("setMode" in (surface as object)) {
+                mocks.createModeler.mockResolvedValue(surface);
+            } else {
+                mocks.savedMode = "view";
+                mocks.createViewer.mockResolvedValue(surface);
+            }
+            const host = makeHost(file);
+            boot(host);
+            await drainAsyncWork();
+            host.postMessage.mockClear();
+            return host;
+        }
+
+        it("reports the outcome of every format run on the canvas", async () => {
+            const { modeler, eventBus } = formattableModeler();
+            const host = await bootWith(modeler);
+            const [, announce] = eventBus.on.mock.calls.find(
+                ([event]) => event === "layout.formatted",
+            )!;
+
+            announce({ status: "failed", diagnostics: [], code: "ENGINE_FAILED", message: "x" });
+
+            expect(sentOfType(host, "DiagramFormattedCommand")).toEqual([
+                expect.objectContaining({
+                    status: "failed",
+                    diagnostics: [],
+                    code: "ENGINE_FAILED",
+                    message: "x",
+                }),
+            ]);
+        });
+
+        it("reports a format run that throws", async () => {
+            const { modeler } = formattableModeler({
+                formatDiagram: vi.fn(async () => {
+                    throw new Error("layout engine crashed");
+                }),
+            });
+            const host = await bootWith(modeler);
+
+            dispatch(new FormatDiagramQuery());
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "DiagramFormattedCommand")).toEqual([
+                expect.objectContaining({
+                    status: "failed",
+                    code: "ENGINE_FAILED",
+                    message: "layout engine crashed",
+                }),
+            ]);
+        });
+
+        it("answers format and cleanup on the readonly viewer with a failure", async () => {
+            const host = await bootWith(makeViewer());
+
+            dispatch(new FormatDiagramQuery());
+            dispatch(new CleanupDiagramQuery(false));
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "DiagramFormattedCommand")).toEqual([
+                expect.objectContaining({ status: "failed", code: "UNSUPPORTED_SURFACE" }),
+            ]);
+            expect(sentOfType(host, "CleanupReportCommand")).toEqual([
+                expect.objectContaining({
+                    outcome: {
+                        status: "failed",
+                        items: [],
+                        message: "this surface cannot be cleaned up",
+                    },
+                    applied: false,
+                }),
+            ]);
+        });
+
+        it("always answers a cleanup request, even when the cleanup throws", async () => {
+            const { modeler } = formattableModeler({
+                cleanupDiagram: vi
+                    .fn()
+                    .mockReturnValueOnce({ status: "clean", items: [] })
+                    .mockImplementationOnce(() => {
+                        throw new Error("cleanup crashed");
+                    }),
+            });
+            const host = await bootWith(modeler);
+
+            dispatch(new CleanupDiagramQuery(false));
+            dispatch(new CleanupDiagramQuery(true));
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "CleanupReportCommand")).toEqual([
+                expect.objectContaining({
+                    outcome: { status: "clean", items: [] },
+                    applied: false,
+                }),
+                expect.objectContaining({
+                    outcome: { status: "failed", items: [], message: "cleanup crashed" },
+                    applied: true,
+                }),
+            ]);
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([
+                expect.objectContaining({
+                    message: "Error receiving message: CleanupDiagramQuery — cleanup crashed",
+                }),
+            ]);
+        });
+
+        it("echoes an SVG request with the rendered diagram", async () => {
+            const host = await bootWith(
+                makeModeler({ getDiagramSvg: vi.fn(async () => "<svg />") }),
+            );
+
+            dispatch(new GetDiagramAsSVGCommand());
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "GetDiagramAsSVGCommand")).toEqual([
+                expect.objectContaining({ svg: "<svg />" }),
+            ]);
+        });
+
+        it("hands every inline script task to the host in one reply", async () => {
+            const scripts = [{ elementId: "Task_1", scriptFormat: "javascript", content: "x" }];
+            const host = await bootWith(
+                makeModeler({ collectInlineScriptTasks: vi.fn(() => scripts) }),
+            );
+
+            dispatch(new OpenAllScriptTasksQuery());
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "OpenScriptEditorsCommand")).toEqual([
+                expect.objectContaining({ scripts, variables: [] }),
+            ]);
+        });
+
+        it("logs a script update the modeler rejects", async () => {
+            const host = await bootWith(
+                makeModeler({
+                    updateScriptContent: vi.fn(() => {
+                        throw new Error("element gone");
+                    }),
+                }),
+            );
+
+            dispatch(new UpdateScriptContentQuery("Task_1", "script-task", undefined, "x = 1"));
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([
+                expect.objectContaining({
+                    message: "Error receiving message: UpdateScriptContentQuery — element gone",
+                }),
+            ]);
+        });
+
+        it("applies host lint results to the live surface", async () => {
+            const modeler = makeModeler();
+            await bootWith(modeler);
+            const results = { Task_1: [] };
+
+            dispatch(new BpmnlintResultsQuery(results));
+            await drainMicrotasks();
+
+            expect(modeler.applyLintResults).toHaveBeenCalledWith(results);
+        });
+    });
+
+    describe("session callbacks", () => {
+        it("persists a panel toggle per editor and as the new host default", async () => {
+            mocks.createModeler.mockResolvedValue(makeModeler());
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+            const panel = mocks.initResizer.mock.results[0].value;
+
+            panel.onVisibilityChanged.mock.calls[0][0](false);
+
+            expect(mocks.persistPanelVisibility).toHaveBeenCalledWith(false);
+            expect(sentOfType(host, "SetPropertiesPanelStateCommand")).toEqual([
+                expect.objectContaining({ visible: false }),
+            ]);
+        });
+
+        it("falls back to a visible panel when the host never sends its default", async () => {
+            mocks.createModeler.mockResolvedValue(makeModeler());
+            const host = makeHost(tagged());
+            host.postMessage.mockImplementation((message: { type: string }) => {
+                if (message.type === "GetBpmnFileCommand") dispatch(tagged());
+            });
+            boot(host);
+            await drainMicrotasks();
+            await vi.advanceTimersByTimeAsync(4999);
+            expect(mocks.restorePanelVisibility).not.toHaveBeenCalled();
+
+            await vi.advanceTimersByTimeAsync(1);
+
+            expect(mocks.restorePanelVisibility).toHaveBeenCalledWith(
+                mocks.initResizer.mock.results[0].value,
+                true,
+            );
+        });
+
+        it("lets the host trigger undo on an editable surface only", async () => {
+            const editorActions = { trigger: vi.fn() };
+            const modeler = modelerWithServices({ editorActions });
+            const viewer = makeViewer();
+            mocks.createModeler.mockResolvedValue(modeler);
+            mocks.createViewer.mockResolvedValue(viewer);
+            boot(makeHost(tagged()));
+            await drainAsyncWork();
+            const triggerHostAction = vi.mocked(installHostEditorActions).mock.calls[0][0];
+
+            triggerHostAction("undo");
+            modeButtons()[0].click();
+            await drainAsyncWork();
+            triggerHostAction("redo");
+
+            expect(editorActions.trigger.mock.calls).toEqual([["undo"]]);
+            expect(viewer.getService).not.toHaveBeenCalledWith("editorActions");
+        });
+
+        it.each([
+            [new UnsupportedEngineError("c9"), "Unsupported engine: c9"],
+            [new Error("bpmn-js failed"), "Unable to create modeler surface\nbpmn-js failed"],
+        ])("reports a surface that cannot be created (%s)", async (error, message) => {
+            mocks.createModeler.mockRejectedValue(error);
+            const host = makeHost(tagged());
+
+            boot(host);
+            await drainAsyncWork();
+
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([
+                expect.objectContaining({ message }),
+            ]);
+        });
+
+        it("forwards import warnings to the host log", async () => {
+            mocks.createModeler.mockResolvedValue(
+                makeModeler({
+                    loadDiagram: vi.fn(async () => ({
+                        warnings: [new Error("unknown attribute")],
+                    })),
+                }),
+            );
+            const host = makeHost(tagged());
+
+            boot(host);
+            await drainAsyncWork();
+
+            expect(sentOfType(host, "LogWarningCommand")).toEqual([
+                expect.objectContaining({
+                    message: expect.stringContaining("unknown attribute"),
+                }),
+            ]);
+        });
+
+        it("reports an outbound sync whose export fails", async () => {
+            let commandStackChanged!: () => void;
+            mocks.createModeler.mockResolvedValue(
+                makeModeler({
+                    exportDiagram: vi.fn(async () => {
+                        throw new Error("export broke");
+                    }),
+                    onCommandStackChanged: vi.fn((listener: () => void) => {
+                        commandStackChanged = listener;
+                    }),
+                }),
+            );
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            commandStackChanged();
+            await vi.advanceTimersByTimeAsync(300);
+
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([
+                expect.objectContaining({
+                    message: "Failed to sync diagram changes: export broke",
+                }),
+            ]);
+        });
+
+        it("flushes the pending sync and the viewport when the webview is hidden", async () => {
+            let commandStackChanged!: () => void;
+            mocks.createModeler.mockResolvedValue(
+                makeModeler({
+                    onCommandStackChanged: vi.fn((listener: () => void) => {
+                        commandStackChanged = listener;
+                    }),
+                }),
+            );
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            commandStackChanged();
+            Object.defineProperty(document, "visibilityState", {
+                configurable: true,
+                value: "hidden",
+            });
+            document.dispatchEvent(new Event("visibilitychange"));
+            await drainMicrotasks();
+            Object.defineProperty(document, "visibilityState", {
+                configurable: true,
+                value: "visible",
+            });
+
+            expect(sentOfType(host, "SyncDocumentCommand")).toHaveLength(1);
+            expect(mocks.flushViewport).toHaveBeenCalledOnce();
         });
     });
 });
