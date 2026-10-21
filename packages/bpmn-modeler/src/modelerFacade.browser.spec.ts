@@ -1,0 +1,365 @@
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { InlineScriptingPort } from "@miragon/bpmn-modeler-inline-scripting";
+
+import * as lintModule from "./bpmnlint/index";
+import type { LintConfigService } from "./bpmnlint/LintConfigService";
+import { createModeler } from "./createModeler";
+import type { BpmnModeler } from "./modeler";
+import { FAR_FROM_ORIGIN_XML } from "./__fixtures__/bpmnXml";
+import { mountWithPanel, removeMounts } from "./__fixtures__/surfaceMount";
+
+/**
+ * The modeler-only facade methods the webview bootstrap wires to host commands
+ * (script tab sync, element templates, align-to-origin, Design/Implement). They
+ * resolve stringly-named DI services of the real engine stack, which jsdom
+ * cannot stand up, so they run against a real modeler here.
+ */
+
+const SCRIPT_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:scriptTask id="ScriptTask_1" scriptFormat="groovy">
+      <bpmn:script>x = 1</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:scriptTask id="ScriptTask_External" scriptFormat="groovy" camunda:resource="deployment://script.groovy" />
+    <bpmn:task id="Task_Listeners">
+      <bpmn:extensionElements>
+        <camunda:executionListener class="org.example.Audit" event="start" />
+        <camunda:executionListener event="end">
+          <camunda:script scriptFormat="javascript">done = true</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+    </bpmn:task>
+    <bpmn:userTask id="UserTask_1">
+      <bpmn:extensionElements>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="groovy">priority = 1</camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="ScriptTask_1_di" bpmnElement="ScriptTask_1">
+        <dc:Bounds x="160" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ScriptTask_External_di" bpmnElement="ScriptTask_External">
+        <dc:Bounds x="320" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Listeners_di" bpmnElement="Task_Listeners">
+        <dc:Bounds x="160" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_1_di" bpmnElement="UserTask_1">
+        <dc:Bounds x="320" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+interface FlowElement {
+    id: string;
+    script?: string;
+}
+
+interface ShapeBounds {
+    x: number;
+    y: number;
+}
+
+function scriptOf(modeler: BpmnModeler, elementId: string): string | undefined {
+    const process = modeler.getDefinitions().rootElements[0] as unknown as {
+        flowElements: FlowElement[];
+    };
+    return process.flowElements.find((element) => element.id === elementId)?.script;
+}
+
+function boundsOf(modeler: BpmnModeler, elementId: string): ShapeBounds {
+    return modeler.getService("elementRegistry").get(elementId) as unknown as ShapeBounds;
+}
+
+describe("BpmnModeler inline-script sync (C7 with a scripting port)", () => {
+    const scriptingPort = {
+        openScriptEditor: vi.fn(),
+        scriptSourceChanged: vi.fn(),
+    } satisfies InlineScriptingPort;
+    const onWarning = vi.fn();
+    let modeler: BpmnModeler;
+
+    beforeAll(async () => {
+        const { container, panel } = mountWithPanel();
+        modeler = await createModeler(container, {
+            engine: "c7",
+            propertiesPanel: { parent: panel },
+            capabilities: { scripting: scriptingPort },
+            linting: false,
+            onWarning,
+        });
+    });
+
+    beforeEach(async () => {
+        modeler.applyOpenScriptEditors([]);
+        // A re-import also resets the command stack between tests.
+        await modeler.loadDiagram(SCRIPT_XML);
+        vi.clearAllMocks();
+    });
+
+    afterAll(() => {
+        modeler.destroy();
+        removeMounts();
+    });
+
+    it("collects only inline script tasks for the generate-script-files command", () => {
+        expect(modeler.collectInlineScriptTasks()).toEqual([
+            { elementId: "ScriptTask_1", scriptFormat: "groovy", content: "x = 1" },
+        ]);
+    });
+
+    it("writes script-task content into the live model as one undoable step", async () => {
+        modeler.updateScriptContent("ScriptTask_1", "script-task", undefined, "x = 2");
+
+        expect(scriptOf(modeler, "ScriptTask_1")).toBe("x = 2");
+        expect(await modeler.exportDiagram()).toContain("<bpmn:script>x = 2</bpmn:script>");
+
+        modeler.getService("commandStack").undo();
+        expect(scriptOf(modeler, "ScriptTask_1")).toBe("x = 1");
+    });
+
+    it("writes a script-task format to the plain BPMN attribute", async () => {
+        modeler.updateScriptFormat("ScriptTask_1", "script-task", undefined, "javascript");
+
+        const xml = await modeler.exportDiagram();
+        expect(xml).toMatch(/<bpmn:scriptTask id="ScriptTask_1" scriptFormat="javascript">/);
+        expect(xml).not.toContain("camunda:scriptFormat");
+    });
+
+    it("writes listener scripts into the addressed listener's camunda:script", async () => {
+        modeler.updateScriptContent("Task_Listeners", "execution-listener", 1, "done = false");
+        modeler.updateScriptFormat("Task_Listeners", "execution-listener", 1, "groovy");
+        modeler.updateScriptContent("UserTask_1", "task-listener", 0, "priority = 2");
+
+        const xml = await modeler.exportDiagram();
+        expect(xml).toContain(
+            '<camunda:script scriptFormat="groovy">done = false</camunda:script>',
+        );
+        expect(xml).toContain(
+            '<camunda:script scriptFormat="groovy">priority = 2</camunda:script>',
+        );
+        expect(onWarning).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        {
+            target: "an unknown element",
+            write: (handle: BpmnModeler) =>
+                handle.updateScriptContent("Nope", "script-task", undefined, "x"),
+            warning: "Element not found: Nope",
+        },
+        {
+            target: "a class-based listener",
+            write: (handle: BpmnModeler) =>
+                handle.updateScriptFormat("Task_Listeners", "execution-listener", 0, "groovy"),
+            warning: "camunda:ExecutionListener #0 on Task_Listeners has no inline script",
+        },
+    ])("warns the host log and leaves the model untouched for $target", ({ write, warning }) => {
+        write(modeler);
+
+        expect(onWarning).toHaveBeenCalledExactlyOnceWith(warning);
+        expect(modeler.getService("commandStack").canUndo()).toBe(false);
+    });
+
+    it("reports model-side changes to an open script tab but never echoes the tab's own edits", () => {
+        modeler.applyOpenScriptEditors([
+            {
+                elementId: "ScriptTask_1",
+                kind: "script-task",
+                listenerIndex: undefined,
+                fileName: "ScriptTask_1.groovy",
+            },
+        ]);
+
+        modeler.updateScriptContent("ScriptTask_1", "script-task", undefined, "x = 2");
+        expect(scriptingPort.scriptSourceChanged).not.toHaveBeenCalled();
+
+        modeler.getService("commandStack").undo();
+        expect(scriptingPort.scriptSourceChanged).toHaveBeenCalledExactlyOnceWith({
+            elementId: "ScriptTask_1",
+            kind: "script-task",
+            listenerIndex: undefined,
+            content: "x = 1",
+        });
+    });
+});
+
+describe("BpmnModeler host pushes without the matching capability", () => {
+    afterEach(removeMounts);
+
+    it("ignores script-editor and implementation-status pushes on a C8 modeler", async () => {
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c8",
+            propertiesPanel: { parent: panel },
+            linting: false,
+        });
+
+        expect(() =>
+            modeler.applyOpenScriptEditors([
+                {
+                    elementId: "Task_1",
+                    kind: "script-task",
+                    listenerIndex: undefined,
+                    fileName: "Task_1.js",
+                },
+            ]),
+        ).not.toThrow();
+        expect(() => modeler.applyImplementationStatus({ Task_1: true })).not.toThrow();
+
+        modeler.destroy();
+    });
+});
+
+describe("BpmnModeler element templates", () => {
+    const VALID_TEMPLATE = {
+        name: "Audit task",
+        id: "com.example.audit",
+        appliesTo: ["bpmn:Task"],
+        properties: [],
+    };
+
+    afterEach(removeMounts);
+
+    it("reports invalid initial templates and still applies the valid ones", async () => {
+        const onElementTemplatesErrors = vi.fn();
+        const { container, panel } = mountWithPanel();
+
+        const modeler = await createModeler(container, {
+            engine: "c7",
+            propertiesPanel: { parent: panel },
+            linting: false,
+            elementTemplates: [{ name: "Missing id and appliesTo" }, VALID_TEMPLATE],
+            onElementTemplatesErrors,
+        });
+
+        expect(onElementTemplatesErrors).toHaveBeenCalledOnce();
+        expect(onElementTemplatesErrors.mock.calls[0][0].length).toBeGreaterThan(0);
+        expect(templateIds(modeler)).toEqual(["com.example.audit"]);
+
+        modeler.destroy();
+    });
+
+    it("replaces the template set on a live push", async () => {
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c7",
+            propertiesPanel: { parent: panel },
+            linting: false,
+        });
+
+        modeler.setElementTemplates([VALID_TEMPLATE]);
+
+        expect(templateIds(modeler)).toEqual(["com.example.audit"]);
+        modeler.destroy();
+    });
+
+    function templateIds(modeler: BpmnModeler): string[] {
+        return modeler
+            .getService<{ getAll(): Array<{ id: string }> }>("elementTemplates")
+            .getAll()
+            .map((template) => template.id);
+    }
+});
+
+describe("BpmnModeler align to origin", () => {
+    let modeler: BpmnModeler;
+
+    beforeEach(async () => {
+        const { container, panel } = mountWithPanel();
+        modeler = await createModeler(container, {
+            engine: "c8",
+            propertiesPanel: { parent: panel },
+            linting: false,
+        });
+        await modeler.loadDiagram(FAR_FROM_ORIGIN_XML);
+    });
+
+    afterEach(() => {
+        modeler.destroy();
+        removeMounts();
+    });
+
+    it("leaves the diagram in place while the setting is off", () => {
+        modeler.alignElementsToOrigin();
+
+        expect(boundsOf(modeler, "StartEvent_1")).toMatchObject({ x: 5000, y: 4000 });
+        expect(modeler.getService("commandStack").canUndo()).toBe(false);
+    });
+
+    it("moves the diagram to the origin offset only when asked, never on a plain export", async () => {
+        modeler.setSettings({ alignToOrigin: true });
+
+        await modeler.exportDiagram();
+        expect(boundsOf(modeler, "StartEvent_1").x).toBe(5000);
+
+        modeler.alignElementsToOrigin();
+        expect(boundsOf(modeler, "StartEvent_1").x).toBe(150);
+        expect(boundsOf(modeler, "Task_1").y).toBe(150);
+        expect(modeler.getService("commandStack").canUndo()).toBe(true);
+    });
+});
+
+describe("BpmnModeler design/implement mode", () => {
+    afterEach(removeMounts);
+
+    it("opens in the requested mode and marks container and panel", async () => {
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c8",
+            mode: "design",
+            propertiesPanel: { parent: panel },
+            linting: false,
+        });
+
+        expect(modeler.getMode()).toBe("design");
+        expect(container.dataset.bpmnMode).toBe("design");
+        expect(panel.dataset.bpmnMode).toBe("design");
+        modeler.destroy();
+    });
+
+    it("switches live, notifying once per actual change", async () => {
+        const onModeChanged = vi.fn();
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c8",
+            mode: "design",
+            propertiesPanel: { parent: panel },
+            linting: false,
+            onModeChanged,
+        });
+
+        modeler.setMode("implement");
+        modeler.setMode("implement");
+
+        expect(modeler.getMode()).toBe("implement");
+        expect(onModeChanged).toHaveBeenCalledExactlyOnceWith("implement");
+        expect(container.dataset.bpmnMode).toBe("implement");
+        expect(panel.dataset.bpmnMode).toBe("implement");
+        modeler.destroy();
+    });
+
+    it("re-resolves the in-page lint rules for the new mode", async () => {
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c8",
+            propertiesPanel: { parent: panel },
+            linting: { module: lintModule },
+        });
+        const setLintMode = vi.spyOn(
+            modeler.getService<LintConfigService>("bpmnLintConfig"),
+            "setMode",
+        );
+
+        modeler.setMode("design");
+
+        expect(setLintMode).toHaveBeenCalledExactlyOnceWith("design");
+        modeler.destroy();
+    });
+});
