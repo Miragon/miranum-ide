@@ -32,7 +32,12 @@ import {
 import type { ScriptSourceChangedEvent } from "./scriptSourceWatcher";
 import { InlineScriptingPortForwarder } from "./inlineScriptingPortForwarder";
 import type { InlineScriptingPort } from "./InlineScriptingPort";
-import { collectInlineScriptTasks, findListenerAt } from "./scriptModel";
+import {
+    collectInlineScriptTasks,
+    describeScriptSurface,
+    resolveScriptWriteTarget,
+} from "./scriptModel";
+import type { ScriptField } from "./scriptModel";
 
 export {
     OPEN_SCRIPT_EDITOR_EVENT,
@@ -48,9 +53,10 @@ export {
     ScriptSourceWatcherModule,
     InlineScriptingPortForwarder,
     collectInlineScriptTasks,
-    findListenerAt,
+    describeScriptSurface,
+    resolveScriptWriteTarget,
 };
-export type { OpenScriptEditorEvent, ScriptSourceChangedEvent, InlineScriptingPort };
+export type { OpenScriptEditorEvent, ScriptSourceChangedEvent, InlineScriptingPort, ScriptField };
 export type { ScriptTaskBusinessObject } from "./bpmnTypes";
 
 /**
