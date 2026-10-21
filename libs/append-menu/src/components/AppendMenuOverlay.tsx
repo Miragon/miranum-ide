@@ -150,10 +150,8 @@ export function AppendMenuOverlay({
         searchRef.current?.focus();
     }, []);
 
-    // A signature of the *visible* items in both columns. Changes only when
-    // filtering reshuffles membership (search/category), not when selecting a
-    // template merely toggles palette entries' disabled state — so an
-    // intentional programmatic highlight move survives a template selection.
+    // A signature of the *visible* items in both columns, so the highlight is
+    // re-seeded only when membership changes, not on every re-render.
     const listsSignature = useMemo(
         () =>
             filteredTemplates.map((t) => t.id).join("|") +
@@ -176,6 +174,10 @@ export function AppendMenuOverlay({
      * Selecting a multi-type template always leads to picking the concrete
      * type next, so expand the palette and move the highlight to its first
      * enabled item (icon-only highlight would be unreadable).
+     *
+     * Must stay declared after the re-seed effect: the appliesTo filter hides
+     * palette entries, so a selection also changes `listsSignature`, and this
+     * highlight has to win.
      */
     useEffect(() => {
         if (!selectedTemplate) {
