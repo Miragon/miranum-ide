@@ -2,6 +2,7 @@ import { posix } from "path";
 
 import { DirectoryNotFound, FileNotFound, NoWorkspaceFolderFoundError } from "../domain/errors";
 import { LoggerPort, SettingsPort, WorkspacePort } from "../domain/hostPorts";
+import { findGitRoot } from "./findGitRoot";
 
 /**
  * Implemented by {@link import("../../modeler/bpmn/service/BpmnElementTemplatesService").BpmnElementTemplatesService}
@@ -44,7 +45,7 @@ export class ArtifactService {
             return this.vsWorkspace.getWorkspaceFolderForDocument(documentDir);
         } catch (error) {
             if (error instanceof NoWorkspaceFolderFoundError) {
-                const gitRoot = await this.vsWorkspace.findGitRoot(documentDir);
+                const gitRoot = await findGitRoot(this.vsWorkspace, documentDir);
                 return gitRoot ?? documentDir;
             }
             throw error;

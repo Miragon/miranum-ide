@@ -11,7 +11,6 @@ import { ArtifactService } from "./ArtifactService";
 function createService() {
     const vsWorkspace = {
         getWorkspaceFolderForDocument: vi.fn(),
-        findGitRoot: vi.fn(),
         readDirectory: vi.fn(),
         readFile: vi.fn(),
         createWatcher: vi.fn(),
@@ -77,7 +76,7 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
 
         await expect(service.getWorkspaceRoot("/work/sub")).resolves.toBe("/work");
-        expect(vsWorkspace.findGitRoot).not.toHaveBeenCalled();
+        expect(vsWorkspace.readDirectory).not.toHaveBeenCalled();
     });
 
     it("falls back to the enclosing git repo when no workspace folder is found", async () => {
@@ -85,7 +84,9 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
             throw new NoWorkspaceFolderFoundError();
         });
-        vsWorkspace.findGitRoot.mockResolvedValue("/repo");
+        vsWorkspace.readDirectory.mockImplementation(async (path: string) =>
+            path === "/repo" ? [[".git", "directory"]] : [],
+        );
 
         await expect(service.getWorkspaceRoot("/repo/sub")).resolves.toBe("/repo");
     });
@@ -95,7 +96,7 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
             throw new NoWorkspaceFolderFoundError();
         });
-        vsWorkspace.findGitRoot.mockResolvedValue(undefined);
+        vsWorkspace.readDirectory.mockResolvedValue([]);
 
         await expect(service.getWorkspaceRoot("/some/dir")).resolves.toBe("/some/dir");
     });
@@ -107,7 +108,7 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         });
 
         await expect(service.getWorkspaceRoot("/work/sub")).rejects.toThrow("boom");
-        expect(vsWorkspace.findGitRoot).not.toHaveBeenCalled();
+        expect(vsWorkspace.readDirectory).not.toHaveBeenCalled();
     });
 });
 
