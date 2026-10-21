@@ -232,6 +232,23 @@ describe("BridgedClipboard copy event", () => {
         expect(hostCopyHandler).toHaveBeenCalledTimes(1);
     });
 
+    it("lets a text field copy through after an element copy that fired no copy event", () => {
+        const { eventBus } = instantiate(bridgeSpies("").bridge);
+        // IntelliJ and VS Code for the Web swallow the canvas Cmd+C keydown, so
+        // only the bridge write delivers those elements.
+        eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+        const nameField = document.createElement("input");
+        document.body.appendChild(nameField);
+
+        const fieldCopy = dispatchCopyObservedByHost(nameField);
+        const laterCopy = dispatchCopyObservedByHost();
+
+        expect(fieldCopy.event.defaultPrevented).toBe(false);
+        expect(fieldCopy.event.clipboardData.getData("text/plain")).toBe("");
+        expect(fieldCopy.hostCopyHandler).toHaveBeenCalledTimes(1);
+        expect(laterCopy.event.defaultPrevented).toBe(false);
+    });
+
     it("marks the copy handled even when bpmn-js passed no hints", () => {
         const { eventBus } = instantiate(bridgeSpies("").bridge);
         const context: { tree: unknown; hints?: { clip?: boolean } } = { tree: TREE };
