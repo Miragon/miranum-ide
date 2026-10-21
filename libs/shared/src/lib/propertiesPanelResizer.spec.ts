@@ -231,6 +231,16 @@ describe("initResizer", () => {
             expect(visibilityChanges).toEqual([]);
         });
 
+        it("holds a quickly narrowed panel at the minimum width", () => {
+            const { resizer, panel, handle } = setUp({ width: 300 });
+
+            pressAt(resizer, 500);
+            moveTo(650);
+
+            expect(panel.style.width).toBe("200px");
+            expect(handle.isVisible()).toBe(true);
+        });
+
         it("collapses once the drag carries the intended width down to zero", () => {
             const { resizer, panel, handle, visibilityChanges } = setUp({ width: 300 });
 
