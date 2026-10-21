@@ -25,7 +25,6 @@ export class ScriptTaskContextPadProvider {
      * @param contextPad The bpmn-js context pad service. The provider must
      *   register itself here, otherwise {@link getContextPadEntries} is
      *   never called even though the class is instantiated via `__init__`.
-     * @param opener The shared script-editor opener.
      */
     constructor(
         contextPad: ContextPad,
