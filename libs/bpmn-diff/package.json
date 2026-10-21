@@ -5,7 +5,7 @@
     "private": true,
     "scripts": {
         "build": "tsc --noEmit",
-        "test": "vitest run"
+        "test": "vitest run --coverage"
     },
     "dependencies": {
         "bpmn-js-differ": "3.2.0",
@@ -15,6 +15,7 @@
     },
     "devDependencies": {
         "@typescript/native": "npm:typescript@7.0.2",
+        "@vitest/coverage-v8": "5.0.5",
         "typescript": "npm:@typescript/typescript6@6.0.2",
         "vite": "8.3.4",
         "vitest": "5.0.5"

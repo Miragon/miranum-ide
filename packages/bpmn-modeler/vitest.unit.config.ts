@@ -8,10 +8,11 @@ export default defineConfig({
     // `jsx-dev-runtime`, so force the production runtime (mirrors
     // libs/properties-panel/vitest.config.ts).
     oxc: { jsx: { development: false } },
+    resolve: { alias: bpmnModelerTestAliases },
     test: {
         name: "bpmn-modeler",
         environment: "jsdom",
-        include: ["src/**/*.{spec,test}.ts"],
+        include: ["src/**/*.{spec,test}.{ts,tsx}"],
         // The browser project owns the real-ResizeObserver specs; jsdom ships no
         // ResizeObserver, so keep them out of this project.
         exclude: ["src/**/*.browser.spec.ts", "node_modules/**", "dist/**"],
@@ -19,6 +20,5 @@ export default defineConfig({
         // default externalisation mishandles; inline it so the in-page linter
         // specs import it the same way the bundle does (mirrors modeler-core).
         server: { deps: { inline: [/@miragon\/bpmnlint-plugin-rules/] } },
-        alias: bpmnModelerTestAliases,
     },
 });

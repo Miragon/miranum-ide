@@ -1,0 +1,31 @@
+name: Set up focused workspaces
+description: Enable corepack, set up Node with the Yarn cache and install only the given workspaces.
+
+inputs:
+  focus:
+    description: Space-separated workspace names passed to `yarn workspaces focus`.
+    required: true
+  native-build-deps:
+    description: Install the Linux headers Theia's native modules compile against.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: corepack enable
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '22'
+        cache: yarn
+    - if: inputs.native-build-deps == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev libxkbfile-dev libsecret-1-dev
+    - shell: bash
+      env:
+        FOCUS: ${{ inputs.focus }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: yarn workspaces focus $FOCUS

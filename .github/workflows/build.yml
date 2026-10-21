@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   pull_request:
     types: [ opened, reopened, synchronize ]
+  # Runs every Vitest target with coverage, e.g. to refresh Codecov's carried-forward flags.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,97 +19,31 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      shared: ${{ steps.filter.outputs.shared }}
-      bpmn-i18n-extras: ${{ steps.filter.outputs.bpmn-i18n-extras }}
-      element-template-chooser: ${{ steps.filter.outputs.element-template-chooser }}
-      append-menu: ${{ steps.filter.outputs.append-menu }}
-      bpmn-clipboard: ${{ steps.filter.outputs.bpmn-clipboard }}
-      model-navigation: ${{ steps.filter.outputs.model-navigation }}
-      modeler-core: ${{ steps.filter.outputs.modeler-core }}
-      modeler-bridge: ${{ steps.filter.outputs.modeler-bridge }}
-      vscode-plugin: ${{ steps.filter.outputs.vscode-plugin }}
       intellij-plugin: ${{ steps.filter.outputs.intellij-plugin }}
-      bpmn-modeler: ${{ steps.filter.outputs.bpmn-modeler }}
-      dmn-modeler: ${{ steps.filter.outputs.dmn-modeler }}
-      dep-alignment: ${{ steps.filter.outputs.dep-alignment }}
-      bpmn-webview: ${{ steps.filter.outputs.bpmn-webview }}
-      dmn-webview: ${{ steps.filter.outputs.dmn-webview }}
-      form-webview: ${{ steps.filter.outputs.form-webview }}
-      deployment-webview: ${{ steps.filter.outputs.deployment-webview }}
-      standalone-extension: ${{ steps.filter.outputs.standalone-extension }}
-      docs: ${{ steps.filter.outputs.docs }}
-      vscode-plugin-src: ${{ steps.filter.outputs.vscode-plugin-src }}
       intellij-plugin-src: ${{ steps.filter.outputs.intellij-plugin-src }}
-      modeler-core-src: ${{ steps.filter.outputs.modeler-core-src }}
-      modeler-bridge-src: ${{ steps.filter.outputs.modeler-bridge-src }}
-      bpmn-modeler-src: ${{ steps.filter.outputs.bpmn-modeler-src }}
-      dmn-modeler-src: ${{ steps.filter.outputs.dmn-modeler-src }}
-      bpmn-webview-src: ${{ steps.filter.outputs.bpmn-webview-src }}
-      dmn-webview-src: ${{ steps.filter.outputs.dmn-webview-src }}
-      form-webview-src: ${{ steps.filter.outputs.form-webview-src }}
-      bpmn-i18n-extras-src: ${{ steps.filter.outputs.bpmn-i18n-extras-src }}
+      standalone: ${{ steps.filter.outputs.standalone }}
+      dep-alignment: ${{ steps.filter.outputs.dep-alignment }}
+      docs: ${{ steps.filter.outputs.docs }}
+      affected-targets: ${{ steps.targets.outputs.changes }}
+      test-matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
-            shared:
-              - 'libs/shared/**'
-              - 'libs/modeler-types/**'
-            # Covers the overlay and its pin of the shared @miragon/bpmn-modeler-i18n
-            # npm package (this package.json). A lib bump lands as a version change
-            # here, re-running the i18n coverage/overlay tests and every bundler that
-            # ships it — so a key we depend on that upstream drops or renames turns
-            # CI red instead of silently falling back to English.
-            bpmn-i18n-extras:
-              - 'libs/bpmn-i18n-extras/**'
-            element-template-chooser:
-              - 'libs/element-template-chooser/**'
-            append-menu:
-              - 'libs/append-menu/**'
-            bpmn-clipboard:
-              - 'libs/bpmn-clipboard/**'
-            model-navigation:
-              - 'libs/model-navigation/**'
-            modeler-core:
-              - 'libs/modeler-core/**'
-            modeler-bridge:
-              - 'apps/modeler-bridge/**'
-            vscode-plugin:
-              - 'apps/vscode-plugin/**'
             intellij-plugin:
               - 'apps/intellij-plugin/**'
-            bpmn-modeler:
-              - 'packages/bpmn-modeler/**'
-              # The large-model counter spec imports its generator from here.
-              - 'scripts/perf/**'
-              # The package inlines these private libraries from source; changes
-              # to any of them must re-run its build and packed-consumer gates.
-              - 'libs/modeler-types/**'
-              - 'libs/bpmn-diff/**'
-              - 'libs/bpmn-clipboard/**'
-              - 'libs/bpmn-i18n-extras/**'
-              - 'libs/element-template-chooser/**'
-              - 'libs/append-menu/**'
-              - 'libs/properties-panel/**'
-              - 'libs/model-navigation/**'
-              - 'libs/code-link/**'
-              - 'libs/definition-search/**'
-              - 'libs/inline-scripting/**'
-              - 'libs/flow-navigation/**'
-              - 'libs/bpmn-layout/**'
+            intellij-plugin-src:
+              - 'apps/intellij-plugin/src/**'
+            standalone:
+              - 'apps/standalone/**'
+              - 'libs/standalone-extension/**'
               - 'package.json'
               - 'yarn.lock'
-              - '.yarnrc.yml'
-              - 'tsconfig.base.json'
-            dmn-modeler:
-              - 'packages/dmn-modeler/**'
             # Version-skew guard runs on any manifest or lockfile change that
             # could drift a shared dependency between the published packages and
-            # their in-repo consumers. Kept separate from the package filters so
-            # the lockfile is NOT in them (it would rebuild the packages on
-            # every unrelated dependency change).
+            # their in-repo consumers.
             dep-alignment:
               - 'packages/bpmn-modeler/package.json'
               - 'packages/dmn-modeler/package.json'
@@ -116,44 +52,43 @@ jobs:
               - 'package.json'
               - 'yarn.config.cjs'
               - 'yarn.lock'
-            bpmn-webview:
-              - 'apps/bpmn-webview/**'
-            dmn-webview:
-              - 'apps/dmn-webview/**'
-            form-webview:
-              - 'apps/form-webview/**'
-            deployment-webview:
-              - 'apps/deployment-webview/**'
-            standalone-extension:
-              - 'apps/standalone/**'
-              - 'libs/standalone-extension/**'
-              - 'package.json'
-              - 'yarn.lock'
             docs:
               - 'docs/**'
-            # `*-src` gate the coverage reports on code changes only, so the
-            # release-please PR (CHANGELOG.md, package.json, gradle.properties)
-            # gets none while build+test still run via the broad filters above.
-            vscode-plugin-src:
-              - 'apps/vscode-plugin/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            intellij-plugin-src:
-              - 'apps/intellij-plugin/src/**'
-            modeler-core-src:
-              - 'libs/modeler-core/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            modeler-bridge-src:
-              - 'apps/modeler-bridge/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            bpmn-modeler-src:
-              - 'packages/bpmn-modeler/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            dmn-modeler-src:
-              - 'packages/dmn-modeler/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            bpmn-webview-src:
-              - 'apps/bpmn-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            dmn-webview-src:
-              - 'apps/dmn-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            form-webview-src:
-              - 'apps/form-webview/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
-            bpmn-i18n-extras-src:
-              - 'libs/bpmn-i18n-extras/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
+      # Each Vitest target in .github/vitest-targets.json becomes two filters:
+      # `<id>` (its trigger paths plus the shared `global` ones) runs the target,
+      # `<id>-src` (its own code files) additionally reports coverage, so the
+      # release-please PR (CHANGELOG.md, package.json, gradle.properties) gets none.
+      - id: target-filters
+        run: |
+          set -euo pipefail
+          filters=$(jq -c '.global as $global | .targets | to_entries
+            | map({(.key): (.value.paths + $global),
+                   (.key + "-src"): [.value.dir + "/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"]})
+            | add' .github/vitest-targets.json)
+          echo "filters=$filters" >> "$GITHUB_OUTPUT"
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: targets
+        with:
+          filters: ${{ steps.target-filters.outputs.filters }}
+      - id: matrix
+        env:
+          CHANGES: ${{ steps.targets.outputs.changes }}
+          RUN_ALL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          matrix=$(jq -c --argjson changes "$CHANGES" --arg runAll "$RUN_ALL" '
+            def changed($name): $runAll == "true" or ($changes | index($name)) != null;
+            [.targets | to_entries[] | select(changed(.key)) | {
+              id: .key,
+              dir: .value.dir,
+              package: .value.package,
+              focus: ([.value.package] + (.value.focus // []) | join(" ")),
+              typecheck: (.value.typecheck // ""),
+              browser: (.value.browser // false),
+              nativeBuildDeps: (.value.nativeBuildDeps // false),
+              report: changed(.key + "-src")
+            }]' .github/vitest-targets.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   lint:
     runs-on: ubuntu-latest
@@ -177,6 +112,8 @@ jobs:
       - run: yarn format:check
       - name: Unused files/deps/exports (knip)
         run: yarn knip
+      - name: Every Vitest workspace is a CI test target
+        run: node .github/scripts/check-vitest-targets.mjs
 
   audit:
     runs-on: ubuntu-latest
@@ -208,263 +145,76 @@ jobs:
         env:
           YARN_HTTP_TIMEOUT: "300000"
 
-  test-standalone-extension:
+  test:
+    name: test (${{ matrix.id }})
     needs: detect-changes
-    if: needs.detect-changes.outputs.standalone-extension == 'true'
+    if: needs.detect-changes.outputs.test-matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.test-matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-workspaces
+        with:
+          focus: ${{ matrix.focus }}
+          native-build-deps: ${{ matrix.nativeBuildDeps }}
+      - name: Install Playwright Chromium (browser-mode tests)
+        if: matrix.browser
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: yarn workspace "$PACKAGE" exec playwright install chromium --with-deps
+      - name: Test with coverage
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: yarn workspace "$PACKAGE" test
+      - name: Typecheck
+        if: matrix.typecheck != ''
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SCRIPT: ${{ matrix.typecheck }}
+        run: yarn workspace "$PACKAGE" run "$SCRIPT"
+      - name: Report coverage on the PR
+        if: always() && github.event_name == 'pull_request' && matrix.report
+        continue-on-error: true
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
+        with:
+          working-directory: ${{ matrix.dir }}
+          json-summary-path: ${{ github.workspace }}/coverage/${{ matrix.dir }}/coverage-summary.json
+          json-final-path: ${{ github.workspace }}/coverage/${{ matrix.dir }}/coverage-final.json
+          name: ${{ matrix.id }}
+      - name: Upload coverage to Codecov
+        if: matrix.report
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/${{ matrix.dir }}/lcov.info
+          disable_search: true
+          fail_ci_if_error: false
+          flags: ${{ matrix.id }}
+          name: ${{ matrix.id }}
+          verbose: true
+
+  test-standalone:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspaces
         with:
-          node-version: '22'
-          cache: yarn
-      - name: Install Linux build deps for Theia native modules
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libx11-dev libxkbfile-dev libsecret-1-dev
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler-standalone @miragon/bpmn-modeler-standalone-extension
-      - run: yarn workspace @miragon/bpmn-modeler-standalone-extension test
+          focus: "bpmn-modeler @miragon/bpmn-modeler-standalone @miragon/bpmn-modeler-standalone-extension"
+          native-build-deps: 'true'
       - run: yarn workspace @miragon/bpmn-modeler-standalone test:runtime
       - run: yarn workspace @miragon/bpmn-modeler-standalone test:security
       - run: yarn workspace @miragon/bpmn-modeler-standalone build
       - name: Verify secondary-window bundle
         run: test -f apps/standalone/lib/frontend/secondary-window.html
-
-  build-shared:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - run: yarn workspaces focus @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types
-      - run: yarn workspace @miragon/bpmn-modeler-types build
-      - run: yarn workspace @miragon/bpmn-modeler-shared build
-
-  build-bpmn-i18n-extras:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - run: yarn workspaces focus @miragon/bpmn-modeler-i18n-extras
-      - run: yarn workspace @miragon/bpmn-modeler-i18n-extras build
-
-  build-element-template-chooser:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.element-template-chooser == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - run: yarn workspaces focus @miragon/bpmn-modeler-element-template-chooser
-      - run: yarn workspace @miragon/bpmn-modeler-element-template-chooser build
-
-  build-append-menu:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.append-menu == 'true' ||
-      needs.detect-changes.outputs.element-template-chooser == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - run: yarn workspaces focus @miragon/bpmn-modeler-append-menu
-      - run: yarn workspace @miragon/bpmn-modeler-append-menu build
-
-  build-bpmn-clipboard:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.bpmn-clipboard == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - run: yarn workspaces focus @miragon/bpmn-modeler-clipboard
-      - run: yarn workspace @miragon/bpmn-modeler-clipboard build
-
-  build-vscode-plugin:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.vscode-plugin == 'true' ||
-      needs.detect-changes.outputs.modeler-core == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install Linux build deps for Theia native modules
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libx11-dev libxkbfile-dev libsecret-1-dev
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus vs-code-bpmn-modeler @miragon/bpmn-modeler-core @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: yarn workspace vs-code-bpmn-modeler build
-
-  test-vscode-plugin:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.vscode-plugin == 'true' ||
-      needs.detect-changes.outputs.modeler-core == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install Linux build deps for Theia native modules
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libx11-dev libxkbfile-dev libsecret-1-dev
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler vs-code-bpmn-modeler @miragon/bpmn-modeler-core @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: yarn workspace vs-code-bpmn-modeler test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.vscode-plugin-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: apps/vscode-plugin
-          json-summary-path: ../../coverage/apps/vscode-plugin/coverage-summary.json
-          json-final-path: ../../coverage/apps/vscode-plugin/coverage-final.json
-          name: vscode-plugin
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.vscode-plugin-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/apps/vscode-plugin"
-          fail_ci_if_error: false
-          flags: vscode-plugin
-          name: vscode-plugin
-          verbose: true
-
-  test-modeler-core:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.modeler-core == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler-core @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: yarn workspace @miragon/bpmn-modeler-core test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.modeler-core-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: libs/modeler-core
-          json-summary-path: ../../coverage/libs/modeler-core/coverage-summary.json
-          json-final-path: ../../coverage/libs/modeler-core/coverage-final.json
-          name: modeler-core
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.modeler-core-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/libs/modeler-core"
-          fail_ci_if_error: false
-          flags: modeler-core
-          name: modeler-core
-          verbose: true
-
-  test-modeler-bridge:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.modeler-bridge == 'true' ||
-      needs.detect-changes.outputs.modeler-core == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler-bridge @miragon/bpmn-modeler-core @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: yarn workspace @miragon/bpmn-modeler-bridge test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.modeler-bridge-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: apps/modeler-bridge
-          json-summary-path: ../../coverage/apps/modeler-bridge/coverage-summary.json
-          json-final-path: ../../coverage/apps/modeler-bridge/coverage-final.json
-          name: modeler-bridge
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.modeler-bridge-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/apps/modeler-bridge"
-          fail_ci_if_error: false
-          flags: modeler-bridge
-          name: modeler-bridge
-          verbose: true
 
   test-intellij-plugin:
     needs: detect-changes
@@ -499,16 +249,16 @@ jobs:
   e2e-vscode-plugin:
     needs: detect-changes
     if: >-
-      needs.detect-changes.outputs.vscode-plugin == 'true' ||
-      needs.detect-changes.outputs.modeler-core == 'true' ||
-      needs.detect-changes.outputs.bpmn-modeler == 'true' ||
-      needs.detect-changes.outputs.dmn-modeler == 'true' ||
-      needs.detect-changes.outputs.bpmn-webview == 'true' ||
-      needs.detect-changes.outputs.dmn-webview == 'true' ||
-      needs.detect-changes.outputs.form-webview == 'true' ||
-      needs.detect-changes.outputs.deployment-webview == 'true' ||
-      needs.detect-changes.outputs.model-navigation == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'vscode-plugin') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'modeler-core') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'shared') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'model-navigation') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'bpmn-modeler') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'dmn-modeler') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'bpmn-webview') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'dmn-webview') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'form-webview') ||
+      contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'deployment-webview')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -555,271 +305,27 @@ jobs:
       - name: Run Extension-Host smoke test
         run: xvfb-run -a corepack yarn workspace vs-code-bpmn-modeler test:e2e
 
-  test-bpmn-webview:
+  build-vscode-plugin:
     needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.bpmn-webview == 'true' ||
-      needs.detect-changes.outputs.bpmn-modeler == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true' ||
-      needs.detect-changes.outputs.append-menu == 'true' ||
-      needs.detect-changes.outputs.element-template-chooser == 'true' ||
-      needs.detect-changes.outputs.bpmn-clipboard == 'true' ||
-      needs.detect-changes.outputs.model-navigation == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler @miragon/bpmn-modeler-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras @miragon/bpmn-modeler-append-menu @miragon/bpmn-modeler-element-template-chooser @miragon/bpmn-modeler-clipboard
-      - run: yarn workspace @miragon/bpmn-modeler-webview test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.bpmn-webview-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: apps/bpmn-webview
-          json-summary-path: ../../coverage/apps/bpmn-webview/coverage-summary.json
-          json-final-path: ../../coverage/apps/bpmn-webview/coverage-final.json
-          name: bpmn-webview
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.bpmn-webview-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/apps/bpmn-webview"
-          fail_ci_if_error: false
-          flags: bpmn-webview
-          name: bpmn-webview
-          verbose: true
-
-  test-dmn-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.dmn-webview == 'true' ||
-      needs.detect-changes.outputs.dmn-modeler == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/dmn-modeler-webview @miragon/dmn-modeler @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras
-      - run: yarn workspace @miragon/dmn-modeler-webview test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.dmn-webview-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: apps/dmn-webview
-          json-summary-path: ../../coverage/apps/dmn-webview/coverage-summary.json
-          json-final-path: ../../coverage/apps/dmn-webview/coverage-final.json
-          name: dmn-webview
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.dmn-webview-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/apps/dmn-webview"
-          fail_ci_if_error: false
-          flags: dmn-webview
-          name: dmn-webview
-          verbose: true
-
-  test-form-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.form-webview == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/form-modeler-webview @miragon/bpmn-modeler-shared
-      - run: yarn workspace @miragon/form-modeler-webview test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.form-webview-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: apps/form-webview
-          json-summary-path: ../../coverage/apps/form-webview/coverage-summary.json
-          json-final-path: ../../coverage/apps/form-webview/coverage-final.json
-          name: form-webview
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.form-webview-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/apps/form-webview"
-          fail_ci_if_error: false
-          flags: form-webview
-          name: form-webview
-          verbose: true
-
-  test-model-navigation:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.model-navigation == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'vscode-plugin')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspaces
         with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/bpmn-model-navigation @miragon/bpmn-modeler-shared
-      - run: yarn workspace @miragon/bpmn-model-navigation test
-      - run: yarn workspace @miragon/bpmn-model-navigation build
-
-  test-bpmn-i18n-extras:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus bpmn-modeler @miragon/bpmn-modeler-i18n-extras
-      - run: yarn workspace @miragon/bpmn-modeler-i18n-extras test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.bpmn-i18n-extras-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: libs/bpmn-i18n-extras
-          json-summary-path: ../../coverage/libs/bpmn-i18n-extras/coverage-summary.json
-          json-final-path: ../../coverage/libs/bpmn-i18n-extras/coverage-final.json
-          name: bpmn-i18n-extras
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.bpmn-i18n-extras-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/libs/bpmn-i18n-extras"
-          fail_ci_if_error: false
-          flags: bpmn-i18n-extras
-          name: bpmn-i18n-extras
-          verbose: true
-
-  build-bpmn-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.bpmn-webview == 'true' ||
-      needs.detect-changes.outputs.bpmn-modeler == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true' ||
-      needs.detect-changes.outputs.append-menu == 'true' ||
-      needs.detect-changes.outputs.element-template-chooser == 'true' ||
-      needs.detect-changes.outputs.bpmn-clipboard == 'true' ||
-      needs.detect-changes.outputs.model-navigation == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/bpmn-modeler @miragon/bpmn-modeler-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras @miragon/bpmn-modeler-append-menu @miragon/bpmn-modeler-element-template-chooser @miragon/bpmn-modeler-clipboard
-      - run: yarn workspace @miragon/bpmn-modeler-webview build
-
-  test-bpmn-modeler:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.bpmn-modeler == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/bpmn-modeler
-      - name: Install Playwright Chromium (browser-mode tests)
-        run: yarn workspace @miragon/bpmn-modeler exec playwright install chromium --with-deps
-      - run: yarn workspace @miragon/bpmn-modeler test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.bpmn-modeler-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: packages/bpmn-modeler
-          json-summary-path: ../../coverage/packages/bpmn-modeler/coverage-summary.json
-          json-final-path: ../../coverage/packages/bpmn-modeler/coverage-final.json
-          name: bpmn-modeler
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.bpmn-modeler-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/packages/bpmn-modeler"
-          fail_ci_if_error: false
-          flags: bpmn-modeler
-          name: bpmn-modeler
-          verbose: true
+          focus: "vs-code-bpmn-modeler @miragon/bpmn-modeler-core @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras"
+          native-build-deps: 'true'
+      - run: yarn workspace vs-code-bpmn-modeler build
 
   build-bpmn-modeler:
     needs: detect-changes
-    if: needs.detect-changes.outputs.bpmn-modeler == 'true'
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'bpmn-modeler')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspaces
         with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/bpmn-modeler
+          focus: "@miragon/bpmn-modeler"
       # Full package build: tsc typecheck + Vite lib + theme CSS + the
       # check-dts gate (no private protocol symbols in the published d.ts).
       - run: yarn workspace @miragon/bpmn-modeler build
@@ -846,58 +352,15 @@ jobs:
       - name: Test hoisted and nested packed consumers
         run: node packages/bpmn-modeler/scripts/smoke-packed-consumer.mjs "$RUNNER_TEMP/miragon-bpmn-modeler.tgz"
 
-  test-dmn-modeler:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.dmn-modeler == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/dmn-modeler
-      - run: yarn workspace @miragon/dmn-modeler test
-      - name: Report coverage on the PR
-        if: >-
-          always() && github.event_name == 'pull_request' &&
-          needs.detect-changes.outputs.dmn-modeler-src == 'true'
-        continue-on-error: true
-        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
-        with:
-          working-directory: packages/dmn-modeler
-          json-summary-path: ../../coverage/packages/dmn-modeler/coverage-summary.json
-          json-final-path: ../../coverage/packages/dmn-modeler/coverage-final.json
-          name: dmn-modeler
-      - name: Upload coverage to Codecov
-        if: needs.detect-changes.outputs.dmn-modeler-src == 'true'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: "./coverage/packages/dmn-modeler"
-          fail_ci_if_error: false
-          flags: dmn-modeler
-          name: dmn-modeler
-          verbose: true
-
   build-dmn-modeler:
     needs: detect-changes
-    if: needs.detect-changes.outputs.dmn-modeler == 'true'
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'dmn-modeler')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspaces
         with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/dmn-modeler
+          focus: "@miragon/dmn-modeler"
       # Full package build: tsc typecheck + public-api typecheck + Vite lib +
       # theme CSS + check-dts + check-externals gates.
       - run: yarn workspace @miragon/dmn-modeler build
@@ -908,6 +371,50 @@ jobs:
           test -f packages/dmn-modeler/dist/dmn-modeler.css
           test -f packages/dmn-modeler/dist/lightTheme.css
           test -f packages/dmn-modeler/dist/darkTheme.css
+
+  build-bpmn-webview:
+    needs: detect-changes
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'bpmn-webview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-workspaces
+        with:
+          focus: "@miragon/bpmn-modeler @miragon/bpmn-modeler-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras @miragon/bpmn-modeler-append-menu @miragon/bpmn-modeler-element-template-chooser @miragon/bpmn-modeler-clipboard"
+      - run: yarn workspace @miragon/bpmn-modeler-webview build
+
+  build-dmn-webview:
+    needs: detect-changes
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'dmn-webview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-workspaces
+        with:
+          focus: "@miragon/dmn-modeler-webview @miragon/dmn-modeler @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras"
+      - run: yarn workspace @miragon/dmn-modeler-webview build
+
+  build-form-webview:
+    needs: detect-changes
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'form-webview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-workspaces
+        with:
+          focus: "@miragon/form-modeler-webview @miragon/bpmn-modeler-shared"
+      - run: yarn workspace @miragon/form-modeler-webview build
+
+  build-deployment-webview:
+    needs: detect-changes
+    if: contains(fromJSON(needs.detect-changes.outputs.affected-targets), 'deployment-webview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-workspaces
+        with:
+          focus: "@miragon/bpmn-modeler-deployment-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types"
+      - run: yarn workspace @miragon/bpmn-modeler-deployment-webview build
 
   check-dep-alignment:
     needs: detect-changes
@@ -922,59 +429,6 @@ jobs:
       # Constraints and dedupe read manifests + yarn.lock only — no yarn install needed.
       - run: yarn constraints
       - run: yarn dedupe --check
-
-  build-dmn-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.dmn-webview == 'true' ||
-      needs.detect-changes.outputs.dmn-modeler == 'true' ||
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.bpmn-i18n-extras == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/dmn-modeler-webview @miragon/dmn-modeler @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types @miragon/bpmn-modeler-i18n-extras
-      - run: yarn workspace @miragon/dmn-modeler-webview build
-
-  build-form-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.form-webview == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/form-modeler-webview @miragon/bpmn-modeler-shared
-      - run: yarn workspace @miragon/form-modeler-webview build
-
-  build-deployment-webview:
-    needs: detect-changes
-    if: >-
-      needs.detect-changes.outputs.deployment-webview == 'true' ||
-      needs.detect-changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: yarn
-      - name: Install dependencies (focused)
-        run: yarn workspaces focus @miragon/bpmn-modeler-deployment-webview @miragon/bpmn-modeler-shared @miragon/bpmn-modeler-types
-      - run: yarn workspace @miragon/bpmn-modeler-deployment-webview build
 
   verify-docs:
     needs: detect-changes
@@ -995,41 +449,29 @@ jobs:
   ci:
     if: always()
     needs:
+      - detect-changes
       - lint
       - audit
-      - build-shared
-      - build-bpmn-i18n-extras
-      - build-element-template-chooser
-      - build-append-menu
-      - build-bpmn-clipboard
-      - build-vscode-plugin
-      - test-vscode-plugin
-      - test-modeler-core
-      - test-modeler-bridge
+      - test
+      - test-standalone
       - test-intellij-plugin
       - e2e-vscode-plugin
-      - test-bpmn-webview
-      - test-dmn-webview
-      - test-form-webview
-      - test-model-navigation
-      - test-bpmn-i18n-extras
-      - test-standalone-extension
-      - test-bpmn-modeler
+      - build-vscode-plugin
       - build-bpmn-modeler
-      - test-dmn-modeler
       - build-dmn-modeler
-      - check-dep-alignment
       - build-bpmn-webview
       - build-dmn-webview
       - build-form-webview
       - build-deployment-webview
+      - check-dep-alignment
       - verify-docs
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed or were skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          results='${{ toJSON(needs) }}'
-          echo "$results" | jq -e '
+          echo "$NEEDS" | jq -e '
             to_entries | all(
               .value.result == "success" or .value.result == "skipped"
             )

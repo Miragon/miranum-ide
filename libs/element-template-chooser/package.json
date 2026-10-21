@@ -5,7 +5,7 @@
     "private": true,
     "scripts": {
         "build": "tsc --noEmit",
-        "test": "vitest run"
+        "test": "vitest run --coverage"
     },
     "dependencies": {
         "minisearch": "7.2.0",
@@ -16,6 +16,7 @@
     },
     "devDependencies": {
         "@typescript/native": "npm:typescript@7.0.2",
+        "@vitest/coverage-v8": "5.0.5",
         "bpmn-js": "18.31.0",
         "diagram-js": "15.28.1",
         "typescript": "npm:@typescript/typescript6@6.0.2",

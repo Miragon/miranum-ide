@@ -110,7 +110,8 @@ describe("emitted external dependency guard", () => {
     });
 });
 
-describe("consumer type-check guard", () => {
+// Each case builds a full TypeScript program over lib.dom; CI runners take 3-5 s.
+describe("consumer type-check guard", { timeout: 30_000 }, () => {
     const FIXTURE = {
         "consumer.ts": `
             import { createModeler } from "@miragon/bpmn-modeler";

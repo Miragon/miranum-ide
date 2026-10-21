@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Injector } from "didi";
 import { BpmnModdle } from "bpmn-moddle";
-import { createClipboardModules, type ClipboardBridge } from "@miragon/bpmn-modeler-clipboard";
+import { createClipboardModules, type ClipboardBridge } from "./index";
 
 /**
  * Behavioural spec for the bridge-path clipboard module (`BridgedClipboard`).

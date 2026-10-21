@@ -3,34 +3,21 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     test: {
         projects: [
-            "apps/vscode-plugin",
-            "apps/modeler-bridge",
-            "apps/bpmn-webview",
-            "apps/dmn-webview",
-            "apps/form-webview",
-            "apps/deployment-webview",
+            "apps/*/vitest.config.ts",
+            "libs/*/vitest.config.ts",
+            "packages/*/vitest.config.ts",
+            // An aggregator of the two projects below, which nest no further.
+            "!packages/bpmn-modeler/vitest.config.ts",
             "packages/bpmn-modeler/vitest.unit.config.ts",
             "packages/bpmn-modeler/vitest.browser.config.ts",
-            "packages/dmn-modeler",
-            "libs/append-menu",
-            "libs/bpmn-i18n-extras",
-            "libs/code-link",
-            "libs/definition-search",
-            "libs/element-template-chooser",
-            "libs/inline-scripting",
-            "libs/properties-panel",
-            "libs/bpmn-diff",
-            "libs/bpmn-layout",
-            "libs/modeler-core",
-            "libs/modeler-types",
-            "libs/shared",
-            "libs/flow-navigation",
-            "libs/model-navigation",
         ],
+        // Coverage options are root-only in a multi-project run, so the
+        // per-workspace include/thresholds never apply here; `test:coverage`
+        // runs each workspace on its own instead. Kept apart from coverage/<dir>
+        // so `--coverage` here does not wipe those reports.
         coverage: {
             provider: "v8",
-            reportsDirectory: "./coverage",
-            reporter: ["text", "html", "lcov", "clover", "json"],
+            reportsDirectory: "./coverage/root",
         },
     },
 });

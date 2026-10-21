@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createClipboardModules, type ClipboardBridge } from "@miragon/bpmn-modeler-clipboard";
+import { createClipboardModules, type ClipboardBridge } from "./index";
 
 /**
  * Contract of the clipboard-override factory. The two DI modules and the value

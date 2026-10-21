@@ -23,6 +23,7 @@ export default defineConfig({
     // instanceof checks break ("Unrecognized extension value"). Mirrors the
     // webview's dedupe list.
     resolve: {
+        alias: bpmnModelerTestAliases,
         dedupe: [
             "preact",
             "@bpmn-io/properties-panel",
@@ -42,7 +43,6 @@ export default defineConfig({
         name: "bpmn-modeler-browser",
         include: ["src/**/*.browser.spec.ts"],
         server: { deps: { inline: [/@miragon\/bpmnlint-plugin-rules/] } },
-        alias: bpmnModelerTestAliases,
         browser: {
             enabled: true,
             headless: true,

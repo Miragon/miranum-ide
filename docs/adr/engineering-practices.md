@@ -1,7 +1,7 @@
 # Engineering practices
 
 - Status: accepted
-- Last reviewed: 2026-10-20
+- Last reviewed: 2026-10-21
 
 ## Context
 
@@ -14,6 +14,7 @@ need compatibility proof for the paths the build and plugin installer exercise.
 
 - [Test environments](#test-environments)
 - [Coverage gates](#coverage-gates)
+- [CI test targets](#ci-test-targets)
 - [Private upstream APIs](#private-upstream-apis)
 - [Dependency compatibility and security](#dependency-compatibility-and-security)
 - [Consequences](#consequences)
@@ -24,9 +25,20 @@ need compatibility proof for the paths the build and plugin installer exercise.
 
 Use Vitest's existing unit projects for pure logic and jsdom-compatible behavior,
 plus a second BPMN package project with the Playwright provider and headless
-Chromium for `*.browser.spec.ts`. Share workspace aliases between projects and
-exclude browser files from jsdom. Package `test` runs both; the root test
-configuration includes the browser project, and CI installs Chromium.
+Chromium for `*.browser.spec.ts`. Every workspace config resolves `@miragon/*`
+through the aliases [`vitest.shared.ts`](../../vitest.shared.ts) generates from
+`tsconfig.base.json` paths, so test resolution cannot drift from the build's.
+The aliases are anchored regexes under `resolve.alias`: `@miragon/bpmn-modeler`
+cannot capture its `/diff` subpath, and `x/*` keys keep deep imports working.
+`vite-tsconfig-paths` is not declared by the libs and would break focused
+installs. Exclude browser files from jsdom. Package `test` runs both projects;
+the root test configuration includes the browser project, and CI installs
+Chromium.
+
+Test library behaviour in the library that owns it. Clipboard modules and the
+static moddle-extension check have their specs in `libs/bpmn-clipboard` and
+`libs/modeler-types`; the package keeps only the Chromium round trips and
+installed-shape pins that need a real modeler.
 
 Real browser tests are necessary for SVG geometry, viewbox transforms and
 ResizeObserver delivery. Mocks can test viewport-latch decisions but cannot
@@ -53,19 +65,55 @@ when upstream bundler/runtime behavior changes.
 
 ### Coverage gates
 
-Each Vitest workspace owns its coverage target as `coverage.thresholds` in its
-`vitest.config.ts`, set a few points below the measured baseline. The test job
-fails below it, so the required `ci` check enforces the target without a
-separate coverage job, and the PR coverage comment reads the same numbers.
-Measure all `src/**/*.{ts,tsx}` files rather than only those a test imports,
-otherwise a new untested module does not lower the percentage.
+Each Vitest workspace owns its coverage target as literal `coverage.thresholds`
+in its `vitest.config.ts`, set about three points below the measured baseline.
+Its `test` script runs `vitest run --coverage`, so its CI leg fails below the
+target and the required `ci` check enforces it without a separate coverage job.
+The PR coverage comment reads the same numbers; it parses the thresholds from
+the config text, which is why they are not computed in the shared preset.
+`coveragePreset` in `vitest.shared.ts` measures all `src/**/*.{ts,tsx}` files
+rather than only those a test imports, otherwise a new untested module does not
+lower the percentage. Workspaces exclude only code with no testable logic and
+name the reason: wiring covered by the Extension-Host smoke test, re-export
+barrels, stdio entry points and generated icon components.
 
-CI posts the per-module coverage comment and uploads to Codecov only when a PR
-changes that module's code files, matched by extension in the
-[build workflow](../../.github/workflows/build.yml)'s `*-src` filters. Listing
-excluded files instead let release-please changelog edits trigger reports.
-Codecov statuses stay advisory: path-filtered jobs skip uploads, so a required
-Codecov check would block unrelated PRs.
+`@miragon/bpmn-modeler`'s coverage counts its own `src` only, not the libraries
+it inlines. Crediting their code to the package run would let the package
+threshold mask a library regression, and a library-only PR would still not see
+the credit in its own leg. Libraries reach their numbers through their own
+specs instead.
+
+Coverage options are root-only in a Vitest multi-project run, so the root
+`yarn test` skips coverage; `yarn test:coverage` runs each workspace's `test`
+as CI does.
+
+### CI test targets
+
+[`.github/vitest-targets.json`](../../.github/vitest-targets.json) lists every
+Vitest workspace with its focused install and the paths that should re-run it:
+its own directory, every workspace its code imports, and files its specs import
+by relative path. Specs that read files instead of importing them list those
+paths by hand; the packages' architecture tests scan every `libs/*/src`, so
+both packages trigger on it. The [build workflow](../../.github/workflows/build.yml)
+turns each entry into an `<id>` path filter, plus the shared `global` paths
+(registry, workflow, preset, root manifest), and an `<id>-src` filter of its
+own code files. One `test` matrix job runs every affected target: tests with
+coverage, an optional typecheck script, the PR comment and the Codecov upload.
+The app and package build jobs and the Extension-Host smoke test are gated on
+the same target ids.
+
+[`check-vitest-targets.mjs`](../../.github/scripts/check-vitest-targets.mjs)
+runs in the lint job and pre-push. It fails when a workspace with a Vitest
+config is not a target, when a target does not declare the Vitest packages its
+focused install needs (including Vitest's `vite` peer), or when its trigger
+paths miss a workspace or file its tests import. Before the registry, each workspace needed a hand-written job,
+filter and `ci.needs` entry, and twelve workspaces' specs never ran in CI.
+
+Only `<id>-src` matches upload coverage, so the release-please PR (changelogs,
+manifests) gets none. Codecov statuses stay advisory, and
+[`codecov.yml`](../../.github/codecov.yml) carries every flag forward because
+path-filtered legs upload only what a commit touched. A manual
+`workflow_dispatch` run executes all targets to refresh those flags.
 
 ### Private upstream APIs
 
@@ -89,6 +137,8 @@ tests make a dependency bump fail where its shape changed:
 [engine groups](../../packages/bpmn-modeler/src/engineGroupData.upstream.browser.spec.ts),
 [differ results](../../libs/bpmn-diff/src/differResult.spec.ts), and
 [template prefixes](../../libs/properties-panel/src/modeFilter/engineGroupData.upstream.spec.ts).
+The `bpmn-diff` and `properties-panel` targets list `yarn.lock` among their
+trigger paths so a lockfile-only bump re-runs those pins.
 Clipboard catches a shape failure, logs it and disables that clipboard path;
 the CI test is the standing failure signal.
 
@@ -183,7 +233,9 @@ maintenance problem unresolved.
 
 ## Consequences
 
-Coverage targets are floors that only rise when someone raises them.
+Coverage targets are floors that only rise when someone raises them. Adding a
+Vitest workspace means adding a registry entry; the guard makes forgetting it
+a lint failure rather than a silently untested workspace.
 Tests run in the environment capable of exposing the failure: browser layout in
 Chromium, pure logic in unit tests, private shapes against installed dependencies,
 and archive compatibility through real extraction. This adds browser/runtime

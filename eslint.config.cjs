@@ -20,6 +20,8 @@ module.exports = [
             // `.gitignore`, so it must be excluded here explicitly.
             "**/build",
             "**/src-gen",
+            // Vitest HTML coverage reports ship their own JavaScript.
+            "**/coverage",
             "**/plugins",
             "**/gen-webpack*.js",
             "**/gen-esbuild*.mjs",

@@ -1,10 +1,4 @@
-import { staticUnresolvedModdleExtensions } from "@miragon/bpmn-modeler-types";
 import { createBundledResolver, type Resolver } from "@miragon/bpmnlint-plugin-rules";
-
-// Re-exported so `browserLinter.ts` and `browserResolver.spec.ts` keep importing
-// it from here; the implementation moved to modeler-types so the host's
-// escalation pre-check shares the exact same logic.
-export { staticUnresolvedModdleExtensions };
 
 /**
  * A bpmnlint rule that reports nothing. Substituted for a rule/config the bundled

@@ -4,10 +4,10 @@ import { buildMenuEntries, type PadEntry } from "./contextPadMenu";
 
 describe("buildMenuEntries", () => {
     it("uses title as label, falls back to entryId", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
-            myEntry: { title: "My Title", action: vi.fn() },
-            noTitle: { action: vi.fn() },
+            myEntry: { title: "My Title", action: vi.fn<() => void>() },
+            noTitle: { action: vi.fn<() => void>() },
         };
 
         const result = buildMenuEntries(entries, trigger);
@@ -17,13 +17,13 @@ describe("buildMenuEntries", () => {
     });
 
     it("passes through className and imageUrl", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
             styled: {
                 title: "Styled",
                 className: "bpmn-icon-task",
                 imageUrl: "https://example.com/icon.svg",
-                action: vi.fn(),
+                action: vi.fn<() => void>(),
             },
         };
 
@@ -34,10 +34,10 @@ describe("buildMenuEntries", () => {
     });
 
     it("filters out entries without an action", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
             noAction: { title: "No Action" },
-            hasAction: { title: "Has Action", action: vi.fn() },
+            hasAction: { title: "Has Action", action: vi.fn<() => void>() },
         };
 
         const result = buildMenuEntries(entries, trigger);
@@ -47,10 +47,10 @@ describe("buildMenuEntries", () => {
     });
 
     it("filters out drag-only entries (action without click)", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
-            dragOnly: { title: "Drag", action: { dragstart: vi.fn() } },
-            clickable: { title: "Click", action: { click: vi.fn() } },
+            dragOnly: { title: "Drag", action: { dragstart: vi.fn<() => void>() } },
+            clickable: { title: "Click", action: { click: vi.fn<() => void>() } },
         };
 
         const result = buildMenuEntries(entries, trigger);
@@ -60,12 +60,12 @@ describe("buildMenuEntries", () => {
     });
 
     it("adds shortcut hints on append, replace, delete", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
-            append: { title: "Append", action: vi.fn() },
-            replace: { title: "Replace", action: vi.fn() },
-            delete: { title: "Delete", action: vi.fn() },
-            connect: { title: "Connect", action: vi.fn() },
+            append: { title: "Append", action: vi.fn<() => void>() },
+            replace: { title: "Replace", action: vi.fn<() => void>() },
+            delete: { title: "Delete", action: vi.fn<() => void>() },
+            connect: { title: "Connect", action: vi.fn<() => void>() },
         };
 
         const result = buildMenuEntries(entries, trigger);
@@ -77,11 +77,11 @@ describe("buildMenuEntries", () => {
     });
 
     it("preserves insertion order", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
-            first: { title: "First", action: vi.fn() },
-            second: { title: "Second", action: vi.fn() },
-            third: { title: "Third", action: vi.fn() },
+            first: { title: "First", action: vi.fn<() => void>() },
+            second: { title: "Second", action: vi.fn<() => void>() },
+            third: { title: "Third", action: vi.fn<() => void>() },
         };
 
         const result = buildMenuEntries(entries, trigger);
@@ -90,9 +90,9 @@ describe("buildMenuEntries", () => {
     });
 
     it("action calls trigger with the entry id", () => {
-        const trigger = vi.fn();
+        const trigger = vi.fn<() => void>();
         const entries: Record<string, PadEntry> = {
-            myEntry: { title: "My Entry", action: vi.fn() },
+            myEntry: { title: "My Entry", action: vi.fn<() => void>() },
         };
 
         const result = buildMenuEntries(entries, trigger);

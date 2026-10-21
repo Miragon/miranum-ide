@@ -54,6 +54,7 @@
         "stack",
         "tsconfig.base.json",
         "vitest.config.ts",
+        "vitest.shared.ts",
         "yarn.config.cjs",
         "yarn.lock"
       ],

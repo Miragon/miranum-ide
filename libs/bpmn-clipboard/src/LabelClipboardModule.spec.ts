@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// LabelClipboard is not exported from the package barrel; reach the class through the DI tuple.
-import { LabelClipboardModule } from "../../../libs/bpmn-clipboard/src/LabelClipboardModule";
+// LabelClipboard is not exported; reach the class through the DI tuple.
+import { LabelClipboardModule } from "./LabelClipboardModule";
 
 type Bridge = {
     requestClipboard: () => Promise<string>;

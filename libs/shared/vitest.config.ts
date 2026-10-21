@@ -1,18 +1,16 @@
 import { defineConfig } from "vitest/config";
-import { resolve } from "node:path";
+
+import { coveragePreset, workspaceAliases } from "../../vitest.shared";
 
 export default defineConfig({
+    resolve: { alias: workspaceAliases },
     test: {
         name: "shared",
         environment: "node",
-        include: ["src/**/*.{spec,test}.ts"],
-        alias: {
-            "@miragon/bpmn-modeler-types": resolve(__dirname, "../modeler-types/src/index.ts"),
-        },
+        include: ["src/**/*.{spec,test}.{ts,tsx}"],
         coverage: {
-            provider: "v8",
-            reportsDirectory: "../../coverage/libs/shared",
-            reporter: ["text", "html", "lcov", "clover", "json", "json-summary"],
+            ...coveragePreset(__dirname),
+            thresholds: { statements: 39, branches: 64, functions: 28, lines: 38 },
         },
     },
 });
