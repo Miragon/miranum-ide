@@ -8,7 +8,7 @@ import {
     FlushDocumentQuery,
     GetFormFileCommand,
     GetFormInputValuesCommand,
-    LogErrorCommand,
+    installGlobalErrorForwarding,
     Query,
     ReleaseDocumentFlushQuery,
 } from "@miragon/bpmn-modeler-shared";
@@ -80,16 +80,5 @@ function bootstrap(): void {
     host.postMessage(new GetFormInputValuesCommand());
 }
 
-window.addEventListener("error", (event: ErrorEvent) => {
-    host.postMessage(new LogErrorCommand(`Unhandled error: ${event.message}`, event.error?.stack));
-});
-window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-    const reason: unknown = event.reason;
-    host.postMessage(
-        new LogErrorCommand(
-            `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-            reason instanceof Error ? reason.stack : undefined,
-        ),
-    );
-});
+installGlobalErrorForwarding((command) => host.postMessage(command));
 window.addEventListener("DOMContentLoaded", bootstrap);

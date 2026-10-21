@@ -12,3 +12,4 @@ export * from "./lib/variableManifest";
 export * from "./lib/harvestRecorder";
 export * from "./lib/webviewStateStore";
 export * from "./lib/propertiesPanelUiState";
+export * from "./lib/globalErrorForwarding";
