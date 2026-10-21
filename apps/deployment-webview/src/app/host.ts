@@ -29,6 +29,7 @@ declare const process: { env: { NODE_ENV: string } };
 export interface WebviewState {
     formData?: Record<string, string>;
     collapsedSections?: string[];
+    activeTab?: string;
 }
 
 type StateType = WebviewState;
