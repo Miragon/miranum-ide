@@ -942,6 +942,36 @@ describe("bridge script editor (real core over a fake transport)", () => {
         expect(frames.find((f) => f.method === "script/open")).toBeUndefined();
     });
 
+    it("logs a batch that fails mid-way instead of leaving the rejection unhandled", async () => {
+        const { rpc, frames, editorId } = await setup();
+
+        await rpc.handleLine(
+            JSON.stringify({
+                method: "webview/message",
+                params: {
+                    editorId,
+                    message: {
+                        type: "OpenScriptEditorsCommand",
+                        scripts: [{ elementId: "Task_1", scriptFormat: "", content: "x = 1" }],
+                        variables: [],
+                    },
+                },
+            }),
+        );
+        const picker = await waitForFrame(
+            frames,
+            (f) => f.method === "picker/show" && f.id != null,
+        );
+        await rpc.handleLine(JSON.stringify({ id: picker.id, error: "host went away" }));
+
+        const log = await waitForFrame(
+            frames,
+            (f) => f.method === "notifier/log" && f.params?.level === "error",
+        );
+        expect(log.params.message).toContain("host went away");
+        expect(frames.find((f) => f.method === "notifier/showInfo")).toBeUndefined();
+    });
+
     it("hints to focus a diagram when script/openAll fires with no active editor", async () => {
         // No session/register: getActiveEditorId() throws, and the guard must
         // turn that into a balloon hint rather than surfacing the raw error.
