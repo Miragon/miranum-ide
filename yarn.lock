@@ -5598,17 +5598,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/estree@npm:1.0.9":
+"@types/estree@npm:1.0.9, @types/estree@npm:^1.0.0, @types/estree@npm:^1.0.6, @types/estree@npm:^1.0.8":
   version: 1.0.9
   resolution: "@types/estree@npm:1.0.9"
   checksum: 10c0/3ad3286ca2988cd550dafb8f2ad599c8474868e954fa601a36655bdfefd8039f7c714b8c1c7f2ae219ffbd58bd4660e66fa7479a0120fc02d4777057d4865387
-  languageName: node
-  linkType: hard
-
-"@types/estree@npm:^1.0.0, @types/estree@npm:^1.0.6, @types/estree@npm:^1.0.8":
-  version: 1.0.8
-  resolution: "@types/estree@npm:1.0.8"
-  checksum: 10c0/39d34d1afaa338ab9763f37ad6066e3f349444f9052b9676a7cc0252ef9485a41c6d81c9c4e0d26e9077993354edf25efc853f3224dd4b447175ef62bdcc86a5
   languageName: node
   linkType: hard
 
@@ -9736,17 +9729,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cytoscape@npm:3.34.3":
+"cytoscape@npm:3.34.3, cytoscape@npm:^3.23.0, cytoscape@npm:^3.34.0":
   version: 3.34.3
   resolution: "cytoscape@npm:3.34.3"
   checksum: 10c0/953ef85160d4a5b1a7e47af4039e66b81d4e6d00b39d6e1f4387c4563cdc4cb4480e91e8f7f6b5fbda05bf3d8019792b514a809ed1e4d1c2a5b16827b4c4a315
-  languageName: node
-  linkType: hard
-
-"cytoscape@npm:^3.23.0, cytoscape@npm:^3.34.0":
-  version: 3.34.2
-  resolution: "cytoscape@npm:3.34.2"
-  checksum: 10c0/048db6c151a4e4322ea9246df06824bde8edb8681163afd50425c0471d2f72a064273b689afdad3302976b9c07ab4f433033a2b29c3a1aad0c793724847a6999
   languageName: node
   linkType: hard
 
@@ -16625,7 +16611,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:8.5.30, postcss@npm:^8.5.29, postcss@npm:^8.5.8":
+"postcss@npm:8.5.30":
   version: 8.5.30
   resolution: "postcss@npm:8.5.30"
   dependencies:
@@ -16636,7 +16622,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.5.3":
+"postcss@npm:^8.5.29, postcss@npm:^8.5.3, postcss@npm:^8.5.8":
   version: 8.5.31
   resolution: "postcss@npm:8.5.31"
   dependencies:
