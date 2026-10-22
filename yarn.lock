@@ -9729,17 +9729,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cytoscape@npm:3.34.4":
+"cytoscape@npm:3.34.4, cytoscape@npm:^3.23.0, cytoscape@npm:^3.34.0":
   version: 3.34.4
   resolution: "cytoscape@npm:3.34.4"
   checksum: 10c0/4dcd1f0a0ff61df5d3cfd4359426403e70fdc4c8d38c6c246506b3789514001c46c46cf54575455ab03736920dc09c497a40eaa20d61798f5a2bc31f7f038940
-  languageName: node
-  linkType: hard
-
-"cytoscape@npm:^3.23.0, cytoscape@npm:^3.34.0":
-  version: 3.34.3
-  resolution: "cytoscape@npm:3.34.3"
-  checksum: 10c0/953ef85160d4a5b1a7e47af4039e66b81d4e6d00b39d6e1f4387c4563cdc4cb4480e91e8f7f6b5fbda05bf3d8019792b514a809ed1e4d1c2a5b16827b4c4a315
   languageName: node
   linkType: hard
 
@@ -17730,19 +17723,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"schema-utils@npm:^4.2.0, schema-utils@npm:^4.3.3":
-  version: 4.5.0
-  resolution: "schema-utils@npm:4.5.0"
-  dependencies:
-    "@types/json-schema": "npm:^7.0.15"
-    ajv: "npm:^8.20.0"
-    ajv-formats: "npm:^3.0.1"
-    ajv-keywords: "npm:^5.1.0"
-  checksum: 10c0/b2b8e6fc1b1f2abb30741a04e9d309879fd09afcea8c8aa163bdb380d8836ab4102f60a750cb1116c5e299f597cc8d59ee8f2bbee87dd7606d45e748ce901794
-  languageName: node
-  linkType: hard
-
-"schema-utils@npm:^4.6.0":
+"schema-utils@npm:^4.2.0, schema-utils@npm:^4.3.3, schema-utils@npm:^4.6.0":
   version: 4.8.1
   resolution: "schema-utils@npm:4.8.1"
   dependencies:
