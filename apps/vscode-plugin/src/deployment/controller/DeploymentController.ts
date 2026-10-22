@@ -12,6 +12,7 @@ import {
 import { posix } from "path";
 
 import { DeployActiveDiagramService } from "@miragon/bpmn-modeler-core";
+import { DeployFilesService } from "@miragon/bpmn-modeler-core";
 import { DeploymentMessageDispatcher } from "@miragon/bpmn-modeler-core";
 import { EditorSessionStore } from "@miragon/bpmn-modeler-core";
 import { DeploymentService } from "@miragon/bpmn-modeler-core";
@@ -23,7 +24,6 @@ import { Command, Query } from "@miragon/bpmn-modeler-shared";
 import { deploymentWebviewHtml } from "../infrastructure/DeploymentWebviewHtml";
 import { VsCodeDocument } from "../../shared/infrastructure/VsCodeDocument";
 import { VsCodeNotifier } from "../../shared/infrastructure/VsCodeNotifier";
-import { VsCodePicker } from "../../shared/infrastructure/VsCodePicker";
 import { getContext } from "../../shared/infrastructure/extensionContext";
 
 // VS Code view ID for the deployment sidebar WebviewView.
@@ -69,7 +69,7 @@ export class DeploymentController implements WebviewViewProvider {
         private readonly deploymentStatusService: DeploymentStatusService,
         private readonly verificationService: DeploymentVerificationService,
         private readonly deployActiveDiagramService: DeployActiveDiagramService,
-        private readonly picker: VsCodePicker,
+        private readonly deployFilesService: DeployFilesService,
         private readonly notifier: VsCodeNotifier,
     ) {}
 
@@ -123,7 +123,17 @@ export class DeploymentController implements WebviewViewProvider {
             (message: Query) => void webviewView.webview.postMessage(message),
         );
         this.currentDispatcher = dispatcher;
+
+        // Re-send defaults when the user switches between editor tabs while the
+        // deployment panel is already visible.
+        const activeEditorSubscription = this.editorStore.onDidChangeActiveEditor(() => {
+            if (webviewView.visible) {
+                dispatcher.sendFormDefaults();
+            }
+        });
+
         webviewView.onDidDispose(() => {
+            activeEditorSubscription.dispose();
             if (this.currentDispatcher === dispatcher) {
                 this.currentDispatcher = undefined;
             }
@@ -136,14 +146,6 @@ export class DeploymentController implements WebviewViewProvider {
         // Re-send defaults whenever the panel becomes visible again (e.g. user
         // switches back to the activity-bar tab).
         webviewView.onDidChangeVisibility(() => {
-            if (webviewView.visible) {
-                dispatcher.sendFormDefaults();
-            }
-        });
-
-        // Re-send defaults when the user switches between editor tabs while the
-        // deployment panel is already visible.
-        this.editorStore.onDidChangeActiveEditor(() => {
             if (webviewView.visible) {
                 dispatcher.sendFormDefaults();
             }
@@ -176,38 +178,10 @@ export class DeploymentController implements WebviewViewProvider {
         }
     }
 
-    /**
-     * Deploys a multi-select set of workspace BPMN/DMN files to the active
-     * target. With no active target, runs the switch first so the user picks one,
-     * then proceeds only if a concrete target results.
-     */
     private async deployFiles(): Promise<void> {
-        const documentDir = this.activeDocumentDir();
-        let target = await this.deploymentTargetService.getActiveTarget(documentDir);
-        if (target === undefined) {
-            await this.switchTarget();
-            target = await this.deploymentTargetService.getActiveTarget(documentDir);
-            if (target === undefined) {
-                return;
-            }
-        }
-
-        const files = await this.picker.pickWorkspaceFiles({
-            glob: "**/*.{bpmn,dmn}",
-            exclude: "**/node_modules/**",
-            placeholder: `Select files to deploy to "${target.name}"`,
+        await this.deployFilesService.deployFiles(this.activeDocumentDir(), async () => {
+            await this.currentDispatcher?.sendTargets();
         });
-        if (files.length === 0) {
-            return;
-        }
-
-        const resolvedTarget = target;
-        const auth = await this.deploymentTargetService.getCredentials(target, documentDir);
-        await this.notifier.withProgress(
-            `Deploying ${files.length} file(s) to "${target.name}"`,
-            () => this.deploymentService.deployFiles(files, resolvedTarget, auth),
-        );
-        await this.deploymentStatusService.refreshActive();
     }
 
     /**

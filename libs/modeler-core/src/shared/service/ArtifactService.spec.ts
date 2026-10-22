@@ -11,7 +11,6 @@ import { ArtifactService } from "./ArtifactService";
 function createService() {
     const vsWorkspace = {
         getWorkspaceFolderForDocument: vi.fn(),
-        findGitRoot: vi.fn(),
         readDirectory: vi.fn(),
         readFile: vi.fn(),
         createWatcher: vi.fn(),
@@ -72,32 +71,82 @@ describe("ArtifactService.findConfigFile", () => {
 });
 
 describe("ArtifactService.getWorkspaceRoot", () => {
+    // Listing any other directory is denied, as in a tree of execute-only
+    // directories, so the walk only succeeds by probing `.git` itself.
+    function createServiceOutsideWorkspaceFolders(
+        gitEntries: Record<string, "directory" | "file">,
+    ) {
+        const { service, vsWorkspace } = createService();
+        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
+            throw new NoWorkspaceFolderFoundError();
+        });
+        vsWorkspace.readDirectory.mockImplementation(async (path: string) => {
+            if (gitEntries[path] === "directory") {
+                return [["HEAD", "file"]];
+            }
+            throw new Error(`EACCES: permission denied, scandir '${path}'`);
+        });
+        vsWorkspace.readFile.mockImplementation(async (path: string) => {
+            if (gitEntries[path] === "file") {
+                return "gitdir: /repo/.git/worktrees/feature";
+            }
+            throw new FileNotFound(path);
+        });
+        return service;
+    }
+
     it("returns the VS Code workspace folder when one exists", async () => {
         const { service, vsWorkspace } = createService();
         vsWorkspace.getWorkspaceFolderForDocument.mockReturnValue("/work");
 
         await expect(service.getWorkspaceRoot("/work/sub")).resolves.toBe("/work");
-        expect(vsWorkspace.findGitRoot).not.toHaveBeenCalled();
+        expect(vsWorkspace.readDirectory).not.toHaveBeenCalled();
     });
 
-    it("falls back to the enclosing git repo when no workspace folder is found", async () => {
-        const { service, vsWorkspace } = createService();
-        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
-            throw new NoWorkspaceFolderFoundError();
+    it("falls back to the document directory when it holds the git repository", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/repo/.git": "directory",
+            "/.git": "directory",
         });
-        vsWorkspace.findGitRoot.mockResolvedValue("/repo");
 
-        await expect(service.getWorkspaceRoot("/repo/sub")).resolves.toBe("/repo");
+        await expect(service.getWorkspaceRoot("/repo")).resolves.toBe("/repo");
     });
 
-    it("falls back to the document directory when neither folder nor git root exist", async () => {
-        const { service, vsWorkspace } = createService();
-        vsWorkspace.getWorkspaceFolderForDocument.mockImplementation(() => {
-            throw new NoWorkspaceFolderFoundError();
+    it("falls back to the nearest enclosing git repository", async () => {
+        const service = createServiceOutsideWorkspaceFolders({
+            "/repo/.git": "directory",
+            "/.git": "directory",
         });
-        vsWorkspace.findGitRoot.mockResolvedValue(undefined);
 
-        await expect(service.getWorkspaceRoot("/some/dir")).resolves.toBe("/some/dir");
+        await expect(service.getWorkspaceRoot("/repo/processes/orders")).resolves.toBe("/repo");
+    });
+
+    it("recognises the .git file of a worktree or submodule as the repository root", async () => {
+        const service = createServiceOutsideWorkspaceFolders({ "/worktrees/feature/.git": "file" });
+
+        await expect(service.getWorkspaceRoot("/worktrees/feature/src")).resolves.toBe(
+            "/worktrees/feature",
+        );
+    });
+
+    it("recognises a git repository at the filesystem root", async () => {
+        const service = createServiceOutsideWorkspaceFolders({ "/.git": "directory" });
+
+        await expect(service.getWorkspaceRoot("/tmp/loose")).resolves.toBe("/");
+    });
+
+    it("keeps URI-form document directories in URI form", async () => {
+        const service = createServiceOutsideWorkspaceFolders({ "file:///repo/.git": "directory" });
+
+        await expect(service.getWorkspaceRoot("file:///repo/processes")).resolves.toBe(
+            "file:///repo",
+        );
+    });
+
+    it("falls back to the document directory when no git repository encloses it", async () => {
+        const service = createServiceOutsideWorkspaceFolders({});
+
+        await expect(service.getWorkspaceRoot("/tmp/loose")).resolves.toBe("/tmp/loose");
     });
 
     it("rethrows errors that are not NoWorkspaceFolderFoundError", async () => {
@@ -107,7 +156,7 @@ describe("ArtifactService.getWorkspaceRoot", () => {
         });
 
         await expect(service.getWorkspaceRoot("/work/sub")).rejects.toThrow("boom");
-        expect(vsWorkspace.findGitRoot).not.toHaveBeenCalled();
+        expect(vsWorkspace.readDirectory).not.toHaveBeenCalled();
     });
 });
 

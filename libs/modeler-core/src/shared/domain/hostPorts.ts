@@ -204,7 +204,6 @@ export interface WorkspacePort {
     findWorkspaceFolderForDocument(document: string): string | undefined;
     getWorkspaceFolderPaths(): string[];
     getDocumentDirectory(document: string): string;
-    findGitRoot(startDir: string): Promise<string | undefined>;
     readDirectory(path: string): Promise<[string, "file" | "directory"][]>;
     readFile(path: string): Promise<string>;
     writeFile(path: string, content: string): Promise<void>;

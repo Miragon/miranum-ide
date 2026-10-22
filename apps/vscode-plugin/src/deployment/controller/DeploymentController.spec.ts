@@ -22,26 +22,46 @@ import { commands, window } from "vscode";
 import { DeploymentResult } from "@miragon/bpmn-modeler-core";
 import {
     DeploymentResultQuery,
+    DeploymentTargetsQuery,
     type Command,
     type DeployCommand,
 } from "@miragon/bpmn-modeler-shared";
 import {
     DeploymentController,
     DEPLOY_CMD,
+    DEPLOY_FILES_CMD,
     DEPLOYMENT_STATUS_MENU_CMD,
+    SWITCH_TARGET_CMD,
     VERIFY_DEPLOYMENT_CMD,
 } from "./DeploymentController";
+
+function createWebviewView() {
+    const postMessage = vi.fn();
+    const onDidReceiveMessage = vi.fn();
+    return {
+        visible: true,
+        webview: { options: {}, html: "", postMessage, onDidReceiveMessage },
+        postMessage,
+        onDidReceiveMessage,
+        onDidChangeVisibility: vi.fn(),
+        onDidDispose: vi.fn(),
+    };
+}
 
 /**
  * Assembles the controller with structural port doubles and a fake `WebviewView`
  * that captures the message listener, the visibility listener, and posted queries.
  */
 function createController() {
-    const onDidChangeActiveEditor = vi.fn();
+    const activeEditorListeners = new Set<() => void>();
     const editorStore = {
         getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-        onDidChangeActiveEditor,
+        onDidChangeActiveEditor: vi.fn((listener: () => void) => {
+            activeEditorListeners.add(listener);
+            return { dispose: () => activeEditorListeners.delete(listener) };
+        }),
     };
+    const changeActiveEditor = () => activeEditorListeners.forEach((listener) => listener());
     const vsDocument = {
         getFilePath: vi.fn().mockReturnValue("/work/trusted/order-process.bpmn"),
     };
@@ -81,8 +101,8 @@ function createController() {
     const deployActiveDiagramService = {
         deployActive: vi.fn().mockResolvedValue(undefined),
     };
-    const picker = {
-        pickWorkspaceFiles: vi.fn().mockResolvedValue([]),
+    const deployFilesService = {
+        deployFiles: vi.fn().mockResolvedValue(undefined),
     };
     const notifier = {
         showInfo: vi.fn(),
@@ -95,16 +115,8 @@ function createController() {
         withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
     };
 
-    const postMessage = vi.fn();
-    const onDidReceiveMessage = vi.fn();
-    const onDidChangeVisibility = vi.fn();
-    const onDidDispose = vi.fn();
-    const webviewView = {
-        visible: true,
-        webview: { options: {}, html: "", postMessage, onDidReceiveMessage },
-        onDidChangeVisibility,
-        onDidDispose,
-    };
+    const webviewView = createWebviewView();
+    const { postMessage, onDidReceiveMessage, onDidChangeVisibility, onDidDispose } = webviewView;
 
     const controller = new DeploymentController(
         editorStore as never,
@@ -115,13 +127,14 @@ function createController() {
         deploymentStatusService as never,
         verificationService as never,
         deployActiveDiagramService as never,
-        picker as never,
+        deployFilesService as never,
         notifier as never,
     );
 
     return {
         controller,
         editorStore,
+        changeActiveEditor,
         vsDocument,
         deploymentService,
         startInstanceService,
@@ -129,7 +142,7 @@ function createController() {
         deploymentStatusService,
         verificationService,
         deployActiveDiagramService,
-        picker,
+        deployFilesService,
         notifier,
         webviewView,
         postMessage,
@@ -170,20 +183,23 @@ describe("DeploymentController.register", () => {
     });
 });
 
-describe("DeploymentController deployment verification commands", () => {
-    /** Registers commands and returns the handler registered for `commandId`. */
-    function registeredHandler(
-        c: ReturnType<typeof createController>,
-        commandId: string,
-    ): () => Promise<void> {
-        c.controller.register({ subscriptions: [] } as never);
-        const call = vi
-            .mocked(commands.registerCommand)
-            .mock.calls.find(([id]) => id === commandId);
-        if (!call) throw new Error(`No handler registered for ${commandId}`);
-        return call[1] as () => Promise<void>;
-    }
+function registeredHandler(
+    c: ReturnType<typeof createController>,
+    commandId: string,
+): () => Promise<void> {
+    c.controller.register({ subscriptions: [] } as never);
+    const call = vi.mocked(commands.registerCommand).mock.calls.find(([id]) => id === commandId);
+    if (!call) throw new Error(`No handler registered for ${commandId}`);
+    return call[1] as () => Promise<void>;
+}
 
+function postedTargetLists(postMessage: ReturnType<typeof vi.fn>): DeploymentTargetsQuery[] {
+    return postMessage.mock.calls
+        .map(([query]) => query)
+        .filter((query) => query instanceof DeploymentTargetsQuery);
+}
+
+describe("DeploymentController deployment verification commands", () => {
     it("deploys the active diagram against the active document's directory", async () => {
         const c = createController();
 
@@ -227,6 +243,90 @@ describe("DeploymentController deployment verification commands", () => {
 
         expect(c.verificationService.verifyActive).not.toHaveBeenCalled();
         expect(c.deploymentTargetService.switchActiveTarget).not.toHaveBeenCalled();
+    });
+});
+
+describe("DeploymentController target commands", () => {
+    it("switches the target, refreshes the status bar and re-pushes targets into the sidebar", async () => {
+        const c = createController();
+        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+        c.postMessage.mockClear();
+
+        await registeredHandler(c, SWITCH_TARGET_CMD)();
+
+        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith("/work/trusted");
+        expect(c.deploymentStatusService.refreshActive).toHaveBeenCalledOnce();
+        expect(postedTargetLists(c.postMessage)).toHaveLength(1);
+    });
+
+    it("switches the target before the sidebar was ever opened", async () => {
+        const c = createController();
+
+        await registeredHandler(c, SWITCH_TARGET_CMD)();
+
+        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith("/work/trusted");
+    });
+
+    it("switches against no document directory when no editor is focused", async () => {
+        const c = createController();
+        c.editorStore.getActiveEditorId.mockImplementation(() => {
+            throw new Error("no active editor");
+        });
+
+        await registeredHandler(c, SWITCH_TARGET_CMD)();
+
+        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(undefined);
+    });
+
+    it("keeps refreshing the newest sidebar when an older one is disposed", async () => {
+        const c = createController();
+        const olderView = createWebviewView();
+        const newerView = createWebviewView();
+        c.controller.resolveWebviewView(olderView as never, {} as never, {} as never);
+        c.controller.resolveWebviewView(newerView as never, {} as never, {} as never);
+        olderView.onDidDispose.mock.calls[0][0]();
+        newerView.postMessage.mockClear();
+
+        await registeredHandler(c, SWITCH_TARGET_CMD)();
+
+        expect(postedTargetLists(newerView.postMessage)).toHaveLength(1);
+    });
+
+    it("stops pushing targets once the current sidebar is disposed", async () => {
+        const c = createController();
+        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+        c.onDidDispose.mock.calls[0][0]();
+        c.postMessage.mockClear();
+
+        await registeredHandler(c, SWITCH_TARGET_CMD)();
+
+        expect(c.postMessage).not.toHaveBeenCalled();
+    });
+
+    it("deploys files against the active document's directory", async () => {
+        const c = createController();
+
+        await registeredHandler(c, DEPLOY_FILES_CMD)();
+
+        expect(c.deployFilesService.deployFiles).toHaveBeenCalledWith(
+            "/work/trusted",
+            expect.any(Function),
+        );
+    });
+
+    it("mirrors a target picked during deploy-files into the open sidebar", async () => {
+        const c = createController();
+        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+        c.deployFilesService.deployFiles.mockImplementation(
+            async (_dir: string, afterTargetPicker: () => Promise<void>) => {
+                c.postMessage.mockClear();
+                await afterTargetPicker();
+            },
+        );
+
+        await registeredHandler(c, DEPLOY_FILES_CMD)();
+
+        expect(postedTargetLists(c.postMessage)).toHaveLength(1);
     });
 });
 
@@ -275,8 +375,7 @@ describe("DeploymentController.resolveWebviewView", () => {
         const c = createController();
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
-        const onActiveChange = c.editorStore.onDidChangeActiveEditor.mock.calls[0][0];
-        onActiveChange();
+        c.changeActiveEditor();
 
         expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith("editor-1");
     });
@@ -287,7 +386,17 @@ describe("DeploymentController.resolveWebviewView", () => {
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
         c.onDidChangeVisibility.mock.calls[0][0]();
-        c.editorStore.onDidChangeActiveEditor.mock.calls[0][0]();
+        c.changeActiveEditor();
+
+        expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
+    });
+
+    it("stops following the active editor once the view is disposed", () => {
+        const c = createController();
+        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+
+        c.onDidDispose.mock.calls[0][0]();
+        c.changeActiveEditor();
 
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
     });

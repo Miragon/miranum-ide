@@ -235,31 +235,6 @@ export class NodeWorkspace implements WorkspacePort {
     }
 
     /**
-     * Walks upward from `startDir` for a directory containing `.git`. Ported
-     * verbatim from `VsCodeWorkspace`; scheme handling is delegated to
-     * {@link readDirectory}, so `current` stays in the caller's input space.
-     */
-    async findGitRoot(startDir: string): Promise<string | undefined> {
-        let current = startDir;
-        while (true) {
-            try {
-                const entries = await this.readDirectory(current);
-                if (entries.some(([name]) => name === ".git")) {
-                    return current;
-                }
-            } catch {
-                return undefined;
-            }
-            const parent = posix.dirname(current);
-            // dirname returns the same path at the filesystem root.
-            if (parent === current) {
-                return undefined;
-            }
-            current = parent;
-        }
-    }
-
-    /**
      * Lists direct children as `[name, "file"|"directory"]`. Entries that are
      * neither (symlinks, sockets, …) are dropped to match `VsCodeWorkspace`.
      *

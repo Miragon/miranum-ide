@@ -44,11 +44,40 @@ export class ArtifactService {
             return this.vsWorkspace.getWorkspaceFolderForDocument(documentDir);
         } catch (error) {
             if (error instanceof NoWorkspaceFolderFoundError) {
-                const gitRoot = await this.vsWorkspace.findGitRoot(documentDir);
+                const gitRoot = await this.findGitRoot(documentDir);
                 return gitRoot ?? documentDir;
             }
             throw error;
         }
+    }
+
+    private async findGitRoot(startDir: string): Promise<string | undefined> {
+        let current = startDir;
+        while (true) {
+            if (await this.holdsGitEntry(current)) {
+                return current;
+            }
+
+            const parent = posix.dirname(current);
+            if (parent === current) {
+                return undefined;
+            }
+            current = parent;
+        }
+    }
+
+    /**
+     * Probes `.git` instead of listing `directory`: every ancestor of an opened
+     * document can be traversed, but not necessarily listed. `.git` is a
+     * directory in a clone and a file in worktrees and submodules.
+     */
+    private async holdsGitEntry(directory: string): Promise<boolean> {
+        // Not `posix.join`: it collapses the `file:///` of URI-form directories.
+        const gitEntry = directory.endsWith("/") ? `${directory}.git` : `${directory}/.git`;
+        return (
+            (await succeeds(() => this.vsWorkspace.readDirectory(gitEntry))) ||
+            (await succeeds(() => this.vsWorkspace.readFile(gitEntry)))
+        );
     }
 
     async collectTemplateDirs(
@@ -251,5 +280,14 @@ export class ArtifactService {
             }
         }
         return files;
+    }
+}
+
+async function succeeds(operation: () => Promise<unknown>): Promise<boolean> {
+    try {
+        await operation();
+        return true;
+    } catch {
+        return false;
     }
 }
