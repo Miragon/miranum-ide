@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// `BpmnElementTemplatesService` imports `EditorSessionStore`, which imports the
-// `Disposable` *type* from vscode — erased at runtime, but the specifier must
-// still resolve under vitest.
-vi.mock("vscode", () => ({}));
-
 import { ElementTemplatesQuery } from "@miragon/bpmn-modeler-shared";
 
 import { BpmnElementTemplatesService } from "./BpmnElementTemplatesService";

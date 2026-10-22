@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// `BpmnPropertiesPanelService` imports `EditorSessionStore`, which imports the
-// `Disposable` *type* from vscode — erased at runtime, but the specifier must
-// still resolve under vitest.
-vi.mock("vscode", () => ({}));
-
 import { PropertiesPanelStateQuery } from "@miragon/bpmn-modeler-shared";
 
 import { BpmnPropertiesPanelService } from "./BpmnPropertiesPanelService";
