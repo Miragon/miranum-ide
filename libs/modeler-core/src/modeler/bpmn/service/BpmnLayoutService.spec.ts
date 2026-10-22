@@ -121,21 +121,24 @@ describe("BpmnLayoutService.reportFormatted", () => {
         );
     });
 
-    it("falls back to the engine-failure copy, without the detail, when no code is given", () => {
+    it.each([
+        ["no code is given", undefined],
+        ["the code is outside the protocol union", "NOT_A_CODE" as never],
+    ])("treats a failure as an engine failure when %s", (_case, code) => {
         const { service, notifier } = createService();
 
-        service.reportFormatted(failedFormat(undefined, "boom"));
+        service.reportFormatted(failedFormat(code, "boom"));
 
         expect(notifier.logError).toHaveBeenCalledWith("Format failed: boom");
-        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted.");
+        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted. boom");
     });
 
-    it("has no copy for a code outside the protocol union", () => {
+    it("does not treat inherited object keys as refusal codes", () => {
         const { service, notifier } = createService();
 
-        service.reportFormatted(failedFormat("NOT_A_CODE" as never));
+        service.reportFormatted(failedFormat("toString" as never));
 
-        expect(notifier.showError).toHaveBeenCalledWith(undefined);
+        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted.");
     });
 });
 
