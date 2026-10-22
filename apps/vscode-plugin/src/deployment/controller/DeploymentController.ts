@@ -123,7 +123,17 @@ export class DeploymentController implements WebviewViewProvider {
             (message: Query) => void webviewView.webview.postMessage(message),
         );
         this.currentDispatcher = dispatcher;
+
+        // Re-send defaults when the user switches between editor tabs while the
+        // deployment panel is already visible.
+        const activeEditorSubscription = this.editorStore.onDidChangeActiveEditor(() => {
+            if (webviewView.visible) {
+                dispatcher.sendFormDefaults();
+            }
+        });
+
         webviewView.onDidDispose(() => {
+            activeEditorSubscription.dispose();
             if (this.currentDispatcher === dispatcher) {
                 this.currentDispatcher = undefined;
             }
@@ -136,14 +146,6 @@ export class DeploymentController implements WebviewViewProvider {
         // Re-send defaults whenever the panel becomes visible again (e.g. user
         // switches back to the activity-bar tab).
         webviewView.onDidChangeVisibility(() => {
-            if (webviewView.visible) {
-                dispatcher.sendFormDefaults();
-            }
-        });
-
-        // Re-send defaults when the user switches between editor tabs while the
-        // deployment panel is already visible.
-        this.editorStore.onDidChangeActiveEditor(() => {
             if (webviewView.visible) {
                 dispatcher.sendFormDefaults();
             }

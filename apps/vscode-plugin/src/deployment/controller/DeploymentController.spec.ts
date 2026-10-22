@@ -53,11 +53,15 @@ function createWebviewView() {
  * that captures the message listener, the visibility listener, and posted queries.
  */
 function createController() {
-    const onDidChangeActiveEditor = vi.fn();
+    const activeEditorListeners = new Set<() => void>();
     const editorStore = {
         getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-        onDidChangeActiveEditor,
+        onDidChangeActiveEditor: vi.fn((listener: () => void) => {
+            activeEditorListeners.add(listener);
+            return { dispose: () => activeEditorListeners.delete(listener) };
+        }),
     };
+    const changeActiveEditor = () => activeEditorListeners.forEach((listener) => listener());
     const vsDocument = {
         getFilePath: vi.fn().mockReturnValue("/work/trusted/order-process.bpmn"),
     };
@@ -130,6 +134,7 @@ function createController() {
     return {
         controller,
         editorStore,
+        changeActiveEditor,
         vsDocument,
         deploymentService,
         startInstanceService,
@@ -370,8 +375,7 @@ describe("DeploymentController.resolveWebviewView", () => {
         const c = createController();
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
-        const onActiveChange = c.editorStore.onDidChangeActiveEditor.mock.calls[0][0];
-        onActiveChange();
+        c.changeActiveEditor();
 
         expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith("editor-1");
     });
@@ -382,7 +386,17 @@ describe("DeploymentController.resolveWebviewView", () => {
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
         c.onDidChangeVisibility.mock.calls[0][0]();
-        c.editorStore.onDidChangeActiveEditor.mock.calls[0][0]();
+        c.changeActiveEditor();
+
+        expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
+    });
+
+    it("stops following the active editor once the view is disposed", () => {
+        const c = createController();
+        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+
+        c.onDidDispose.mock.calls[0][0]();
+        c.changeActiveEditor();
 
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
     });
