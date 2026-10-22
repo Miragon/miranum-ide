@@ -189,7 +189,9 @@ yarn watch
 yarn docs:dev
 ```
 
-Opens the VitePress docs site in your browser.
+Opens the VitePress docs site in your browser. The site is built on the Miragon docs kit
+(`docs/.vitepress/miragon/`, vendored from Miragon/corporate-identity); do not edit the kit
+files, `corepack yarn workspace @miragon/bpmn-modeler-docs check:kit` reports drift.
 
 ### Run the extension in VS Code
 
@@ -406,7 +408,7 @@ Common types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`.
 | **PR Labeler**      | PR opened / updated                                      | auto-labels PRs by changed workspace                                          |
 | **Prepare Release ***| manual (`workflow_dispatch`)                            | bump version, sanity build, commit, tag, create GitHub Release                |
 | **Publish ***       | `release: published` (or `workflow_dispatch` + dry-run)  | build artefact, attach to release, push to Marketplace / GitHub Release        |
-| **Deploy Docs**     | `release: published` / manual                            | VitePress build + GitHub Pages deploy                                         |
+| **Deploy Docs**     | push to `main` / PR touching `docs/**`, manual           | Miragon docs-kit check + VitePress build; deploys to GitHub Pages from `main` |
 
 There are two `prepare-*` and two `publish-*` workflows — one pair
 per artefact (VS Code extension, standalone macOS app). See
