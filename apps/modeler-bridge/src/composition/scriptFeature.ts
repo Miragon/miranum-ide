@@ -89,7 +89,7 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         // webview found, one at a time — a concurrent open would race the
         // per-script format quick-picks (see OpenScriptEditorsCommand).
         .on("OpenScriptEditorsCommand", (message: Command, editorId: string) => {
-            void openAllScripts(message as OpenScriptEditorsCommand, editorId);
+            return openAllScripts(message as OpenScriptEditorsCommand, editorId);
         });
 
     /**

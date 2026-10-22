@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// `BpmnClipboardMediator` imports `EditorSessionStore`, which imports the
-// `Disposable` *type* from vscode — erased at runtime, but the specifier must
-// still resolve under vitest.
-vi.mock("vscode", () => ({}));
-
 import { ClipboardQuery, TextClipboardQuery } from "@miragon/bpmn-modeler-shared";
 
 import { BpmnClipboardMediator } from "./BpmnClipboardMediator";

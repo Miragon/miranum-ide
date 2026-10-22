@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The service is vscode-free, but `DiffPaneStore` (constructed here as the real
-// backing registry) imports the `Disposable` *type* from vscode — erased at
-// runtime, yet the specifier must resolve under vitest.
-vi.mock("vscode", () => ({}));
-
 import { DiffPaneHandle } from "../domain/DiffSession";
 import { DiffPaneStore } from "../infrastructure/DiffPaneStore";
 import { BpmnDiffService } from "./BpmnDiffService";

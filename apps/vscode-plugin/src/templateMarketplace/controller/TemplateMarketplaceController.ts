@@ -5,6 +5,7 @@ import { commands, ExtensionContext, QuickPickItem, window, workspace } from "vs
 
 import {
     BpmnElementTemplatesService,
+    expandHomePath,
     marketplaceEntryLabel,
     MarketplaceSettingsEntry,
     parseMarketplaceUrl,
@@ -16,22 +17,6 @@ import { VsCodeSettings } from "../../shared/infrastructure/VsCodeSettings";
 export const ADD_MARKETPLACE_CMD = "bpmn-modeler.addMarketplace";
 export const UPDATE_MARKETPLACES_CMD = "bpmn-modeler.updateMarketplaces";
 export const REMOVE_MARKETPLACE_CMD = "bpmn-modeler.removeMarketplace";
-
-/**
- * Expands a leading `~` at the host boundary — a shell convention neither the
- * filesystem APIs nor the host-agnostic core resolve — so the core only ever
- * sees an absolute path. `~user` is left untouched (not portably resolvable) so
- * the parser rejects it.
- */
-export function expandHomePath(input: string): string {
-    if (input === "~") {
-        return homedir();
-    }
-    if (input.startsWith("~/") || input.startsWith("~\\")) {
-        return join(homedir(), input.slice(2));
-    }
-    return input;
-}
 
 /**
  * Renders a marketplace's scope membership for the Remove picker's description,
@@ -83,7 +68,7 @@ export class TemplateMarketplaceController {
             // can never drift from what the service resolves.
             validateInput: (value) => {
                 try {
-                    parseMarketplaceUrl(expandHomePath(value.trim()));
+                    parseMarketplaceUrl(expandHomePath(value.trim(), homedir(), join));
                     return undefined;
                 } catch {
                     return (
@@ -106,7 +91,7 @@ export class TemplateMarketplaceController {
 
         // Persist the expanded path so a re-fetch via Update (which re-reads
         // settings) never sees a `~`.
-        const location = expandHomePath(input.trim());
+        const location = expandHomePath(input.trim(), homedir(), join);
         try {
             await this.notifier.withProgress("Adding marketplace…", () =>
                 this.marketplaceSvc.addMarketplace(location),
