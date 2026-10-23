@@ -197,10 +197,10 @@ export interface BpmnDesignerHandle {
 
     /**
      * Replace the element types pinned at the top of the append/create menu —
-     * the live counterpart of {@link DesignerOptions.favouriteBpmnElements}. At
-     * most six are shown, in the given order; types without a plain menu entry
-     * are skipped, and an empty list clears the row. Takes effect the next time
-     * the menu opens.
+     * the live counterpart of {@link DesignerOptions.favouriteBpmnElements}.
+     * Only the first six types count, shown in the given order; of those, types
+     * without a plain menu entry are skipped, and an empty list clears the row.
+     * Takes effect the next time the menu opens.
      */
     setFavouriteBpmnElements(types: readonly string[]): void;
 

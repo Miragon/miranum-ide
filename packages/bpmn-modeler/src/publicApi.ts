@@ -332,9 +332,9 @@ export interface BpmnModelerHandle {
      * [A] Replace the element types pinned at the top of the append/create
      * menu — equivalent to `setSettings({ favouriteBpmnElements })`, and
      * present on {@link BpmnDesignerHandle} too, so a host updates either
-     * surface the same way. At most six are shown, in the given order; types
-     * without a plain menu entry are skipped, and an empty list clears the row.
-     * Takes effect the next time the menu opens.
+     * surface the same way. Only the first six types count, shown in the given
+     * order; of those, types without a plain menu entry are skipped, and an
+     * empty list clears the row. Takes effect the next time the menu opens.
      */
     setFavouriteBpmnElements(types: readonly string[]): void;
 

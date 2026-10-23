@@ -479,7 +479,7 @@ abort — the factory rejects with the thrown error and nothing is left mounted.
 | `newDiagram()`                                                                                 | Replace the diagram with a fresh empty one stamped for `engine`/`engineVersion`, so it reopens in the same engine and mode. |
 | `setElementTemplates(templates)`                                                               | Push a new template set (data, never a path).                                         |
 | `setSettings(settings)`                                                                        | Merge a partial settings update (`colorTheme` excluded — theme is host policy).       |
-| `setFavouriteBpmnElements(types)`                                                              | Replace the append/create-menu favourites live — `setSettings({ favouriteBpmnElements })` on its own. Also on `BpmnDesignerHandle`. |
+| `setFavouriteBpmnElements(types)`                                                              | Replace the append/create-menu favourites live; same as `setSettings({ favouriteBpmnElements })`. Also on `BpmnDesignerHandle`. |
 | `viewport` / `selection`                                                                       | Viewport (zoom/scroll/fit) and selection accessors.                                   |
 | `captureViewState()` / `applyViewState(state)`                                                 | [View state](#view-state-capture--restore) capture/restore across an instance switch. |
 | `setTheme(theme)`                                                                              | Switch the colour theme live; a no-op once destroyed.                                 |
@@ -677,9 +677,9 @@ compile time. Unlike the root `ModelerCapabilities`, the design
 `loadDiagram`, `exportDiagram`, `newDiagram`, `getDiagramSvg`, `viewport`,
 `selection`, `captureViewState`, `applyViewState`, `setTheme`, `getService`,
 `applyLintResults`, `applyLintingDisabled`, `startInPageLinting`,
-`setFavouriteBpmnElements`, and
-`destroy` — each **signature-identical** to its `BpmnModelerHandle` counterpart, so a modeler handle
-narrows to a designer handle with no adapter.
+`setFavouriteBpmnElements`, and `destroy` — each **signature-identical** to its
+`BpmnModelerHandle` counterpart, so a modeler handle narrows to a designer
+handle with no adapter.
 `captureViewState` / `applyViewState` (see
 [View state](#view-state-capture--restore)) carry the user's plane, viewbox, and selection across a
 mode switch. `getService` is typed against `CoreDesignerServices`, which equals the full
