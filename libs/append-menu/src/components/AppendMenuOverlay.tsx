@@ -237,11 +237,7 @@ export function AppendMenuOverlay({
     const handleBpmnSelect = useCallback(
         (item: { id: string; entry: PopupMenuEntry }, event: Event) => {
             if (selectedTemplate?.template) {
-                const bpmnType = resolveSelectedType(
-                    item.id,
-                    item.entry.label,
-                    selectedTemplate.template.appliesTo,
-                );
+                const bpmnType = resolveSelectedType(item.id, selectedTemplate.template.appliesTo);
                 if (bpmnType) {
                     onTemplateTypeSelect(
                         selectedTemplate.template,
