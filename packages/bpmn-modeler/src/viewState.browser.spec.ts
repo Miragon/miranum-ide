@@ -25,7 +25,7 @@ import {
 
 type ViewStateSurface = Pick<
     BpmnDesignerHandle,
-    "loadDiagram" | "applyViewState" | "viewport" | "selection" | "destroy"
+    "loadDiagram" | "captureViewState" | "applyViewState" | "viewport" | "selection" | "destroy"
 >;
 
 const SURFACES: Array<{
@@ -155,6 +155,22 @@ describe.each(SURFACES)("$name view-state restore (real ResizeObserver)", (descr
         expect(after.x).toBeCloseTo(focused.x, 0);
         expect(after.y).toBeCloseTo(focused.y, 0);
         expect(after.x).toBeCloseTo(4950, 0);
+    });
+
+    it("restores a captured view state on a fresh instance", async () => {
+        const { handle: original } = await openSized(800, 600);
+        original.applyViewState(SNAPSHOT);
+        await settleObserver();
+
+        const captured = original.captureViewState();
+        original.destroy();
+        const { handle: successor } = await openSized(800, 600);
+        successor.applyViewState(captured);
+        await settleObserver();
+
+        expect(captured.selectedElementIds).toEqual(["Task_1"]);
+        expectViewportMatches(successor.viewport.getViewport());
+        expect(successor.captureViewState()).toEqual(captured);
     });
 
     it("clears the selection when the snapshot has none", async () => {
