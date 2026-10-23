@@ -18,7 +18,6 @@ import {
     GetClipboardCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
-    GetFormReferenceStatusCommand,
     GetPropertiesPanelStateCommand,
     GetTextClipboardCommand,
     ImplementationStatusQuery,
@@ -28,35 +27,28 @@ import {
     DiagramFormattedCommand,
     LogErrorCommand,
     LogWarningCommand,
-    NavigateToImplementationCommand,
-    NavigateToReferencedModelCommand,
-    OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
-    SearchWorkspaceDefinitionsCommand,
     ShowInfoCommand,
     SetClipboardCommand,
     SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
     SetTextClipboardCommand,
-    SyncActivitiesCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
     UpdateLintResultsCommand,
     UpdateOpenScriptEditorsQuery,
     UpdateScriptContentQuery,
     UpdateScriptFormatQuery,
-    UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
     WorkspaceDefinitionsQuery,
     HOST_REPLY_TIMEOUT_MS,
     HostDocumentRevisions,
     createFlushResponder,
     createInertLockGroup,
-    createReplyRegistry,
     createResolver,
     extractProcessVariables,
     initResizer,
@@ -105,6 +97,7 @@ import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
+import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
@@ -121,9 +114,6 @@ import {
     type SurfaceHandle,
 } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
-
-// The first search indexes the workspace cold, which can walk a whole directory tree.
-export const DEFINITION_SEARCH_TIMEOUT_MS = 30_000;
 
 /**
  * Host replies that act on the imported diagram. The webview requests their
@@ -237,11 +227,7 @@ function startSession(
     let engineReloadPending = false;
     let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
-    let availableProtocolFormIds = new Set<string>();
-    const referenceAvailabilityListeners = new Set<() => void>();
-    const definitionSearchReplies = createReplyRegistry<WorkspaceDefinitionsQuery>(
-        DEFINITION_SEARCH_TIMEOUT_MS,
-    );
+    const protocolCapabilities = createProtocolCapabilities(host, () => surface);
     const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
@@ -444,81 +430,6 @@ function startSession(
     }
 
     /**
-     * The default capability adapter: each port posts the protocol command to
-     * the host. Selected whenever `bootstrap()` is called without explicit
-     * capabilities, so every real host (VS Code, IntelliJ, Theia) runs through
-     * it. Closes over the session {@link host} and {@link surface}.
-     *
-     * `scripting` is always populated here even though its DI cluster is C7-only;
-     * `capabilityModules` gates the registration, so the surplus port on C8 is inert.
-     */
-    function createProtocolCapabilities(): ModelerCapabilities {
-        return {
-            modelNavigation: {
-                openReference: ({ id, kind }) =>
-                    host.postMessage(new NavigateToReferencedModelCommand(id, kind)),
-                isReferenceAvailable: ({ id, kind }) =>
-                    kind !== "form" || availableProtocolFormIds.has(id),
-                onReferenceAvailabilityChanged: (listener) => {
-                    referenceAvailabilityListeners.add(listener);
-                    return () => referenceAvailabilityListeners.delete(listener);
-                },
-            },
-            codeLink: {
-                navigateToImplementation: (reference, kind) =>
-                    host.postMessage(new NavigateToImplementationCommand(reference, kind)),
-                syncActivities: (entries) => host.postMessage(new SyncActivitiesCommand(entries)),
-            },
-            scripting: {
-                // The process-variable model is re-extracted per open so
-                // completion reflects the diagram at the moment the tab opens.
-                openScriptEditor: (event) =>
-                    host.postMessage(
-                        new OpenScriptEditorCommand(
-                            event.elementId,
-                            event.kind,
-                            event.listenerIndex,
-                            event.eventName,
-                            event.scriptFormat,
-                            event.content,
-                            // Scripting is a modeler-only cluster (C7), but the
-                            // port closes over the polymorphic surface.
-                            isModelerHandle(surface)
-                                ? extractProcessVariables(surface.getDefinitions())
-                                : [],
-                        ),
-                    ),
-                scriptSourceChanged: (event) =>
-                    host.postMessage(
-                        new UpdateScriptSourceCommand(
-                            event.elementId,
-                            event.kind,
-                            event.listenerIndex,
-                            event.content,
-                        ),
-                    ),
-            },
-            definitionSearch: {
-                search: async ({ kind, text }) => {
-                    const { requestId, reply } = definitionSearchReplies.open();
-                    host.postMessage(new SearchWorkspaceDefinitionsCommand(requestId, kind, text));
-                    const answer = await reply;
-                    if (!answer) {
-                        host.postMessage(
-                            new LogWarningCommand("No workspace search reply from the host"),
-                        );
-                        throw new Error("The host did not answer the search");
-                    }
-                    if (answer.failed) {
-                        throw new Error("The host could not search other models");
-                    }
-                    return answer.definitions;
-                },
-            },
-        };
-    }
-
-    /**
      * Entry point executed once the webview DOM is fully loaded.
      *
      * Registers the message listener first so no backend messages are missed,
@@ -716,7 +627,7 @@ function startSession(
         const engine = bpmnFileQuery?.engine;
         modelerEngine = engine;
 
-        const capabilities = injectedCapabilities ?? createProtocolCapabilities();
+        const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
 
         // The shared lint options for both editable surfaces (Implement + Design):
@@ -1080,8 +991,8 @@ function startSession(
 
         const currentBpmnFileQuery = latestBpmnFileQuery ?? bpmnFileQuery;
 
-        if (currentBpmnFileQuery?.engine === "c8" && injectedCapabilities === undefined) {
-            host.postMessage(new GetFormReferenceStatusCommand());
+        if (injectedCapabilities === undefined) {
+            protocolCapabilities.requestFormReferenceStatus(currentBpmnFileQuery?.engine);
         }
 
         console.debug("[DEBUG] Modeler is initialized...");
@@ -1551,23 +1462,18 @@ function startSession(
             }
             case queryOrCommand.type === "FormReferenceStatusQuery": {
                 try {
-                    const query = message.data as FormReferenceStatusQuery;
-                    const nextFormIds = new Set(query.formIds);
-                    const changed =
-                        nextFormIds.size !== availableProtocolFormIds.size ||
-                        [...nextFormIds].some((formId) => !availableProtocolFormIds.has(formId));
-                    availableProtocolFormIds = nextFormIds;
-                    if (changed) {
-                        referenceAvailabilityListeners.forEach((listener) => listener());
-                    }
+                    protocolCapabilities.handlers.FormReferenceStatusQuery(
+                        message.data as FormReferenceStatusQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
                 break;
             }
             case queryOrCommand.type === "WorkspaceDefinitionsQuery": {
-                const query = message.data as WorkspaceDefinitionsQuery;
-                definitionSearchReplies.settle(query.requestId, query);
+                protocolCapabilities.handlers.WorkspaceDefinitionsQuery(
+                    message.data as WorkspaceDefinitionsQuery,
+                );
                 break;
             }
             case queryOrCommand.type === "FocusElementQuery": {

@@ -117,8 +117,9 @@ vi.mock("./state", () => ({
     },
 }));
 
-import { bootstrap, DEFINITION_SEARCH_TIMEOUT_MS } from "./bootstrap";
+import { bootstrap } from "./bootstrap";
 import { installHostEditorActions } from "./hostEditorActions";
+import { DEFINITION_SEARCH_TIMEOUT_MS } from "./session/protocolCapabilities";
 import { loadDesignerModule, loadViewerModule } from "./surfaceModules";
 
 function dispatch(data: unknown): void {
