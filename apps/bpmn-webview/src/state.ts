@@ -36,7 +36,7 @@ type StatefulSurface = Pick<
 export function readSavedMode(
     host: HostApi<WebviewState, Command | Query>,
 ): SurfaceMode | undefined {
-    return createWebviewStateStore(host).read()?.mode;
+    return host.getState()?.mode;
 }
 
 /**
