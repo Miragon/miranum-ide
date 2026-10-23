@@ -59,13 +59,14 @@ function instantiate(bridge: ClipboardBridge): {
     eventBus: FakeEventBus;
     copyPaste: { paste: ReturnType<typeof vi.fn> };
     nativeCopyPaste: { toggle: ReturnType<typeof vi.fn> };
-    canvas: { focus: ReturnType<typeof vi.fn> };
+    canvas: { focus: ReturnType<typeof vi.fn>; isFocused: ReturnType<typeof vi.fn> };
 } {
     const eventBus = new FakeEventBus();
     liveEventBuses.push(eventBus);
     const copyPaste = { paste: vi.fn() };
     const nativeCopyPaste = { toggle: vi.fn() };
-    const canvas = { focus: vi.fn() };
+    // Element copies only start from a keydown on the focused canvas.
+    const canvas = { focus: vi.fn(), isFocused: vi.fn(() => true) };
     const moddle = BpmnModdle();
 
     const [BridgedClipboardModule] = createClipboardModules({ element: bridge });
@@ -99,6 +100,10 @@ function dispatchCopyObservedByHost(target: EventTarget = document.body) {
 /** A minimal but real copyTree: one bpmn:Task descriptor at depth 0. */
 const TREE = {
     "0": [{ businessObject: { $type: "bpmn:Task", id: "Task_1", name: "Do work" } }],
+};
+
+const OTHER_TREE = {
+    "0": [{ businessObject: { $type: "bpmn:Task", id: "Task_2", name: "Review" } }],
 };
 
 afterEach(() => {
@@ -232,41 +237,68 @@ describe("BridgedClipboard copy event", () => {
         expect(hostCopyHandler).toHaveBeenCalledTimes(1);
     });
 
-    it("lets a text field copy through after an element copy that fired no copy event", () => {
-        const { eventBus } = instantiate(bridgeSpies("").bridge);
-        // IntelliJ and VS Code for the Web swallow the canvas Cmd+C keydown, so
-        // only the bridge write delivers those elements.
+    // IntelliJ and VS Code for the Web fire no copy event for the canvas Cmd+C,
+    // so only the bridge write delivers those elements and the payload stays parked.
+    it.each([
+        ["a text field", () => document.createElement("input")],
+        ["static text", () => Object.assign(document.createElement("p"), { textContent: "Docs" })],
+        ["a select", () => document.createElement("select")],
+    ])(
+        "lets a copy from %s through after an element copy that fired no copy event",
+        (_, createCopySource) => {
+            const { eventBus, canvas } = instantiate(bridgeSpies("").bridge);
+            eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+            const copySource = createCopySource();
+            document.body.appendChild(copySource);
+            canvas.isFocused.mockReturnValue(false);
+
+            const { event, hostCopyHandler } = dispatchCopyObservedByHost(copySource);
+
+            expect(event.defaultPrevented).toBe(false);
+            expect(event.clipboardData.getData("text/plain")).toBe("");
+            expect(hostCopyHandler).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it("drops elements parked by a canvas copy once the user copies elsewhere", () => {
+        const { eventBus, canvas } = instantiate(bridgeSpies("").bridge);
         eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
-        const nameField = document.createElement("input");
-        document.body.appendChild(nameField);
-        nameField.focus();
+        canvas.isFocused.mockReturnValue(false);
+        dispatchCopyObservedByHost();
+        canvas.isFocused.mockReturnValue(true);
 
-        const fieldCopy = dispatchCopyObservedByHost(nameField);
-        nameField.blur();
-        const laterCopy = dispatchCopyObservedByHost();
+        const { event } = dispatchCopyObservedByHost();
 
-        expect(fieldCopy.event.defaultPrevented).toBe(false);
-        expect(fieldCopy.event.clipboardData.getData("text/plain")).toBe("");
-        expect(fieldCopy.hostCopyHandler).toHaveBeenCalledTimes(1);
-        expect(laterCopy.event.defaultPrevented).toBe(false);
+        expect(event.defaultPrevented).toBe(false);
     });
 
     it("puts canvas-copied elements on the clipboard while a text selection lingers in a field", () => {
         const { eventBus } = instantiate(bridgeSpies("").bridge);
         const nameField = document.createElement("input");
-        const canvasSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        canvasSvg.setAttribute("tabindex", "0");
-        document.body.append(nameField, canvasSvg);
-        // Clicking the user-select:none canvas moves focus but keeps the field's
-        // selection, and Chromium targets the copy event at that selection.
-        canvasSvg.focus();
+        document.body.appendChild(nameField);
         eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
 
+        // Clicking the user-select:none canvas moves focus but keeps the field's
+        // selection, and Chromium targets the copy event at that selection.
         const { event, hostCopyHandler } = dispatchCopyObservedByHost(nameField);
 
         expect(event.defaultPrevented).toBe(true);
         expect(event.clipboardData.getData("text/plain")).toBe(CLIP_PREFIX + JSON.stringify(TREE));
         expect(hostCopyHandler).not.toHaveBeenCalled();
+    });
+
+    it("lets the focused modeler answer a copy when several share the document", () => {
+        const unfocusedModeler = instantiate(bridgeSpies("").bridge);
+        const focusedModeler = instantiate(bridgeSpies("").bridge);
+        unfocusedModeler.eventBus.fire("copyPaste.elementsCopied", { tree: TREE });
+        unfocusedModeler.canvas.isFocused.mockReturnValue(false);
+        focusedModeler.eventBus.fire("copyPaste.elementsCopied", { tree: OTHER_TREE });
+
+        const { event } = dispatchCopyObservedByHost();
+
+        expect(event.clipboardData.getData("text/plain")).toBe(
+            CLIP_PREFIX + JSON.stringify(OTHER_TREE),
+        );
     });
 
     it("marks the copy handled even when bpmn-js passed no hints", () => {

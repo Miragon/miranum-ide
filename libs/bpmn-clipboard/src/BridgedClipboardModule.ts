@@ -107,11 +107,12 @@ class BridgedClipboard {
         const onDocumentCopy = (e: ClipboardEvent): void => {
             const elementsPayload = pendingClipData;
             pendingClipData = null;
-            // Hosts that swallow the canvas Cmd+C keydown fire no copy event for
-            // it, so the payload may be stale; a text-field copy is the user's text.
-            // Focus decides, not e.target: Chromium targets the copy at the DOM
-            // selection, which stays in a field after the user clicks the canvas.
-            if (!elementsPayload || isTextEditingElement(document.activeElement)) {
+            // diagram-js copies elements only from a keydown on the focused canvas
+            // and prevents its default, so hosts that don't re-dispatch a copy
+            // leave the payload stale. Focus decides, not e.target: Chromium
+            // targets the copy at the DOM selection, which stays in a field
+            // after a canvas click.
+            if (!elementsPayload || !canvas.isFocused()) {
                 return;
             }
             e.preventDefault();
