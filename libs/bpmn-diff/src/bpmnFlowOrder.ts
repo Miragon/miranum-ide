@@ -47,11 +47,14 @@ export interface ModdleElement {
  * removed elements between two surviving siblings).  `y`/`x` come from BPMNDI
  * bounds and are tiebreakers for elements that share an index — most
  * commonly a parallel-gateway fork where two branches start at the same depth.
+ * `blockEndIndex` is set on a sub-process: the index of the last element of its
+ * block, so an element anchored after the sub-process lands behind its content.
  */
 export interface FlowPosition {
     flowIndex: number;
     y: number;
     x: number;
+    blockEndIndex?: number;
 }
 
 /**
@@ -79,6 +82,8 @@ export function buildFlowOrder(root: ModdleElement): Map<string, FlowPosition> {
  *   - outgoing target → place removed just before that node (`-0.5`)
  *   - flow's own source/target if the removed element is itself a sequence flow
  *
+ * Just after a sub-process means after its whole block, content included.
+ *
  * Removed ids without any surviving neighbour are omitted from the map; the
  * caller's sort then drops them to the end via the fallback index.
  */
@@ -94,7 +99,11 @@ export function buildRemovedAnchors(
 
     const anchorAfter = (baseId: string, offset: number): FlowPosition | undefined => {
         const p = afterOrder.get(baseId);
-        return p && { flowIndex: p.flowIndex + offset, y: p.y, x: p.x };
+        return p && { flowIndex: (p.blockEndIndex ?? p.flowIndex) + offset, y: p.y, x: p.x };
+    };
+    const anchorBefore = (baseId: string, offset: number): FlowPosition | undefined => {
+        const p = afterOrder.get(baseId);
+        return p && { flowIndex: p.flowIndex - offset, y: p.y, x: p.x };
     };
 
     for (const removedId of removedIds) {
@@ -124,11 +133,11 @@ export function buildRemovedAnchors(
             for (const flow of outgoingBySource.get(removedId) ?? []) {
                 const targetId = refId(flow.targetRef);
                 if (targetId && afterOrder.has(targetId)) {
-                    anchor = anchorAfter(targetId, -0.5);
+                    anchor = anchorBefore(targetId, 0.5);
                     break;
                 }
                 if (flow.id && afterOrder.has(flow.id)) {
-                    anchor = anchorAfter(flow.id, -0.25);
+                    anchor = anchorBefore(flow.id, 0.25);
                     break;
                 }
             }
@@ -142,7 +151,7 @@ export function buildRemovedAnchors(
             if (sourceId && afterOrder.has(sourceId)) {
                 anchor = anchorAfter(sourceId, 0.5);
             } else if (targetId && afterOrder.has(targetId)) {
-                anchor = anchorAfter(targetId, -0.5);
+                anchor = anchorBefore(targetId, 0.5);
             }
         }
 
@@ -261,15 +270,19 @@ class FlowWalk {
     }
 
     private placeNode(node: ModdleElement): void {
-        this.place(node);
-        if (isSubProcess(node)) this.walkContainerFlow([node], entryNodesOf(node, this.graph));
+        const position = this.place(node);
+        if (!isSubProcess(node)) return;
+        this.walkContainerFlow([node], entryNodesOf(node, this.graph));
+        position.blockEndIndex = this.nextFlowIndex - 1;
     }
 
-    private place(element: ModdleElement, fallback: Point = ORIGIN): void {
+    private place(element: ModdleElement, fallback: Point = ORIGIN): FlowPosition {
         const id = element.id!;
         const { x, y } = this.bounds.get(id) ?? fallback;
+        const position: FlowPosition = { flowIndex: this.nextFlowIndex++, y, x };
         this.claimedIds.add(id);
-        this.order.set(id, { flowIndex: this.nextFlowIndex++, y, x });
+        this.order.set(id, position);
+        return position;
     }
 
     private isUnclaimed(element: ModdleElement): boolean {

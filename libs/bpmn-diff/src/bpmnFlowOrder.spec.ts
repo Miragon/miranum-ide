@@ -477,6 +477,44 @@ describe("buildRemovedAnchors", () => {
         expect(anchors.get("Removed")).toEqual(at(3.5, 40, 50));
     });
 
+    it("places a removed successor of a sub-process after the sub-process's content", () => {
+        const afterOrder = buildFlowOrder(
+            definitionsOf([
+                processOf(
+                    ...chainedBy(
+                        "F",
+                        element("StartEvent", "Start"),
+                        element("SubProcess", "Sub", {
+                            flowElements: chainedBy(
+                                "I",
+                                element("StartEvent", "InnerStart"),
+                                element("EndEvent", "InnerEnd"),
+                            ),
+                        }),
+                        element("EndEvent", "End"),
+                    ),
+                ),
+            ]),
+        );
+
+        const anchors = buildRemovedAnchors(
+            ["Removed"],
+            before(
+                element("SubProcess", "Sub"),
+                element("Task", "Removed"),
+                sequenceFlow("ToRemoved", "Sub", "Removed"),
+            ),
+            afterOrder,
+        );
+
+        expect(sortIdsByOrder(["F2", "Removed", "InnerEnd", "Sub"], afterOrder, anchors)).toEqual([
+            "Sub",
+            "InnerEnd",
+            "Removed",
+            "F2",
+        ]);
+    });
+
     it("places a removed node just after its surviving incoming flow when the source is gone", () => {
         const anchors = buildRemovedAnchors(
             ["Removed"],
