@@ -105,11 +105,6 @@
                 "tiny-svg"
             ]
         },
-        "libs/properties-panel": {
-            // engineGroupData.upstream.spec reads the installed dist through
-            // createRequire to pin its group prefix, which knip cannot trace.
-            "ignoreDependencies": ["bpmn-js-element-templates"]
-        },
         "packages/dmn-modeler": {
             // `src/index.ts` is the public `@miragon/dmn-modeler` entry (in
             // package.json exports), so list it as the entry.
