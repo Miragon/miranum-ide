@@ -160,9 +160,9 @@ export class FormInputValuesQuery extends Query {
 }
 
 export class ElementTemplatesQuery extends Query {
-    public readonly elementTemplates: JSON[];
+    public readonly elementTemplates: object[];
 
-    constructor(elementTemplates: any[]) {
+    constructor(elementTemplates: object[]) {
         super("ElementTemplatesQuery");
         this.elementTemplates = elementTemplates;
     }
