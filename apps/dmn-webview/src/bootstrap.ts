@@ -9,6 +9,7 @@ import {
     createFlushResponder,
     createHostThemeAdapter,
     createResolver,
+    createWebviewStateStore,
     DmnFileQuery,
     DmnModelerSettingQuery,
     FlushDocumentQuery,
@@ -19,12 +20,15 @@ import {
     type HostThemeMode,
     initResizer,
     installCanvasAutoFocus,
+    installGlobalErrorForwarding,
     installPanelShortcuts,
     LanguageQuery,
     LogErrorCommand,
     LogWarningCommand,
     PropertiesPanelStateQuery,
+    PropertiesPanelUiStateAdapter,
     Query,
+    readSavedPanelVisibility,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
     resolveHostThemeKind,
@@ -40,7 +44,6 @@ import {
     type DmnModelerHandle,
 } from "@miragon/dmn-modeler";
 
-import { readSavedPanelVisibility, WebviewStateManager } from "./state";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { WebviewState } from "./webviewState";
 
@@ -61,26 +64,6 @@ let host: HostApi<WebviewState, Command | Query>;
 let bootstrapOpts: BootstrapOptions = {};
 let modeler: DmnModelerHandle | undefined;
 let themeAdapter: HostThemeAdapter | undefined;
-
-// Global safety net for throws outside the per-message try/catch below — dmn-js
-// event-bus callbacks run outside it, so an error there would otherwise vanish
-// into the webview console instead of reaching the output channel.
-function registerGlobalErrorHandlers(): void {
-    window.addEventListener("error", (event: ErrorEvent) => {
-        host.postMessage(
-            new LogErrorCommand(`Unhandled error: ${event.message}`, event.error?.stack),
-        );
-    });
-    window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-        const reason: unknown = event.reason;
-        host.postMessage(
-            new LogErrorCommand(
-                `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-                reason instanceof Error ? reason.stack : undefined,
-            ),
-        );
-    });
-}
 
 /**
  * Debounce the openXML function to avoid multiple calls when the user types fast.
@@ -175,7 +158,7 @@ let modelerIsInitialized = false;
 /**
  * Upper bound (ms) on how long bootstrap waits for a host reply before
  * continuing without it, so a dropped settings / panel-state reply can no longer
- * stall the restore chain (`restorePanelUiState` / `startPersisting`).
+ * stall the restore chain (`restoreGroupsAndScroll` / `startPersisting`).
  */
 const RESOLVER_TIMEOUT_MS = 5000;
 
@@ -189,7 +172,10 @@ const RESOLVER_TIMEOUT_MS = 5000;
 async function run(): Promise<void> {
     const canvas = requireElement("#js-canvas");
     const propertiesPanel = requireElement("#js-properties-panel");
-    const stateManager = new WebviewStateManager(host, propertiesPanel);
+    const panelUiState = new PropertiesPanelUiStateAdapter(
+        createWebviewStateStore(host),
+        propertiesPanel,
+    );
     window.addEventListener("message", onReceiveMessage);
 
     // Theme is host policy: drive the page-level scope (host chrome, keyed off
@@ -263,10 +249,10 @@ async function run(): Promise<void> {
     // Registered after restore so the restore itself can't echo back.
     if (savedPanelVisible === undefined) {
         const panelState = await panelStateResolver.wait(RESOLVER_TIMEOUT_MS);
-        stateManager.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
+        panelUiState.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
     }
     propertiesPanelHandle.onVisibilityChanged((visible) => {
-        stateManager.persistPanelVisibility(visible);
+        panelUiState.persistPanelVisibility(visible);
         host.postMessage(new SetPropertiesPanelStateCommand(visible));
     });
 
@@ -284,8 +270,8 @@ async function run(): Promise<void> {
     installCanvasAutoFocus({ focusCanvas });
     host.postMessage(new RequestFocusCommand());
 
-    stateManager.restorePanelUiState();
-    stateManager.startPersisting();
+    panelUiState.restoreGroupsAndScroll();
+    panelUiState.startPersisting();
 }
 
 async function initializeModeler(dmnFile: string | undefined, documentRevision = 0) {
@@ -413,7 +399,7 @@ export function bootstrap(
 ): void {
     host = injectedHost;
     bootstrapOpts = opts;
-    registerGlobalErrorHandlers();
+    installGlobalErrorForwarding((command) => host.postMessage(command));
     if (document.readyState === "complete") {
         void run();
     } else {

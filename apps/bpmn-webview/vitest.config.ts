@@ -13,8 +13,9 @@ export default defineConfig({
         // specs import it the same way the bundle does (mirrors modeler-core).
         server: { deps: { inline: [/@miragon\/bpmnlint-plugin-rules/] } },
         coverage: {
-            ...coveragePreset(__dirname),
-            thresholds: { statements: 49, branches: 40, functions: 48, lines: 50 },
+            // Import-time entry wiring and a re-export barrel without logic of their own.
+            ...coveragePreset(__dirname, { exclude: ["src/main.ts", "src/index.ts"] }),
+            thresholds: { statements: 79, branches: 71, functions: 83, lines: 81 },
         },
     },
 });
