@@ -34,7 +34,7 @@ import {
     type Highlight,
     type NavColumns,
 } from "../navigation";
-import { clampToCanvas } from "../positioning";
+import { clampToCanvas, type CanvasBounds } from "../positioning";
 import { offersTypePick } from "../templateTypeAction";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
@@ -45,7 +45,7 @@ interface AppendMenuOverlayProps {
     favourites: string[];
     translate: Translate;
     position: { x: number; y: number };
-    canvasBounds: { right: number; bottom: number };
+    canvasBounds: CanvasBounds;
     onSelect: (action: PopupMenuEntryAction | undefined, event: Event) => void;
     onTemplateTypeSelect: (
         template: ElementTemplate,

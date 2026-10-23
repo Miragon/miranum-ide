@@ -3,12 +3,19 @@ const EDGE_GAP = 8;
 const HOVER_CARD_WIDTH = 300;
 const HOVER_CARD_MIN_HEIGHT = 200;
 
+export interface CanvasBounds {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
 interface PanelPosition {
     left: number;
     top: number;
 }
 
-interface HoverCardPosition {
+export interface HoverCardPosition {
     top: number;
     left: number;
     maxHeight: number;
@@ -21,15 +28,24 @@ interface HoverCardPosition {
 export function clampToCanvas(
     anchor: { x: number; y: number },
     panelSize: { width: number; height: number },
-    canvasBounds: { right: number; bottom: number },
+    canvasBounds: CanvasBounds,
 ): PanelPosition {
-    const maxLeft = canvasBounds.right - panelSize.width - EDGE_GAP;
-    const maxTop = canvasBounds.bottom - panelSize.height - EDGE_GAP;
-
     return {
-        left: Math.max(EDGE_GAP, Math.min(anchor.x, maxLeft)),
-        top: Math.max(EDGE_GAP, Math.min(anchor.y, maxTop)),
+        left: clampToCanvasAxis(anchor.x, panelSize.width, canvasBounds.left, canvasBounds.right),
+        top: clampToCanvasAxis(anchor.y, panelSize.height, canvasBounds.top, canvasBounds.bottom),
     };
+}
+
+// A panel larger than the canvas overhangs the canvas's start edge, never the viewport's.
+function clampToCanvasAxis(
+    anchor: number,
+    panelExtent: number,
+    canvasStart: number,
+    canvasEnd: number,
+): number {
+    const min = canvasStart + EDGE_GAP;
+    const max = canvasEnd - panelExtent - EDGE_GAP;
+    return max < min ? Math.max(EDGE_GAP, max) : Math.min(Math.max(anchor, min), max);
 }
 
 /**

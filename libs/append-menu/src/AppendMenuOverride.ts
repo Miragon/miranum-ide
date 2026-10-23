@@ -234,6 +234,8 @@ class AppendMenuOverride {
                     translate,
                     position: { x: position.x, y: position.y },
                     canvasBounds: {
+                        left: canvasBounds.left,
+                        top: canvasBounds.top,
                         right: canvasBounds.right,
                         bottom: canvasBounds.bottom,
                     },

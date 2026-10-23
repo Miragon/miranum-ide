@@ -57,6 +57,12 @@ const cards = () => container.querySelectorAll(".am-template-card");
 const previewedTemplate = () => container.querySelector(".am-hover-card-name")?.textContent ?? null;
 const chip = (name: string) =>
     [...container.querySelectorAll(".am-chip")].find((button) => button.textContent === name);
+const hoverCardPlacement = () => {
+    const style = container.querySelector<HTMLElement>(".am-hover-card")?.style;
+    return style ? { left: style.left, top: style.top } : null;
+};
+const placeAt = (element: Element | null | undefined, rect: { left: number; top: number }) =>
+    vi.spyOn(element!, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
 const elapse = (milliseconds: number) =>
     act(() => {
         vi.advanceTimersByTime(milliseconds);
@@ -101,6 +107,36 @@ describe("TemplatePanel", () => {
 
         hover(cards()[0], true);
         expect(previewedTemplate()).toBe("Invoice Worker");
+    });
+
+    it("keeps the preview beside its card when the list scrolls", () => {
+        const props = renderPanel();
+        placeAt(container.querySelector(".am-template-panel"), { left: 600, top: 0 });
+        const card = placeAt(cards()[1], { left: 600, top: 240 });
+
+        act(() => {
+            render(<TemplatePanel {...props} highlightedIndex={1} />, container);
+        });
+        expect(hoverCardPlacement()).toEqual({ left: "292px", top: "240px" });
+
+        card.mockReturnValue({ left: 600, top: 180 } as DOMRect);
+        act(() => {
+            container.querySelector(".am-template-list")!.dispatchEvent(new Event("scroll"));
+        });
+        expect(hoverCardPlacement()).toEqual({ left: "292px", top: "180px" });
+    });
+
+    it("keeps the preview beside the panel when the overlay moves it", () => {
+        const props = renderPanel({ highlightedIndex: 1 });
+        const panel = placeAt(container.querySelector(".am-template-panel"), { left: 600, top: 0 });
+        placeAt(cards()[1], { left: 600, top: 240 });
+
+        panel.mockReturnValue({ left: 500, top: 0 } as DOMRect);
+        act(() => {
+            render(<TemplatePanel {...props} />, container);
+        });
+
+        expect(hoverCardPlacement()).toEqual({ left: "192px", top: "240px" });
     });
 
     it("toggles the category filter from its chips", () => {
