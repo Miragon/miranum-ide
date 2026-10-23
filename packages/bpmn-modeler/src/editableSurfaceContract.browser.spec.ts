@@ -136,10 +136,9 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
     ])(
         "throws NoModelerError from host lint pushes once destroyed, $label",
         async ({ linting }) => {
-            const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
             const handle = await open({ linting });
-
             handle.destroy();
+            const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
             expect(() => handle.applyLintResults(LINT_RESULTS)).toThrow(NoModelerError);
             expect(() => handle.applyLintingDisabled()).toThrow(NoModelerError);
