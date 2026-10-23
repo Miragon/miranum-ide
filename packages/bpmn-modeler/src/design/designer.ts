@@ -1,5 +1,5 @@
 import Modeler from "bpmn-js/lib/Modeler";
-import { ImportXMLError, ImportXMLResult } from "bpmn-js/lib/BaseViewer";
+import type { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import {
     PropertiesPanelModule,
     NeutralPropertiesProviderModule,
@@ -13,61 +13,44 @@ import TokenSimulationModule from "bpmn-js-token-simulation";
 import { AppendMenuModule } from "@miragon/bpmn-modeler-append-menu";
 import { FlowNavigationModule } from "@miragon/bpmn-modeler-flow-navigation";
 import { createBpmnLayoutModule } from "@miragon/bpmn-modeler-layout";
-import type { CleanupService, LayoutOutcome, Layouter } from "@miragon/bpmn-modeler-layout";
-import { createClipboardModules } from "@miragon/bpmn-modeler-clipboard";
+import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import { createModelNavigationModule } from "@miragon/bpmn-model-navigation";
 import { createDefinitionSearchModule } from "@miragon/bpmn-modeler-definition-search";
 import { TranslateModule } from "@miragon/bpmn-modeler-i18n";
-import { DisposableStore, MutableDisposable, NoModelerError } from "@miragon/bpmn-modeler-types";
-import { installContentEditableClipboardPolyfill } from "../propertiesPanelClipboard";
-import { ThemeController } from "../theme";
-import { CanvasViewportManager, type ViewportManager } from "../viewport";
-import { ElementSelectionManager, type SelectionManager } from "../selection";
-import { CanvasRootElementManager, type RootElementManager } from "../rootElement";
-import {
-    applyViewState as applyViewStateComposition,
-    captureViewState as captureViewStateComposition,
-    type ViewState,
-} from "../viewState";
-import { armInitialViewportPolicy } from "../initialViewport";
-import { installSurfaceFocusFeatures } from "../focusFeatures";
+import { DisposableStore } from "@miragon/bpmn-modeler-types";
+import type { ViewportManager } from "../viewport";
+import type { SelectionManager } from "../selection";
+import type { RootElementManager } from "../rootElement";
+import type { ViewState } from "../viewState";
 import { buildLintModules } from "../lintModules";
-import { createLintHandleMethods, type LintHandleMethods } from "../lintHandle";
+import type { LintHandleMethods } from "../lintHandle";
 import { wireContentSaved } from "../contentSaved";
-import { exportFormattedXml } from "../diagramXml";
+import { exportFormattedXml, exportSvg, importDiagram } from "../diagramXml";
+import {
+    applyFavouriteBpmnElements,
+    cleanupSurfaceDiagram,
+    createSurfaceLintHandle,
+    formatSurfaceDiagram,
+    installClipboardSupport,
+} from "../editableSurface";
+import { SurfaceCore } from "../surfaceCore";
 import { createReporter, type SurfaceReporter } from "../reporting";
-import type { LintConfigService } from "../bpmnlint/LintConfigService";
 import type { BpmnlintConfig, CleanupOutcome, LintResults } from "@miragon/bpmn-modeler-types";
 import type { ThemeMode } from "../publicApi";
 import type { CoreDesignerServices, DesignerOptions } from "./publicApi";
-
-// Structural sliver of the non-core append-menu DI service — only the member
-// this surface calls.
-interface AppendMenuOverrideService {
-    setFavourites(types: string[]): void;
-}
 
 /**
  * An independent, editable BPMN surface without an execution platform.
  * Create it with {@link createDesigner}; accessors require a live instance.
  */
 export class BpmnDesigner {
-    private modeler: Modeler | undefined = undefined;
-
-    private _viewport: ViewportManager | undefined;
-
-    private _selection: SelectionManager | undefined;
-
-    private _rootElement: RootElementManager | undefined;
-
-    private themeController?: ThemeController;
+    private readonly core: SurfaceCore<Modeler>;
 
     private readonly reporter: SurfaceReporter;
 
-    private readonly store = new DisposableStore();
+    private readonly lintHandle: LintHandleMethods;
 
-    // Re-armed per import, so it can't be a plain store entry.
-    private readonly sizeObserver = new MutableDisposable();
+    private readonly store = new DisposableStore();
 
     /**
      * @param container The canvas host element (bpmn-js `container`).
@@ -77,31 +60,24 @@ export class BpmnDesigner {
         private readonly container: HTMLElement,
         private readonly options: DesignerOptions,
     ) {
+        this.core = new SurfaceCore(container, [container, options.propertiesPanel.parent]);
         this.reporter = createReporter({ onError: options.onError });
+        this.lintHandle = createSurfaceLintHandle(this.core, this.reporter);
     }
 
     /** Access the viewport manager after {@link init}. */
     get viewport(): ViewportManager {
-        if (!this._viewport) {
-            throw new NoModelerError();
-        }
-        return this._viewport;
+        return this.core.viewport;
     }
 
     /** Access the selection manager after {@link init}. */
     get selection(): SelectionManager {
-        if (!this._selection) {
-            throw new NoModelerError();
-        }
-        return this._selection;
+        return this.core.selection;
     }
 
     /** Access the root element manager after {@link init}. */
     get rootElement(): RootElementManager {
-        if (!this._rootElement) {
-            throw new NoModelerError();
-        }
-        return this._rootElement;
+        return this.core.rootElement;
     }
 
     /**
@@ -111,7 +87,7 @@ export class BpmnDesigner {
      * {@link ViewState} for the plane/selection degradation rules.
      */
     captureViewState(): ViewState {
-        return captureViewStateComposition(this.viewStateManagers());
+        return this.core.captureViewState();
     }
 
     /**
@@ -119,40 +95,16 @@ export class BpmnDesigner {
      * and selection in the required root → viewport → selection order.
      */
     applyViewState(state: ViewState): void {
-        applyViewStateComposition(this.viewStateManagers(), state);
-    }
-
-    // Accessing viewport guards initialization; all three managers share its lifecycle.
-    private viewStateManagers() {
-        return {
-            viewport: this.viewport,
-            selection: this.selection,
-            rootElement: this._rootElement!,
-        };
+        this.core.applyViewState(state);
     }
 
     /** @internal */
     async init(): Promise<void> {
         // Register NativeCopyPaste even with a bridge: the bridge module expects to disable it.
-        const clip = this.options.clipboard;
-        const clipModules = clip
-            ? createClipboardModules({ element: clip.bridge, text: clip.text })
-            : [];
-        if (clip) {
-            // The FEEL editor sits outside bpmn-js DI and needs the document-level text bridge.
-            const textBridge = clip.text ?? clip.bridge;
-            this.store.add(
-                installContentEditableClipboardPolyfill(
-                    [this.container, this.options.propertiesPanel.parent],
-                    {
-                        requestClipboard: () => textBridge.requestClipboard(),
-                        writeClipboard: (text) => {
-                            void textBridge.writeClipboard(text);
-                        },
-                    },
-                ),
-            );
-        }
+        const clipModules = installClipboardSupport(this.store, this.options.clipboard, [
+            this.container,
+            this.options.propertiesPanel.parent,
+        ]);
         const extra = (this.options.additionalModules as unknown[]) ?? [];
 
         // capabilityModules imports engine features and CSS, which must stay out of the design entry.
@@ -162,22 +114,13 @@ export class BpmnDesigner {
             ...(definitionSearch ? [createDefinitionSearchModule(definitionSearch)] : []),
         ];
 
-        this.allocateModeler(clipModules, capModules, extra);
-        this.store.add(() => {
-            this.modeler?.destroy();
-            this.modeler = undefined;
-        });
-
-        const accessor = <T>(name: string): T => this.getModeler().get<T>(name);
-        this._viewport = new CanvasViewportManager(accessor);
-        this._selection = new ElementSelectionManager(accessor);
-        this._rootElement = new CanvasRootElementManager(accessor);
-
-        this.store.add(
-            installSurfaceFocusFeatures(accessor, {
+        this.core.allocate(
+            this.store,
+            () => this.constructModeler(clipModules, capModules, extra),
+            {
                 extraRoots: [this.options.propertiesPanel.parent],
                 hasSearchPad: true,
-            }),
+            },
         );
 
         if (this.options.favouriteBpmnElements) {
@@ -188,116 +131,93 @@ export class BpmnDesigner {
         if (onContentSaved) {
             wireContentSaved({
                 store: this.store,
-                eventBus: this.getModeler().get("eventBus"),
+                eventBus: this.core.service("eventBus"),
                 exportDiagram: () => this.exportDiagram(),
                 onContentSaved,
                 reporter: this.reporter,
             });
         }
-
-        this.store.add(() => this.sizeObserver.dispose());
     }
 
-    private allocateModeler(clipModules: unknown[], capModules: unknown[], extra: unknown[]): void {
-        try {
-            this.modeler = new Modeler({
-                container: this.container,
-                propertiesPanel: {
-                    parent: this.options.propertiesPanel.parent,
-                    // Keep popups within this instance's theme scope instead of document.body.
-                    feelPopupContainer: this.container,
-                },
-                minimap: { open: false },
-                moddleExtensions: this.options.moddleExtensions,
-                additionalModules: [
-                    TranslateModule,
-                    PropertiesPanelModule,
-                    NeutralPropertiesProviderModule,
-                    ModeFilterModule,
-                    CustomGroupsModule,
-                    CreateAppendAnythingModule,
-                    AppendMenuModule,
-                    FlowNavigationModule,
-                    // Formatting is pure geometry, so it is engine-neutral and
-                    // belongs on this surface as much as on the modeler.
-                    createBpmnLayoutModule(),
-                    MinimapModule,
-                    TokenSimulationModule,
-                    // Design never enabled linting implicitly, so omission needs no migration notice.
-                    ...buildLintModules(
-                        this.options.linting,
-                        { engine: undefined, mode: "design" },
-                        {
-                            onLintResults: this.options.onLintResults,
-                            onLintingToggled: this.options.onLintingToggled,
-                        },
-                        { nudgeWhenOmitted: false },
-                    ),
-                    ...capModules,
-                    NativeCopyPasteModule,
-                    ...clipModules,
-                    ...extra,
-                ],
-            });
-        } catch (error) {
-            // A partially-constructed bpmn-js attaches `.bjs-container` with no
-            // handle to destroy; clear the dedicated container before rethrowing.
-            this.container.replaceChildren();
-            throw error;
-        }
+    private constructModeler(
+        clipModules: unknown[],
+        capModules: unknown[],
+        extra: unknown[],
+    ): Modeler {
+        return new Modeler({
+            container: this.container,
+            propertiesPanel: {
+                parent: this.options.propertiesPanel.parent,
+                // Keep popups within this instance's theme scope instead of document.body.
+                feelPopupContainer: this.container,
+            },
+            minimap: { open: false },
+            moddleExtensions: this.options.moddleExtensions,
+            additionalModules: [
+                TranslateModule,
+                PropertiesPanelModule,
+                NeutralPropertiesProviderModule,
+                ModeFilterModule,
+                CustomGroupsModule,
+                CreateAppendAnythingModule,
+                AppendMenuModule,
+                FlowNavigationModule,
+                // Formatting is pure geometry, so it is engine-neutral and
+                // belongs on this surface as much as on the modeler.
+                createBpmnLayoutModule(),
+                MinimapModule,
+                TokenSimulationModule,
+                // Design never enabled linting implicitly, so omission needs no migration notice.
+                ...buildLintModules(
+                    this.options.linting,
+                    { engine: undefined, mode: "design" },
+                    {
+                        onLintResults: this.options.onLintResults,
+                        onLintingToggled: this.options.onLintingToggled,
+                    },
+                    { nudgeWhenOmitted: false },
+                ),
+                ...capModules,
+                NativeCopyPasteModule,
+                ...clipModules,
+                ...extra,
+            ],
+        });
     }
 
     async newDiagram(): Promise<ImportXMLResult> {
-        const result = await this.getModeler().createDiagram();
-        this.armInitialViewport();
+        const result = await this.core.instance.createDiagram();
+        this.core.armInitialViewport();
         return result;
     }
 
     async loadDiagram(xml: string): Promise<ImportXMLResult> {
-        try {
-            const result = await this.getModeler().importXML(xml);
-            this.armInitialViewport();
-            return result;
-        } catch (error: unknown) {
-            if ((error as ImportXMLError).warnings) {
-                const importError = error as ImportXMLError;
-                throw new Error(`${importError.message} ${importError.warnings}`, {
-                    cause: error,
-                });
-            }
-            throw error;
-        }
-    }
-
-    private armInitialViewport(): void {
-        this.sizeObserver.set(armInitialViewportPolicy(this.getService("canvas"), this.viewport));
+        const result = await importDiagram(this.core.instance, xml);
+        this.core.armInitialViewport();
+        return result;
     }
 
     async exportDiagram(): Promise<string> {
-        return exportFormattedXml(this.getModeler());
+        return exportFormattedXml(this.core.instance);
     }
 
     /** @see BpmnDesignerHandle.formatDiagram */
     async formatDiagram(): Promise<LayoutOutcome> {
-        return this.getModeler().get<Layouter>("bpmnLayouter").format();
+        return formatSurfaceDiagram(this.core);
     }
 
     /** @see BpmnDesignerHandle.cleanupDiagram */
     cleanupDiagram(options?: { apply?: boolean }): CleanupOutcome {
-        const cleanup = this.getModeler().get<CleanupService>("bpmnCleanup");
-        return options?.apply ? cleanup.apply() : cleanup.inspect();
+        return cleanupSurfaceDiagram(this.core, options);
     }
 
     async getDiagramSvg(): Promise<string> {
-        const result = await this.getModeler().saveSVG();
-        return result.svg;
+        return exportSvg(this.core.instance);
     }
 
     /** @see BpmnDesignerHandle.setFavouriteBpmnElements */
     setFavouriteBpmnElements(types: readonly string[]): void {
-        this.getModeler()
-            .get<AppendMenuOverrideService>("appendMenuOverride", false)
-            ?.setFavourites([...types]);
+        applyFavouriteBpmnElements(this.core, types);
     }
 
     /**
@@ -306,17 +226,7 @@ export class BpmnDesigner {
      * page-global `#theme-link` when present.
      */
     setTheme(theme: ThemeMode): void {
-        if (this.store.isDisposed) {
-            return;
-        }
-        if (!this.themeController) {
-            this.themeController = new ThemeController([
-                this.container,
-                this.options.propertiesPanel.parent,
-            ]);
-            this.store.add(() => this.themeController?.dispose());
-        }
-        this.themeController.setMode(theme);
+        this.core.setTheme(this.store, theme);
     }
 
     /**
@@ -327,7 +237,7 @@ export class BpmnDesigner {
     getService<K extends keyof CoreDesignerServices>(name: K): CoreDesignerServices[K];
     getService<T = unknown>(name: string): T;
     getService<T = unknown>(name: string): T {
-        return this.getModeler().get<T>(name);
+        return this.core.service<T>(name);
     }
 
     /**
@@ -335,7 +245,7 @@ export class BpmnDesigner {
      * A no-op with a warning when the designer was created without a lint module.
      */
     applyLintResults(results: LintResults | null): void {
-        this.lintHandle().applyLintResults(results);
+        this.lintHandle.applyLintResults(results);
     }
 
     /**
@@ -343,7 +253,7 @@ export class BpmnDesigner {
      * warning when the designer was created without a lint module.
      */
     applyLintingDisabled(): void {
-        this.lintHandle().applyLintingDisabled();
+        this.lintHandle.applyLintingDisabled();
     }
 
     /**
@@ -351,14 +261,7 @@ export class BpmnDesigner {
      * warning when the designer was created without a lint module.
      */
     startInPageLinting(config?: BpmnlintConfig, configToken?: string): void {
-        this.lintHandle().startInPageLinting(config, configToken);
-    }
-
-    private lintHandle(): LintHandleMethods {
-        return createLintHandleMethods(
-            () => this.getModeler().get<LintConfigService>("bpmnLintConfig", false) ?? undefined,
-            (message) => this.reporter.warn(message),
-        );
+        this.lintHandle.startInPageLinting(config, configToken);
     }
 
     /**
@@ -371,19 +274,6 @@ export class BpmnDesigner {
      */
     destroy(): void {
         this.store.dispose();
-        this._viewport = undefined;
-        this._selection = undefined;
-        this._rootElement = undefined;
-    }
-
-    /**
-     * @throws {NoModelerError} If {@link init} has not been called (or the
-     *   instance was destroyed).
-     */
-    private getModeler(): Modeler {
-        if (!this.modeler) {
-            throw new NoModelerError();
-        }
-        return this.modeler;
+        this.core.releaseManagers();
     }
 }

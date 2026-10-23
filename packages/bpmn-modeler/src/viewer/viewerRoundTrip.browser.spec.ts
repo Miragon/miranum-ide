@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { NoModelerError } from "@miragon/bpmn-modeler-types";
 
 import { createViewer } from "./createViewer";
 import type { BpmnViewer } from "./viewer";
@@ -41,5 +42,21 @@ describe("createViewer (rendered round trip)", () => {
         viewer = await createViewer(mountCanvas());
 
         await expect(viewer.exportDiagram()).rejects.toThrow("no definitions loaded");
+    });
+
+    it("rejects an unparsable import with the parser warnings as the cause", async () => {
+        viewer = await createViewer(mountCanvas());
+
+        const rejection = await viewer.loadDiagram("<not-bpmn/>").catch((error: unknown) => error);
+
+        expect(rejection).toBeInstanceOf(Error);
+        expect((rejection as Error).cause).toHaveProperty("warnings", expect.any(Array));
+    });
+
+    it("rejects a load on a destroyed viewer with NoModelerError", async () => {
+        viewer = await createViewer(mountCanvas());
+        viewer.destroy();
+
+        await expect(viewer.loadDiagram(START_EVENT_XML)).rejects.toBeInstanceOf(NoModelerError);
     });
 });

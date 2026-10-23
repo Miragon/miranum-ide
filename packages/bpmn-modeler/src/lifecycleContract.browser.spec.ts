@@ -67,8 +67,8 @@ interface SurfaceDescriptor {
     triggerViewbox?(handle: Handle): void;
     /** The diagram-js canvas; absent when the surface exposes none. */
     canvas?(handle: Handle): { resized(): void };
-    /** Reads a live-only accessor, which must throw once destroyed. */
-    probeDead(handle: Handle): void;
+    /** Live-only accessors, each of which must throw once destroyed. */
+    deadAccessors(handle: Handle): Array<() => unknown>;
     /** Switches the colour theme; absent when the surface has no theme setter. */
     setTheme?(handle: Handle, theme: ThemeMode): void;
 }
@@ -107,7 +107,11 @@ const surfaces: SurfaceDescriptor[] = [
         ],
         triggerViewbox: (h) => (h as BpmnModeler).getService("canvas").zoom(2),
         canvas: (h) => (h as BpmnModeler).getService("canvas"),
-        probeDead: (h) => void (h as BpmnModeler).viewport,
+        deadAccessors: (h) => [
+            () => (h as BpmnModeler).viewport,
+            () => (h as BpmnModeler).selection,
+            () => (h as BpmnModeler).rootElement,
+        ],
         setTheme: (h, theme) => (h as BpmnModeler).setTheme(theme),
     },
     {
@@ -123,7 +127,11 @@ const surfaces: SurfaceDescriptor[] = [
         subscribeChannels: (h, onFire) => [(h as BpmnDesigner).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnDesigner).getService("canvas").zoom(2),
         canvas: (h) => (h as BpmnDesigner).getService("canvas"),
-        probeDead: (h) => void (h as BpmnDesigner).viewport,
+        deadAccessors: (h) => [
+            () => (h as BpmnDesigner).viewport,
+            () => (h as BpmnDesigner).selection,
+            () => (h as BpmnDesigner).rootElement,
+        ],
         setTheme: (h, theme) => (h as BpmnDesigner).setTheme(theme),
     },
     {
@@ -139,7 +147,11 @@ const surfaces: SurfaceDescriptor[] = [
         subscribeChannels: (h, onFire) => [(h as BpmnViewer).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnViewer).getService("canvas").zoom(2),
         canvas: (h) => (h as BpmnViewer).getService("canvas"),
-        probeDead: (h) => void (h as BpmnViewer).viewport,
+        deadAccessors: (h) => [
+            () => (h as BpmnViewer).viewport,
+            () => (h as BpmnViewer).selection,
+            () => (h as BpmnViewer).rootElement,
+        ],
         setTheme: (h, theme) => (h as BpmnViewer).setTheme(theme),
     },
     {
@@ -167,7 +179,7 @@ const surfaces: SurfaceDescriptor[] = [
         },
         load: () => Promise.resolve(),
         subscribeChannels: (h, onFire) => [(h as DiffViewer).onViewportChanged(onFire)],
-        probeDead: (h) => void (h as DiffViewer).getViewport(),
+        deadAccessors: (h) => [() => (h as DiffViewer).getViewport()],
     },
 ];
 
@@ -191,7 +203,9 @@ describe.each(surfaces)("$name lifecycle contract", (surface) => {
         expect(removed).toBe(added);
         tracker.restore();
 
-        expect(() => surface.probeDead(handle)).toThrow(NoModelerError);
+        for (const readAccessor of surface.deadAccessors(handle)) {
+            expect(readAccessor).toThrow(NoModelerError);
+        }
 
         // Idempotent: a second destroy neither throws nor re-runs disposers.
         expect(() => handle.destroy()).not.toThrow();

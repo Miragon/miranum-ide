@@ -19,8 +19,8 @@ import {
 } from "./__fixtures__/surfaceMount";
 
 /**
- * The host-command contract the modeler and the designer implement separately
- * (import fit, export, format, cleanup, import errors, lint pushes, debounced
+ * The host-command contract the modeler and the designer both expose (import
+ * fit, export, format, cleanup, import errors, theme, lint pushes, debounced
  * save, favourites). Both run the real bpmn-js modeling stack, so the contract
  * runs in the browser project against each surface.
  */
@@ -91,7 +91,7 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
     async function openMounted(options: SharedOptions = { linting: false }) {
         const mount = mountWithPanel();
         surface = await descriptor.create(mount, options);
-        return { handle: surface, container: mount.container };
+        return { handle: surface, container: mount.container, panel: mount.panel };
     }
 
     afterEach(() => {
@@ -181,6 +181,15 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
         expect(handle.cleanupDiagram().items).toEqual([]);
     });
 
+    it("rejects a load on a destroyed surface with NoModelerError", async () => {
+        const handle = await open();
+        handle.destroy();
+
+        await expect(handle.loadDiagram(FAR_FROM_ORIGIN_XML)).rejects.toBeInstanceOf(
+            NoModelerError,
+        );
+    });
+
     it("rejects an unparsable import with the parser warnings as the cause", async () => {
         const handle = await open();
 
@@ -188,6 +197,18 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
 
         expect(rejection).toBeInstanceOf(Error);
         expect((rejection as Error).cause).toHaveProperty("warnings", expect.any(Array));
+    });
+
+    it("re-themes a live surface on the container and the panel", async () => {
+        const { handle, container, panel } = await openMounted();
+        const appliedThemes = () =>
+            [container, panel].map((root) => root.getAttribute("data-bpmn-theme"));
+
+        handle.setTheme("dark");
+        expect(appliedThemes()).toEqual(["dark", "dark"]);
+
+        handle.setTheme("light");
+        expect(appliedThemes()).toEqual(["light", "light"]);
     });
 
     it("turns host lint pushes into warnings when created without a lint module", async () => {
