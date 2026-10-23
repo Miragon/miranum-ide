@@ -1,5 +1,5 @@
 import Modeler from "bpmn-js/lib/Modeler";
-import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
+import { ImportXMLError, ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import {
     PropertiesPanelModule,
     NeutralPropertiesProviderModule,
@@ -34,6 +34,7 @@ import { installSurfaceFocusFeatures } from "../focusFeatures";
 import { buildLintModules } from "../lintModules";
 import { createLintHandleMethods, type LintHandleMethods } from "../lintHandle";
 import { wireContentSaved } from "../contentSaved";
+import { exportFormattedXml } from "../diagramXml";
 import { createReporter, type SurfaceReporter } from "../reporting";
 import type { LintConfigService } from "../bpmnlint/LintConfigService";
 import type { BpmnlintConfig, CleanupOutcome, LintResults } from "@miragon/bpmn-modeler-types";
@@ -272,13 +273,7 @@ export class BpmnDesigner {
     }
 
     async exportDiagram(): Promise<string> {
-        const result: SaveXMLResult = await this.getModeler().saveXML({ format: true });
-        if (result.xml) {
-            return result.xml;
-        } else if (result.error) {
-            throw result.error;
-        }
-        throw new Error("Failed to serialise the diagram!");
+        return exportFormattedXml(this.getModeler());
     }
 
     /** @see BpmnDesignerHandle.formatDiagram */
