@@ -16,8 +16,9 @@
  */
 import "./inlineScripting.css";
 
-import { OPEN_SCRIPT_EDITOR_EVENT, ScriptTaskContextPadModule } from "./scriptTaskContextPad";
-import type { OpenScriptEditorEvent } from "./scriptTaskContextPad";
+import { OPEN_SCRIPT_EDITOR_EVENT } from "./scriptEditorEvents";
+import type { OpenScriptEditorEvent } from "./scriptEditorEvents";
+import { ScriptTaskContextPadModule } from "./scriptTaskContextPad";
 import { ScriptEditorOpenerModule } from "./scriptEditorOpener";
 import { ScriptEditorButtonsModule } from "./scriptEditorButtons";
 import { ScriptEditorKeyboardModule } from "./scriptEditorKeyboard";
