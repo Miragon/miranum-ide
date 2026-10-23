@@ -2,6 +2,7 @@ import { ExtensionContext } from "vscode";
 
 import { setContext } from "./shared/infrastructure/extensionContext";
 import { notifyIfNewRelease } from "./shared/infrastructure/releaseNotes";
+import { ensureGlobalWebCrypto } from "./shared/infrastructure/webCryptoCompatibility";
 import { buildSharedDeps } from "./composition/sharedDeps";
 import * as diffFeature from "./composition/diffFeature";
 import * as scriptFeature from "./composition/scriptFeature";
@@ -11,6 +12,8 @@ import * as compareFeature from "./composition/compareFeature";
 import * as commandsFeature from "./composition/commandsFeature";
 import * as deploymentFeature from "./composition/deploymentFeature";
 import * as templateMarketplaceFeature from "./composition/templateMarketplaceFeature";
+
+ensureGlobalWebCrypto();
 
 /** Narrow API surface returned by `activate()` for e2e tests only. */
 export interface TestApi {
