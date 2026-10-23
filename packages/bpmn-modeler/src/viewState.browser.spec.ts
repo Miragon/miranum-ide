@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { isUsableViewbox } from "@miragon/bpmn-modeler-types";
 
+import { createModeler } from "./createModeler";
 import { createDesigner } from "./design/createDesigner";
 import { createViewer } from "./viewer/createViewer";
 import type { BpmnDesignerHandle } from "./design/publicApi";
@@ -19,7 +20,7 @@ import {
  * and a real ResizeObserver: an `applyViewState` right after `loadDiagram` must
  * win over the observer's delayed initial fit. jsdom lays nothing out and ships
  * no ResizeObserver, so this runs in Vitest browser mode (headless Chromium).
- * Both surfaces that arm the delayed fit on import run the same contract.
+ * Every surface arms the delayed fit on import, so each runs the same contract.
  */
 
 type ViewStateSurface = Pick<
@@ -39,6 +40,15 @@ const SURFACES: Array<{
         name: "BpmnDesigner",
         create: ({ container, panel }) =>
             createDesigner(container, { propertiesPanel: { parent: panel }, linting: false }),
+    },
+    {
+        name: "BpmnModeler",
+        create: ({ container, panel }) =>
+            createModeler(container, {
+                engine: "c8",
+                propertiesPanel: { parent: panel },
+                linting: false,
+            }),
     },
 ];
 
@@ -131,6 +141,20 @@ describe.each(SURFACES)("$name view-state restore (real ResizeObserver)", (descr
         expect(viewport.x).toBeGreaterThan(4000);
         expect(viewport.x).toBeLessThan(5400);
         expect(viewport.width).toBeGreaterThan(400);
+    });
+
+    it("keeps a centerOnElement focus across the delayed initial fit", async () => {
+        const { handle } = await openSized(800, 600);
+
+        expect(handle.viewport.centerOnElement("Task_2")).toBe(true);
+        const focused = handle.viewport.getViewport();
+        await settleObserver();
+
+        // Task_2 centres at x 5350; at scale 1 the 800 px box starts 400 px left of it.
+        const after = handle.viewport.getViewport();
+        expect(after.x).toBeCloseTo(focused.x, 0);
+        expect(after.y).toBeCloseTo(focused.y, 0);
+        expect(after.x).toBeCloseTo(4950, 0);
     });
 
     it("clears the selection when the snapshot has none", async () => {

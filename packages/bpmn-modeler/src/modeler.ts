@@ -24,6 +24,7 @@ import {
     Engine,
     getLatestVersion,
     LintResults,
+    MutableDisposable,
     NoModelerError,
     OpenScriptEditorRef,
     ScriptKind,
@@ -46,6 +47,7 @@ import { exportFormattedXml } from "./diagramXml";
 import { createReporter, type SurfaceReporter } from "./reporting";
 import { installSurfaceFocusFeatures } from "./focusFeatures";
 import { CanvasViewportManager, type ViewportManager } from "./viewport";
+import { armInitialViewportPolicy } from "./initialViewport";
 import { ElementSelectionManager, type SelectionManager } from "./selection";
 import { CanvasRootElementManager, type RootElementManager } from "./rootElement";
 import {
@@ -132,6 +134,9 @@ export class BpmnModeler {
 
     // Reset on every init() so a re-entry starts from a clean disposal ledger.
     private store = new DisposableStore();
+
+    // Re-armed per import, so it can't be a plain store entry; replaced per init() like the store.
+    private sizeObserver = new MutableDisposable();
 
     /**
      * @param container The canvas host element (bpmn-js `container`).
@@ -294,6 +299,9 @@ export class BpmnModeler {
             this.modeler?.destroy();
             this.modeler = undefined;
         });
+        const sizeObserver = new MutableDisposable();
+        this.sizeObserver = sizeObserver;
+        this.store.add(() => sizeObserver.dispose());
 
         const accessor = <T>(name: string): T => this.getModeler().get<T>(name);
         this._viewport = new CanvasViewportManager(accessor);
@@ -432,6 +440,7 @@ export class BpmnModeler {
         const result = await this.getModeler().importXML(initialDiagram(this.engine!, version));
         this.showTransactionBoundariesIfEnabled();
         this.applyEnginesFromDefinitions();
+        this.armInitialViewport();
         return result;
     }
 
@@ -442,6 +451,7 @@ export class BpmnModeler {
                 .then((result: ImportXMLResult) => {
                     this.showTransactionBoundariesIfEnabled();
                     this.applyEnginesFromDefinitions();
+                    this.armInitialViewport();
                     return result;
                 });
         } catch (error: unknown) {
@@ -453,6 +463,10 @@ export class BpmnModeler {
             }
             throw error;
         }
+    }
+
+    private armInitialViewport(): void {
+        this.sizeObserver.set(armInitialViewportPolicy(this.getService("canvas"), this.viewport));
     }
 
     // Import clears the overlays, so every import re-renders the boundaries.

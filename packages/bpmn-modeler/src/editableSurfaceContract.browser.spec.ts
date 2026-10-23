@@ -14,14 +14,15 @@ import {
     afterPaint,
     mountWithPanel,
     removeMounts,
+    settleObserver,
     type SurfaceMount,
 } from "./__fixtures__/surfaceMount";
 
 /**
  * The host-command contract the modeler and the designer implement separately
- * (export, format, cleanup, import errors, lint pushes, debounced save,
- * favourites). Both run the real bpmn-js modeling stack, so the contract runs
- * in the browser project against each surface.
+ * (import fit, export, format, cleanup, import errors, lint pushes, debounced
+ * save, favourites). Both run the real bpmn-js modeling stack, so the contract
+ * runs in the browser project against each surface.
  */
 
 type SharedOptions = Pick<DesignerOptions, "linting" | "onContentSaved" | "favouriteBpmnElements">;
@@ -84,8 +85,13 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
     let surface: BpmnDesignerHandle | undefined;
 
     async function open(options: SharedOptions = { linting: false }): Promise<BpmnDesignerHandle> {
-        surface = await descriptor.create(mountWithPanel(), options);
-        return surface;
+        return (await openMounted(options)).handle;
+    }
+
+    async function openMounted(options: SharedOptions = { linting: false }) {
+        const mount = mountWithPanel();
+        surface = await descriptor.create(mount, options);
+        return { handle: surface, container: mount.container };
     }
 
     afterEach(() => {
@@ -115,6 +121,30 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
         handle.destroy();
 
         await expect(handle.exportDiagram()).rejects.toBeInstanceOf(NoModelerError);
+    });
+
+    it("fits a far-from-origin diagram on load", async () => {
+        const handle = await open();
+        await handle.loadDiagram(FAR_FROM_ORIGIN_XML);
+        await settleObserver();
+
+        // The diagram spans x 5000–5400; an unfitted canvas stays at the origin.
+        const { x } = handle.viewport.getViewport();
+        expect(x).toBeGreaterThan(4000);
+        expect(x).toBeLessThan(5400);
+    });
+
+    it("keeps the canvas size in sync after newDiagram", async () => {
+        const { handle, container } = await openMounted();
+        await handle.newDiagram();
+        await settleObserver();
+        const canvas = handle.getService("canvas");
+        expect(canvas.viewbox().outer.width).toBe(800);
+
+        container.style.width = "400px";
+        await settleObserver();
+
+        expect(canvas.viewbox().outer.width).toBe(400);
     });
 
     it("exports the rendered diagram as SVG", async () => {

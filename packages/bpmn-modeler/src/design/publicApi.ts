@@ -174,9 +174,9 @@ export interface BpmnDesignerHandle {
     exportDiagram(): Promise<string>;
 
     /**
-     * Replace the diagram with a new empty one. The base bpmn-js template carries
-     * no `modeler:executionPlatform`, so a fresh Design diagram stays in Design
-     * mode by the mode-marker semantics above.
+     * Replace the diagram with a new empty one and fit it to view. The base
+     * bpmn-js template carries no `modeler:executionPlatform`, so a fresh Design
+     * diagram stays in Design mode by the mode-marker semantics above.
      */
     newDiagram(): Promise<ImportXMLResult>;
 

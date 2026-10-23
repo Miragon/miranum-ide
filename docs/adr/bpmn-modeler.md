@@ -460,8 +460,12 @@ implementers must honor its promise-returning signature.
 Surfaces compose lifecycle primitives instead of inheriting a base class:
 published `DisposableStore`, `MutableDisposable` and `subscribe` support
 idempotent LIFO cleanup; internal `createSurface` disposes partial construction
-on failure. A shared initial-viewport policy prevents delayed fit from
-overwriting restored state. These primitives live in `modeler-types` so the
+on failure. Every surface (modeler, designer, viewer, diff panes) arms one
+shared initial-viewport policy on every import: it fits once the container has
+a size and keeps the cached canvas box in sync on resize. An explicit
+`setViewport`/`applyViewState`, or a `ViewportManager.centerOnElement` focus,
+settles it, so the delayed fit never overwrites restored state; hosts need no
+initial fit of their own. Lifecycle primitives live in `modeler-types` so the
 restricted `/mode` graph and inlined feature libraries can reuse them.
 After `destroy()`, every surface (modeler, designer, viewer, DiffViewer) throws
 `NoModelerError` from each member that reaches the diagram or its services,
