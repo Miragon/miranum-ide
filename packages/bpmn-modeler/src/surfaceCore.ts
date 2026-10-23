@@ -22,7 +22,6 @@ import { CanvasViewportManager, type ViewportManager } from "./viewport";
 
 type SurfaceInstance = Pick<BaseViewer, "get" | "destroy">;
 
-/** The DI lookups a live surface offers to the helpers composed around it. */
 export interface SurfaceServices {
     /** @throws {NoModelerError} If no bpmn-js instance is live. */
     service<S>(name: string): S;
@@ -31,12 +30,8 @@ export interface SurfaceServices {
 }
 
 /**
- * The plumbing every surface facade (modeler, designer, viewer) composes: the
- * bpmn-js instance and its teardown, the viewport/selection/root-element
- * managers, view-state capture, the initial-viewport fit, focus features and
- * the theme controller. The facade owns the {@link DisposableStore} and hands
- * it in, so registration order — and with it LIFO teardown — stays the
- * facade's.
+ * The facade owns the {@link DisposableStore} and hands it in, so registration
+ * order, and with it LIFO teardown, stays the facade's.
  */
 export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
     private liveInstance: T | undefined;

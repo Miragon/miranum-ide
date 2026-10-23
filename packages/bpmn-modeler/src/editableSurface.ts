@@ -9,7 +9,7 @@ import type { ClipboardOptions } from "./publicApi";
 import type { SurfaceReporter } from "./reporting";
 import type { SurfaceServices } from "./surfaceCore";
 
-// Modeler and designer only: the viewer importing this would pull the clipboard modules into `/viewer`.
+// Kept out of SurfaceCore: these value imports (clipboard modules) must stay out of `/viewer`.
 
 // Structural sliver of the non-core append-menu DI service — only the member called here.
 interface AppendMenuOverrideService {
