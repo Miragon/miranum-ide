@@ -18,7 +18,6 @@ type DmnMessageSession = Pick<
     "receiveHostFile" | "respondToFlush" | "applyLanguage" | "focusCanvas"
 >;
 
-/** Where one session's settings and panel-state replies from the host land. */
 export interface DmnHostReplies {
     panelState: { done(query: PropertiesPanelStateQuery): void };
     settings: { done(query: DmnModelerSettingQuery): void };

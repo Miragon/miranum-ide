@@ -16,13 +16,8 @@ import type { DmnModelerHandle } from "@miragon/dmn-modeler";
 
 import type { WebviewState } from "./webviewState";
 
-type DmnHost = Pick<HostApi<WebviewState, Command | Query>, "postMessage">;
+type HostChannel = Pick<HostApi<WebviewState, Command | Query>, "postMessage">;
 
-/**
- * The document side of one DMN webview session: the modeler that renders the
- * host document, the debounced host imports and outbound syncs, the host
- * revisions, and the destructive-flush lock.
- */
 export class DmnDocumentSession implements FlushSource {
     private attachedModeler: DmnModelerHandle | undefined;
     private initialDocumentImported = false;
@@ -43,7 +38,7 @@ export class DmnDocumentSession implements FlushSource {
 
     readonly respondToFlush = createFlushResponder(this, (reply) => this.post(reply));
 
-    constructor(private readonly host: DmnHost) {}
+    constructor(private readonly host: HostChannel) {}
 
     get modeler(): DmnModelerHandle | undefined {
         return this.attachedModeler;
