@@ -2,6 +2,8 @@ export * from "./lib/host";
 export * from "./lib/utils";
 export * from "./lib/messages";
 export * from "./lib/documentFlush";
+export * from "./lib/hostDocumentRevisions";
+export * from "./lib/inertLock";
 export * from "./lib/modeler";
 export * from "./lib/processVariables";
 export * from "./lib/propertiesPanelResizer";
