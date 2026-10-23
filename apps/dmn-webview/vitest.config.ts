@@ -11,7 +11,7 @@ export default defineConfig({
         coverage: {
             // Import-time entry wiring; bootstrap.ts carries the logic.
             ...coveragePreset(__dirname, { exclude: ["src/main.ts"] }),
-            thresholds: { statements: 92, branches: 75, functions: 91, lines: 93 },
+            thresholds: { statements: 97, branches: 82, functions: 95, lines: 97 },
         },
     },
 });

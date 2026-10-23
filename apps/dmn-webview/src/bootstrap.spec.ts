@@ -10,6 +10,8 @@ import {
 } from "@miragon/bpmn-modeler-shared";
 import type { DmnModelerOptions } from "@miragon/dmn-modeler";
 
+import { bootstrap } from "./bootstrap";
+import { getHostApi } from "./host";
 import type { WebviewState } from "./webviewState";
 
 const mocks = vi.hoisted(() => {
@@ -40,7 +42,7 @@ const mocks = vi.hoisted(() => {
         ),
         initResizer: vi.fn(() => panelHandle),
         installPanelShortcuts: vi.fn(),
-        installCanvasAutoFocus: vi.fn(),
+        installCanvasAutoFocus: vi.fn((_options: { focusCanvas(): void }) => () => undefined),
         setLanguage: vi.fn(),
         getLocale: vi.fn(() => "en"),
     };
@@ -86,6 +88,14 @@ const defaultReplies: Replies = {
     GetDmnModelerSettingCommand: () => new DmnModelerSettingQuery({ colorTheme: "automatic" }),
 };
 
+const startedSessions: Array<() => void> = [];
+
+function startSession(...args: Parameters<typeof bootstrap>): () => void {
+    const stop = bootstrap(...args);
+    startedSessions.push(stop);
+    return stop;
+}
+
 function dispatch(data: unknown): void {
     window.dispatchEvent(new MessageEvent("message", { data }));
 }
@@ -114,11 +124,11 @@ async function startBootstrap({
         setState: vi.fn(),
         updateState: vi.fn(),
     };
-    const { bootstrap } = await import("./bootstrap");
-    bootstrap(host as never);
+    const stop = startSession(host as never);
     return {
         host,
         posted,
+        stop,
         ofType: (type: string) => posted.filter((message) => message.type === type),
         options: () => mocks.createModeler.mock.calls[0][1],
     };
@@ -135,8 +145,6 @@ describe("DMN bootstrap", () => {
     let documentAddEventListener: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        vi.resetModules();
-        // The visibilitychange listener registers at import time, so spy first.
         windowAddEventListener = vi.spyOn(window, "addEventListener");
         documentAddEventListener = vi.spyOn(document, "addEventListener");
         document.body.className = "";
@@ -145,6 +153,9 @@ describe("DMN bootstrap", () => {
     });
 
     afterEach(() => {
+        for (const stop of startedSessions.splice(0)) {
+            stop();
+        }
         for (const [type, listener, options] of windowAddEventListener.mock.calls) {
             window.removeEventListener(type, listener as EventListener, options);
         }
@@ -271,8 +282,7 @@ describe("DMN bootstrap", () => {
             updateState: vi.fn(),
         };
 
-        const { bootstrap } = await import("./bootstrap");
-        bootstrap(host as never, { theme: "dark", locale: "de" });
+        startSession(host as never, { theme: "dark", locale: "de" });
 
         // The forced dark mode reaches the instance before any settings reply,
         // and the locale is seeded before the modeler renders.
@@ -289,8 +299,7 @@ describe("DMN bootstrap", () => {
         };
 
         const drdRecorder = { id: "recorder" };
-        const { bootstrap } = await import("./bootstrap");
-        bootstrap(host as never, { additionalModules: { drd: [drdRecorder] } });
+        startSession(host as never, { additionalModules: { drd: [drdRecorder] } });
 
         await vi.waitFor(() =>
             expect(mocks.createModeler).toHaveBeenCalledWith(
@@ -322,6 +331,132 @@ describe("DMN bootstrap", () => {
         expect(ofType("LogErrorCommand")).toContainEqual(
             expect.objectContaining({ message: "Unhandled error: boom" }),
         );
+    });
+
+    it("keeps two bootstraps in one module instance on their own documents, revisions and hosts", async () => {
+        const secondModeler = {
+            ...mocks.handle,
+            loadDiagram: vi.fn(async (_xml: string) => ({ warnings: [] })),
+            exportDiagram: vi.fn(async () => "<second-edit />"),
+        };
+        const first = await startReady();
+        mocks.createModeler.mockResolvedValueOnce(secondModeler);
+
+        const second = await startReady({
+            replies: {
+                ...defaultReplies,
+                GetDmnFileCommand: () => new DmnFileQuery("<second />", 1),
+            },
+        });
+
+        expect(secondModeler.loadDiagram).toHaveBeenCalledWith("<second />");
+        expect(second.ofType("GetDmnFileCommand")).toHaveLength(1);
+
+        dispatch(new DmnFileQuery("<second-update />", 2));
+        await vi.waitFor(() =>
+            expect(secondModeler.loadDiagram).toHaveBeenCalledWith("<second-update />"),
+        );
+        expect(mocks.handle.loadDiagram).not.toHaveBeenCalledWith("<second-update />");
+
+        mocks.createModeler.mock.calls[0][1].onContentChanged?.();
+        mocks.createModeler.mock.calls[1][1].onContentChanged?.();
+
+        await vi.waitFor(
+            () => {
+                expect(first.ofType("SyncDocumentCommand")).toEqual([
+                    expect.objectContaining({ content: "<saved />", documentRevision: 7 }),
+                ]);
+                expect(second.ofType("SyncDocumentCommand")).toEqual([
+                    expect.objectContaining({ content: "<second-edit />", documentRevision: 2 }),
+                ]);
+            },
+            { timeout: 1000 },
+        );
+    });
+
+    describe("stopping a session", () => {
+        it("stops reacting to the host and the page", async () => {
+            const pageTheme = () => document.documentElement.getAttribute("data-dmn-theme");
+            const { posted, options, stop } = await startReady();
+            document.body.classList.add("vscode-dark");
+            await vi.waitFor(() => expect(pageTheme()).toBe("dark"));
+            options().onContentChanged?.();
+            const postedBeforeStop = posted.length;
+
+            stop();
+            dispatch(new DmnFileQuery("<after-stop />", 9));
+            dispatch(new FlushDocumentQuery(12));
+            dispatch(new DmnModelerSettingQuery({ colorTheme: "light" }));
+            Object.defineProperty(document, "visibilityState", {
+                value: "hidden",
+                configurable: true,
+            });
+            document.dispatchEvent(new Event("visibilitychange"));
+            window.dispatchEvent(new ErrorEvent("error", { message: "late" }));
+            document.body.classList.remove("vscode-dark");
+            await new Promise((resolve) => setTimeout(resolve, 400));
+
+            expect(posted).toHaveLength(postedBeforeStop);
+            expect(mocks.handle.loadDiagram).not.toHaveBeenCalledWith("<after-stop />");
+            expect(mocks.handle.exportDiagram).not.toHaveBeenCalled();
+            expect(pageTheme()).toBe("dark");
+        });
+
+        it("destroys the modeler, unlocks a flush, and detaches the canvas shortcuts", async () => {
+            const removeCanvasAutoFocus = vi.fn();
+            mocks.installCanvasAutoFocus.mockReturnValue(removeCanvasAutoFocus);
+            const { ofType, stop } = await startReady();
+            dispatch(new FlushDocumentQuery(4, true, true));
+            await vi.waitFor(() => expect(ofType("DocumentFlushedCommand")).toHaveLength(1));
+            expect(document.body.inert).toBe(true);
+
+            stop();
+
+            expect(mocks.handle.destroy).toHaveBeenCalledOnce();
+            expect(document.body.inert).toBe(false);
+            expect(removeCanvasAutoFocus).toHaveBeenCalledOnce();
+            expect(mocks.installPanelShortcuts.mock.calls[0][0].isEnabled()).toBe(false);
+        });
+
+        it("destroys a modeler that finishes creating after the stop", async () => {
+            let finishCreating!: () => void;
+            mocks.createModeler.mockImplementationOnce(
+                () => new Promise((resolve) => (finishCreating = () => resolve(mocks.handle))),
+            );
+            const { ofType, stop } = await startBootstrap();
+            await vi.waitFor(() => expect(mocks.createModeler).toHaveBeenCalledOnce());
+
+            stop();
+            finishCreating();
+
+            await vi.waitFor(() => expect(mocks.handle.destroy).toHaveBeenCalledOnce());
+            expect(ofType("GetDmnFileCommand")).toHaveLength(0);
+        });
+
+        it("skips the restore when stopped while waiting for the host settings", async () => {
+            vi.useFakeTimers();
+            const { GetDmnModelerSettingCommand: _, ...withoutSettings } = defaultReplies;
+            const { ofType, stop } = await startBootstrap({ replies: withoutSettings });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(mocks.handle.loadDiagram).toHaveBeenCalledWith("<initial />");
+
+            stop();
+            await vi.advanceTimersByTimeAsync(5000);
+
+            expect(ofType("RequestFocusCommand")).toHaveLength(0);
+            expect(mocks.installPanelShortcuts).not.toHaveBeenCalled();
+        });
+
+        it("never starts when stopped before the page loaded", async () => {
+            Object.defineProperty(document, "readyState", { value: "loading", configurable: true });
+            const { stop } = await startBootstrap();
+
+            stop();
+            window.dispatchEvent(new Event("load"));
+            await Promise.resolve();
+
+            expect(mocks.createModeler).not.toHaveBeenCalled();
+        });
     });
 
     describe("document flush on close", () => {
@@ -432,6 +567,46 @@ describe("DMN bootstrap", () => {
             expect(mocks.handle.loadDiagram).not.toHaveBeenCalledWith("<stale />");
         });
 
+        it("drops an export that a host update overtook", async () => {
+            const { ofType, options } = await startReady();
+            let finishExport!: (xml: string) => void;
+            mocks.handle.exportDiagram.mockImplementationOnce(
+                () => new Promise<string>((resolve) => (finishExport = resolve)),
+            );
+
+            options().onContentChanged?.();
+            await vi.waitFor(() => expect(mocks.handle.exportDiagram).toHaveBeenCalledOnce(), {
+                timeout: 1000,
+            });
+            dispatch(new DmnFileQuery("<host-update />", 8));
+            await vi.waitFor(() =>
+                expect(mocks.handle.loadDiagram).toHaveBeenCalledWith("<host-update />"),
+            );
+            finishExport("<stale-edit />");
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(ofType("SyncDocumentCommand")).toHaveLength(0);
+        });
+
+        it("loads nothing for an empty document but still tracks its revision", async () => {
+            const { ofType, options } = await startReady({
+                replies: { ...defaultReplies, GetDmnFileCommand: () => new DmnFileQuery("", 3) },
+            });
+
+            dispatch(new DmnFileQuery("", 4));
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            options().onContentChanged?.();
+
+            await vi.waitFor(
+                () =>
+                    expect(ofType("SyncDocumentCommand")).toEqual([
+                        expect.objectContaining({ content: "<saved />", documentRevision: 4 }),
+                    ]),
+                { timeout: 1000 },
+            );
+            expect(mocks.handle.loadDiagram).not.toHaveBeenCalled();
+        });
+
         it("reports a failed outbound sync", async () => {
             const { ofType, options } = await startReady();
             mocks.handle.exportDiagram.mockRejectedValueOnce(new Error("export broke"));
@@ -472,12 +647,10 @@ describe("DMN bootstrap", () => {
             vi.stubEnv("NODE_ENV", "development");
             vi.spyOn(console, "debug").mockImplementation(() => undefined);
             const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-            const { getHostApi } = await import("./host");
-            const { bootstrap } = await import("./bootstrap");
             const previewHost = getHostApi();
             const postMessage = vi.spyOn(previewHost, "postMessage");
 
-            bootstrap(previewHost);
+            startSession(previewHost);
             await vi.waitFor(() =>
                 expect(postMessage).toHaveBeenCalledWith(
                     expect.objectContaining({ type: "RequestFocusCommand" }),
