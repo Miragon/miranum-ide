@@ -32,11 +32,12 @@ import {
 } from "@miragon/bpmn-modeler-types";
 import {
     collectInlineScriptTasks,
-    findListenerAt,
+    describeScriptSurface,
     OpenScriptEditorsStore,
+    resolveScriptWriteTarget,
     ScriptSourceWatcher,
 } from "@miragon/bpmn-modeler-inline-scripting";
-import type { ScriptTaskBusinessObject } from "@miragon/bpmn-modeler-inline-scripting";
+import type { ScriptField, ScriptTaskBusinessObject } from "@miragon/bpmn-modeler-inline-scripting";
 import { buildLintModules } from "./lintModules";
 import { createLintHandleMethods, type LintHandleMethods } from "./lintHandle";
 import { capabilityModules } from "./capabilityModules";
@@ -574,35 +575,10 @@ export class BpmnModeler {
         listenerIndex: number | undefined,
         scriptFormat: string,
     ): void {
-        const modeler = this.getModeler();
-        const elementRegistry = modeler.get<ScriptModelElementRegistry>("elementRegistry");
-        const modeling = modeler.get<ScriptModeling>("modeling");
-        const element = elementRegistry.get(elementId);
-        if (!element) {
-            this.reporter.warn(`Element not found: ${elementId}`);
-            return;
+        const element = this.findScriptElement(elementId);
+        if (element) {
+            this.writeScriptField(element, elementId, kind, listenerIndex, "format", scriptFormat);
         }
-
-        if (kind === "script-task") {
-            // Script-task scriptFormat is unnamespaced; camunda:scriptFormat would be ignored by the panel.
-            modeling.updateModdleProperties(element, element.businessObject, {
-                scriptFormat,
-            });
-            return;
-        }
-
-        const listenerType =
-            kind === "execution-listener" ? "camunda:ExecutionListener" : "camunda:TaskListener";
-        const listener = findListenerAt(element.businessObject, listenerType, listenerIndex);
-        if (!listener || !listener.script) {
-            this.reporter.warn(
-                `${listenerType} #${listenerIndex} on ${elementId} has no inline script`,
-            );
-            return;
-        }
-        modeling.updateModdleProperties(element, listener.script, {
-            scriptFormat,
-        });
     }
 
     /** @internal */
@@ -612,39 +588,47 @@ export class BpmnModeler {
         listenerIndex: number | undefined,
         content: string,
     ): void {
-        const modeler = this.getModeler();
-        const elementRegistry = modeler.get<ScriptModelElementRegistry>("elementRegistry");
-        const modeling = modeler.get<ScriptModeling>("modeling");
-        const element = elementRegistry.get(elementId);
+        const element = this.findScriptElement(elementId);
         if (!element) {
-            this.reporter.warn(`Element not found: ${elementId}`);
             return;
         }
-
         // commandStack.changed fires during the write; set the baseline first to avoid echoing our own edit.
-        modeler
+        this.getModeler()
             .get<ScriptSourceWatcher>("scriptSourceWatcher", false)
             ?.noteApplied(elementId, kind, listenerIndex, content);
+        this.writeScriptField(element, elementId, kind, listenerIndex, "content", content);
+    }
 
-        if (kind === "script-task") {
-            modeling.updateModdleProperties(element, element.businessObject, {
-                script: content,
-            });
-            return;
+    private findScriptElement(elementId: string): ScriptModelElement | undefined {
+        const element = this.getModeler()
+            .get<ScriptModelElementRegistry>("elementRegistry")
+            .get(elementId);
+        if (!element) {
+            this.reporter.warn(`Element not found: ${elementId}`);
         }
+        return element;
+    }
 
-        const listenerType =
-            kind === "execution-listener" ? "camunda:ExecutionListener" : "camunda:TaskListener";
-        const listener = findListenerAt(element.businessObject, listenerType, listenerIndex);
-        if (!listener || !listener.script) {
+    private writeScriptField(
+        element: ScriptModelElement,
+        elementId: string,
+        kind: ScriptKind,
+        listenerIndex: number | undefined,
+        field: ScriptField,
+        value: string,
+    ): void {
+        const target = resolveScriptWriteTarget(element.businessObject, kind, listenerIndex, field);
+        if (!target) {
             this.reporter.warn(
-                `${listenerType} #${listenerIndex} on ${elementId} has no inline script`,
+                `${describeScriptSurface(elementId, kind, listenerIndex)} has no inline script`,
             );
             return;
         }
-        modeling.updateModdleProperties(element, listener.script, {
-            value: content,
-        });
+        this.getModeler()
+            .get<ScriptModeling>("modeling")
+            .updateModdleProperties(element, target.moddleElement, {
+                [target.propertyName]: value,
+            });
     }
 
     /** @internal C7 only; C8 does not register the script-editor store. */

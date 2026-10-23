@@ -14,6 +14,7 @@ import type { Engine } from "@miragon/bpmn-modeler-types";
 
 import type { EngineStack } from "./engineStack";
 import { loadEngineStack } from "./index";
+import { mountCanvas, removeMounts } from "../__fixtures__/surfaceMount";
 
 // Pins each engine stack against the installed camunda-bpmn-js Modeler it replaces, so a bump
 // that adds, drops, reorders or reshapes a module or option default fails here; delete with
@@ -77,21 +78,15 @@ const BPMN_JS_MODULES: ReadonlySet<object> = new Set(
 );
 
 let upstream: UpstreamModeler | undefined;
-let container: HTMLElement | undefined;
 
 afterEach(() => {
     upstream?.destroy();
-    container?.remove();
     upstream = undefined;
-    container = undefined;
+    removeMounts();
 });
 
 function createUpstream(engineCase: EngineCase): UpstreamModeler {
-    container = document.createElement("div");
-    container.style.width = "800px";
-    container.style.height = "600px";
-    document.body.appendChild(container);
-    upstream = engineCase.createUpstream(container);
+    upstream = engineCase.createUpstream(mountCanvas());
     return upstream;
 }
 
