@@ -62,14 +62,6 @@ vi.mock("@miragon/bpmn-modeler-i18n-extras", () => ({
     extras: {},
 }));
 
-vi.mock("@miragon/bpmn-modeler-types", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@miragon/bpmn-modeler-types")>();
-    return {
-        ...actual,
-        observeCanvasSize: vi.fn(),
-    };
-});
-
 vi.mock("@miragon/bpmn-modeler-shared", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@miragon/bpmn-modeler-shared")>();
     return {
@@ -102,12 +94,11 @@ vi.mock("./state", () => ({
     readSavedMode: vi.fn(() => mocks.savedMode),
     WebviewStateManager: class {
         constructor() {
-            mocks.stateManagerCreated();
+            mocks.stateManagerCreated(this);
         }
         captureViewState = vi.fn();
         applyViewState = vi.fn();
         restoreViewport = vi.fn();
-        markViewportRestored = vi.fn();
         restoreSelection = vi.fn();
         restorePanelUiState = vi.fn();
         restorePanelVisibility = mocks.restorePanelVisibility;
@@ -929,6 +920,48 @@ describe("bootstrap mode switching", () => {
         expect(document.body.inert).toBe(false);
         expect(document.getElementById("js-properties-panel")!.getAttribute("aria-busy")).toBe(
             "false",
+        );
+    });
+
+    const stateManagers = () =>
+        mocks.stateManagerCreated.mock.calls.map(
+            ([manager]) => manager as { restoreViewport: ReturnType<typeof vi.fn> },
+        );
+
+    it("leaves a recreated surface on its carried view state", async () => {
+        const modeler = makeModeler();
+        const viewer = makeViewer();
+        mocks.createModeler.mockResolvedValue(modeler);
+        mocks.createViewer.mockResolvedValue(viewer);
+
+        boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+        await drainAsyncWork();
+        modeButtons()[0].click();
+        await drainAsyncWork();
+
+        expect(viewer.applyViewState).toHaveBeenCalledOnce();
+        const [initial, recreated] = stateManagers();
+        expect(initial.restoreViewport).toHaveBeenCalledOnce();
+        expect(recreated.restoreViewport).not.toHaveBeenCalled();
+    });
+
+    it("restores the persisted viewport on a fallback surface after its import", async () => {
+        const first = makeModeler();
+        const fallback = makeModeler();
+        mocks.createModeler.mockResolvedValueOnce(first).mockResolvedValueOnce(fallback);
+        mocks.createViewer.mockRejectedValue(new Error("viewer failed"));
+
+        boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+        await drainAsyncWork();
+        // View fails to build, so the session falls back to Implement.
+        modeButtons()[0].click();
+        await drainAsyncWork();
+
+        expect(fallback.loadDiagram).toHaveBeenCalledWith("<exported />");
+        const fallbackManager = stateManagers().at(-1)!;
+        expect(fallbackManager.restoreViewport).toHaveBeenCalledOnce();
+        expect(fallback.loadDiagram.mock.invocationCallOrder[0]).toBeLessThan(
+            fallbackManager.restoreViewport.mock.invocationCallOrder[0],
         );
     });
 

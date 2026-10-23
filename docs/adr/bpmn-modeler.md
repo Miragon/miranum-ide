@@ -441,8 +441,10 @@ because hosts can render the strip before a surface exists for harvesting.
 Tagged Design/Implement switches toggle live. Recreate transitions capture view
 state, export XML, await `beforeDestroy` (host flush), destroy the old surface,
 construct/load the new one and restore plane, viewport and selection. Bind
-recreated surfaces before loading carried XML; initial host binding retains
-first-open fit behavior. Recreation loses instance undo and simulation state.
+recreated surfaces before loading carried XML. The surface fits a fresh open
+itself; the host only restores its persisted plane and viewport, on first open
+and after a fallback, which carries no snapshot. Recreation loses instance undo
+and simulation state.
 
 A session owns at most one live surface. Failed preparation retains the old
 surface; failed construction/load disposes the candidate before trying a

@@ -73,41 +73,26 @@ describe("WebviewStateManager.restoreViewport", () => {
         expect(fitViewport).not.toHaveBeenCalled();
     });
 
-    it("fits the diagram on a fresh open with no saved viewport", () => {
-        const { manager, setViewport, fitViewport } = setup(undefined);
+    it.each([
+        ["no saved state", undefined],
+        ["saved state without a viewport", { selectedElementIds: ["a"] }],
+    ])("leaves a fresh open with %s to the surface's own fit", (_case, saved) => {
+        const { manager, setViewport, fitViewport } = setup(saved);
 
         manager.restoreViewport();
 
-        expect(fitViewport).toHaveBeenCalledOnce();
+        expect(fitViewport).not.toHaveBeenCalled();
         expect(setViewport).not.toHaveBeenCalled();
     });
 
-    it("fits the diagram when saved state exists but carries no viewport", () => {
-        const { manager, setViewport, fitViewport } = setup({ selectedElementIds: ["a"] });
+    it("hands a restore on an unsized canvas to the surface to hold", () => {
+        const viewport = { x: 10, y: 20, width: 800, height: 600 };
+        const { manager, setViewport, fitViewport } = setup({ viewport }, false);
 
         manager.restoreViewport();
 
-        expect(fitViewport).toHaveBeenCalledOnce();
-        expect(setViewport).not.toHaveBeenCalled();
-    });
-
-    it("applies the viewbox only once across repeated calls", () => {
-        const { manager, fitViewport } = setup(undefined);
-
-        expect(manager.restoreViewport()).toBe(true);
-        expect(manager.restoreViewport()).toBe(true);
-
-        // Re-fitting on every later resize would discard the user's own zoom.
-        expect(fitViewport).toHaveBeenCalledOnce();
-    });
-
-    it("keeps retrying while the canvas is still unsized", () => {
-        const { manager, fitViewport } = setup(undefined, false);
-
-        expect(manager.restoreViewport()).toBe(false);
-        expect(manager.restoreViewport()).toBe(false);
-
-        expect(fitViewport).toHaveBeenCalledTimes(2);
+        expect(setViewport).toHaveBeenCalledExactlyOnceWith(viewport);
+        expect(fitViewport).not.toHaveBeenCalled();
     });
 
     it("restores root element before viewport on a tab-switch rebuild", () => {
@@ -183,28 +168,6 @@ describe("WebviewStateManager.captureViewState / applyViewState", () => {
         manager.applyViewState(snapshot);
 
         expect(applyViewState).toHaveBeenCalledWith(snapshot);
-    });
-
-    it("latches the initial restore so a later restoreViewport no-ops", () => {
-        const viewport = { x: 100, y: 200, width: 500, height: 300 };
-        const { manager, setViewport, fitViewport } = setup({ viewport });
-
-        manager.applyViewState({ viewport, selectedElementIds: [] });
-        expect(manager.restoreViewport()).toBe(true);
-
-        expect(setViewport).not.toHaveBeenCalled();
-        expect(fitViewport).not.toHaveBeenCalled();
-    });
-
-    it("markViewportRestored latches without applying a viewport", () => {
-        const viewport = { x: 100, y: 200, width: 500, height: 300 };
-        const { manager, setViewport, fitViewport } = setup({ viewport });
-
-        manager.markViewportRestored();
-        expect(manager.restoreViewport()).toBe(true);
-
-        expect(setViewport).not.toHaveBeenCalled();
-        expect(fitViewport).not.toHaveBeenCalled();
     });
 });
 
