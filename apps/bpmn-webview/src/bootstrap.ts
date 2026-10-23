@@ -52,7 +52,9 @@ import {
     UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
     WorkspaceDefinitionsQuery,
+    HOST_REPLY_TIMEOUT_MS,
     createFlushResponder,
+    createReplyRegistry,
     createResolver,
     extractProcessVariables,
     initResizer,
@@ -119,15 +121,8 @@ import {
 } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
 
-/**
- * Upper bound (ms) on how long bootstrap waits for a host reply before
- * continuing without it. A dropped element-templates / settings / panel-state
- * reply would otherwise stall the whole restore chain (selection, panel UI
- * state, and — critically — {@link WebviewStateManager.startPersisting}, without
- * which nothing is ever written back to webview state). Late replies still apply
- * through their normal message handlers.
- */
-const RESOLVER_TIMEOUT_MS = 5000;
+// The first search indexes the workspace cold, which can walk a whole directory tree.
+export const DEFINITION_SEARCH_TIMEOUT_MS = 30_000;
 
 /**
  * Host replies that act on the imported diagram. The webview requests their
@@ -246,14 +241,9 @@ function startSession(
     let cancelPendingVariablePublish: (() => void) | undefined;
     let availableProtocolFormIds = new Set<string>();
     const referenceAvailabilityListeners = new Set<() => void>();
-    const pendingDefinitionSearches = new Map<
-        number,
-        {
-            resolve: (definitions: WorkspaceDefinitionsQuery["definitions"]) => void;
-            reject: (reason: Error) => void;
-        }
-    >();
-    let lastDefinitionSearchId = 0;
+    const definitionSearchReplies = createReplyRegistry<WorkspaceDefinitionsQuery>(
+        DEFINITION_SEARCH_TIMEOUT_MS,
+    );
     const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
@@ -525,14 +515,21 @@ function startSession(
                     ),
             },
             definitionSearch: {
-                search: ({ kind, text }) =>
-                    new Promise((resolve, reject) => {
-                        const requestId = ++lastDefinitionSearchId;
-                        pendingDefinitionSearches.set(requestId, { resolve, reject });
+                search: async ({ kind, text }) => {
+                    const { requestId, reply } = definitionSearchReplies.open();
+                    host.postMessage(new SearchWorkspaceDefinitionsCommand(requestId, kind, text));
+                    const answer = await reply;
+                    if (!answer) {
                         host.postMessage(
-                            new SearchWorkspaceDefinitionsCommand(requestId, kind, text),
+                            new LogWarningCommand("No workspace search reply from the host"),
                         );
-                    }),
+                        throw new Error("The host did not answer the search");
+                    }
+                    if (answer.failed) {
+                        throw new Error("The host could not search other models");
+                    }
+                    return answer.definitions;
+                },
             },
         };
     }
@@ -602,11 +599,20 @@ function startSession(
         } else if (injectedClipboard) {
             clipboard = injectedClipboard;
         } else if (process.env.NODE_ENV !== "development") {
+            const pastedText = (reply: ClipboardQuery | TextClipboardQuery | undefined): string => {
+                if (!reply) {
+                    host.postMessage(
+                        new LogWarningCommand("No clipboard reply from the host; paste skipped"),
+                    );
+                    return "";
+                }
+                return reply.text ?? "";
+            };
+
             const requestElementClipboard = async (): Promise<string> => {
                 elementClipboardResolver = createResolver<ClipboardQuery>();
                 host.postMessage(new GetClipboardCommand());
-                const q = await elementClipboardResolver.wait();
-                return q?.text ?? "";
+                return pastedText(await elementClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
             };
             const writeElementClipboard = (text: string): void => {
                 host.postMessage(new SetClipboardCommand(text));
@@ -615,8 +621,7 @@ function startSession(
             const requestTextClipboard = async (): Promise<string> => {
                 textClipboardResolver = createResolver<TextClipboardQuery>();
                 host.postMessage(new GetTextClipboardCommand());
-                const q = await textClipboardResolver.wait();
-                return q?.text ?? "";
+                return pastedText(await textClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
             };
             const writeTextClipboard = (text: string): void => {
                 host.postMessage(new SetTextClipboardCommand(text));
@@ -1137,7 +1142,7 @@ function startSession(
         // gated on templates/settings, so a slow or dropped templates reply
         // cannot leave the panel stuck at the pre-rendered default.
         if (savedPanelVisible === undefined) {
-            const panelStateQuery = await panelStateResolver.wait(RESOLVER_TIMEOUT_MS);
+            const panelStateQuery = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
             if (engineReloadPending) return;
             stateManager.restorePanelVisibility(
                 propertiesPanelHandle,
@@ -1172,8 +1177,8 @@ function startSession(
         // positional per selected element). The timeouts guarantee this chain
         // always reaches startPersisting even if a host reply is dropped.
         await Promise.all([
-            elementTemplatesResolver.wait(RESOLVER_TIMEOUT_MS),
-            settingsResolver.wait(RESOLVER_TIMEOUT_MS),
+            elementTemplatesResolver.wait(HOST_REPLY_TIMEOUT_MS),
+            settingsResolver.wait(HOST_REPLY_TIMEOUT_MS),
         ]);
         if (engineReloadPending) return;
 
@@ -1583,17 +1588,8 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "WorkspaceDefinitionsQuery": {
-                const { requestId, definitions, failed } =
-                    message.data as WorkspaceDefinitionsQuery;
-                const pendingSearch = pendingDefinitionSearches.get(requestId);
-                if (pendingSearch) {
-                    pendingDefinitionSearches.delete(requestId);
-                    if (failed) {
-                        pendingSearch.reject(new Error("The host could not search other models"));
-                    } else {
-                        pendingSearch.resolve(definitions);
-                    }
-                }
+                const query = message.data as WorkspaceDefinitionsQuery;
+                definitionSearchReplies.settle(query.requestId, query);
                 break;
             }
             case queryOrCommand.type === "FocusElementQuery": {

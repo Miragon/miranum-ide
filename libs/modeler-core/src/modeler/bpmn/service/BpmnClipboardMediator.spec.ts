@@ -32,24 +32,36 @@ describe("BpmnClipboardMediator.readClipboard", () => {
         const { mediator, editorStore, clipboard } = createMediator();
         clipboard.readClipboard.mockResolvedValue("<bpmn-copy/>");
 
-        const result = await mediator.readClipboard(EDITOR);
+        await mediator.readClipboard(EDITOR);
 
-        expect(result).toBe(true);
         const [id, msg] = editorStore.postMessage.mock.calls[0];
         expect(id).toBe(EDITOR);
         expect(msg).toBeInstanceOf(ClipboardQuery);
         expect((msg as ClipboardQuery).text).toBe("<bpmn-copy/>");
     });
 
-    it("logs and returns false when reading the clipboard throws", async () => {
+    it("answers with empty text when reading the clipboard throws", async () => {
         const { mediator, clipboard, notifier, editorStore } = createMediator();
         clipboard.readClipboard.mockRejectedValue(new Error("denied"));
 
-        const result = await mediator.readClipboard(EDITOR);
+        await mediator.readClipboard(EDITOR);
 
-        expect(result).toBe(false);
         expect(notifier.logError).toHaveBeenCalledOnce();
-        expect(editorStore.postMessage).not.toHaveBeenCalled();
+        expect(editorStore.postMessage).toHaveBeenCalledOnce();
+        const [id, msg] = editorStore.postMessage.mock.calls[0];
+        expect(id).toBe(EDITOR);
+        expect(msg).toBeInstanceOf(ClipboardQuery);
+        expect((msg as ClipboardQuery).text).toBe("");
+    });
+
+    it("logs, without throwing, an empty reply that cannot be posted", async () => {
+        const { mediator, clipboard, notifier, editorStore } = createMediator();
+        clipboard.readClipboard.mockRejectedValue(new Error("denied"));
+        editorStore.postMessage.mockRejectedValue(new Error("webview gone"));
+
+        await expect(mediator.readClipboard(EDITOR)).resolves.toBeUndefined();
+        expect(notifier.logError).toHaveBeenCalledTimes(2);
+        expect(notifier.logError).toHaveBeenLastCalledWith(new Error("webview gone"));
     });
 });
 
@@ -58,22 +70,34 @@ describe("BpmnClipboardMediator.readTextClipboard", () => {
         const { mediator, editorStore, clipboard } = createMediator();
         clipboard.readClipboard.mockResolvedValue("plain text");
 
-        const result = await mediator.readTextClipboard(EDITOR);
+        await mediator.readTextClipboard(EDITOR);
 
-        expect(result).toBe(true);
         const msg = editorStore.postMessage.mock.calls[0][1];
         expect(msg).toBeInstanceOf(TextClipboardQuery);
         expect((msg as TextClipboardQuery).text).toBe("plain text");
     });
 
-    it("logs and returns false when reading the clipboard throws", async () => {
-        const { mediator, clipboard, notifier } = createMediator();
+    it("answers with empty text when reading the clipboard throws", async () => {
+        const { mediator, clipboard, notifier, editorStore } = createMediator();
         clipboard.readClipboard.mockRejectedValue(new Error("denied"));
 
-        const result = await mediator.readTextClipboard(EDITOR);
+        await mediator.readTextClipboard(EDITOR);
 
-        expect(result).toBe(false);
         expect(notifier.logError).toHaveBeenCalledOnce();
+        expect(editorStore.postMessage).toHaveBeenCalledOnce();
+        const msg = editorStore.postMessage.mock.calls[0][1];
+        expect(msg).toBeInstanceOf(TextClipboardQuery);
+        expect((msg as TextClipboardQuery).text).toBe("");
+    });
+
+    it("logs, without throwing, a reply that cannot be posted", async () => {
+        const { mediator, notifier, editorStore } = createMediator();
+        editorStore.postMessage.mockImplementation(() => {
+            throw new Error("No editor found");
+        });
+
+        await expect(mediator.readTextClipboard(EDITOR)).resolves.toBeUndefined();
+        expect(notifier.logError).toHaveBeenCalledExactlyOnceWith(new Error("No editor found"));
     });
 });
 

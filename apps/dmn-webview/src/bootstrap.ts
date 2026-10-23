@@ -16,6 +16,7 @@ import {
     GetDmnFileCommand,
     GetDmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
+    HOST_REPLY_TIMEOUT_MS,
     type HostThemeAdapter,
     type HostThemeMode,
     initResizer,
@@ -156,13 +157,6 @@ const settingsResolver = createResolver<DmnModelerSettingQuery>();
 let modelerIsInitialized = false;
 
 /**
- * Upper bound (ms) on how long bootstrap waits for a host reply before
- * continuing without it, so a dropped settings / panel-state reply can no longer
- * stall the restore chain (`restoreGroupsAndScroll` / `startPersisting`).
- */
-const RESOLVER_TIMEOUT_MS = 5000;
-
-/**
  * The Main function that gets executed after the webview is fully loaded.
  * This way we can ensure that when the backend sends a message, it is caught.
  * There are two reasons why a webview gets build:
@@ -241,14 +235,14 @@ async function run(): Promise<void> {
     // handler in onReceiveMessage swaps the stylesheet) so the modeler doesn't
     // settle on the wrong theme before the user setting arrives. Timed out so a
     // dropped reply can't stall the restore chain below.
-    await settingsResolver.wait(RESOLVER_TIMEOUT_MS);
+    await settingsResolver.wait(HOST_REPLY_TIMEOUT_MS);
 
     // Panel visibility: this editor's own saved entry (applied early above) wins;
     // only when absent do we fall back to the host's global default. Then report
     // toggles back — persisting per-editor state and seeding the global default.
     // Registered after restore so the restore itself can't echo back.
     if (savedPanelVisible === undefined) {
-        const panelState = await panelStateResolver.wait(RESOLVER_TIMEOUT_MS);
+        const panelState = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
         panelUiState.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
     }
     propertiesPanelHandle.onVisibilityChanged((visible) => {

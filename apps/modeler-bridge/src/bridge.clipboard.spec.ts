@@ -94,10 +94,13 @@ describe("bridge clipboard (real core over a fake transport)", () => {
         },
     );
 
-    it("logs a refused clipboard read instead of answering the webview", async () => {
-        const { rpc, frames, sendFromWebview } = await setupWithOpenEditor();
+    it.each([
+        ["GetClipboardCommand", "ClipboardQuery"],
+        ["GetTextClipboardCommand", "TextClipboardQuery"],
+    ])("logs a refused read and still answers %s with an empty %s", async (command, query) => {
+        const { rpc, frames, editorId, sendFromWebview } = await setupWithOpenEditor();
 
-        await sendFromWebview({ type: "GetClipboardCommand" });
+        await sendFromWebview({ type: command });
         const read = await waitForFrame(frames, isClipboardRead);
         await rpc.handleLine(hostErrorReply(read.id, "denied"));
         await settle();
@@ -106,6 +109,9 @@ describe("bridge clipboard (real core over a fake transport)", () => {
             method: "notifier/log",
             params: { level: "error", message: "denied" },
         });
-        expect(postedQueries(frames, "ClipboardQuery")).toHaveLength(0);
+        const answers = postedQueries(frames, query);
+        expect(answers).toHaveLength(1);
+        expect(answers[0].params.editorId).toBe(editorId);
+        expect(answers[0].params.message.text).toBe("");
     });
 });

@@ -292,6 +292,10 @@ export class PropertiesPanelStateQuery extends Query {
     }
 }
 
+/**
+ * Answers a {@link GetClipboardCommand} with the system clipboard text. Every
+ * request is answered; a failed read answers with empty text.
+ */
 export class ClipboardQuery extends Query {
     public readonly text: string;
 
@@ -301,6 +305,10 @@ export class ClipboardQuery extends Query {
     }
 }
 
+/**
+ * Answers a {@link GetTextClipboardCommand} with the system clipboard text.
+ * Every request is answered; a failed read answers with empty text.
+ */
 export class TextClipboardQuery extends Query {
     public readonly text: string;
 
@@ -615,6 +623,11 @@ export class UpdateLintResultsCommand extends Command {
     }
 }
 
+/**
+ * Asks the host to read the system clipboard for an element paste, which the
+ * webview's sandbox cannot do itself. The host always answers with a
+ * {@link ClipboardQuery}.
+ */
 export class GetClipboardCommand extends Command {
     constructor() {
         super("GetClipboardCommand");
@@ -719,6 +732,11 @@ export class SetClipboardCommand extends Command {
     }
 }
 
+/**
+ * Asks the host to read the system clipboard for a text paste into a label or
+ * properties-panel field. The host always answers with a
+ * {@link TextClipboardQuery}.
+ */
 export class GetTextClipboardCommand extends Command {
     constructor() {
         super("GetTextClipboardCommand");

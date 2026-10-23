@@ -13,6 +13,7 @@ import {
     FormatDiagramQuery,
     FormReferenceStatusQuery,
     GetDiagramAsSVGCommand,
+    HOST_REPLY_TIMEOUT_MS,
     installCanvasAutoFocus,
     LanguageQuery,
     OpenAllScriptTasksQuery,
@@ -117,7 +118,7 @@ vi.mock("./state", () => ({
     },
 }));
 
-import { bootstrap } from "./bootstrap";
+import { bootstrap, DEFINITION_SEARCH_TIMEOUT_MS } from "./bootstrap";
 import { installHostEditorActions } from "./hostEditorActions";
 import { loadDesignerModule, loadViewerModule } from "./surfaceModules";
 
@@ -1508,6 +1509,68 @@ describe("bootstrap mode switching", () => {
             await expect(second).resolves.toEqual([orderDefinition]);
             await expect(first).rejects.toThrow("The host could not search other models");
         });
+
+        it("fails a workspace search the host never answers and ignores its late reply", async () => {
+            const { host, ports } = await bootLikeMain();
+            const settled = vi.fn();
+            void ports.definitionSearch.search({ kind: "message", text: "order" }).then(
+                (definitions) => settled({ definitions }),
+                (error: Error) => settled({ error: error.message }),
+            );
+            const [{ requestId }] = sentOfType(host, "SearchWorkspaceDefinitionsCommand");
+
+            await vi.advanceTimersByTimeAsync(DEFINITION_SEARCH_TIMEOUT_MS - 1);
+            expect(settled).not.toHaveBeenCalled();
+
+            await vi.advanceTimersByTimeAsync(1);
+            expect(settled).toHaveBeenCalledExactlyOnceWith({
+                error: expect.stringMatching(/did not answer/),
+            });
+            expect(sentOfType(host, "LogWarningCommand")).toContainEqual(
+                expect.objectContaining({ message: expect.stringContaining("search") }),
+            );
+
+            expect(() =>
+                dispatch(new WorkspaceDefinitionsQuery(requestId as number, [])),
+            ).not.toThrow();
+            await drainMicrotasks();
+            expect(settled).toHaveBeenCalledOnce();
+        });
+
+        it("still resolves a workspace search answered just before the deadline", async () => {
+            const { host, ports } = await bootLikeMain();
+            const definition = {
+                kind: "message" as const,
+                name: "OrderPlaced",
+                source: { path: "order.bpmn", label: "order.bpmn" },
+                usages: [],
+            };
+            const search = ports.definitionSearch.search({ kind: "message", text: "order" });
+            const [{ requestId }] = sentOfType(host, "SearchWorkspaceDefinitionsCommand");
+
+            await vi.advanceTimersByTimeAsync(DEFINITION_SEARCH_TIMEOUT_MS - 1);
+            dispatch(new WorkspaceDefinitionsQuery(requestId as number, [definition]));
+
+            await expect(search).resolves.toEqual([definition]);
+        });
+
+        it.each(["bridge", "text"] as const)(
+            "skips a %s paste the host never answers",
+            async (channel) => {
+                const { host, options } = await bootLikeMain();
+                const settled = vi.fn();
+                void options.clipboard![channel].requestClipboard().then(settled);
+
+                await vi.advanceTimersByTimeAsync(HOST_REPLY_TIMEOUT_MS - 1);
+                expect(settled).not.toHaveBeenCalled();
+
+                await vi.advanceTimersByTimeAsync(1);
+                expect(settled).toHaveBeenCalledWith("");
+                expect(sentOfType(host, "LogWarningCommand")).toContainEqual(
+                    expect.objectContaining({ message: expect.stringContaining("clipboard") }),
+                );
+            },
+        );
 
         it("copies and pastes through separate host channels for elements and text", async () => {
             const { host, options } = await bootLikeMain();
