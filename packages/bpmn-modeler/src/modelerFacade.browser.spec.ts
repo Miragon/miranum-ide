@@ -5,7 +5,7 @@ import * as lintModule from "./bpmnlint/index";
 import type { LintConfigService } from "./bpmnlint/LintConfigService";
 import { createModeler } from "./createModeler";
 import type { BpmnModeler } from "./modeler";
-import { FAR_FROM_ORIGIN_XML } from "./__fixtures__/bpmnXml";
+import { C7_SCRIPTS_XML, FAR_FROM_ORIGIN_XML } from "./__fixtures__/bpmnXml";
 import { mountWithPanel, removeMounts } from "./__fixtures__/surfaceMount";
 
 /**
@@ -14,47 +14,6 @@ import { mountWithPanel, removeMounts } from "./__fixtures__/surfaceMount";
  * resolve stringly-named DI services of the real engine stack, which jsdom
  * cannot stand up, so they run against a real modeler here.
  */
-
-const SCRIPT_XML = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
-  <bpmn:process id="Process_1" isExecutable="true">
-    <bpmn:scriptTask id="ScriptTask_1" scriptFormat="groovy">
-      <bpmn:script>x = 1</bpmn:script>
-    </bpmn:scriptTask>
-    <bpmn:scriptTask id="ScriptTask_External" scriptFormat="groovy" camunda:resource="deployment://script.groovy" />
-    <bpmn:task id="Task_Listeners">
-      <bpmn:extensionElements>
-        <camunda:executionListener class="org.example.Audit" event="start" />
-        <camunda:executionListener event="end">
-          <camunda:script scriptFormat="javascript">done = true</camunda:script>
-        </camunda:executionListener>
-      </bpmn:extensionElements>
-    </bpmn:task>
-    <bpmn:userTask id="UserTask_1">
-      <bpmn:extensionElements>
-        <camunda:taskListener event="create">
-          <camunda:script scriptFormat="groovy">priority = 1</camunda:script>
-        </camunda:taskListener>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      <bpmndi:BPMNShape id="ScriptTask_1_di" bpmnElement="ScriptTask_1">
-        <dc:Bounds x="160" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ScriptTask_External_di" bpmnElement="ScriptTask_External">
-        <dc:Bounds x="320" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_Listeners_di" bpmnElement="Task_Listeners">
-        <dc:Bounds x="160" y="220" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="UserTask_1_di" bpmnElement="UserTask_1">
-        <dc:Bounds x="320" y="220" width="100" height="80" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>`;
 
 interface FlowElement {
     id: string;
@@ -103,7 +62,7 @@ describe("BpmnModeler inline-script sync (C7 with a scripting port)", () => {
     beforeEach(async () => {
         modeler.applyOpenScriptEditors([]);
         // A re-import also resets the command stack between tests.
-        await modeler.loadDiagram(SCRIPT_XML);
+        await modeler.loadDiagram(C7_SCRIPTS_XML);
         vi.clearAllMocks();
     });
 
