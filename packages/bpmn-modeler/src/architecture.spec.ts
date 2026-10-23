@@ -294,6 +294,30 @@ describe("bpmn-modeler import direction", () => {
         ).toEqual([]);
     });
 
+    it("the /viewer subpath never imports the editable-surface helpers", () => {
+        // The readonly viewer composes only the neutral SurfaceCore; the editable
+        // helpers value-import the clipboard modules, which must stay out of `/viewer`.
+        const VIEWER_DIR = join(PKG_SRC, "viewer");
+        const EDITABLE_SURFACE = resolve(PKG_SRC, "editableSurface.ts");
+        const offenders: string[] = [];
+        for (const file of listSourceFiles(PKG_SRC)) {
+            if (!file.startsWith(VIEWER_DIR)) continue;
+            for (const spec of importedModules(readFileSync(file, "utf8"))) {
+                if (
+                    spec.startsWith(".") &&
+                    resolve(dirname(file), `${spec}.ts`) === EDITABLE_SURFACE
+                ) {
+                    offenders.push(`${file.slice(PKG_SRC.length + 1)} → ${spec}`);
+                }
+            }
+        }
+        expect(
+            offenders,
+            `the /viewer subpath must not import ../editableSurface (it pulls the ` +
+                `clipboard modules into the readonly entry):\n${offenders.join("\n")}`,
+        ).toEqual([]);
+    });
+
     it("the append menu deep-imports the template chooser, never its barrel (#1505)", () => {
         // The chooser barrel value-imports the DI module — and with it
         // minisearch and the chooser CSS. The append menu is reachable from the
