@@ -9,55 +9,14 @@
     color: var(--cd-ui-text);
 }
 
-.dl-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-    gap: var(--cd-space-6);
-    align-items: center;
-}
-.dl-h1 {
-    margin: 0 0 var(--cd-space-3);
-    font-size: 44px;
-    line-height: 52px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--cd-ui-text);
-}
-.dl-sub {
-    margin: 0 0 var(--cd-space-4);
-    font-size: 18px;
-    line-height: 28px;
-    color: var(--cd-ui-text-leise);
-}
-.dl-cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--cd-space-2);
-}
-.dl-meta {
-    margin: var(--cd-space-3) 0 0;
-    font-size: 14px;
-    color: var(--cd-ui-text-leise);
-}
-.dl-meta a,
 .dl-link {
     color: var(--cd-ui-link);
     font-weight: 500;
     text-decoration: underline;
     text-underline-offset: 3px;
 }
-.dl-meta a:hover,
 .dl-link:hover {
     text-decoration-thickness: 2px;
-}
-
-.dl-preview-img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border: 1px solid var(--cd-ui-linie);
-    border-radius: var(--cd-radius-md);
-    box-shadow: var(--cd-shadow-2);
 }
 
 .dl-btn {
@@ -81,33 +40,16 @@
     background: var(--vp-button-brand-hover-bg);
     color: var(--vp-button-brand-hover-text);
 }
-.dl-btn-lg {
-    height: 48px;
-    padding: 0 var(--cd-space-4);
-    font-size: 16px;
-}
 .dl-btn svg {
     width: 18px;
     height: 18px;
     flex: none;
 }
 .dl-btn:focus-visible,
-.dl-meta a:focus-visible,
 .dl-link:focus-visible,
 .dl-copy:focus-visible {
     outline: 2px solid var(--cd-ui-fokus);
     outline-offset: 2px;
-}
-
-.dl-platforms {
-    margin-top: var(--cd-space-7);
-}
-.dl-h2 {
-    margin: 0 0 var(--cd-space-3);
-    font-size: 21px;
-    line-height: 28px;
-    font-weight: 600;
-    color: var(--cd-ui-text);
 }
 
 .dl-list {
@@ -206,22 +148,9 @@
     cursor: pointer;
 }
 
-@media (max-width: 960px) {
-    .dl-hero {
-        grid-template-columns: minmax(0, 1fr);
-    }
-    .dl-h1 {
-        font-size: 36px;
-        line-height: 44px;
-    }
-}
-
 @media (max-width: 640px) {
     .dl-page {
         padding: var(--cd-space-4) var(--cd-space-3) var(--cd-space-6);
-    }
-    .dl-cta .dl-btn {
-        width: 100%;
     }
     .dl-row {
         grid-template-columns: 36px minmax(0, 1fr);

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, type Component } from "vue";
-import { withBase } from "vitepress";
 import AppleIcon from "../icons/AppleIcon.vue";
 import WindowsIcon from "../icons/WindowsIcon.vue";
 import LinuxIcon from "../icons/LinuxIcon.vue";
@@ -37,7 +36,24 @@ const winUrl = computed(() => release.value?.exeX64Url ?? RELEASES_URL);
 const linuxUrl = computed(() => release.value?.flatpakX86_64Url ?? RELEASES_URL);
 
 const platforms = computed<Platform[]>(() => [
-    { name: "macOS", format: "DMG", icon: AppleIcon, url: macPrimaryUrl.value, external: false },
+    {
+        name: macAltUrl.value ? "macOS (Apple silicon)" : "macOS",
+        format: "DMG",
+        icon: AppleIcon,
+        url: macPrimaryUrl.value,
+        external: false,
+    },
+    ...(macAltUrl.value
+        ? [
+              {
+                  name: "macOS (Intel)",
+                  format: "DMG",
+                  icon: AppleIcon,
+                  url: macAltUrl.value,
+                  external: false,
+              },
+          ]
+        : []),
     {
         name: "Windows",
         format: "Installer (.exe)",
@@ -92,49 +108,9 @@ async function copyHomebrew() {
 
 <template>
     <main class="dl-page">
-        <section class="dl-hero">
-            <div class="dl-hero-text">
-                <h1 class="dl-h1">Download the Miragon BPMN Modeler</h1>
-                <p class="dl-sub">
-                    Edit BPMN, DMN and Camunda Forms in VS Code, IntelliJ or the desktop app. Free
-                    and open source.
-                </p>
-                <div class="dl-cta">
-                    <a class="dl-btn dl-btn-lg" :href="macPrimaryUrl">Download for macOS</a>
-                    <a
-                        class="dl-btn dl-btn-lg"
-                        :href="MARKETPLACE_URL"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        <VSCodeIcon />
-                        Install the VS Code extension
-                    </a>
-                </div>
-                <p class="dl-meta">
-                    <a v-if="macAltUrl" :href="macAltUrl">Mac with Intel chip</a>
-                    <span v-if="macAltUrl" aria-hidden="true"> · </span>
-                    <a :href="OPEN_VSX_URL" target="_blank" rel="noopener">Extension on Open VSX</a>
-                </p>
-            </div>
-            <div class="dl-preview">
-                <img
-                    :src="withBase('/standalone-preview-light.png')"
-                    alt="The Miragon BPMN Modeler desktop app with a BPMN diagram"
-                    class="dl-preview-img cd-nur-hell"
-                />
-                <img
-                    :src="withBase('/standalone-preview-dark.png')"
-                    alt="The Miragon BPMN Modeler desktop app with a BPMN diagram"
-                    class="dl-preview-img cd-nur-dunkel"
-                />
-            </div>
-        </section>
-
-        <section class="dl-platforms" aria-labelledby="dl-platforms-title">
-            <h2 id="dl-platforms-title" class="dl-h2">All platforms</h2>
+        <section aria-label="Downloads">
             <ul class="dl-list">
-                <li v-for="platform in platforms" :key="platform.format" class="dl-row">
+                <li v-for="platform in platforms" :key="`${platform.name} ${platform.format}`" class="dl-row">
                     <span class="dl-icon-sq"><component :is="platform.icon" /></span>
                     <span class="dl-row-name">{{ platform.name }}</span>
                     <span class="dl-row-format">{{ platform.format }}</span>
