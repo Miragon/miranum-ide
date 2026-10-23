@@ -239,8 +239,9 @@ export class BpmnViewer {
     /**
      * Tears the instance down: disposes every registered lifecycle resource (the
      * canvas-size observer, focus features, theme controller, and the underlying
-     * bpmn-js viewer) in reverse order. Idempotent. What the members do
-     * afterwards is the {@link BpmnViewerHandle.destroy} contract.
+     * bpmn-js viewer) in reverse order. Idempotent.
+     *
+     * @see BpmnViewerHandle.destroy
      */
     destroy(): void {
         this.store.dispose();
