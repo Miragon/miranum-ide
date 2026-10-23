@@ -210,6 +210,18 @@ describe("resolveScriptWriteTarget", () => {
         expect(taskTarget?.moddleElement).toBe(inlineTaskListener.script);
     });
 
+    it("has no script-task target once the element is no longer a bpmn:ScriptTask", () => {
+        // A replace-menu morph keeps the element id, so a late host push still resolves it.
+        const morphedTask: ScriptTaskBusinessObject = { $type: "bpmn:UserTask" };
+
+        expect(
+            resolveScriptWriteTarget(morphedTask, "script-task", undefined, "content"),
+        ).toBeUndefined();
+        expect(
+            resolveScriptWriteTarget(morphedTask, "script-task", undefined, "format"),
+        ).toBeUndefined();
+    });
+
     it("has no target for a listener without an inline script", () => {
         expect(
             resolveScriptWriteTarget(userTask, "execution-listener", 0, "content"),
