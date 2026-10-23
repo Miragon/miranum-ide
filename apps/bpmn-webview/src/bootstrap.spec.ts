@@ -993,6 +993,109 @@ describe("bootstrap mode switching", () => {
         expect(mocks.createViewer).toHaveBeenCalledOnce();
     });
 
+    describe("host state on a rebuilt modeler", () => {
+        const hostSettings = {
+            alignToOrigin: true,
+            showTransactionBoundaries: false,
+            colorTheme: "light" as const,
+            favouriteBpmnElements: ["bpmn:UserTask"],
+        };
+        const openScripts = [
+            {
+                elementId: "Task_1",
+                kind: "script-task" as const,
+                listenerIndex: undefined,
+                fileName: "Task_1.js",
+            },
+        ];
+
+        function makeSettingsHost() {
+            const host = makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+            const answerDefaults = host.postMessage.getMockImplementation()!;
+            host.postMessage.mockImplementation((message: { type: string }) => {
+                if (message.type !== "GetBpmnModelerSettingCommand") {
+                    answerDefaults(message);
+                    return;
+                }
+                dispatch(new BpmnModelerSettingQuery(hostSettings));
+                dispatch(new UpdateOpenScriptEditorsQuery(openScripts));
+            });
+            return host;
+        }
+
+        function makeScriptLockingModeler() {
+            const applyOpenScriptEditors = vi.fn();
+            return { modeler: makeModeler({ applyOpenScriptEditors }), applyOpenScriptEditors };
+        }
+
+        const implementButton = () => modeButtons()[2];
+        const viewButton = () => modeButtons()[0];
+
+        it("applies the host settings and open-script locks to a modeler a mode switch creates", async () => {
+            mocks.savedMode = "view";
+            const { modeler, applyOpenScriptEditors } = makeScriptLockingModeler();
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            mocks.createModeler.mockResolvedValue(modeler);
+
+            boot(makeSettingsHost());
+            await drainAsyncWork();
+            implementButton().click();
+            await drainAsyncWork();
+
+            expect(mocks.createModeler).toHaveBeenCalledOnce();
+            expect(mocks.createModeler.mock.calls[0][1]).toMatchObject({ settings: hostSettings });
+            expect(applyOpenScriptEditors).toHaveBeenCalledWith(openScripts);
+            // The script-source watcher baselines from the model, so the locks
+            // must land on the imported diagram, not on the empty canvas.
+            expect(modeler.loadDiagram.mock.invocationCallOrder[0]).toBeLessThan(
+                applyOpenScriptEditors.mock.invocationCallOrder[0],
+            );
+        });
+
+        it("carries the host state into the second modeler after Implement → View → Implement", async () => {
+            const first = makeScriptLockingModeler();
+            const second = makeScriptLockingModeler();
+            mocks.createModeler
+                .mockResolvedValueOnce(first.modeler)
+                .mockResolvedValueOnce(second.modeler);
+            mocks.createViewer.mockResolvedValue(makeViewer());
+
+            boot(makeSettingsHost());
+            await drainAsyncWork();
+            viewButton().click();
+            await drainAsyncWork();
+            implementButton().click();
+            await drainAsyncWork();
+
+            expect(first.modeler.setSettings).toHaveBeenCalledWith(hostSettings);
+            expect(first.applyOpenScriptEditors).toHaveBeenCalledWith(openScripts);
+            expect(mocks.createModeler).toHaveBeenCalledTimes(2);
+            expect(mocks.createModeler.mock.calls[1][1]).toMatchObject({ settings: hostSettings });
+            expect(second.applyOpenScriptEditors).toHaveBeenCalledWith(openScripts);
+        });
+
+        it("hands host state pushed while in View to the next modeler", async () => {
+            mocks.savedMode = "view";
+            const { modeler, applyOpenScriptEditors } = makeScriptLockingModeler();
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            mocks.createModeler.mockResolvedValue(modeler);
+            const pushedSettings = { ...hostSettings, favouriteBpmnElements: ["bpmn:ScriptTask"] };
+
+            boot(makeSettingsHost());
+            await drainAsyncWork();
+            dispatch(new BpmnModelerSettingQuery(pushedSettings));
+            dispatch(new UpdateOpenScriptEditorsQuery([]));
+            await drainMicrotasks();
+            implementButton().click();
+            await drainAsyncWork();
+
+            expect(mocks.createModeler.mock.calls[0][1]).toMatchObject({
+                settings: pushedSettings,
+            });
+            expect(applyOpenScriptEditors).toHaveBeenCalledExactlyOnceWith([]);
+        });
+    });
+
     describe("initial locale", () => {
         const germanFile = new BpmnFileQuery("<tagged />", "c7", "modeler", 1, undefined, "de");
 

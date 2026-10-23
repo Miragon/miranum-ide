@@ -163,6 +163,8 @@ Settings are sent from the extension host as `BpmnModelerSettingQuery`:
 
 Applied via `bpmnModeler.setSettings()`, which merges the partial settings and immediately applies transaction boundary visibility for C7 engines using `transactionBoundaries.show()` / `transactionBoundaries.hide()`.
 
+The host sends settings (and `UpdateOpenScriptEditorsQuery`) only on load and on change, so the webview remembers the latest of each in `apps/bpmn-webview/src/hostModelerState.ts`: a modeler a mode switch rebuilds gets the settings through `createModeler({ settings })` and the open-script locks once its import has finished.
+
 ## Theme Handling
 
 The BPMN webview themes each modeler **instance** through `@miragon/bpmn-modeler`

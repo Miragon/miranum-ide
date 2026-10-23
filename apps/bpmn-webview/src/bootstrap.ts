@@ -100,6 +100,7 @@ import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
+import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
@@ -250,6 +251,7 @@ function startSession(
         }
     >();
     let lastDefinitionSearchId = 0;
+    const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
     // editor and focuses in one tick); apply it once the modeler is ready.
@@ -807,6 +809,7 @@ function startSession(
                     engine: ctxEngine,
                     mode,
                     theme,
+                    settings: hostModelerState.settings,
                     propertiesPanel: { parent: mountEl },
                     additionalModules: extraModules,
                     clipboard,
@@ -972,8 +975,9 @@ function startSession(
                     surfaceMode = mode;
                     stateManager.persistMode(mode);
                     strip.render({ mode, engine: modelerEngine, busy: switchPending });
-                    // A recreate/fallback stood up a fresh instance: restore its
-                    // panel UI, resume persistence, and re-request modeler resources.
+                    // A recreate/fallback stood up a fresh instance: re-apply the
+                    // host's script locks, restore its panel UI, resume persistence,
+                    // and re-request modeler resources.
                     if (transition === "recreate" || transition === "fallback") {
                         // A recreate already applied the carried snapshot via the
                         // handle, bypassing this fresh state manager — latch so the
@@ -981,6 +985,11 @@ function startSession(
                         // A fallback applied no snapshot, so its restore must run.
                         if (transition === "recreate") {
                             stateManager.markViewportRestored();
+                        }
+                        // After the import: the script-source watcher baselines
+                        // the locked scripts from the loaded model.
+                        if (isModelerHandle(surface)) {
+                            hostModelerState.restoreOpenScripts(surface);
                         }
                         stateManager.restorePanelUiState();
                         stateManager.startPersisting();
@@ -1357,6 +1366,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnModelerSettingQuery": {
                 const query = message.data as BpmnModelerSettingQuery;
+                hostModelerState.rememberSettings(query.setting);
                 try {
                     // Theme is host policy: the adapter drives the page scope +
                     // instance theme off the VS Code `<body>`-class watcher here,
@@ -1528,6 +1538,7 @@ function startSession(
             case queryOrCommand.type === "UpdateOpenScriptEditorsQuery": {
                 try {
                     const query = message.data as UpdateOpenScriptEditorsQuery;
+                    hostModelerState.rememberOpenScripts(query.openScripts);
                     if (isModelerHandle(surface)) {
                         surface.applyOpenScriptEditors(query.openScripts);
                     }
