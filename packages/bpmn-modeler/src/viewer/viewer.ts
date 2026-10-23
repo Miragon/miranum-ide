@@ -212,6 +212,9 @@ export class BpmnViewer {
      * mirrors the choice to a legacy page-global `#theme-link` when present.
      */
     setTheme(theme: ThemeMode): void {
+        if (this.store.isDisposed) {
+            return;
+        }
         if (!this.themeController) {
             const panel = this.options.propertiesPanel;
             this.themeController = new ThemeController(

@@ -299,6 +299,9 @@ export class BpmnDesigner {
      * page-global `#theme-link` when present.
      */
     setTheme(theme: ThemeMode): void {
+        if (this.store.isDisposed) {
+            return;
+        }
         if (!this.themeController) {
             this.themeController = new ThemeController([
                 this.container,

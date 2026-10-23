@@ -360,7 +360,7 @@ export interface BpmnModelerHandle {
     /**
      * [B] Switch the colour theme live. Toggles this instance's
      * `data-bpmn-theme` attribute and mirrors it to a legacy `#theme-link` when
-     * present.
+     * present. A no-op once the instance is destroyed.
      */
     setTheme(theme: ThemeMode): void;
 

@@ -79,3 +79,33 @@ export function trackDocumentListeners(eventType: string) {
         },
     };
 }
+
+/**
+ * Counts `change` listeners added to and removed from every `matchMedia` list,
+ * so a spec can assert the automatic theme leaves no scheme listener behind.
+ */
+export function trackColorSchemeListeners() {
+    const originalMatchMedia = window.matchMedia;
+    let added = 0;
+    let removed = 0;
+    window.matchMedia = (query: string) => {
+        const list = originalMatchMedia.call(window, query);
+        const originalAdd = list.addEventListener.bind(list);
+        const originalRemove = list.removeEventListener.bind(list);
+        list.addEventListener = ((type: string, ...rest: unknown[]) => {
+            if (type === "change") added++;
+            return (originalAdd as (...args: unknown[]) => void)(type, ...rest);
+        }) as typeof list.addEventListener;
+        list.removeEventListener = ((type: string, ...rest: unknown[]) => {
+            if (type === "change") removed++;
+            return (originalRemove as (...args: unknown[]) => void)(type, ...rest);
+        }) as typeof list.removeEventListener;
+        return list;
+    };
+    return {
+        counts: () => ({ added, removed }),
+        restore: () => {
+            window.matchMedia = originalMatchMedia;
+        },
+    };
+}
