@@ -1530,9 +1530,7 @@ describe("bootstrap mode switching", () => {
                 expect.objectContaining({ message: expect.stringContaining("search") }),
             );
 
-            expect(() =>
-                dispatch(new WorkspaceDefinitionsQuery(requestId as number, [])),
-            ).not.toThrow();
+            dispatch(new WorkspaceDefinitionsQuery(requestId as number, []));
             await drainMicrotasks();
             expect(settled).toHaveBeenCalledOnce();
         });

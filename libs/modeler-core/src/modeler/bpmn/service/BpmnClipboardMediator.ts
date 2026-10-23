@@ -10,8 +10,8 @@ import { EditorSessionStore } from "../../../shared/infrastructure/EditorSession
  * permissions, so the extension host has to perform the actual read/write
  * and post the value back over the webview channel.
  *
- * Every read is answered: a failed read is logged and answered with empty
- * text, which the webview treats as an empty clipboard.
+ * A failed read still answers, with empty text, because the webview awaits
+ * every read.
  */
 export class BpmnClipboardMediator {
     constructor(
