@@ -1,7 +1,7 @@
 # Architecture and hosts
 
 - Status: accepted
-- Last reviewed: 2026-10-14
+- Last reviewed: 2026-10-23
 
 ## Context
 
@@ -71,6 +71,13 @@ Commands and Queries are not correlated by default: a request is a Command and
 the answer a later pushed Query. A webview port that answers a query while
 several requests can be in flight carries a request id that the host echoes,
 as `SearchWorkspaceDefinitionsCommand` and `WorkspaceDefinitionsQuery` do.
+Hosts answer an awaited request even when they cannot serve it, with an empty
+or `failed` answer, as the clipboard reads and the definition search do. The
+BPMN and DMN webviews still bound every awaited answer (`HOST_REPLY_TIMEOUT_MS`,
+`createReplyRegistry` in `libs/shared`) because IntelliJ's
+[best-effort frames](#process-lifecycle) can lose a request or its answer, and
+treat a missed deadline as no answer. Only their initial file request waits
+without a bound, since a cold first open can outlast any backstop.
 
 Enforcement lives in the [core architecture tests](../../libs/modeler-core/src/architecture.spec.ts),
 [VS Code architecture tests](../../apps/vscode-plugin/src/architecture.spec.ts),

@@ -164,8 +164,8 @@ value and passes it as `clipboard` to `createModeler` / `createDesigner`:
 const requestElementClipboard = async (): Promise<string> => {
     elementClipboardResolver = createResolver<ClipboardQuery>();
     host.postMessage(new GetClipboardCommand());
-    const q = await elementClipboardResolver.wait();
-    return q?.text ?? "";
+    // Unanswered after HOST_REPLY_TIMEOUT_MS: logs a warning and pastes nothing.
+    return pastedText(await elementClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
 };
 const writeElementClipboard = (text: string): void => {
     host.postMessage(new SetClipboardCommand(text));

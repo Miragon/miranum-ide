@@ -154,7 +154,7 @@ let clipboardResolver = createResolver<ClipboardQuery>();
 const requestClipboard = async (): Promise<string> => {
   clipboardResolver = createResolver<ClipboardQuery>();
   vscode.postMessage(new GetClipboardCommand());
-  const q = await clipboardResolver.wait();
+  const q = await clipboardResolver.wait(HOST_REPLY_TIMEOUT_MS);
   return q?.text ?? "";
 };
 
@@ -162,7 +162,9 @@ const requestClipboard = async (): Promise<string> => {
 // clipboardResolver.done(message.data as ClipboardQuery);
 ```
 
-The extension host handles `GetClipboardCommand` by reading the system clipboard via `vscode.env.clipboard.readText()`, then posts a `ClipboardQuery` back to the webview with the text.
+The extension host handles `GetClipboardCommand` by reading the system clipboard via `vscode.env.clipboard.readText()`, then posts a `ClipboardQuery` back to the webview with the text — with empty text when the read fails, so every request is answered.
+
+Bound every awaited host reply, because a reply can still be lost (e.g. IntelliJ drops best-effort frames while the bridge respawns): `wait(HOST_REPLY_TIMEOUT_MS)` for a single-slot reply, or `createReplyRegistry` (both in `libs/shared/src/lib/utils.ts`) when several requests are in flight and each reply carries a `requestId` (workspace definition search). An unanswered request then settles as `undefined`. The initial file requests (`bpmnFileResolver` / `dmnFileResolver`) deliberately wait indefinitely, since a cold first open can take longer than any backstop.
 
 ## State Persistence
 
@@ -282,4 +284,4 @@ See `apps/vscode-plugin/src/shared/infrastructure/WebviewHtml.ts`.
 - **Modeler message types**: `libs/shared/src/lib/modeler.ts`
 - **Host API interface + implementations** (`HostApi`/`HostApiImpl`/`MockHostApi`): `libs/shared/src/lib/host.ts`
 - **Webview host wrapper + mock** (`getHostApi`/`MockHost`): `apps/bpmn-webview/src/app/host.ts`
-- **Resolver utility**: `libs/shared/src/lib/utils.ts` (`createResolver`)
+- **Resolver utilities**: `libs/shared/src/lib/utils.ts` (`createResolver`, `createReplyRegistry`, `HOST_REPLY_TIMEOUT_MS`)
