@@ -46,7 +46,7 @@ function renderOverlay(overrides: Partial<OverlayProps> = {}) {
         favourites: [],
         translate: fallbackTranslate,
         position: { x: 120, y: 80 },
-        canvasBounds: { right: 1000, bottom: 800 },
+        canvasBounds: { left: 0, top: 0, right: 1000, bottom: 800 },
         onSelect: vi.fn(),
         onTemplateTypeSelect: vi.fn(),
         onCancel: vi.fn(),
@@ -176,6 +176,24 @@ describe("AppendMenuOverlay", () => {
         expect(onSelect).toHaveBeenCalledWith(invoiceWorker.entry.action, expect.any(MouseEvent));
     });
 
+    it("applies a multi-type template that fixes its element type on click", () => {
+        const messageCatch = templateEntry("message", "Message Catch", {
+            appliesTo: ["bpmn:IntermediateCatchEvent", "bpmn:IntermediateThrowEvent"],
+            template: {
+                elementType: {
+                    value: "bpmn:IntermediateCatchEvent",
+                    eventDefinition: "bpmn:MessageEventDefinition",
+                },
+            },
+        });
+        const { onSelect } = renderOverlay({ templateEntries: [messageCatch] });
+
+        click(templateCard("Message Catch"));
+
+        expect(onSelect).toHaveBeenCalledWith(messageCatch.entry.action, expect.any(MouseEvent));
+        expect(container.querySelector(".am-template-card--selected")).toBeNull();
+    });
+
     it("backs out of the type pick on the first Escape and cancels on the second", () => {
         const hostEscapeHandler = vi.fn();
         document.body.addEventListener("keydown", hostEscapeHandler);
@@ -256,6 +274,17 @@ describe("AppendMenuOverlay", () => {
         // jsdom lays the panel out with zero size, so only the edge margin remains.
         expect(panel.style.left).toBe("992px");
         expect(panel.style.top).toBe("792px");
+    });
+
+    it("keeps the panel inside a canvas offset from the viewport origin", () => {
+        renderOverlay({
+            position: { x: 100, y: 20 },
+            canvasBounds: { left: 400, top: 60, right: 1400, bottom: 860 },
+        });
+
+        const panel = container.querySelector<HTMLElement>(".am-panel")!;
+        expect(panel.style.left).toBe("408px");
+        expect(panel.style.top).toBe("68px");
     });
 
     it("previews the highlighted template with its preset values", () => {

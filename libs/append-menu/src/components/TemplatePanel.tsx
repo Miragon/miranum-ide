@@ -7,10 +7,10 @@
  * source of truth; this panel only renders cards and the floating
  * {@link TemplateHoverCard}.
  */
-import { useEffect, useRef, useState, useMemo, useCallback } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "preact/hooks";
 import type { EnrichedTemplateEntry, Translate } from "../types";
 import type { TemplateCategory } from "../filtering";
-import { hoverCardPosition } from "../positioning";
+import { hoverCardPosition, type HoverCardPosition } from "../positioning";
 import { ExpandableTemplateCard } from "./ExpandableTemplateCard";
 import { TemplateHoverCard } from "./TemplateHoverCard";
 
@@ -107,24 +107,35 @@ export function TemplatePanel({
         hideTimeoutRef.current = window.setTimeout(() => setHoveredIndex(-1), HOVER_HIDE_DELAY);
     }, []);
 
-    const hoverCardStyle = useMemo(() => {
-        if (activePreviewIndex < 0 || !listRef.current || !panelRef.current) {
-            return null;
-        }
-        const cards = listRef.current.querySelectorAll(".am-template-card");
-        const card = cards[activePreviewIndex] as HTMLElement | undefined;
-        if (!card) {
-            return null;
-        }
+    const [hoverCardStyle, setHoverCardStyle] = useState<HoverCardPosition | null>(null);
 
-        return hoverCardPosition(
-            {
-                panelLeft: panelRef.current.getBoundingClientRect().left,
-                cardTop: card.getBoundingClientRect().top,
-            },
-            window.innerHeight,
-        );
+    const measureHoverCard = useCallback(() => {
+        const card =
+            activePreviewIndex >= 0
+                ? listRef.current?.querySelectorAll(".am-template-card")[activePreviewIndex]
+                : undefined;
+        const measured =
+            card && panelRef.current
+                ? hoverCardPosition(
+                      {
+                          panelLeft: panelRef.current.getBoundingClientRect().left,
+                          cardTop: card.getBoundingClientRect().top,
+                      },
+                      window.innerHeight,
+                  )
+                : null;
+        setHoverCardStyle((current) => (isSamePosition(current, measured) ? current : measured));
     }, [activePreviewIndex]);
+
+    // Measured after every commit because the overlay moves the whole panel when it clamps
+    // it to the canvas, which this panel cannot observe through its own props.
+    useLayoutEffect(measureHoverCard);
+
+    useEffect(() => {
+        const list = listRef.current;
+        list?.addEventListener("scroll", measureHoverCard);
+        return () => list?.removeEventListener("scroll", measureHoverCard);
+    }, [measureHoverCard]);
 
     const activeEntry = activePreviewIndex >= 0 ? entries[activePreviewIndex] : null;
 
@@ -190,4 +201,8 @@ export function TemplatePanel({
             )}
         </div>
     );
+}
+
+function isSamePosition(a: HoverCardPosition | null, b: HoverCardPosition | null): boolean {
+    return a?.top === b?.top && a?.left === b?.left && a?.maxHeight === b?.maxHeight;
 }

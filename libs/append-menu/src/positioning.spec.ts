@@ -4,7 +4,7 @@ import { clampToCanvas, hoverCardPosition } from "./positioning";
 
 describe("clampToCanvas", () => {
     const panel = { width: 300, height: 200 };
-    const canvas = { right: 1000, bottom: 800 };
+    const canvas = { left: 0, top: 0, right: 1000, bottom: 800 };
 
     it.each([
         ["inside the canvas", { x: 100, y: 120 }, { left: 100, top: 120 }],
@@ -13,6 +13,23 @@ describe("clampToCanvas", () => {
         ["before the top-left corner", { x: -40, y: -10 }, { left: 8, top: 8 }],
     ])("keeps a panel anchored %s on the canvas", (_case, anchor, expected) => {
         expect(clampToCanvas(anchor, panel, canvas)).toEqual(expected);
+    });
+
+    it("keeps a panel anchored before an offset canvas's top-left corner on the canvas", () => {
+        const offsetCanvas = { left: 400, top: 60, right: 1400, bottom: 860 };
+
+        expect(clampToCanvas({ x: 380, y: 40 }, panel, offsetCanvas)).toEqual({
+            left: 408,
+            top: 68,
+        });
+    });
+
+    it("lets a panel wider than an offset canvas overhang its left edge, not the viewport", () => {
+        const narrowCanvas = { left: 600, top: 0, right: 1000, bottom: 800 };
+
+        expect(
+            clampToCanvas({ x: 700, y: 100 }, { width: 540, height: 200 }, narrowCanvas),
+        ).toEqual({ left: 452, top: 100 });
     });
 
     it("pins a panel larger than the canvas to the top-left margin", () => {
