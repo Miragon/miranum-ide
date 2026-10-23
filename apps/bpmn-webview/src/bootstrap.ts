@@ -805,11 +805,12 @@ function startSession(
                     loadModelerModule(),
                     lintingOptions(),
                 ]);
-                return createModeler(container, {
+                const settingsAtCreation = hostModelerState.settings;
+                const modeler = await createModeler(container, {
                     engine: ctxEngine,
                     mode,
                     theme,
-                    settings: hostModelerState.settings,
+                    settings: settingsAtCreation,
                     propertiesPanel: { parent: mountEl },
                     additionalModules: extraModules,
                     clipboard,
@@ -847,6 +848,9 @@ function startSession(
                     },
                     handleGlobalEscape: true,
                 });
+                // A push during the async init only reached the previous surface.
+                hostModelerState.applySettingsPushedSince(settingsAtCreation, modeler);
+                return modeler;
             },
         };
 

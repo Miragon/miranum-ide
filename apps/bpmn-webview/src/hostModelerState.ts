@@ -1,13 +1,16 @@
 import type { BpmnModelerSetting, OpenScriptEditorRef } from "@miragon/bpmn-modeler-types";
 
+interface SettingsTarget {
+    setSettings(settings: BpmnModelerSetting): void;
+}
+
 interface OpenScriptEditorsTarget {
     applyOpenScriptEditors(refs: OpenScriptEditorRef[]): void;
 }
 
 /**
- * The latest modeler settings and open script editors the host pushed. The
- * host sends both only on load and on change, so a modeler a mode switch
- * builds later has to be handed the last known values instead of the defaults.
+ * The host sends settings and open script editors only on load and on change,
+ * so a modeler a mode switch builds later has to be handed the last known values.
  */
 export class HostModelerState {
     private latestSettings: BpmnModelerSetting | undefined;
@@ -25,7 +28,15 @@ export class HostModelerState {
         this.latestOpenScripts = openScripts;
     }
 
-    /** A no-op until the host has reported open script editors. */
+    applySettingsPushedSince(
+        builtWith: BpmnModelerSetting | undefined,
+        modeler: SettingsTarget,
+    ): void {
+        if (this.latestSettings && this.latestSettings !== builtWith) {
+            modeler.setSettings(this.latestSettings);
+        }
+    }
+
     restoreOpenScripts(modeler: OpenScriptEditorsTarget): void {
         if (this.latestOpenScripts) {
             modeler.applyOpenScriptEditors(this.latestOpenScripts);

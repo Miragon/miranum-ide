@@ -1094,6 +1094,30 @@ describe("bootstrap mode switching", () => {
             });
             expect(applyOpenScriptEditors).toHaveBeenCalledExactlyOnceWith([]);
         });
+
+        it("applies settings pushed while the rebuilt modeler initialises", async () => {
+            mocks.savedMode = "view";
+            const modeler = makeModeler();
+            let finishModelerInit!: () => void;
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            mocks.createModeler.mockReturnValueOnce(
+                new Promise((resolve) => {
+                    finishModelerInit = () => resolve(modeler);
+                }),
+            );
+            const pushedSettings = { ...hostSettings, alignToOrigin: false };
+
+            boot(makeSettingsHost());
+            await drainAsyncWork();
+            implementButton().click();
+            await drainAsyncWork();
+            expect(mocks.createModeler.mock.calls[0][1]).toMatchObject({ settings: hostSettings });
+            dispatch(new BpmnModelerSettingQuery(pushedSettings));
+            finishModelerInit();
+            await drainAsyncWork();
+
+            expect(modeler.setSettings).toHaveBeenCalledExactlyOnceWith(pushedSettings);
+        });
     });
 
     describe("initial locale", () => {

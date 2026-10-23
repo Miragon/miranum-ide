@@ -29,6 +29,29 @@ describe("HostModelerState", () => {
         expect(state.settings).toEqual(settings(true));
     });
 
+    it("hands a modeler the settings pushed after the ones it was built with", () => {
+        const state = new HostModelerState();
+        const modeler = { setSettings: vi.fn() };
+        state.rememberSettings(settings(false));
+        const builtWith = state.settings;
+
+        state.rememberSettings(settings(true));
+        state.applySettingsPushedSince(builtWith, modeler);
+
+        expect(modeler.setSettings).toHaveBeenCalledExactlyOnceWith(settings(true));
+    });
+
+    it("leaves a modeler built with the latest settings alone", () => {
+        const state = new HostModelerState();
+        const modeler = { setSettings: vi.fn() };
+
+        state.applySettingsPushedSince(state.settings, modeler);
+        state.rememberSettings(settings(true));
+        state.applySettingsPushedSince(state.settings, modeler);
+
+        expect(modeler.setSettings).not.toHaveBeenCalled();
+    });
+
     it("leaves a modeler's open-script locks alone before the host reported any", () => {
         const modeler = { applyOpenScriptEditors: vi.fn() };
 
