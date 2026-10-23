@@ -931,6 +931,33 @@ describe("bootstrap mode switching", () => {
         );
     });
 
+    it("keeps the page locked when an engine reload lands during a mode switch", async () => {
+        let finishViewer!: () => void;
+        mocks.createModeler.mockResolvedValue(makeModeler());
+        mocks.createViewer.mockReturnValueOnce(
+            new Promise((resolve) => {
+                finishViewer = () => resolve(makeViewer());
+            }),
+        );
+        bootstrap(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)) as never, {
+            capabilities: {},
+            clipboard: "native",
+            linting: false,
+            reload: mocks.reload,
+        });
+        await drainAsyncWork();
+
+        modeButtons()[0].click();
+        await drainAsyncWork();
+        dispatch(new BpmnFileQuery("<c8 />", "c8", "modeler", 2));
+        await drainAsyncWork();
+        finishViewer();
+        await drainAsyncWork();
+
+        expect(mocks.reload).toHaveBeenCalledOnce();
+        expect(document.body.inert).toBe(true);
+    });
+
     const stateManagers = () =>
         mocks.stateManagerCreated.mock.calls.map(
             ([manager]) => manager as { restoreViewport: ReturnType<typeof vi.fn> },
