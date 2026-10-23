@@ -36,4 +36,10 @@ describe("createViewer (rendered round trip)", () => {
         expect(await viewer.exportDiagram()).toContain("StartEvent_1");
         expect(await viewer.getDiagramSvg()).toContain("<svg");
     });
+
+    it("rejects an export before any import with bpmn-js's own error", async () => {
+        viewer = await createViewer(mountCanvas());
+
+        await expect(viewer.exportDiagram()).rejects.toThrow("no definitions loaded");
+    });
 });

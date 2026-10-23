@@ -3,7 +3,7 @@ import OutlineModule from "bpmn-js/lib/features/outline";
 import ContextPadModule from "diagram-js/lib/features/context-pad";
 import MinimapModule from "diagram-js-minimap";
 import TokenSimulationViewerModule from "bpmn-js-token-simulation/lib/viewer";
-import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
+import { ImportXMLError, ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import { createModelNavigationModule } from "@miragon/bpmn-model-navigation";
 // Deep imports avoid the barrel's CSS side effects; viewer styles must stay separate from editor CSS.
 import PropertiesPanelModule from "@miragon/bpmn-modeler-properties-panel/render/index";
@@ -22,6 +22,7 @@ import {
 } from "../viewState";
 import { armInitialViewportPolicy } from "../initialViewport";
 import { installSurfaceFocusFeatures } from "../focusFeatures";
+import { exportFormattedXml } from "../diagramXml";
 import type { ThemeMode } from "../publicApi";
 import type { CoreViewerServices, ViewerOptions } from "./publicApi";
 
@@ -192,13 +193,7 @@ export class BpmnViewer {
     }
 
     async exportDiagram(): Promise<string> {
-        const result: SaveXMLResult = await this.getViewer().saveXML({ format: true });
-        if (result.xml) {
-            return result.xml;
-        } else if (result.error) {
-            throw result.error;
-        }
-        throw new Error("Failed to serialise the diagram!");
+        return exportFormattedXml(this.getViewer());
     }
 
     async getDiagramSvg(): Promise<string> {

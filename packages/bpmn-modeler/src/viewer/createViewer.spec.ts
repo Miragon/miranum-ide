@@ -108,6 +108,14 @@ describe("createViewer (runtime, jsdom)", () => {
         expect(() => viewer!.getService("canvas")).toThrow(NoModelerError);
     });
 
+    it("rejects an export on a destroyed viewer with NoModelerError", async () => {
+        container = mount();
+        viewer = await createViewer(container);
+        viewer.destroy();
+
+        await expect(viewer.exportDiagram()).rejects.toBeInstanceOf(NoModelerError);
+    });
+
     describe("readonly properties panel (opt-in, #1443)", () => {
         // Entry-level readonly behaviour (every input disabled, no add/remove
         // affordances) is proven in the lib's own specs

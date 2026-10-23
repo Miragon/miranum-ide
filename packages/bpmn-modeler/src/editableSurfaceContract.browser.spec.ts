@@ -71,6 +71,29 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
         removeMounts();
     });
 
+    it("rejects an export before any import with bpmn-js's own error", async () => {
+        const handle = await open();
+
+        await expect(handle.exportDiagram()).rejects.toThrow("no definitions loaded");
+    });
+
+    it("exports the loaded diagram as formatted XML", async () => {
+        const handle = await open();
+        await handle.loadDiagram(FAR_FROM_ORIGIN_XML);
+
+        const xml = await handle.exportDiagram();
+
+        expect(xml).toMatch(/^<\?xml[\s\S]*id="Task_1"/);
+        expect(xml).toContain('\n  <bpmn:process id="Process_1"');
+    });
+
+    it("rejects an export on a destroyed surface with NoModelerError", async () => {
+        const handle = await open();
+        handle.destroy();
+
+        await expect(handle.exportDiagram()).rejects.toBeInstanceOf(NoModelerError);
+    });
+
     it("exports the rendered diagram as SVG", async () => {
         const handle = await open();
         await handle.loadDiagram(FAR_FROM_ORIGIN_XML);

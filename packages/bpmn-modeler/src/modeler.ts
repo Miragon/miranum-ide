@@ -1,5 +1,5 @@
 import Modeler from "bpmn-js/lib/Modeler";
-import { ImportXMLError, ImportXMLResult, SaveXMLResult } from "bpmn-js/lib/BaseViewer";
+import { ImportXMLError, ImportXMLResult } from "bpmn-js/lib/BaseViewer";
 import type { ModuleDeclaration } from "didi";
 import TokenSimulationModule from "bpmn-js-token-simulation";
 import { ElementTemplateChooserModule } from "@miragon/bpmn-modeler-element-template-chooser";
@@ -42,6 +42,7 @@ import { buildLintModules } from "./lintModules";
 import { createLintHandleMethods, type LintHandleMethods } from "./lintHandle";
 import { capabilityModules } from "./capabilityModules";
 import { wireContentSaved } from "./contentSaved";
+import { exportFormattedXml } from "./diagramXml";
 import { createReporter, type SurfaceReporter } from "./reporting";
 import { installSurfaceFocusFeatures } from "./focusFeatures";
 import { CanvasViewportManager, type ViewportManager } from "./viewport";
@@ -307,16 +308,6 @@ export class BpmnModeler {
             }),
         );
 
-        if (this.settings.favouriteBpmnElements) {
-            const appendMenuOverride = this.getModeler().get<AppendMenuOverrideService>(
-                "appendMenuOverride",
-                false,
-            );
-            if (appendMenuOverride) {
-                appendMenuOverride.setFavourites(this.settings.favouriteBpmnElements);
-            }
-        }
-
         // Subscribe before initial templates are supplied so their validation errors are observed.
         const onElementTemplatesErrors = this.options.onElementTemplatesErrors;
         if (onElementTemplatesErrors) {
@@ -472,13 +463,7 @@ export class BpmnModeler {
     }
 
     async exportDiagram(): Promise<string> {
-        const result: SaveXMLResult = await this.getModeler().saveXML({ format: true });
-        if (result.xml) {
-            return result.xml;
-        } else if (result.error) {
-            throw result.error;
-        }
-        throw new Error("Failed to save changes made to the diagram!");
+        return exportFormattedXml(this.getModeler());
     }
 
     async getDiagramSvg(): Promise<string> {
