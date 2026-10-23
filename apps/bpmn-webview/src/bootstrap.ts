@@ -100,6 +100,7 @@ import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
+import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
@@ -212,12 +213,15 @@ function startSession(
     let surface!: SurfaceHandle;
     // The mode the live surface renders, and the mode strip that drives
     // it. `switchPending` blocks re-entrant switches while a recreate is in
-    // flight; `disposeCanvasObserver` tears down the per-surface size observer.
+    // flight; `initialSurfaceReady` blocks switches until the boot restore,
+    // which drives the live surface's state manager, has finished;
+    // `disposeCanvasObserver` tears down the per-surface size observer.
     let surfaceMode!: SurfaceMode;
     let strip!: ModeStrip;
     let modeSession: ModeSession | undefined;
     const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
     let switchPending = false;
+    let initialSurfaceReady = false;
     // Saved `document.body.inert` from the start of a recreate switch, restored
     // when it lands (unless a concurrent engine reload has taken ownership).
     let inertBeforeSwitch: boolean | undefined;
@@ -250,6 +254,7 @@ function startSession(
         }
     >();
     let lastDefinitionSearchId = 0;
+    const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
     // editor and focuses in one tick); apply it once the modeler is ready.
@@ -803,10 +808,12 @@ function startSession(
                     loadModelerModule(),
                     lintingOptions(),
                 ]);
-                return createModeler(container, {
+                const settingsAtCreation = hostModelerState.settings;
+                const modeler = await createModeler(container, {
                     engine: ctxEngine,
                     mode,
                     theme,
+                    settings: settingsAtCreation,
                     propertiesPanel: { parent: mountEl },
                     additionalModules: extraModules,
                     clipboard,
@@ -844,6 +851,9 @@ function startSession(
                     },
                     handleGlobalEscape: true,
                 });
+                // A push during the async init only reached the previous surface.
+                hostModelerState.applySettingsPushedSince(settingsAtCreation, modeler);
+                return modeler;
             },
         };
 
@@ -972,8 +982,9 @@ function startSession(
                     surfaceMode = mode;
                     stateManager.persistMode(mode);
                     strip.render({ mode, engine: modelerEngine, busy: switchPending });
-                    // A recreate/fallback stood up a fresh instance: restore its
-                    // panel UI, resume persistence, and re-request modeler resources.
+                    // A recreate/fallback stood up a fresh instance: re-apply the
+                    // host's script locks, restore its panel UI, resume persistence,
+                    // and re-request modeler resources.
                     if (transition === "recreate" || transition === "fallback") {
                         // A recreate already applied the carried snapshot via the
                         // handle, bypassing this fresh state manager — latch so the
@@ -981,6 +992,11 @@ function startSession(
                         // A fallback applied no snapshot, so its restore must run.
                         if (transition === "recreate") {
                             stateManager.markViewportRestored();
+                        }
+                        // After the import: the script-source watcher baselines
+                        // the locked scripts from the loaded model.
+                        if (isModelerHandle(surface)) {
+                            hostModelerState.restoreOpenScripts(surface);
                         }
                         stateManager.restorePanelUiState();
                         stateManager.startPersisting();
@@ -1020,9 +1036,9 @@ function startSession(
         // Always offer all three modes, greying out the ones the current
         // engine can't reach (Implement on an untagged model) so the mode is
         // discoverable — the strip ignores clicks on an aria-disabled entry. A
-        // click is also dropped while a switch or engine reload is in flight, and
-        // otherwise queues behind the other modeler operations so it never
-        // interleaves with an import.
+        // click is also dropped until the initial surface is ready and while a
+        // switch or engine reload is in flight, and otherwise queues behind the
+        // other modeler operations so it never interleaves with an import.
         strip = mountModeStrip({
             host: propertiesPanelParent,
             stripEl,
@@ -1030,7 +1046,7 @@ function startSession(
             translate: (template, replacements) => i18n.translate(template, replacements),
             onLabelChange: (apply) => i18n.onChange(apply),
             onSelect: (mode) => {
-                if (switchPending || engineReloadPending) return;
+                if (!initialSurfaceReady || switchPending || engineReloadPending) return;
                 void serializedModelerOperation(() => modeSession!.requestMode(mode));
             },
             onEscape: focusCanvas,
@@ -1167,6 +1183,7 @@ function startSession(
 
         // The initial surface is live: drop the strip's busy state and persist the
         // resolved mode so a first-ever open remembers where it landed.
+        initialSurfaceReady = true;
         strip.render({ mode: surfaceMode, engine: modelerEngine, busy: false });
         stateManager.persistMode(surfaceMode);
 
@@ -1357,6 +1374,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnModelerSettingQuery": {
                 const query = message.data as BpmnModelerSettingQuery;
+                hostModelerState.rememberSettings(query.setting);
                 try {
                     // Theme is host policy: the adapter drives the page scope +
                     // instance theme off the VS Code `<body>`-class watcher here,
@@ -1528,6 +1546,7 @@ function startSession(
             case queryOrCommand.type === "UpdateOpenScriptEditorsQuery": {
                 try {
                     const query = message.data as UpdateOpenScriptEditorsQuery;
+                    hostModelerState.rememberOpenScripts(query.openScripts);
                     if (isModelerHandle(surface)) {
                         surface.applyOpenScriptEditors(query.openScripts);
                     }
