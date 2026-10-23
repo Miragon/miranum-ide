@@ -85,6 +85,7 @@ declare module "bpmn-js-create-append-anything" {
             readonly type: string;
             readonly eventDefinitionType?: string;
             readonly triggeredByEvent?: boolean;
+            readonly isExpanded?: boolean;
         };
     }
     export const TASK: readonly CreateAppendOption[];

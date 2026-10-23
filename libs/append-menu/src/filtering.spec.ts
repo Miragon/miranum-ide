@@ -184,7 +184,7 @@ describe("with upstream create-append-anything entries", () => {
 
     it("resolves a bpmn:SubProcess favourite to the plain sub-process", () => {
         expect(favouriteIds([subProcesses], ["bpmn:SubProcess"])).toEqual([
-            "append-collapsed-subprocess",
+            "append-expanded-subprocess",
         ]);
     });
 
@@ -207,6 +207,6 @@ describe("with upstream create-append-anything entries", () => {
                 [germanEvents, subProcesses],
                 ["bpmn:IntermediateThrowEvent", "bpmn:SubProcess"],
             ),
-        ).toEqual(["append-none-intermediate-throwing", "append-collapsed-subprocess"]);
+        ).toEqual(["append-none-intermediate-throwing", "append-expanded-subprocess"]);
     });
 });

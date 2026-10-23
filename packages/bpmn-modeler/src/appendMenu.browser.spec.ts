@@ -1,4 +1,5 @@
 import type { Shape } from "bpmn-js/lib/model/Types";
+import { isExpanded } from "bpmn-js/lib/util/DiUtil";
 import {
     ALL_EVENTS,
     DATA_OBJECTS,
@@ -7,7 +8,7 @@ import {
     SUBPROCESS,
     TASK,
 } from "bpmn-js-create-append-anything";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { PLAIN_ENTRY_ACTION_BY_BPMN_TYPE } from "@miragon/bpmn-modeler-append-menu";
 
@@ -18,6 +19,15 @@ interface PopupMenuService {
     open(target: unknown, providerId: string, position: { x: number; y: number }): void;
     close(): void;
 }
+
+interface ElementTemplatesService {
+    createElement(template: object): Shape;
+}
+
+type ModelerOptions = Pick<
+    Parameters<typeof createModeler>[1],
+    "engine" | "locale" | "settings" | "elementTemplates"
+>;
 
 const UPSTREAM_OPTIONS = [
     ...TASK,
@@ -53,13 +63,11 @@ const TASK_OR_USER_TASK_TEMPLATE = {
 const handles: BpmnModeler[] = [];
 const mountedNodes: HTMLElement[] = [];
 
-afterEach(() => {
-    handles.forEach((handle) => handle.destroy());
-    handles.length = 0;
-    mountedNodes.forEach((node) => node.remove());
-    mountedNodes.length = 0;
+function teardown(): void {
+    handles.splice(0).forEach((handle) => handle.destroy());
+    mountedNodes.splice(0).forEach((node) => node.remove());
     document.querySelectorAll(".am-overlay-root").forEach((root) => root.remove());
-});
+}
 
 // Preact runs the properties panel's mount effects a frame plus a task after import; tearing
 // the modeler down before then trips the panel's selection reconcile on a destroyed canvas.
@@ -68,22 +76,24 @@ async function afterPaint(): Promise<void> {
     await new Promise<void>((resolve) => setTimeout(resolve));
 }
 
-async function openAppendMenu(
-    options: Pick<Parameters<typeof createModeler>[1], "locale" | "settings" | "elementTemplates">,
-): Promise<BpmnModeler> {
+async function openModeler(options: ModelerOptions): Promise<BpmnModeler> {
     const container = document.createElement("div");
     const panel = document.createElement("div");
     container.style.cssText = "position:absolute;width:1200px;height:800px";
     document.body.append(container, panel);
     mountedNodes.push(container, panel);
     const handle = await createModeler(container, {
-        engine: "c7",
         propertiesPanel: { parent: panel },
         ...options,
     });
     handles.push(handle);
     await handle.loadDiagram(XML);
     await afterPaint();
+    return handle;
+}
+
+async function openAppendMenu(options: Omit<ModelerOptions, "engine">): Promise<BpmnModeler> {
+    const handle = await openModeler({ engine: "c7", ...options });
     const task = handle.getService<{ get(id: string): Shape }>("elementRegistry").get("Task_1");
     handle.getService<PopupMenuService>("popupMenu").open(task, "bpmn-append", { x: 320, y: 200 });
     return handle;
@@ -104,14 +114,29 @@ function click(selector: string): void {
 }
 
 describe("append menu entry catalog", () => {
-    it.each(Object.entries(PLAIN_ENTRY_ACTION_BY_BPMN_TYPE))(
-        "maps %s to the upstream entry creating its plain element",
-        (bpmnType, action) => {
-            const option = UPSTREAM_OPTIONS.find((candidate) => candidate.actionName === action);
+    let c8Templates: ElementTemplatesService;
 
-            expect(option?.target.type).toBe(bpmnType);
-            expect(option?.target.eventDefinitionType).toBeUndefined();
-            expect(option?.target.triggeredByEvent).toBeUndefined();
+    beforeAll(async () => {
+        c8Templates = (await openModeler({ engine: "c8" })).getService("elementTemplates");
+    });
+
+    afterAll(teardown);
+
+    it.each(Object.entries(PLAIN_ENTRY_ACTION_BY_BPMN_TYPE))(
+        "maps %s to the entry showing what the C8 template factory creates",
+        (bpmnType, action) => {
+            const { target } = UPSTREAM_OPTIONS.find(({ actionName }) => actionName === action)!;
+            const created = c8Templates.createElement({
+                id: "probe",
+                name: "Probe",
+                appliesTo: [bpmnType],
+                properties: [],
+            });
+
+            expect(target.type).toBe(bpmnType);
+            expect(target.eventDefinitionType).toBeUndefined();
+            expect(target.triggeredByEvent).toBeUndefined();
+            expect(isExpanded(created)).toBe(target.isExpanded ?? isExpanded(created));
         },
     );
 
@@ -127,6 +152,8 @@ describe("append menu entry catalog", () => {
 });
 
 describe("append menu", () => {
+    afterEach(teardown);
+
     it("pins favourites by BPMN type in a translated UI", async () => {
         await openAppendMenu({
             locale: "de",
@@ -143,7 +170,7 @@ describe("append menu", () => {
         expect(navKeys(".am-bpmn-group--favourites")).toEqual([
             "fav:append-rule-task",
             "fav:append-none-intermediate-throwing",
-            "fav:append-collapsed-subprocess",
+            "fav:append-expanded-subprocess",
             "fav:append-user-task",
         ]);
         expect(
