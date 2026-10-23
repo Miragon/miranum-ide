@@ -30,13 +30,22 @@ export function clampToCanvas(
     panelSize: { width: number; height: number },
     canvasBounds: CanvasBounds,
 ): PanelPosition {
-    const maxLeft = canvasBounds.right - panelSize.width - EDGE_GAP;
-    const maxTop = canvasBounds.bottom - panelSize.height - EDGE_GAP;
-
     return {
-        left: Math.max(canvasBounds.left + EDGE_GAP, Math.min(anchor.x, maxLeft)),
-        top: Math.max(canvasBounds.top + EDGE_GAP, Math.min(anchor.y, maxTop)),
+        left: clampToCanvasAxis(anchor.x, panelSize.width, canvasBounds.left, canvasBounds.right),
+        top: clampToCanvasAxis(anchor.y, panelSize.height, canvasBounds.top, canvasBounds.bottom),
     };
+}
+
+// A panel larger than the canvas overhangs the canvas's start edge, never the viewport's.
+function clampToCanvasAxis(
+    anchor: number,
+    panelExtent: number,
+    canvasStart: number,
+    canvasEnd: number,
+): number {
+    const min = canvasStart + EDGE_GAP;
+    const max = canvasEnd - panelExtent - EDGE_GAP;
+    return max < min ? Math.max(EDGE_GAP, max) : Math.min(Math.max(anchor, min), max);
 }
 
 /**

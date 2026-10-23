@@ -24,6 +24,14 @@ describe("clampToCanvas", () => {
         });
     });
 
+    it("lets a panel wider than an offset canvas overhang its left edge, not the viewport", () => {
+        const narrowCanvas = { left: 600, top: 0, right: 1000, bottom: 800 };
+
+        expect(
+            clampToCanvas({ x: 700, y: 100 }, { width: 540, height: 200 }, narrowCanvas),
+        ).toEqual({ left: 452, top: 100 });
+    });
+
     it("pins a panel larger than the canvas to the top-left margin", () => {
         expect(clampToCanvas({ x: 50, y: 50 }, { width: 1200, height: 900 }, canvas)).toEqual({
             left: 8,
