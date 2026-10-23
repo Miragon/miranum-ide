@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { executeTemplateTypeAction } from "./templateTypeAction";
+import { executeTemplateTypeAction, offersTypePick } from "./templateTypeAction";
 import type { ElementTemplate } from "@miragon/bpmn-modeler-element-template-chooser";
 
 const template = {
@@ -24,6 +24,30 @@ function services() {
         mouse: { getLastMoveEvent: vi.fn(() => new Event("mousemove")) },
     };
 }
+
+describe("offersTypePick", () => {
+    it("offers a pick for a template applying to several types", () => {
+        expect(offersTypePick(template)).toBe(true);
+    });
+
+    it.each([
+        ["no template", undefined],
+        ["a single-type template", { ...template, appliesTo: ["bpmn:ServiceTask"] }],
+        [
+            "a template fixing its element type",
+            {
+                ...template,
+                appliesTo: ["bpmn:IntermediateCatchEvent", "bpmn:IntermediateThrowEvent"],
+                elementType: {
+                    value: "bpmn:IntermediateCatchEvent",
+                    eventDefinition: "bpmn:MessageEventDefinition",
+                },
+            },
+        ],
+    ])("offers no pick for %s", (_case, candidate) => {
+        expect(offersTypePick(candidate)).toBe(false);
+    });
+});
 
 describe("executeTemplateTypeAction", () => {
     it("clones the template with elementType set to the chosen type", () => {

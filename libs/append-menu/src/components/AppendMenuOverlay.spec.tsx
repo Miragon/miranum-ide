@@ -176,6 +176,24 @@ describe("AppendMenuOverlay", () => {
         expect(onSelect).toHaveBeenCalledWith(invoiceWorker.entry.action, expect.any(MouseEvent));
     });
 
+    it("applies a multi-type template that fixes its element type on click", () => {
+        const messageCatch = templateEntry("message", "Message Catch", {
+            appliesTo: ["bpmn:IntermediateCatchEvent", "bpmn:IntermediateThrowEvent"],
+            template: {
+                elementType: {
+                    value: "bpmn:IntermediateCatchEvent",
+                    eventDefinition: "bpmn:MessageEventDefinition",
+                },
+            },
+        });
+        const { onSelect } = renderOverlay({ templateEntries: [messageCatch] });
+
+        click(templateCard("Message Catch"));
+
+        expect(onSelect).toHaveBeenCalledWith(messageCatch.entry.action, expect.any(MouseEvent));
+        expect(container.querySelector(".am-template-card--selected")).toBeNull();
+    });
+
     it("backs out of the type pick on the first Escape and cancels on the second", () => {
         const hostEscapeHandler = vi.fn();
         document.body.addEventListener("keydown", hostEscapeHandler);

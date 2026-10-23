@@ -35,6 +35,7 @@ import {
     type NavColumns,
 } from "../navigation";
 import { clampToCanvas } from "../positioning";
+import { offersTypePick } from "../templateTypeAction";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
 
@@ -213,13 +214,11 @@ export function AppendMenuOverlay({
         return () => document.removeEventListener("keydown", handleKey, true);
     }, [onCancel]);
 
-    // Single-type templates apply immediately; multi-type ones become selected
-    // so the palette can be filtered (see the selection effect).
+    // Templates offering a type pick become selected so the palette can be
+    // filtered (see the selection effect); all others apply immediately.
     const handleTemplateClick = useCallback(
         (enriched: EnrichedTemplateEntry, event: Event) => {
-            const appliesTo = enriched.template?.appliesTo ?? [];
-
-            if (appliesTo.length <= 1) {
+            if (!offersTypePick(enriched.template)) {
                 onSelect(enriched.entry.action, event);
             } else {
                 setSelectedTemplate(enriched);
