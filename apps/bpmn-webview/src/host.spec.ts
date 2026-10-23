@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     ApplyDiffHighlightsQuery,
+    DiagramFormattedCommand,
     DiffReadyCommand,
     GetBpmnFileCommand,
     GetBpmnlintConfigCommand,
@@ -13,6 +14,7 @@ import {
     MockHostApi,
     RequestFocusCommand,
     SearchWorkspaceDefinitionsCommand,
+    SwapCompareSidesCommand,
     WorkspaceDefinitionsQuery,
     type Command,
 } from "@miragon/bpmn-modeler-shared";
@@ -215,5 +217,15 @@ describe("development preview host", () => {
             expect(computeDiff).not.toHaveBeenCalled();
             expect(replies).toEqual([]);
         });
+    });
+
+    it.each<[string, string, Command]>([
+        ["a format report", "", new DiagramFormattedCommand("formatted", [])],
+        ["a compare-sides swap", "?mode=diff-before", new SwapCompareSidesCommand()],
+    ])("takes %s without throwing or replying", (_, search, command) => {
+        const host = previewHost(search);
+
+        expect(() => host.postMessage(command)).not.toThrow();
+        expect(replies).toEqual([]);
     });
 });

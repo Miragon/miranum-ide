@@ -267,6 +267,14 @@ class MockHost extends MockHostApi<StateType, MessageType> {
                 console.debug("[DEBUG] UpdateScriptVariablesCommand", message);
                 break;
             }
+            case message.type === "DiagramFormattedCommand": {
+                console.debug("[DEBUG] DiagramFormattedCommand", message);
+                break;
+            }
+            case message.type === "SwapCompareSidesCommand": {
+                console.debug("[DEBUG] SwapCompareSidesCommand (no partner in dev)", message);
+                break;
+            }
             case message.type === "SearchWorkspaceDefinitionsCommand": {
                 const { requestId, kind, text } = message as SearchWorkspaceDefinitionsCommand;
                 const definitions = MOCK_WORKSPACE_DEFINITIONS.filter((definition) =>
