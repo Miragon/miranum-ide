@@ -52,6 +52,34 @@ describe("HostModelerState", () => {
         expect(modeler.setSettings).not.toHaveBeenCalled();
     });
 
+    it("hands a designer the favourites pushed after the settings it was built with", () => {
+        const state = new HostModelerState();
+        const designer = { setFavouriteBpmnElements: vi.fn() };
+        state.rememberSettings(settings(false));
+        const builtWith = state.settings;
+
+        state.rememberSettings({ ...settings(false), favouriteBpmnElements: ["bpmn:UserTask"] });
+        state.applyFavouritesPushedSince(builtWith, designer);
+
+        expect(designer.setFavouriteBpmnElements).toHaveBeenCalledExactlyOnceWith([
+            "bpmn:UserTask",
+        ]);
+    });
+
+    it("leaves a designer alone when no favourites were pushed since it was built", () => {
+        const state = new HostModelerState();
+        const designer = { setFavouriteBpmnElements: vi.fn() };
+
+        state.applyFavouritesPushedSince(state.settings, designer);
+        state.rememberSettings({ ...settings(true), favouriteBpmnElements: ["bpmn:UserTask"] });
+        state.applyFavouritesPushedSince(state.settings, designer);
+        const builtWith = state.settings;
+        state.rememberSettings(settings(false));
+        state.applyFavouritesPushedSince(builtWith, designer);
+
+        expect(designer.setFavouriteBpmnElements).not.toHaveBeenCalled();
+    });
+
     it("leaves a modeler's open-script locks alone before the host reported any", () => {
         const modeler = { applyOpenScriptEditors: vi.fn() };
 

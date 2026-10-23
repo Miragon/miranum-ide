@@ -4,13 +4,18 @@ interface SettingsTarget {
     setSettings(settings: BpmnModelerSetting): void;
 }
 
+interface FavouritesTarget {
+    setFavouriteBpmnElements(types: readonly string[]): void;
+}
+
 interface OpenScriptEditorsTarget {
     applyOpenScriptEditors(refs: OpenScriptEditorRef[]): void;
 }
 
 /**
  * The host sends settings and open script editors only on load and on change,
- * so a modeler a mode switch builds later has to be handed the last known values.
+ * so a modeler or designer a mode switch builds later has to be handed the last
+ * known values.
  */
 export class HostModelerState {
     private latestSettings: BpmnModelerSetting | undefined;
@@ -34,6 +39,16 @@ export class HostModelerState {
     ): void {
         if (this.latestSettings && this.latestSettings !== builtWith) {
             modeler.setSettings(this.latestSettings);
+        }
+    }
+
+    applyFavouritesPushedSince(
+        builtWith: BpmnModelerSetting | undefined,
+        designer: FavouritesTarget,
+    ): void {
+        const favourites = this.latestSettings?.favouriteBpmnElements;
+        if (favourites && this.latestSettings !== builtWith) {
+            designer.setFavouriteBpmnElements(favourites);
         }
     }
 
