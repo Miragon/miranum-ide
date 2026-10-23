@@ -13,6 +13,7 @@ import {
     LogWarningCommand,
     PropertiesPanelStateQuery,
     Query,
+    SyncDocumentCommand,
     TakeFocusQuery,
     HostApi,
     HostApiImpl,
@@ -95,6 +96,14 @@ class MockHost extends MockHostApi<StateType, MessageType> {
             case message.type === "RequestFocusCommand": {
                 // The preview page is always the active editor.
                 dispatchEvent(new TakeFocusQuery());
+                break;
+            }
+            case message.type === "SyncDocumentCommand": {
+                // No document to persist in standalone browser runs.
+                console.debug(
+                    "[DEBUG] SyncDocumentCommand",
+                    (message as SyncDocumentCommand).content,
+                );
                 break;
             }
             // The webview forwards log entries to the host; in a standalone

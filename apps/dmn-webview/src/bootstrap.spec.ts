@@ -463,6 +463,42 @@ describe("DMN bootstrap", () => {
         });
     });
 
+    describe("in the serve preview", () => {
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it("syncs an edit to the development host without logging an error", async () => {
+            vi.stubEnv("NODE_ENV", "development");
+            vi.spyOn(console, "debug").mockImplementation(() => undefined);
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+            const { getHostApi } = await import("./host");
+            const { bootstrap } = await import("./bootstrap");
+            const previewHost = getHostApi();
+            const postMessage = vi.spyOn(previewHost, "postMessage");
+
+            bootstrap(previewHost);
+            await vi.waitFor(() =>
+                expect(postMessage).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: "RequestFocusCommand" }),
+                ),
+            );
+            mocks.createModeler.mock.calls[0][1].onContentChanged?.();
+
+            await vi.waitFor(
+                () =>
+                    expect(postMessage).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            type: "SyncDocumentCommand",
+                            content: "<saved />",
+                        }),
+                    ),
+                { timeout: 1000 },
+            );
+            expect(consoleError).not.toHaveBeenCalled();
+        });
+    });
+
     describe("properties panel", () => {
         it("applies the editor's saved visibility instead of the host default", async () => {
             await startReady({ savedState: { panelVisible: false } });
