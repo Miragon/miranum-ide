@@ -13,7 +13,9 @@ module.exports = [
     {
         ignores: [
             "**/dist",
-            "**/lib",
+            // Theia build output; a bare `**/lib` would also hide `libs/shared/src/lib`.
+            "apps/standalone/lib",
+            "libs/standalone-extension/lib",
             // Gradle output (e.g. the IntelliJ plugin). Stages minified webview
             // bundles under `build/**/webview/`; linting those one-line files
             // emits tens of thousands of spurious errors. Flat config ignores
