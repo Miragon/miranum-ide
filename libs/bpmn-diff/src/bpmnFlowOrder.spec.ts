@@ -22,6 +22,9 @@ const sequenceFlow = (
     target: ModdleElement | string,
 ): ModdleElement => element("SequenceFlow", id, { sourceRef: source, targetRef: target });
 
+const boundaryEvent = (id: string, host: ModdleElement | string): ModdleElement =>
+    element("BoundaryEvent", id, { attachedToRef: host });
+
 const processOf = (...flowElements: ModdleElement[]): ModdleElement =>
     element("Process", "Process_1", { flowElements });
 
@@ -406,6 +409,174 @@ describe("buildFlowOrder", () => {
         ]);
     });
 
+    it("steps to a boundary event after its host's outgoing flows and walks its exception path", () => {
+        const host = element("Task", "A");
+        const timer = boundaryEvent("Timer", host);
+        const escalate = element("Task", "Escalate");
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        ...chainedBy(
+                            "F",
+                            element("StartEvent", "Start"),
+                            host,
+                            element("Task", "B"),
+                            element("EndEvent", "End"),
+                        ),
+                        timer,
+                        escalate,
+                        sequenceFlow("FT", timer, escalate),
+                    ),
+                ],
+                {
+                    Start: { x: 100, y: 100 },
+                    A: { x: 200, y: 78 },
+                    B: { x: 400, y: 78 },
+                    End: { x: 600, y: 100 },
+                    Timer: { x: 232, y: 140 },
+                    Escalate: { x: 300, y: 220 },
+                    FT: [
+                        { x: 250, y: 176 },
+                        { x: 250, y: 260 },
+                        { x: 300, y: 260 },
+                    ],
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "A",
+            "F2",
+            "Timer",
+            "FT",
+            "B",
+            "F3",
+            "Escalate",
+            "End",
+        ]);
+    });
+
+    it("steps to several boundary events on one host in reading order", () => {
+        const host = element("Task", "A");
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        ...chainedBy(
+                            "F",
+                            element("StartEvent", "Start"),
+                            host,
+                            element("EndEvent", "End"),
+                        ),
+                        boundaryEvent("TimerBottomRight", host),
+                        boundaryEvent("ErrorTop", host),
+                        boundaryEvent("MessageBottomLeft", host),
+                    ),
+                ],
+                {
+                    A: { x: 200, y: 80 },
+                    TimerBottomRight: { x: 260, y: 142 },
+                    ErrorTop: { x: 220, y: 62 },
+                    MessageBottomLeft: { x: 210, y: 142 },
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "A",
+            "F2",
+            "ErrorTop",
+            "MessageBottomLeft",
+            "TimerBottomRight",
+            "End",
+        ]);
+    });
+
+    it("steps to a sub-process's boundary event after its content and outgoing flow", () => {
+        const subProcess = element("SubProcess", "Sub", {
+            flowElements: chainedBy(
+                "I",
+                element("StartEvent", "InnerStart"),
+                element("EndEvent", "InnerEnd"),
+            ),
+        });
+        const cancel = boundaryEvent("Cancel", subProcess);
+        const cleanup = element("Task", "Cleanup");
+
+        const order = buildFlowOrder(
+            definitionsOf([
+                processOf(
+                    ...chainedBy(
+                        "F",
+                        element("StartEvent", "Start"),
+                        subProcess,
+                        element("EndEvent", "End"),
+                    ),
+                    cancel,
+                    cleanup,
+                    sequenceFlow("ToCleanup", cancel, cleanup),
+                ),
+            ]),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "Sub",
+            "InnerStart",
+            "I1",
+            "InnerEnd",
+            "F2",
+            "Cancel",
+            "ToCleanup",
+            "End",
+            "Cleanup",
+        ]);
+    });
+
+    it("does not enter a sub-process without a start event at a boundary event", () => {
+        const review = element("Task", "Review");
+        const adHocSubProcess = element("AdHocSubProcess", "AdHoc", {
+            flowElements: [boundaryEvent("Reminder", review), review],
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        ...chainedBy(
+                            "F",
+                            element("StartEvent", "Start"),
+                            adHocSubProcess,
+                            element("EndEvent", "End"),
+                        ),
+                    ),
+                ],
+                {
+                    Review: { x: 100, y: 200 },
+                    Reminder: { x: 130, y: 182 },
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "AdHoc",
+            "Review",
+            "Reminder",
+            "F2",
+            "End",
+        ]);
+    });
+
     it("walks a process referenced by both a participant and the root elements once", () => {
         const start = element("StartEvent", "Start");
         const end = element("EndEvent", "End");
@@ -566,6 +737,41 @@ describe("buildRemovedAnchors", () => {
                 "RemovedFlow",
             )?.flowIndex,
         ).toBe(1.5);
+    });
+
+    it("anchors a removed boundary event on its surviving host, else before its outgoing target", () => {
+        const graph = before(
+            element("Task", "Host"),
+            boundaryEvent("RemovedTimer", "Host"),
+            element("Task", "Escalate"),
+            sequenceFlow("TimerFlow", "RemovedTimer", "Escalate"),
+        );
+
+        expect(
+            buildRemovedAnchors(
+                ["RemovedTimer"],
+                graph,
+                new Map([
+                    ["Host", at(3, 40, 50)],
+                    ["Escalate", at(8)],
+                ]),
+            ).get("RemovedTimer"),
+        ).toEqual(at(3.5, 40, 50));
+        expect(
+            buildRemovedAnchors(["RemovedTimer"], graph, new Map([["Escalate", at(8)]])).get(
+                "RemovedTimer",
+            )?.flowIndex,
+        ).toBe(7.5);
+    });
+
+    it("anchors a removed boundary event on a surviving sub-process after its content", () => {
+        const anchors = buildRemovedAnchors(
+            ["RemovedTimer"],
+            before(element("SubProcess", "Sub"), boundaryEvent("RemovedTimer", "Sub")),
+            new Map([["Sub", { ...at(3), blockEndIndex: 6 }]]),
+        );
+
+        expect(anchors.get("RemovedTimer")?.flowIndex).toBe(6.5);
     });
 
     it("leaves out removed ids with no surviving neighbour or no trace in the before graph", () => {
