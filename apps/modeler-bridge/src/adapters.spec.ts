@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { NotifierPort, UserCancelledError } from "@miragon/bpmn-modeler-core";
 
+import { settle } from "./__fixtures__/bridgeHarness";
 import {
     DocumentMirror,
     RpcClipboard,
@@ -683,9 +684,6 @@ describe("RpcStatusBar", () => {
 });
 
 describe("RpcPicker", () => {
-    /** Lets a `findFiles`-then-`show` chain settle before the frame is asserted. */
-    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-
     function setup() {
         const h = harness();
         const finder = { findFiles: vi.fn() };
@@ -812,7 +810,7 @@ describe("RpcPicker", () => {
             kind: "matches",
             paths: ["/w/b.bpmn", "/w/a.bpmn"],
         }));
-        await flush();
+        await settle();
 
         // No busy list on the host, so the search keeps the status-bar spinner:
         // progress brackets it, then the picker opens.
@@ -855,7 +853,7 @@ describe("RpcPicker", () => {
             kind: "matches",
             paths: ["/w/a.bpmn", "/w/b.bpmn"],
         }));
-        await flush();
+        await settle();
         await answerLast({ selected: null });
         await expect(pending).resolves.toEqual({
             outcome: { kind: "matches", paths: ["/w/a.bpmn", "/w/b.bpmn"] },
@@ -899,7 +897,7 @@ describe("RpcPicker", () => {
             exclude: "**/element-templates/**",
             placeholder: "Pick files",
         });
-        await flush();
+        await settle();
 
         expect(finder.findFiles).toHaveBeenCalledWith(
             "**/*.{form,json,dmn}",
@@ -918,7 +916,7 @@ describe("RpcPicker", () => {
         const { picker, answerLast, finder } = setup();
         finder.findFiles.mockResolvedValue(["/w/a.form"]);
         const pending = picker.pickWorkspaceFiles({ glob: "**/*.form", placeholder: "Pick" });
-        await flush();
+        await settle();
         await answerLast({ selected: null });
         await expect(pending).resolves.toEqual([]);
     });
