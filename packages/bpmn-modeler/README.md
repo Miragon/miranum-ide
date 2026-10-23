@@ -303,6 +303,11 @@ Semantics:
 - **Stale references degrade gracefully.** A `rootElementId` whose sub-process no longer exists
   falls back to the top-level plane, and `selectedElementIds` that are gone are silently skipped — a
   snapshot taken against a since-edited diagram still applies without throwing.
+- **An explicit viewport wins over the initial fit.** Every surface fits a loaded (or new) diagram
+  to view once its container has a size. An `applyViewState`, `viewport.setViewport` or
+  `viewport.centerOnElement` right after the load decides the viewport instead. A viewbox restored
+  while the container is still unsized is held and applied once it is laid out;
+  `centerOnElement` returns `false` until then.
 
 ## Clipboard wire format
 
@@ -475,8 +480,8 @@ abort — the factory rejects with the thrown error and nothing is left mounted.
 
 | Method                                                                                         | Meaning                                                                               |
 |------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| `loadDiagram(xml)` / `exportDiagram()` / `getDiagramSvg()`                                     | Load / serialise the diagram.                                                         |
-| `newDiagram()`                                                                                 | Replace the diagram with a fresh empty one stamped for `engine`/`engineVersion`, so it reopens in the same engine and mode. |
+| `loadDiagram(xml)` / `exportDiagram()` / `getDiagramSvg()`                                     | Load / serialise the diagram; a load [fits it to view](#view-state-capture--restore). |
+| `newDiagram()`                                                                                 | Replace the diagram with a fresh empty one stamped for `engine`/`engineVersion`, so it reopens in the same engine and mode; fits it to view like a load. |
 | `setElementTemplates(templates)`                                                               | Push a new template set (data, never a path).                                         |
 | `setSettings(settings)`                                                                        | Merge a partial settings update (`colorTheme` excluded — theme is host policy).       |
 | `setFavouriteBpmnElements(types)`                                                              | Replace the append/create-menu favourites live; same as `setSettings({ favouriteBpmnElements })`. Also on `BpmnDesignerHandle`. |

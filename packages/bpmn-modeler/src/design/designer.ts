@@ -66,7 +66,7 @@ export class BpmnDesigner {
 
     private readonly store = new DisposableStore();
 
-    // Re-armed per loadDiagram, so it can't be a plain store entry.
+    // Re-armed per import, so it can't be a plain store entry.
     private readonly sizeObserver = new MutableDisposable();
 
     /**
@@ -248,14 +248,15 @@ export class BpmnDesigner {
     }
 
     async newDiagram(): Promise<ImportXMLResult> {
-        return this.getModeler().createDiagram();
+        const result = await this.getModeler().createDiagram();
+        this.armInitialViewport();
+        return result;
     }
 
     async loadDiagram(xml: string): Promise<ImportXMLResult> {
         try {
             const result = await this.getModeler().importXML(xml);
-            const canvas = this.getService("canvas");
-            this.sizeObserver.set(armInitialViewportPolicy(canvas, this._viewport!));
+            this.armInitialViewport();
             return result;
         } catch (error: unknown) {
             if ((error as ImportXMLError).warnings) {
@@ -266,6 +267,10 @@ export class BpmnDesigner {
             }
             throw error;
         }
+    }
+
+    private armInitialViewport(): void {
+        this.sizeObserver.set(armInitialViewportPolicy(this.getService("canvas"), this.viewport));
     }
 
     async exportDiagram(): Promise<string> {

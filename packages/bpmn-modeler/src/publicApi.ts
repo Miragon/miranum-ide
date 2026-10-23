@@ -275,7 +275,7 @@ export interface ModelerOptions {
  */
 export interface BpmnModelerHandle {
     // ── [A] Engine-intrinsic ────────────────────────────────────────────────
-    /** [A] Load BPMN 2.0 XML, replacing any current diagram. */
+    /** [A] Load BPMN 2.0 XML, replacing any current diagram, and fit it to view. */
     loadDiagram(xml: string): Promise<ImportXMLResult>;
 
     /** [A] Serialise the current diagram to formatted XML. */
@@ -284,7 +284,8 @@ export interface BpmnModelerHandle {
     /**
      * [A] Replace the diagram with a fresh empty one stamped for this instance's
      * {@link ModelerOptions.engine} (and {@link ModelerOptions.engineVersion}),
-     * so it reopens with the same engine and mode availability.
+     * so it reopens with the same engine and mode availability, and fit it to
+     * view.
      */
     newDiagram(): Promise<ImportXMLResult>;
 

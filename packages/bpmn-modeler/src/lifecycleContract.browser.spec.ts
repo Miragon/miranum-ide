@@ -65,6 +65,8 @@ interface SurfaceDescriptor {
     subscribeChannels(handle: Handle, onFire: () => void): Array<() => void>;
     /** Fires a user-driven viewbox change; absent when the surface exposes no canvas. */
     triggerViewbox?(handle: Handle): void;
+    /** The diagram-js canvas; absent when the surface exposes none. */
+    canvas?(handle: Handle): { resized(): void };
     /** Reads a live-only accessor, which must throw once destroyed. */
     probeDead(handle: Handle): void;
     /** Switches the colour theme; absent when the surface has no theme setter. */
@@ -104,6 +106,7 @@ const surfaces: SurfaceDescriptor[] = [
             (h as BpmnModeler).onCommandStackChanged(onFire),
         ],
         triggerViewbox: (h) => (h as BpmnModeler).getService("canvas").zoom(2),
+        canvas: (h) => (h as BpmnModeler).getService("canvas"),
         probeDead: (h) => void (h as BpmnModeler).viewport,
         setTheme: (h, theme) => (h as BpmnModeler).setTheme(theme),
     },
@@ -119,6 +122,7 @@ const surfaces: SurfaceDescriptor[] = [
         load: async (h) => void (await (h as BpmnDesigner).loadDiagram(FAR_FROM_ORIGIN_XML)),
         subscribeChannels: (h, onFire) => [(h as BpmnDesigner).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnDesigner).getService("canvas").zoom(2),
+        canvas: (h) => (h as BpmnDesigner).getService("canvas"),
         probeDead: (h) => void (h as BpmnDesigner).viewport,
         setTheme: (h, theme) => (h as BpmnDesigner).setTheme(theme),
     },
@@ -134,6 +138,7 @@ const surfaces: SurfaceDescriptor[] = [
         load: async (h) => void (await (h as BpmnViewer).loadDiagram(FAR_FROM_ORIGIN_XML)),
         subscribeChannels: (h, onFire) => [(h as BpmnViewer).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnViewer).getService("canvas").zoom(2),
+        canvas: (h) => (h as BpmnViewer).getService("canvas"),
         probeDead: (h) => void (h as BpmnViewer).viewport,
         setTheme: (h, theme) => (h as BpmnViewer).setTheme(theme),
     },
@@ -215,6 +220,23 @@ describe.each(surfaces)("$name lifecycle contract", (surface) => {
         await wait(250);
 
         expect(onFire).not.toHaveBeenCalled();
+    });
+
+    it("stops observing the container size once destroyed", async () => {
+        if (!surface.canvas) {
+            return;
+        }
+        const mount = surface.mount();
+        const handle = await surface.create(mount);
+        await surface.load(handle);
+        await settleObserver();
+        const resized = vi.spyOn(surface.canvas(handle), "resized");
+
+        handle.destroy();
+        mount.container.style.width = "400px";
+        await settleObserver();
+
+        expect(resized).not.toHaveBeenCalled();
     });
 
     it("ignores setTheme once destroyed: no theme attribute, no scheme listener", async () => {
