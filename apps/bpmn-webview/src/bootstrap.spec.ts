@@ -2594,4 +2594,42 @@ describe("bootstrap mode switching", () => {
             expect(mocks.reload).toHaveBeenCalledOnce();
         });
     });
+
+    describe("diff pane", () => {
+        const deliverToSession = (data: unknown): Promise<unknown> =>
+            Promise.all(
+                windowAddEventListener.mock.calls
+                    .filter(([type]) => type === "message")
+                    .map(([, listener]) =>
+                        (listener as (event: MessageEvent) => unknown)(
+                            new MessageEvent("message", { data }),
+                        ),
+                    ),
+            );
+
+        // Fails until the diff pane stops routing to the surface it never creates.
+        it.fails.each([
+            [
+                "BpmnModelerSettingQuery",
+                () =>
+                    new BpmnModelerSettingQuery({
+                        alignToOrigin: false,
+                        showTransactionBoundaries: false,
+                        colorTheme: "dark",
+                    }),
+            ],
+            ["ElementTemplatesQuery", () => new ElementTemplatesQuery([])],
+            ["GetDiagramAsSVGCommand", () => new GetDiagramAsSVGCommand()],
+            ["TakeFocusQuery", () => new TakeFocusQuery()],
+        ])("ignores %s without an error", async (_type, query) => {
+            document.body.insertAdjacentHTML("beforeend", `<div id="js-drop-zone"></div>`);
+            const host = makeHost(new BpmnFileQuery("<left />", "c7", "viewer", 1));
+            boot(host);
+            await drainAsyncWork();
+
+            await deliverToSession(query());
+
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([]);
+        });
+    });
 });
