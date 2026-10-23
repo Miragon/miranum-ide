@@ -15,11 +15,9 @@ import {
     BpmnlintInPageQuery,
     GetBpmnlintConfigCommand,
     GetBpmnModelerSettingCommand,
-    GetClipboardCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
     GetPropertiesPanelStateCommand,
-    GetTextClipboardCommand,
     ImplementationStatusQuery,
     LanguageQuery,
     CleanupDiagramQuery,
@@ -33,10 +31,8 @@ import {
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
     ShowInfoCommand,
-    SetClipboardCommand,
     SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
-    SetTextClipboardCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
     UpdateLintResultsCommand,
@@ -98,6 +94,7 @@ import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
+import { resolveClipboard } from "./session/protocolClipboard";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
@@ -228,6 +225,10 @@ function startSession(
     let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
     const protocolCapabilities = createProtocolCapabilities(host, () => surface);
+    const clipboard = resolveClipboard(injectedClipboard, {
+        isDevelopment: process.env.NODE_ENV === "development",
+        host,
+    });
     const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
@@ -245,10 +246,6 @@ function startSession(
     // message can be delivered as a fresh macrotask and swap this closure. So the
     // token read here always belongs to the config that drove this very run.
     let currentLintConfigToken: string | undefined;
-
-    // Separate resolvers for element clipboard and text (label) clipboard.
-    let elementClipboardResolver = createResolver<ClipboardQuery>();
-    let textClipboardResolver = createResolver<TextClipboardQuery>();
 
     const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
@@ -475,68 +472,6 @@ function startSession(
         // hidden by .viewer-mode CSS once we confirm the mode below. For the
         // modeler path, initResizer() is called after the branch check.
 
-        // Resolve the clipboard option passed to createModeler. The package
-        // builds the DI modules and installs the contenteditable/FEEL polyfill
-        // from it, so the polyfill installs during createModeler.
-        //
-        // - `undefined` (default): in dev (plain-browser `serve`) the native
-        //   browser clipboard handles copy/paste, so no option is passed;
-        //   otherwise route both channels through the host.
-        // - `"native"`: force the browser clipboard —
-        //   no option, no polyfill.
-        // - `{ bridge }`: public override — passed through unchanged; the
-        //   package uses the single bridge for both element and text surfaces.
-        let clipboard: ClipboardOptions | undefined;
-
-        if (injectedClipboard === "native") {
-            // Native browser clipboard: pass no option so bpmn-js's
-            // NativeCopyPaste stays in charge.
-        } else if (injectedClipboard) {
-            clipboard = injectedClipboard;
-        } else if (process.env.NODE_ENV !== "development") {
-            const pastedText = (reply: ClipboardQuery | TextClipboardQuery | undefined): string => {
-                if (!reply) {
-                    host.postMessage(
-                        new LogWarningCommand("No clipboard reply from the host; paste skipped"),
-                    );
-                    return "";
-                }
-                return reply.text ?? "";
-            };
-
-            const requestElementClipboard = async (): Promise<string> => {
-                elementClipboardResolver = createResolver<ClipboardQuery>();
-                host.postMessage(new GetClipboardCommand());
-                return pastedText(await elementClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
-            };
-            const writeElementClipboard = (text: string): void => {
-                host.postMessage(new SetClipboardCommand(text));
-            };
-
-            const requestTextClipboard = async (): Promise<string> => {
-                textClipboardResolver = createResolver<TextClipboardQuery>();
-                host.postMessage(new GetTextClipboardCommand());
-                return pastedText(await textClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
-            };
-            const writeTextClipboard = (text: string): void => {
-                host.postMessage(new SetTextClipboardCommand(text));
-            };
-
-            // Two independent protocol channels so element and label/FEEL
-            // clipboards stay separate. The package installs the contenteditable
-            // polyfill off the `text` bridge.
-            clipboard = {
-                bridge: {
-                    requestClipboard: requestElementClipboard,
-                    writeClipboard: writeElementClipboard,
-                },
-                text: {
-                    requestClipboard: requestTextClipboard,
-                    writeClipboard: writeTextClipboard,
-                },
-            };
-        }
-
         host.postMessage(new GetBpmnFileCommand());
         host.postMessage(new GetBpmnModelerSettingCommand());
         host.postMessage(new GetPropertiesPanelStateCommand());
@@ -690,7 +625,7 @@ function startSession(
                     theme,
                     favouriteBpmnElements: settingsAtCreation?.favouriteBpmnElements,
                     propertiesPanel: { parent: mountEl },
-                    clipboard,
+                    clipboard: clipboard.options,
                     capabilities: {
                         modelNavigation: capabilities.modelNavigation,
                         definitionSearch: capabilities.definitionSearch,
@@ -721,7 +656,7 @@ function startSession(
                     settings: settingsAtCreation,
                     propertiesPanel: { parent: mountEl },
                     additionalModules: extraModules,
-                    clipboard,
+                    clipboard: clipboard.options,
                     capabilities,
                     ...linting,
                     onWarning: (warning: string) =>
@@ -1293,11 +1228,11 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "ClipboardQuery": {
-                elementClipboardResolver.done(message.data as ClipboardQuery);
+                clipboard.handlers.ClipboardQuery?.(message.data as ClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "TextClipboardQuery": {
-                textClipboardResolver.done(message.data as TextClipboardQuery);
+                clipboard.handlers.TextClipboardQuery?.(message.data as TextClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "LanguageQuery": {
