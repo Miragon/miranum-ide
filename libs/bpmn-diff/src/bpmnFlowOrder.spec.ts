@@ -25,6 +25,14 @@ const sequenceFlow = (
 const processOf = (...flowElements: ModdleElement[]): ModdleElement =>
     element("Process", "Process_1", { flowElements });
 
+/** `nodes` chained by sequence flows named `<flowPrefix>1`, `<flowPrefix>2`, … */
+const chainedBy = (flowPrefix: string, ...nodes: ModdleElement[]): ModdleElement[] => [
+    ...nodes,
+    ...nodes
+        .slice(1)
+        .map((target, index) => sequenceFlow(`${flowPrefix}${index + 1}`, nodes[index], target)),
+];
+
 /** Parsed-definitions stand-in; `layout` maps ids to shape bounds or edge waypoints. */
 function definitionsOf(
     rootElements: ModdleElement[],
@@ -141,7 +149,97 @@ describe("buildFlowOrder", () => {
         expect(idsInFlowOrder(order)).toEqual(["Start", "Lonely_Top", "Lonely_Bottom"]);
     });
 
-    it("walks an event sub-process from its own start event and orphans only its shape", () => {
+    it("walks an embedded sub-process's content between its shape and its outgoing flow", () => {
+        const subProcess = element("SubProcess", "Sub", {
+            flowElements: chainedBy(
+                "I",
+                element("StartEvent", "InnerStart"),
+                element("Task", "InnerTask"),
+                element("EndEvent", "InnerEnd"),
+            ),
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf([
+                processOf(
+                    ...chainedBy(
+                        "F",
+                        element("StartEvent", "Start"),
+                        element("Task", "A"),
+                        subProcess,
+                        element("Task", "B"),
+                        element("EndEvent", "End"),
+                    ),
+                ),
+            ]),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "A",
+            "F2",
+            "Sub",
+            "InnerStart",
+            "I1",
+            "InnerTask",
+            "I2",
+            "InnerEnd",
+            "F3",
+            "B",
+            "F4",
+            "End",
+        ]);
+    });
+
+    it("walks a nested sub-process as a block inside its parent's block", () => {
+        const transaction = element("Transaction", "Inner", {
+            flowElements: chainedBy(
+                "I",
+                element("StartEvent", "InnerStart"),
+                element("EndEvent", "InnerEnd"),
+            ),
+        });
+        const outer = element("SubProcess", "Outer", {
+            flowElements: chainedBy(
+                "O",
+                element("StartEvent", "OuterStart"),
+                transaction,
+                element("EndEvent", "OuterEnd"),
+            ),
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf([
+                processOf(
+                    ...chainedBy(
+                        "F",
+                        element("StartEvent", "Start"),
+                        outer,
+                        element("EndEvent", "End"),
+                    ),
+                ),
+            ]),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "Outer",
+            "OuterStart",
+            "O1",
+            "Inner",
+            "InnerStart",
+            "I1",
+            "InnerEnd",
+            "O2",
+            "OuterEnd",
+            "F2",
+            "End",
+        ]);
+    });
+
+    it("walks an event sub-process as one block after its parent's flow", () => {
         const errorStart = element("StartEvent", "ErrorStart");
         const handle = element("Task", "Handle");
         const eventSubProcess = element("SubProcess", "EventSubProcess", {
@@ -149,30 +247,163 @@ describe("buildFlowOrder", () => {
             flowElements: [errorStart, handle, sequenceFlow("ToHandle", errorStart, handle)],
         });
 
-        const order = idsInFlowOrder(
-            buildFlowOrder(
-                definitionsOf(
-                    [
-                        processOf(
-                            element("StartEvent", "Start"),
-                            element("EndEvent", "End"),
-                            sequenceFlow("ToEnd", "Start", "End"),
-                            eventSubProcess,
-                        ),
-                    ],
-                    {
-                        Start: { x: 100, y: 100 },
-                        End: { x: 300, y: 100 },
-                        EventSubProcess: { x: 50, y: 250 },
-                        ErrorStart: { x: 100, y: 300 },
-                        Handle: { x: 200, y: 300 },
-                    },
-                ),
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        element("StartEvent", "Start"),
+                        element("EndEvent", "End"),
+                        sequenceFlow("ToEnd", "Start", "End"),
+                        eventSubProcess,
+                    ),
+                ],
+                {
+                    Start: { x: 100, y: 100 },
+                    End: { x: 300, y: 100 },
+                    EventSubProcess: { x: 50, y: 250 },
+                    ErrorStart: { x: 100, y: 300 },
+                    Handle: { x: 200, y: 300 },
+                },
             ),
         );
 
-        expect(order.at(-1)).toBe("EventSubProcess");
-        expect(order.indexOf("ErrorStart")).toBeLessThan(order.indexOf("Handle"));
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "ToEnd",
+            "End",
+            "EventSubProcess",
+            "ErrorStart",
+            "ToHandle",
+            "Handle",
+        ]);
+    });
+
+    it("walks an embedded sub-process's event sub-processes before its outgoing flow", () => {
+        const subProcess = element("SubProcess", "Sub", {
+            flowElements: [
+                ...chainedBy(
+                    "I",
+                    element("StartEvent", "InnerStart"),
+                    element("EndEvent", "InnerEnd"),
+                ),
+                element("SubProcess", "LowerEventSubProcess", {
+                    triggeredByEvent: true,
+                    flowElements: [element("StartEvent", "LowerStart")],
+                }),
+                element("SubProcess", "UpperEventSubProcess", {
+                    triggeredByEvent: true,
+                    flowElements: [element("StartEvent", "UpperStart")],
+                }),
+            ],
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        ...chainedBy(
+                            "F",
+                            element("StartEvent", "Start"),
+                            subProcess,
+                            element("EndEvent", "End"),
+                        ),
+                    ),
+                ],
+                {
+                    UpperEventSubProcess: { x: 300, y: 200 },
+                    LowerEventSubProcess: { x: 100, y: 300 },
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "Sub",
+            "InnerStart",
+            "I1",
+            "InnerEnd",
+            "UpperEventSubProcess",
+            "UpperStart",
+            "LowerEventSubProcess",
+            "LowerStart",
+            "F2",
+            "End",
+        ]);
+    });
+
+    it("enters a sub-process without a start event at its nodes no sequence flow leads to", () => {
+        const prepare = element("Task", "Prepare");
+        const ship = element("Task", "Ship");
+        const adHocSubProcess = element("AdHocSubProcess", "AdHoc", {
+            flowElements: [ship, prepare, sequenceFlow("ToShip", prepare, ship)],
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [
+                    processOf(
+                        ...chainedBy(
+                            "F",
+                            element("StartEvent", "Start"),
+                            adHocSubProcess,
+                            element("EndEvent", "End"),
+                        ),
+                    ),
+                ],
+                {
+                    Prepare: { x: 100, y: 200 },
+                    Ship: { x: 300, y: 100 },
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "F1",
+            "AdHoc",
+            "Prepare",
+            "ToShip",
+            "Ship",
+            "F2",
+            "End",
+        ]);
+    });
+
+    it("keeps an unreached sub-process's content right after its shape in the orphan tail", () => {
+        const unreached = element("SubProcess", "Unreached", {
+            flowElements: chainedBy(
+                "I",
+                element("StartEvent", "InnerStart"),
+                element("EndEvent", "InnerEnd"),
+            ),
+        });
+
+        const order = buildFlowOrder(
+            definitionsOf(
+                [processOf(element("StartEvent", "Start"), unreached, element("Task", "Lonely"))],
+                {
+                    Start: { x: 100, y: 100 },
+                    Unreached: { x: 100, y: 200 },
+                    InnerStart: { x: 150, y: 300 },
+                    I1: [
+                        { x: 186, y: 318 },
+                        { x: 350, y: 318 },
+                    ],
+                    Lonely: { x: 600, y: 250 },
+                    InnerEnd: { x: 350, y: 300 },
+                },
+            ),
+        );
+
+        expect(idsInFlowOrder(order)).toEqual([
+            "Start",
+            "Unreached",
+            "InnerStart",
+            "I1",
+            "InnerEnd",
+            "Lonely",
+        ]);
     });
 
     it("walks a process referenced by both a participant and the root elements once", () => {
@@ -244,6 +475,44 @@ describe("buildRemovedAnchors", () => {
         );
 
         expect(anchors.get("Removed")).toEqual(at(3.5, 40, 50));
+    });
+
+    it("places a removed successor of a sub-process after the sub-process's content", () => {
+        const afterOrder = buildFlowOrder(
+            definitionsOf([
+                processOf(
+                    ...chainedBy(
+                        "F",
+                        element("StartEvent", "Start"),
+                        element("SubProcess", "Sub", {
+                            flowElements: chainedBy(
+                                "I",
+                                element("StartEvent", "InnerStart"),
+                                element("EndEvent", "InnerEnd"),
+                            ),
+                        }),
+                        element("EndEvent", "End"),
+                    ),
+                ),
+            ]),
+        );
+
+        const anchors = buildRemovedAnchors(
+            ["Removed"],
+            before(
+                element("SubProcess", "Sub"),
+                element("Task", "Removed"),
+                sequenceFlow("ToRemoved", "Sub", "Removed"),
+            ),
+            afterOrder,
+        );
+
+        expect(sortIdsByOrder(["F2", "Removed", "InnerEnd", "Sub"], afterOrder, anchors)).toEqual([
+            "Sub",
+            "InnerEnd",
+            "Removed",
+            "F2",
+        ]);
     });
 
     it("places a removed node just after its surviving incoming flow when the source is gone", () => {
