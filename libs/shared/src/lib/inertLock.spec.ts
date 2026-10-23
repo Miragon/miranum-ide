@@ -164,8 +164,7 @@ describe("createInertLockGroup", () => {
     describe.each([false, true])("with the target's own inert state %s", (inertBeforeLocks) => {
         type LockEvent = { lock: number; acquire: boolean };
 
-        // Every order of three acquire/release pairs in which each lock acquires before it releases.
-        function interleavings(remaining: LockEvent[]): LockEvent[][] {
+        function ordersAcquiringBeforeReleasing(remaining: LockEvent[]): LockEvent[][] {
             if (remaining.length === 0) return [[]];
             return remaining
                 .filter(
@@ -174,15 +173,14 @@ describe("createInertLockGroup", () => {
                         !remaining.some((other) => other.lock === event.lock && other.acquire),
                 )
                 .flatMap((next) =>
-                    interleavings(remaining.filter((event) => event !== next)).map((rest) => [
-                        next,
-                        ...rest,
-                    ]),
+                    ordersAcquiringBeforeReleasing(remaining.filter((event) => event !== next)).map(
+                        (rest) => [next, ...rest],
+                    ),
                 );
         }
 
         const lockIds = [0, 1, 2];
-        const orders = interleavings(
+        const orders = ordersAcquiringBeforeReleasing(
             lockIds.flatMap((lock) => [
                 { lock, acquire: true },
                 { lock, acquire: false },
