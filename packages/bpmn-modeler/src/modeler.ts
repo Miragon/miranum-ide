@@ -398,7 +398,7 @@ export class BpmnModeler {
     private lintHandle(): LintHandleMethods {
         return createLintHandleMethods(
             () => this.getModeler().get<LintConfigService>("bpmnLintConfig", false) ?? undefined,
-            (message) => console.warn(message),
+            (message) => this.reporter.warn(message),
         );
     }
 

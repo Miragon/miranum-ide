@@ -249,6 +249,33 @@ describe("BpmnModeler host pushes without the matching capability", () => {
 
         modeler.destroy();
     });
+
+    it("reports ignored lint pushes through onWarning and still mirrors them to the console", async () => {
+        const onWarning = vi.fn();
+        const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const { container, panel } = mountWithPanel();
+        const modeler = await createModeler(container, {
+            engine: "c8",
+            propertiesPanel: { parent: panel },
+            linting: false,
+            onWarning,
+        });
+
+        modeler.applyLintResults({});
+        modeler.applyLintingDisabled();
+        modeler.startInPageLinting();
+
+        const expectedWarnings = [
+            "applyLintResults",
+            "applyLintingDisabled",
+            "startInPageLinting",
+        ].map((method) => `${method} ignored: this surface was created without a lint module`);
+        expect(onWarning.mock.calls.map(([message]) => message)).toEqual(expectedWarnings);
+        expect(consoleWarn.mock.calls.map(([message]) => message)).toEqual(expectedWarnings);
+
+        consoleWarn.mockRestore();
+        modeler.destroy();
+    });
 });
 
 describe("BpmnModeler element templates", () => {
