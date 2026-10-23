@@ -53,6 +53,7 @@ import {
     UpdateScriptVariablesCommand,
     WorkspaceDefinitionsQuery,
     HOST_REPLY_TIMEOUT_MS,
+    HostDocumentRevisions,
     createFlushResponder,
     createReplyRegistry,
     createResolver,
@@ -222,10 +223,7 @@ function startSession(
     let modelerIsInitialized = false;
     let modelerCanImportHostUpdates = false;
     let inertBeforeDestructiveFlush: boolean | undefined;
-    let hostUpdateVersion = 0;
-    let hostDocumentRevision = 0;
-    let latestHostDocumentRevision = 0;
-    let initialBpmnFileReceived = false;
+    const hostDocumentRevisions = new HostDocumentRevisions();
     let initialViewerMode = false;
     let latestBpmnFileQuery: BpmnFileQuery | undefined;
     let refreshDiagramWhenReady = false;
@@ -410,8 +408,8 @@ function startSession(
             isReady: () => modelerIsInitialized,
             hasPendingSync: () => debouncedSendXmlChanges.pending(),
             hasPendingHostUpdate: () => debouncedUpdateXML.pending(),
-            hostUpdateVersion: () => hostUpdateVersion,
-            documentRevision: () => hostDocumentRevision,
+            hostUpdateVersion: () => hostDocumentRevisions.version,
+            documentRevision: () => hostDocumentRevisions.representedRevision,
             flushPendingSync: flushPendingXmlChanges,
             beginDestructiveFlush: () => {
                 if (inertBeforeDestructiveFlush === undefined) {
@@ -1190,9 +1188,7 @@ function startSession(
 
     async function openHostXml(bpmn: string | undefined, documentRevision: number): Promise<void> {
         await openXml(bpmn);
-        if (documentRevision === latestHostDocumentRevision) {
-            hostDocumentRevision = documentRevision;
-        }
+        hostDocumentRevisions.markImported(documentRevision);
     }
 
     /**
@@ -1233,14 +1229,16 @@ function startSession(
         // (diagram-js discards the returned promise) as a context-free line —
         // catch it so the failure is named and deterministic on the channel.
         try {
-            const version = hostUpdateVersion;
+            const versionAtExport = hostDocumentRevisions.version;
             const bpmn = await surface.exportDiagram();
 
-            if (version !== hostUpdateVersion || debouncedUpdateXML.pending()) {
+            if (!hostDocumentRevisions.isCurrent(versionAtExport) || debouncedUpdateXML.pending()) {
                 return;
             }
 
-            host.postMessage(new SyncDocumentCommand(bpmn, hostDocumentRevision));
+            host.postMessage(
+                new SyncDocumentCommand(bpmn, hostDocumentRevisions.representedRevision),
+            );
             // Align-to-origin is a modeler-only feature; the designer/viewer skip it.
             if (isModelerHandle(surface)) {
                 surface.alignElementsToOrigin();
@@ -1277,15 +1275,13 @@ function startSession(
                 try {
                     const bpmnFileQuery = message.data as BpmnFileQuery;
                     const documentRevision = bpmnFileQuery.documentRevision ?? 0;
+                    const receipt = hostDocumentRevisions.receive(documentRevision);
 
-                    if (documentRevision < latestHostDocumentRevision) break;
+                    if (receipt === "stale") break;
 
-                    latestHostDocumentRevision = documentRevision;
-                    hostUpdateVersion++;
                     latestBpmnFileQuery = bpmnFileQuery;
 
-                    if (!initialBpmnFileReceived) {
-                        initialBpmnFileReceived = true;
+                    if (receipt === "initial") {
                         initialViewerMode = bpmnFileQuery.viewerMode === "viewer";
                         bpmnFileResolver.done(bpmnFileQuery);
                     } else if (!initialViewerMode) {
