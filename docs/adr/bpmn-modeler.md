@@ -477,9 +477,8 @@ whose pushes can race teardown catch the error.
 
 The modeler, designer and viewer facades delegate shared plumbing (bpmn-js
 instance, managers, view state, initial fit, focus, theme) to an internal
-`SurfaceCore`; the two editable facades add the `editableSurface` helpers,
-which `/viewer` never imports. Each facade still owns its store, and with it
-its LIFO teardown order.
+`SurfaceCore`; the two editable facades add the `editableSurface` helpers. Each
+facade still owns its store, and with it its LIFO teardown order.
 
 Editable surfaces share debounced content-out (300 ms, 1000 ms max wait).
 `onContentSaved({ xml })` accepts and awaits `void | Promise<void>`. Catch
