@@ -54,6 +54,13 @@ export function wait(milliseconds: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+// Preact runs the properties panel's effects a frame plus a task after a render; tearing
+// the modeler down before then trips the panel's selection reconcile on a destroyed canvas.
+export async function afterPaint(): Promise<void> {
+    await nextAnimationFrame();
+    await wait(0);
+}
+
 /**
  * Counts `document` add/remove listener calls for one event type, so a spec can
  * assert a surface's teardown leaves its document listeners balanced.

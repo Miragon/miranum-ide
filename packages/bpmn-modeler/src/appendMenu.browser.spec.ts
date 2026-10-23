@@ -14,6 +14,7 @@ import { PLAIN_ENTRY_ACTION_BY_BPMN_TYPE } from "@miragon/bpmn-modeler-append-me
 
 import { createModeler } from "./createModeler";
 import type { BpmnModeler } from "./modeler";
+import { afterPaint } from "./__fixtures__/surfaceMount";
 
 interface PopupMenuService {
     open(target: unknown, providerId: string, position: { x: number; y: number }): void;
@@ -67,13 +68,6 @@ function teardown(): void {
     handles.splice(0).forEach((handle) => handle.destroy());
     mountedNodes.splice(0).forEach((node) => node.remove());
     document.querySelectorAll(".am-overlay-root").forEach((root) => root.remove());
-}
-
-// Preact runs the properties panel's mount effects a frame plus a task after import; tearing
-// the modeler down before then trips the panel's selection reconcile on a destroyed canvas.
-async function afterPaint(): Promise<void> {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    await new Promise<void>((resolve) => setTimeout(resolve));
 }
 
 async function openModeler(options: ModelerOptions): Promise<BpmnModeler> {
