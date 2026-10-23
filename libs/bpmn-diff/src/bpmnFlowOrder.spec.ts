@@ -764,6 +764,16 @@ describe("buildRemovedAnchors", () => {
         ).toBe(7.5);
     });
 
+    it("anchors a removed boundary event on a surviving sub-process after its content", () => {
+        const anchors = buildRemovedAnchors(
+            ["RemovedTimer"],
+            before(element("SubProcess", "Sub"), boundaryEvent("RemovedTimer", "Sub")),
+            new Map([["Sub", { ...at(3), blockEndIndex: 6 }]]),
+        );
+
+        expect(anchors.get("RemovedTimer")?.flowIndex).toBe(6.5);
+    });
+
     it("leaves out removed ids with no surviving neighbour or no trace in the before graph", () => {
         const anchors = buildRemovedAnchors(
             ["Isolated", "Unknown"],
