@@ -1,5 +1,10 @@
 export type Translate = (template: string, replacements?: Record<string, string>) => string;
 
+// Used when no TranslateModule is registered (third-party bpmn-js setups):
+// echoes the template while still resolving {placeholders}, matching diagram-js.
+export const fallbackTranslate: Translate = (template, replacements = {}) =>
+    template.replace(/{([^}]+)}/g, (_, key: string) => replacements[key] ?? `{${key}}`);
+
 /** A single property (input/output, binding, or user-configurable field) an element template applies. */
 export interface TemplateProperty {
     id?: string;
@@ -195,4 +200,26 @@ export function classifyBinding(binding: TemplateProperty["binding"]): BindingDi
 
     // Everything else: zeebe:taskDefinition, zeebe:taskDefinition:type, camunda:errorEventDefinition, etc.
     return "hidden";
+}
+
+/** The non-Hidden template properties, grouped by the preview section they render in. */
+interface VisibleProperties {
+    properties: TemplateProperty[];
+    inputs: TemplateProperty[];
+    outputs: TemplateProperty[];
+}
+
+export function partitionVisibleProperties(properties: TemplateProperty[]): VisibleProperties {
+    const visible = properties.filter((property) => property.type !== "Hidden");
+    const inDirection = (direction: BindingDirection) =>
+        visible.filter((property) => classifyBinding(property.binding) === direction);
+    return {
+        properties: inDirection("property"),
+        inputs: inDirection("input"),
+        outputs: inDirection("output"),
+    };
+}
+
+export function propertyDisplayLabel(property: TemplateProperty): string | undefined {
+    return property.label ?? property.binding.name ?? property.binding.key;
 }

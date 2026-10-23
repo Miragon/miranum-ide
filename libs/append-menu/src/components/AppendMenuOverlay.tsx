@@ -34,6 +34,7 @@ import {
     type Highlight,
     type NavColumns,
 } from "../navigation";
+import { clampToCanvas } from "../positioning";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
 
@@ -52,34 +53,6 @@ interface AppendMenuOverlayProps {
         presetId: string | undefined,
     ) => void;
     onCancel: () => void;
-}
-
-// Margin from viewport edges when clamping the panel position.
-const VIEWPORT_MARGIN = 8;
-
-/**
- * Clamps the panel position so it stays within the canvas area.
- *
- * Uses the canvas container's bounds rather than the full viewport
- * to avoid overlapping the properties panel on the right.
- *
- * @param pos The desired top-left position in viewport coordinates.
- * @param panelRect The panel's bounding rect after initial render.
- * @param canvasBounds The right and bottom edges of the canvas container.
- * @returns Clamped `{ left, top }` values for CSS.
- */
-function clampToCanvas(
-    pos: { x: number; y: number },
-    panelRect: { width: number; height: number },
-    canvasBounds: { right: number; bottom: number },
-): { left: number; top: number } {
-    const maxLeft = canvasBounds.right - panelRect.width - VIEWPORT_MARGIN;
-    const maxTop = canvasBounds.bottom - panelRect.height - VIEWPORT_MARGIN;
-
-    return {
-        left: Math.max(VIEWPORT_MARGIN, Math.min(pos.x, maxLeft)),
-        top: Math.max(VIEWPORT_MARGIN, Math.min(pos.y, maxTop)),
-    };
 }
 
 /**
@@ -177,10 +150,8 @@ export function AppendMenuOverlay({
         searchRef.current?.focus();
     }, []);
 
-    // A signature of the *visible* items in both columns. Changes only when
-    // filtering reshuffles membership (search/category), not when selecting a
-    // template merely toggles palette entries' disabled state — so an
-    // intentional programmatic highlight move survives a template selection.
+    // A signature of the *visible* items in both columns, so the highlight is
+    // re-seeded only when membership changes, not on every re-render.
     const listsSignature = useMemo(
         () =>
             filteredTemplates.map((t) => t.id).join("|") +
@@ -203,6 +174,10 @@ export function AppendMenuOverlay({
      * Selecting a multi-type template always leads to picking the concrete
      * type next, so expand the palette and move the highlight to its first
      * enabled item (icon-only highlight would be unreadable).
+     *
+     * Must stay declared after the re-seed effect: the appliesTo filter hides
+     * palette entries, so a selection also changes `listsSignature`, and this
+     * highlight has to win.
      */
     useEffect(() => {
         if (!selectedTemplate) {

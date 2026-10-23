@@ -7,55 +7,14 @@ import {
     processPaletteGroups,
     resolveSelectedType,
 } from "./filtering";
-import type { BpmnElementGroup, EnrichedTemplateEntry, PopupMenuEntry } from "./types";
-
-const noop = (): void => {};
-
-/** Builds an enriched template entry with a minimal template stub. */
-function template(
-    id: string,
-    label: string,
-    opts: {
-        appliesTo?: string[];
-        category?: { id: string; name: string };
-        search?: string[];
-        description?: string;
-    } = {},
-): EnrichedTemplateEntry {
-    const entry: PopupMenuEntry = {
-        label,
-        description: opts.description,
-        search: opts.search,
-        action: noop,
-    };
-    return {
-        id: `append.template-${id}`,
-        entry,
-        template: {
-            id,
-            appliesTo: opts.appliesTo ?? [],
-            category: opts.category,
-        } as never,
-    };
-}
-
-/** Builds a BPMN element group. */
-function group(id: string, name: string, entries: [string, string][]): BpmnElementGroup {
-    return {
-        id,
-        name,
-        entries: entries.map(([entryId, label]) => ({
-            id: entryId,
-            entry: { label, action: noop } as PopupMenuEntry,
-        })),
-    };
-}
+import { group, templateEntry } from "./__fixtures__/entries";
+import type { BpmnElementGroup } from "./types";
 
 describe("filterTemplates", () => {
     const entries = [
-        template("http", "HTTP Worker", { appliesTo: ["bpmn:ServiceTask"], search: ["rest"] }),
-        template("mail", "Send Mail", { appliesTo: ["bpmn:SendTask"] }),
-        template("user", "Approval", {
+        templateEntry("http", "HTTP Worker", { appliesTo: ["bpmn:ServiceTask"], search: ["rest"] }),
+        templateEntry("mail", "Send Mail", { appliesTo: ["bpmn:SendTask"] }),
+        templateEntry("user", "Approval", {
             appliesTo: ["bpmn:UserTask"],
             category: { id: "human", name: "Human" },
         }),
@@ -83,10 +42,10 @@ describe("filterTemplates", () => {
 describe("extractCategories", () => {
     it("returns unique categories from the unfiltered list", () => {
         const entries = [
-            template("a", "A", { category: { id: "c1", name: "One" } }),
-            template("b", "B", { category: { id: "c2", name: "Two" } }),
-            template("c", "C", { category: { id: "c1", name: "One" } }),
-            template("d", "D"),
+            templateEntry("a", "A", { category: { id: "c1", name: "One" } }),
+            templateEntry("b", "B", { category: { id: "c2", name: "Two" } }),
+            templateEntry("c", "C", { category: { id: "c1", name: "One" } }),
+            templateEntry("d", "D"),
         ];
         expect(extractCategories(entries)).toEqual([
             { id: "c1", name: "One" },
@@ -183,5 +142,78 @@ describe("resolveSelectedType", () => {
 
     it("returns undefined when no type matches", () => {
         expect(resolveSelectedType("append-gateway", "Gateway", appliesTo)).toBeUndefined();
+    });
+});
+
+// Ids as bpmn-js-create-append-anything builds them (`append-<actionName>`). Upstream
+// translates the labels, so a German UI hands the palette the German ones.
+describe("with upstream create-append-anything entries", () => {
+    const englishTasks = group("tasks", "Tasks", [
+        ["append-task", "Task"],
+        ["append-user-task", "User task"],
+        ["append-service-task", "Service task"],
+        ["append-rule-task", "Business rule task"],
+    ]);
+    const germanTasks = group("tasks", "Aufgaben", [
+        ["append-task", "Aufgabe"],
+        ["append-user-task", "Benutzer-Aufgabe"],
+        ["append-service-task", "Serviceaufgabe"],
+        ["append-rule-task", "Regel Aufgabe"],
+    ]);
+    const englishEvents = group("events", "Events", [
+        ["append-none-intermediate-throwing", "Intermediate throw event"],
+    ]);
+    const germanEvents = group("events", "Ereignisse", [
+        ["append-none-intermediate-throwing", "Zwischenereignis (auslösend)"],
+    ]);
+
+    const favouriteIds = (groups: BpmnElementGroup[], favourites: string[]) =>
+        processPaletteGroups(groups, favourites, "", null).favouriteEntries.map((e) => e.id);
+    const visibleIds = (groups: BpmnElementGroup[], appliesTo: string[]) =>
+        processPaletteGroups(groups, [], "", new Set(appliesTo))
+            .groups.flatMap((g) => g.entries)
+            .filter((e) => !e.hidden)
+            .map((e) => e.id);
+
+    it("resolves favourites whose id does not name the type through the English label", () => {
+        expect(
+            favouriteIds(
+                [englishTasks, englishEvents],
+                ["bpmn:BusinessRuleTask", "bpmn:IntermediateThrowEvent"],
+            ),
+        ).toEqual(["append-rule-task", "append-none-intermediate-throwing"]);
+    });
+
+    it("resolves favourites through the entry id when the label is translated", () => {
+        expect(
+            favouriteIds([germanTasks], ["bpmn:ServiceTask", "bpmn:UserTask", "bpmn:Task"]),
+        ).toEqual(["append-service-task", "append-user-task", "append-task"]);
+    });
+
+    it("drops favourites named by neither the entry id nor the translated label", () => {
+        expect(
+            favouriteIds(
+                [germanTasks, germanEvents],
+                ["bpmn:BusinessRuleTask", "bpmn:IntermediateThrowEvent"],
+            ),
+        ).toEqual([]);
+    });
+
+    it("keeps every task variant pickable when a template applies to bpmn:Task", () => {
+        expect(visibleIds([englishTasks], ["bpmn:Task", "bpmn:UserTask"])).toEqual([
+            "append-task",
+            "append-user-task",
+            "append-service-task",
+            "append-rule-task",
+        ]);
+    });
+
+    it("resolves a translated entry through its id when that names the type", () => {
+        expect(
+            resolveSelectedType("append-service-task", "Serviceaufgabe", [
+                "bpmn:ServiceTask",
+                "bpmn:SendTask",
+            ]),
+        ).toBe("bpmn:ServiceTask");
     });
 });

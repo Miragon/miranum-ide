@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "preact/hooks";
 import type { EnrichedTemplateEntry, Translate } from "../types";
 import type { TemplateCategory } from "../filtering";
+import { hoverCardPosition } from "../positioning";
 import { ExpandableTemplateCard } from "./ExpandableTemplateCard";
 import { TemplateHoverCard } from "./TemplateHoverCard";
 
@@ -106,10 +107,6 @@ export function TemplatePanel({
         hideTimeoutRef.current = window.setTimeout(() => setHoveredIndex(-1), HOVER_HIDE_DELAY);
     }, []);
 
-    /**
-     * Computes the fixed position for the hover card based on the
-     * active card's bounding rect and the panel's right edge.
-     */
     const hoverCardStyle = useMemo(() => {
         if (activePreviewIndex < 0 || !listRef.current || !panelRef.current) {
             return null;
@@ -120,23 +117,13 @@ export function TemplatePanel({
             return null;
         }
 
-        const cardRect = card.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-
-        const panelRect = panelRef.current.getBoundingClientRect();
-        // Open to the left of the panel so the card clears both the template list
-        // and the BPMN palette. Clamp to the viewport edge on the rare occasion the
-        // 540px panel sits hard against the left (then it may touch the panel, but
-        // never runs off-screen).
-        const HOVER_CARD_WIDTH = 300; // keep in sync with .am-hover-card width
-        const GAP = 8;
-        const left = Math.max(GAP, panelRect.left - HOVER_CARD_WIDTH - GAP);
-
-        // Vertically align with the card, clamped to viewport.
-        const top = Math.max(8, Math.min(cardRect.top, viewportHeight - 200));
-        const maxHeight = viewportHeight - top - 8;
-
-        return { top, left, maxHeight };
+        return hoverCardPosition(
+            {
+                panelLeft: panelRef.current.getBoundingClientRect().left,
+                cardTop: card.getBoundingClientRect().top,
+            },
+            window.innerHeight,
+        );
     }, [activePreviewIndex]);
 
     const activeEntry = activePreviewIndex >= 0 ? entries[activePreviewIndex] : null;

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { executeTemplateTypeAction } from "./templateTypeAction";
 import type { ElementTemplate } from "@miragon/bpmn-modeler-element-template-chooser";
@@ -24,16 +24,6 @@ function services() {
         mouse: { getLastMoveEvent: vi.fn(() => new Event("mousemove")) },
     };
 }
-
-// The modeler runs in browsers where KeyboardEvent is global; the node test env
-// has none, so provide a minimal stand-in for the `instanceof` branch.
-class FakeKeyboardEvent {}
-beforeAll(() => {
-    (globalThis as { KeyboardEvent?: unknown }).KeyboardEvent = FakeKeyboardEvent;
-});
-afterAll(() => {
-    delete (globalThis as { KeyboardEvent?: unknown }).KeyboardEvent;
-});
 
 describe("executeTemplateTypeAction", () => {
     it("clones the template with elementType set to the chosen type", () => {
@@ -120,7 +110,7 @@ describe("executeTemplateTypeAction", () => {
             { providerId: "bpmn-create", target: {} },
             template,
             "bpmn:SendTask",
-            new FakeKeyboardEvent() as unknown as Event,
+            new KeyboardEvent("keydown", { key: "Enter" }),
             undefined,
         );
         expect(s.mouse.getLastMoveEvent).toHaveBeenCalled();
