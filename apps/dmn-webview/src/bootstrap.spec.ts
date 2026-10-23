@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
         isVisible: vi.fn(() => true),
         setVisible: vi.fn(),
         onVisibilityChanged: vi.fn(),
+        dispose: vi.fn(),
     };
     return {
         handle,
@@ -402,7 +403,7 @@ describe("DMN bootstrap", () => {
             expect(pageTheme()).toBe("dark");
         });
 
-        it("destroys the modeler, unlocks a flush, and detaches the canvas shortcuts", async () => {
+        it("destroys the modeler and the resizer, unlocks a flush, and detaches the canvas shortcuts", async () => {
             const removeCanvasAutoFocus = vi.fn();
             mocks.installCanvasAutoFocus.mockReturnValue(removeCanvasAutoFocus);
             const { ofType, stop } = await startReady();
@@ -413,6 +414,7 @@ describe("DMN bootstrap", () => {
             stop();
 
             expect(mocks.handle.destroy).toHaveBeenCalledOnce();
+            expect(mocks.panelHandle.dispose).toHaveBeenCalledOnce();
             expect(document.body.inert).toBe(false);
             expect(removeCanvasAutoFocus).toHaveBeenCalledOnce();
             expect(mocks.installPanelShortcuts.mock.calls[0][0].isEnabled()).toBe(false);

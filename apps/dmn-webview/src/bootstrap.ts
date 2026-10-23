@@ -169,6 +169,7 @@ async function run(
             ) + " (Shift+P)",
         onLabelChange: (apply) => i18n.onChange(apply),
     });
+    stopSignal.addEventListener("abort", () => propertiesPanelHandle.dispose());
 
     // Early-apply this editor's own saved panel visibility (if any) so the panel
     // snaps to the correct per-editor state without waiting on the host and
