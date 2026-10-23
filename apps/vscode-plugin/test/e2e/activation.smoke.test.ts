@@ -50,6 +50,12 @@ suite("Extension activation smoke", () => {
         assert.strictEqual(extension.isActive, true);
     });
 
+    // The Node 16 floor lacks it, and openWith masks a failed editor resolve as an error page.
+    test("provides the global Web Crypto that webview nonces draw from", async () => {
+        await getExtension().activate();
+        assert.strictEqual(typeof globalThis.crypto?.getRandomValues, "function");
+    });
+
     test("registers every command the manifest declares", async () => {
         const extension = getExtension();
         await extension.activate();
