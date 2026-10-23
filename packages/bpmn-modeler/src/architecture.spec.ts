@@ -443,3 +443,20 @@ describe("bpmn-modeler import direction", () => {
         ).toEqual([]);
     });
 });
+
+describe("bpmn-modeler warning sink", () => {
+    it("only reporting.ts writes console.warn, so every facade warning reaches onWarning", () => {
+        const REPORTER = join(PKG_SRC, "reporting.ts");
+        const offenders = listSourceFiles(PKG_SRC)
+            .filter((file) => file !== REPORTER)
+            .filter((file) =>
+                /\bconsole\.warn\s*\(/.test(stripComments(readFileSync(file, "utf8"))),
+            )
+            .map((file) => file.slice(PKG_SRC.length + 1));
+        expect(
+            offenders,
+            `warn through the surface reporter (createReporter), not console.warn:\n` +
+                offenders.join("\n"),
+        ).toEqual([]);
+    });
+});

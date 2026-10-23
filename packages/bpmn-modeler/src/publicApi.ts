@@ -248,7 +248,11 @@ export interface ModelerOptions {
      */
     onError?: (error: unknown) => void;
 
-    /** A non-fatal warning (element-not-found, missing inline script) for the host log. */
+    /**
+     * A non-fatal warning for the host log: element not found, missing inline
+     * script, or a host lint push to an instance created without a lint module.
+     * Every warning is also mirrored to `console.warn`.
+     */
     onWarning?: (message: string) => void;
 
     /**
@@ -377,11 +381,16 @@ export interface BpmnModelerHandle {
     getMode(): ModelerMode;
 
     /**
-     * [B] Render host-computed lint results, or clear them with `null`.
+     * [B] Render host-computed lint results, or clear them with `null`. A no-op
+     * reported through `onWarning` when the instance was created without a lint
+     * module.
      */
     applyLintResults(results: LintResults | null): void;
 
-    /** [B] Turn off the in-webview linter and clear its overlay. */
+    /**
+     * [B] Turn off the in-webview linter and clear its overlay. A no-op reported
+     * through `onWarning` when the instance was created without a lint module.
+     */
     applyLintingDisabled(): void;
 
     /**
@@ -390,7 +399,8 @@ export interface BpmnModelerHandle {
      * handed-back config to the resolved default/mode rules (e.g. after the
      * host deletes its workspace `.bpmnlintrc`). Optional `configToken` lets a
      * repeat instruction with the same version dedup while linting is live.
-     * Never re-enables a user-disabled linter.
+     * Never re-enables a user-disabled linter. A no-op reported through
+     * `onWarning` when the instance was created without a lint module.
      */
     startInPageLinting(config?: BpmnlintConfig, configToken?: string): void;
 

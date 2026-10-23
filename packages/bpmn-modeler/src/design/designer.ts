@@ -34,7 +34,7 @@ import { installSurfaceFocusFeatures } from "../focusFeatures";
 import { buildLintModules } from "../lintModules";
 import { createLintHandleMethods, type LintHandleMethods } from "../lintHandle";
 import { wireContentSaved } from "../contentSaved";
-import { createReporter } from "../reporting";
+import { createReporter, type SurfaceReporter } from "../reporting";
 import type { LintConfigService } from "../bpmnlint/LintConfigService";
 import type { BpmnlintConfig, CleanupOutcome, LintResults } from "@miragon/bpmn-modeler-types";
 import type { ThemeMode } from "../publicApi";
@@ -61,6 +61,8 @@ export class BpmnDesigner {
 
     private themeController?: ThemeController;
 
+    private readonly reporter: SurfaceReporter;
+
     private readonly store = new DisposableStore();
 
     // Re-armed per loadDiagram, so it can't be a plain store entry.
@@ -73,7 +75,9 @@ export class BpmnDesigner {
     constructor(
         private readonly container: HTMLElement,
         private readonly options: DesignerOptions,
-    ) {}
+    ) {
+        this.reporter = createReporter({ onError: options.onError });
+    }
 
     /** Access the viewport manager after {@link init}. */
     get viewport(): ViewportManager {
@@ -190,7 +194,7 @@ export class BpmnDesigner {
                 eventBus: this.getModeler().get("eventBus"),
                 exportDiagram: () => this.exportDiagram(),
                 onContentSaved,
-                reporter: createReporter({ onError: this.options.onError }),
+                reporter: this.reporter,
             });
         }
 
@@ -350,7 +354,7 @@ export class BpmnDesigner {
     private lintHandle(): LintHandleMethods {
         return createLintHandleMethods(
             () => this.getModeler().get<LintConfigService>("bpmnLintConfig", false) ?? undefined,
-            (message) => console.warn(message),
+            (message) => this.reporter.warn(message),
         );
     }
 
