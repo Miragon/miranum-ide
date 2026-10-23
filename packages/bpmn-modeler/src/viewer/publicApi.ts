@@ -144,7 +144,8 @@ export interface BpmnViewerHandle {
 
     /**
      * Switch the colour theme live. Toggles this instance's `data-bpmn-theme`
-     * attribute and mirrors it to a legacy `#theme-link` when present.
+     * attribute and mirrors it to a legacy `#theme-link` when present. A no-op
+     * once the instance is destroyed.
      */
     setTheme(theme: ThemeMode): void;
 

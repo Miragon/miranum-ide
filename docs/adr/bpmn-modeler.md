@@ -1,7 +1,7 @@
 # BPMN modeler
 
 - Status: accepted
-- Last reviewed: 2026-10-20
+- Last reviewed: 2026-10-23
 
 ## Context
 
@@ -236,6 +236,9 @@ the canvas and panel roots. Theme always engages; `automatic` is the default.
 Overlays mounted outside those roots copy the attribute onto their own root.
 The host themes its page chrome through the private shared `hostTheme` adapter.
 A host root theme must not be allowed to override differently themed instances.
+A destroyed instance ignores `setTheme` rather than throwing `NoModelerError`:
+a mode session forwards theme changes to the outgoing surface while a recreate
+is in flight, then applies its current theme to the surface it builds.
 
 Author dark overrides once, scoped under the attribute. The main stylesheet
 combines them with the upstream light base; derive unscoped legacy light/dark

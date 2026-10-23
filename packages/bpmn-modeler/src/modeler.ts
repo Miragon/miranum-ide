@@ -646,12 +646,19 @@ export class BpmnModeler {
      * the adapter.
      */
     setTheme(theme: ThemeMode): void {
+        if (this.store.isDisposed) {
+            return;
+        }
         if (!this.themeController) {
             this.themeController = new ThemeController([
                 this.container,
                 this.options.propertiesPanel.parent,
             ]);
-            this.store.add(() => this.themeController?.dispose());
+            this.store.add(() => {
+                this.themeController?.dispose();
+                // A re-entrant init() disposes this store on a live surface; let setTheme rebuild.
+                this.themeController = undefined;
+            });
         }
         this.themeController.setMode(theme);
     }

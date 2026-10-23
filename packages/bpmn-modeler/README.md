@@ -481,7 +481,7 @@ abort — the factory rejects with the thrown error and nothing is left mounted.
 | `setSettings(settings)`                                                                        | Merge a partial settings update (`colorTheme` excluded — theme is host policy).       |
 | `viewport` / `selection`                                                                       | Viewport (zoom/scroll/fit) and selection accessors.                                   |
 | `captureViewState()` / `applyViewState(state)`                                                 | [View state](#view-state-capture--restore) capture/restore across an instance switch. |
-| `setTheme(theme)`                                                                              | Switch the colour theme live.                                                         |
+| `setTheme(theme)`                                                                              | Switch the colour theme live; a no-op once destroyed.                                 |
 | `setMode(mode)` / `getMode()`                                                                  | Switch / read the design-implement mode live (fires `onModeChanged`).                 |
 | `applyLintResults(results)` / `applyLintingDisabled()` / `startInPageLinting(config?, token?)` | Host-driven lint state.                                                               |
 | `getService(name)`                                                                             | Reach a [core service](#core-services--escape-hatch) or the escape hatch.             |

@@ -3,6 +3,7 @@ import { NoModelerError } from "@miragon/bpmn-modeler-types";
 
 import { createModeler } from "./createModeler";
 import { BpmnModeler } from "./modeler";
+import type { ThemeMode } from "./publicApi";
 import { createDesigner } from "./design/createDesigner";
 import type { BpmnDesigner } from "./design/designer";
 import { createViewer } from "./viewer/createViewer";
@@ -14,6 +15,7 @@ import {
     mountWithPanel,
     removeMounts,
     settleObserver,
+    trackColorSchemeListeners,
     trackDocumentListeners,
     wait,
 } from "./__fixtures__/surfaceMount";
@@ -65,6 +67,8 @@ interface SurfaceDescriptor {
     triggerViewbox?(handle: Handle): void;
     /** Reads a live-only accessor, which must throw once destroyed. */
     probeDead(handle: Handle): void;
+    /** Switches the colour theme; absent when the surface has no theme setter. */
+    setTheme?(handle: Handle, theme: ThemeMode): void;
 }
 
 function assertClean(roots: HTMLElement[]): void {
@@ -101,6 +105,7 @@ const surfaces: SurfaceDescriptor[] = [
         ],
         triggerViewbox: (h) => (h as BpmnModeler).getService("canvas").zoom(2),
         probeDead: (h) => void (h as BpmnModeler).viewport,
+        setTheme: (h, theme) => (h as BpmnModeler).setTheme(theme),
     },
     {
         name: "designer",
@@ -115,6 +120,7 @@ const surfaces: SurfaceDescriptor[] = [
         subscribeChannels: (h, onFire) => [(h as BpmnDesigner).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnDesigner).getService("canvas").zoom(2),
         probeDead: (h) => void (h as BpmnDesigner).viewport,
+        setTheme: (h, theme) => (h as BpmnDesigner).setTheme(theme),
     },
     {
         name: "viewer",
@@ -129,6 +135,7 @@ const surfaces: SurfaceDescriptor[] = [
         subscribeChannels: (h, onFire) => [(h as BpmnViewer).viewport.onViewportChanged(onFire)],
         triggerViewbox: (h) => (h as BpmnViewer).getService("canvas").zoom(2),
         probeDead: (h) => void (h as BpmnViewer).viewport,
+        setTheme: (h, theme) => (h as BpmnViewer).setTheme(theme),
     },
     {
         name: "diffViewer",
@@ -210,6 +217,27 @@ describe.each(surfaces)("$name lifecycle contract", (surface) => {
         expect(onFire).not.toHaveBeenCalled();
     });
 
+    it("ignores setTheme once destroyed: no theme attribute, no scheme listener", async () => {
+        if (!surface.setTheme) {
+            return;
+        }
+        const schemeListeners = trackColorSchemeListeners();
+        try {
+            const mount = surface.mount();
+            const handle = await surface.create(mount);
+            handle.destroy();
+
+            surface.setTheme(handle, "dark");
+            surface.setTheme(handle, "automatic");
+
+            assertClean(mount.roots);
+            const { added, removed } = schemeListeners.counts();
+            expect(removed).toBe(added);
+        } finally {
+            schemeListeners.restore();
+        }
+    });
+
     it("rejects a failed create, leaves zero residue, and stays reusable", async () => {
         const mount = surface.mount();
 
@@ -237,5 +265,26 @@ describe("BpmnModeler engine stack loading", () => {
 
         assertClean(mount.roots);
         expect(() => modeler.getService("canvas")).toThrow(NoModelerError);
+    });
+});
+
+describe("BpmnModeler re-entrant init", () => {
+    it("keeps setTheme working after init() disposes the previous store", async () => {
+        const mount = mountWithPanelRoots();
+        const modeler = new BpmnModeler(mount.container, {
+            engine: "c8",
+            propertiesPanel: { parent: mount.panel! },
+        });
+        await modeler.init();
+        modeler.setTheme("dark");
+
+        await modeler.init();
+        modeler.setTheme("dark");
+
+        for (const root of mount.roots) {
+            expect(root.getAttribute("data-bpmn-theme")).toBe("dark");
+        }
+        modeler.destroy();
+        assertClean(mount.roots);
     });
 });

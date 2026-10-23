@@ -138,6 +138,22 @@ describe("ThemeController", () => {
         expect(root.hasAttribute(THEME_ATTRIBUTE)).toBe(false);
     });
 
+    it("ignores setMode after dispose (no attribute, no media listener, no #theme-link)", () => {
+        const media = stubMatchMedia(true);
+        const link = setThemeLink("lightTheme.css");
+        const root = makeRoot();
+        const controller = new ThemeController([root]);
+        controller.setMode("light");
+        controller.dispose();
+
+        controller.setMode("dark");
+        controller.setMode("automatic");
+
+        expect(root.hasAttribute(THEME_ATTRIBUTE)).toBe(false);
+        expect(media.listenerCount()).toBe(0);
+        expect(currentCss(link)).toBe("lightTheme.css");
+    });
+
     it("mirrors the resolved kind onto a legacy #theme-link when present", () => {
         stubMatchMedia(false);
         const link = setThemeLink("lightTheme.css");

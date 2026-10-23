@@ -10,11 +10,12 @@ export class ThemeController {
     private mode: DmnThemeMode | undefined;
     private mediaQuery?: MediaQueryList;
     private mediaListener?: (event: MediaQueryListEvent) => void;
+    private disposed = false;
 
     constructor(private readonly scopeRoots: readonly HTMLElement[]) {}
 
     setMode(mode: DmnThemeMode): void {
-        if (mode === this.mode) {
+        if (this.disposed || mode === this.mode) {
             return;
         }
         this.mode = mode;
@@ -28,6 +29,7 @@ export class ThemeController {
     }
 
     dispose(): void {
+        this.disposed = true;
         this.stopFollowingPreferredScheme();
         for (const root of this.scopeRoots) {
             root.removeAttribute(THEME_ATTRIBUTE);
