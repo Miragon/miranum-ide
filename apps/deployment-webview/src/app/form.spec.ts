@@ -39,7 +39,12 @@ function edit(id: string, value: string, event = "input") {
 
 function setup() {
     document.body.innerHTML = FORM_TEMPLATE;
-    const host = { postMessage: vi.fn(), getState: vi.fn(), setState: vi.fn() };
+    const host = {
+        postMessage: vi.fn(),
+        getState: vi.fn(),
+        setState: vi.fn(),
+        updateState: vi.fn(),
+    };
     const form = new DeploymentForm(host as never);
     const start = new StartInstanceForm(
         host as never,
