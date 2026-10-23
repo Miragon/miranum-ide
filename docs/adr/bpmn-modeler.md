@@ -112,7 +112,11 @@ survives a live toggle but not destruction/recreation of its instance.
 `/design` stays free of Camunda moddles/behaviors, element templates and
 transaction boundaries; it has no engine settings, engine conversion helpers,
 or Camunda align-to-origin/grid/color-picker chrome. `favouriteBpmnElements` is
-a direct designer option. Its optional lint module comes from the consumer.
+a direct designer option with a live `setFavouriteBpmnElements` setter. The
+modeler handle carries the same setter beside `setSettings`, sharing its
+favourites path, so a host updates either editable surface the same way and the
+modeler handle still narrows to the designer handle. The designer's optional
+lint module comes from the consumer.
 The viewer has no engine, clipboard, lint option or `locale` option, but its
 entry includes translated diff labels and optional panel dependencies. It has
 no broad viewer-purity allowlist; readonly is enforced by the absence of editing

@@ -479,6 +479,7 @@ abort — the factory rejects with the thrown error and nothing is left mounted.
 | `newDiagram()`                                                                                 | Replace the diagram with a fresh empty one stamped for `engine`/`engineVersion`, so it reopens in the same engine and mode. |
 | `setElementTemplates(templates)`                                                               | Push a new template set (data, never a path).                                         |
 | `setSettings(settings)`                                                                        | Merge a partial settings update (`colorTheme` excluded — theme is host policy).       |
+| `setFavouriteBpmnElements(types)`                                                              | Replace the append/create-menu favourites live — `setSettings({ favouriteBpmnElements })` on its own. Also on `BpmnDesignerHandle`. |
 | `viewport` / `selection`                                                                       | Viewport (zoom/scroll/fit) and selection accessors.                                   |
 | `captureViewState()` / `applyViewState(state)`                                                 | [View state](#view-state-capture--restore) capture/restore across an instance switch. |
 | `setTheme(theme)`                                                                              | Switch the colour theme live; a no-op once destroyed.                                 |
@@ -647,7 +648,7 @@ designer.getService( "commandStack" ); // editable: modelling services are prese
 | `propertiesPanel`                    | `{ parent: HTMLElement }`          | — (required)  | The panel host, as in `createModeler`. Shows only the general / documentation groups.                                                                                             |
 | `theme`                              | `"light" \| "dark" \| "automatic"` | `"automatic"` | Colour theme; toggles a per-instance `data-bpmn-theme` attribute.                                                                                                                 |
 | `locale`                             | `string`                           | `"en"`        | UI locale — Design mode has translatable UI (unlike the viewer).                                                                                                                  |
-| `favouriteBpmnElements`              | `string[]`                         | —             | Element types offered first in the append/create menu.                                                                                                                            |
+| `favouriteBpmnElements`              | `string[]`                         | —             | Element types offered first in the append/create menu (at most six); change them live with `setFavouriteBpmnElements`.                                                            |
 | `clipboard`                          | `ClipboardOptions`                 | native        | Clipboard override for sandboxed hosts.                                                                                                                                           |
 | `moddleExtensions`                   | `Record<string, object>`           | —             | Extra moddle extensions for a host's own BPMN namespace.                                                                                                                          |
 | `additionalModules`                  | `unknown[]`                        | —             | Escape hatch: extra bpmn-js DI modules.                                                                                                                                           |
@@ -675,7 +676,8 @@ compile time. Unlike the root `ModelerCapabilities`, the design
 
 `loadDiagram`, `exportDiagram`, `newDiagram`, `getDiagramSvg`, `viewport`,
 `selection`, `captureViewState`, `applyViewState`, `setTheme`, `getService`,
-`applyLintResults`, `applyLintingDisabled`, `startInPageLinting`, and
+`applyLintResults`, `applyLintingDisabled`, `startInPageLinting`,
+`setFavouriteBpmnElements`, and
 `destroy` — each **signature-identical** to its `BpmnModelerHandle` counterpart, so a modeler handle
 narrows to a designer handle with no adapter.
 `captureViewState` / `applyViewState` (see

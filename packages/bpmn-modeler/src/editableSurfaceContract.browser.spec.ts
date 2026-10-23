@@ -10,18 +10,28 @@ import { createModeler } from "./createModeler";
 import { createDesigner } from "./design/createDesigner";
 import type { BpmnDesignerHandle, DesignerOptions } from "./design/publicApi";
 import { FAR_FROM_ORIGIN_XML } from "./__fixtures__/bpmnXml";
-import { mountWithPanel, removeMounts, type SurfaceMount } from "./__fixtures__/surfaceMount";
+import {
+    afterPaint,
+    mountWithPanel,
+    removeMounts,
+    type SurfaceMount,
+} from "./__fixtures__/surfaceMount";
 
 /**
  * The host-command contract the modeler and the designer implement separately
- * (export, format, cleanup, import errors, lint pushes, debounced save). Both
- * run the real bpmn-js modeling stack, so the contract runs in the browser
- * project against each surface.
+ * (export, format, cleanup, import errors, lint pushes, debounced save,
+ * favourites). Both run the real bpmn-js modeling stack, so the contract runs
+ * in the browser project against each surface.
  */
 
-type SharedOptions = Pick<DesignerOptions, "linting" | "onContentSaved">;
+type SharedOptions = Pick<DesignerOptions, "linting" | "onContentSaved" | "favouriteBpmnElements">;
 
 type LabelTarget = Parameters<Modeling["updateLabel"]>[0];
+
+interface PopupMenuService {
+    open(target: unknown, providerId: string, position: { x: number; y: number }): void;
+    close(): void;
+}
 
 interface EditableSurfaceDescriptor {
     name: string;
@@ -31,10 +41,11 @@ interface EditableSurfaceDescriptor {
 const EDITABLE_SURFACES: EditableSurfaceDescriptor[] = [
     {
         name: "modeler",
-        create: ({ container, panel }, options) =>
+        create: ({ container, panel }, { favouriteBpmnElements, ...options }) =>
             createModeler(container, {
                 engine: "c8",
                 propertiesPanel: { parent: panel },
+                settings: { favouriteBpmnElements },
                 ...options,
             }),
     },
@@ -55,6 +66,18 @@ function lintCompleted(surface: BpmnDesignerHandle): Promise<void> {
     return new Promise((resolve) =>
         surface.getService<EventBus>("eventBus").once("linting.completed", () => resolve()),
     );
+}
+
+function pinnedFavourites(surface: BpmnDesignerHandle): (string | null)[] {
+    const popupMenu = surface.getService<PopupMenuService>("popupMenu");
+    const startEvent = surface.getService("elementRegistry").get("StartEvent_1");
+    popupMenu.open(startEvent, "bpmn-append", { x: 40, y: 60 });
+    const favourites = Array.from(
+        document.querySelectorAll(".am-bpmn-group--favourites .am-bpmn-button"),
+        (button) => button.getAttribute("data-nav-key"),
+    );
+    popupMenu.close();
+    return favourites;
 }
 
 describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor) => {
@@ -180,5 +203,35 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
 
         await vi.waitFor(() => expect(onContentSaved).toHaveBeenCalledOnce());
         expect(onContentSaved.mock.calls[0][0].xml).toContain('name="Renamed"');
+    });
+
+    it("pins the configured favourites at the top of the append menu", async () => {
+        const handle = await open({ linting: false, favouriteBpmnElements: ["bpmn:UserTask"] });
+        await handle.loadDiagram(FAR_FROM_ORIGIN_XML);
+        await afterPaint();
+
+        expect(pinnedFavourites(handle)).toEqual(["fav:append-user-task"]);
+    });
+
+    it("replaces the pinned favourites on a live surface", async () => {
+        const handle = await open({ linting: false, favouriteBpmnElements: ["bpmn:UserTask"] });
+        await handle.loadDiagram(FAR_FROM_ORIGIN_XML);
+        await afterPaint();
+
+        handle.setFavouriteBpmnElements(["bpmn:ServiceTask", "bpmn:ExclusiveGateway"]);
+        expect(pinnedFavourites(handle)).toEqual([
+            "fav:append-service-task",
+            "fav:append-exclusive-gateway",
+        ]);
+
+        handle.setFavouriteBpmnElements([]);
+        expect(pinnedFavourites(handle)).toEqual([]);
+    });
+
+    it("throws NoModelerError for a favourites update after destroy", async () => {
+        const handle = await open();
+        handle.destroy();
+
+        expect(() => handle.setFavouriteBpmnElements(["bpmn:UserTask"])).toThrow(NoModelerError);
     });
 });

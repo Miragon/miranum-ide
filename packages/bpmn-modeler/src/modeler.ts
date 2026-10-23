@@ -545,6 +545,11 @@ export class BpmnModeler {
         }
     }
 
+    /** @see BpmnModelerHandle.setFavouriteBpmnElements */
+    setFavouriteBpmnElements(types: readonly string[]): void {
+        this.setSettings({ favouriteBpmnElements: [...types] });
+    }
+
     /** @internal */
     alignElementsToOrigin(): void {
         if (this.settings.alignToOrigin) {

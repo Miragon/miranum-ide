@@ -100,7 +100,8 @@ export interface DesignerOptions {
     /**
      * Element types offered first in the append/create menu — the neutral
      * counterpart of the modeler setting of the same name, lifted to a
-     * first-class option (Design mode has no `settings`).
+     * first-class option (Design mode has no `settings`). Change them live
+     * with {@link BpmnDesignerHandle.setFavouriteBpmnElements}.
      */
     favouriteBpmnElements?: string[];
 
@@ -193,6 +194,15 @@ export interface BpmnDesignerHandle {
 
     /** Report — or, with `apply`, remove — orphan DI and other leftovers. */
     cleanupDiagram(options?: { apply?: boolean }): CleanupOutcome;
+
+    /**
+     * Replace the element types pinned at the top of the append/create menu —
+     * the live counterpart of {@link DesignerOptions.favouriteBpmnElements}. At
+     * most six are shown, in the given order; types without a plain menu entry
+     * are skipped, and an empty list clears the row. Takes effect the next time
+     * the menu opens.
+     */
+    setFavouriteBpmnElements(types: readonly string[]): void;
 
     /** Viewport (zoom/scroll/fit) accessor. */
     readonly viewport: ViewportManager;

@@ -180,11 +180,7 @@ export class BpmnDesigner {
         );
 
         if (this.options.favouriteBpmnElements) {
-            const appendMenuOverride = this.getModeler().get<AppendMenuOverrideService>(
-                "appendMenuOverride",
-                false,
-            );
-            appendMenuOverride?.setFavourites(this.options.favouriteBpmnElements);
+            this.setFavouriteBpmnElements(this.options.favouriteBpmnElements);
         }
 
         const onContentSaved = this.options.onContentSaved;
@@ -295,6 +291,13 @@ export class BpmnDesigner {
     async getDiagramSvg(): Promise<string> {
         const result = await this.getModeler().saveSVG();
         return result.svg;
+    }
+
+    /** @see BpmnDesignerHandle.setFavouriteBpmnElements */
+    setFavouriteBpmnElements(types: readonly string[]): void {
+        this.getModeler()
+            .get<AppendMenuOverrideService>("appendMenuOverride", false)
+            ?.setFavourites([...types]);
     }
 
     /**
