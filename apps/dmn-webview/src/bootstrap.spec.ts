@@ -418,6 +418,24 @@ describe("DMN bootstrap", () => {
             expect(mocks.installPanelShortcuts.mock.calls[0][0].isEnabled()).toBe(false);
         });
 
+        it("drops an export that finishes after the stop", async () => {
+            const { ofType, options, stop } = await startReady();
+            let finishExport!: (xml: string) => void;
+            mocks.handle.exportDiagram.mockImplementationOnce(
+                () => new Promise<string>((resolve) => (finishExport = resolve)),
+            );
+            options().onContentChanged?.();
+            await vi.waitFor(() => expect(mocks.handle.exportDiagram).toHaveBeenCalledOnce(), {
+                timeout: 1000,
+            });
+
+            stop();
+            finishExport("<late-edit />");
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(ofType("SyncDocumentCommand")).toHaveLength(0);
+        });
+
         it("destroys a modeler that finishes creating after the stop", async () => {
             let finishCreating!: () => void;
             mocks.createModeler.mockImplementationOnce(
