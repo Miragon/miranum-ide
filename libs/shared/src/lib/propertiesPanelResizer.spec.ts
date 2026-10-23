@@ -345,7 +345,8 @@ describe("initResizer", () => {
             handle.dispose();
 
             const documentListenersRemoved = addDocumentListener.mock.calls.map(
-                ([, , options]) => (options as AddEventListenerOptions | undefined)?.signal?.aborted,
+                ([, , options]) =>
+                    (options as AddEventListenerOptions | undefined)?.signal?.aborted,
             );
             expect(documentListenersRemoved).toEqual([true, true]);
         });
