@@ -6,46 +6,34 @@ import "./styles.css";
 import {
     applyPageThemeScope,
     Command,
-    createFlushResponder,
     createHostThemeAdapter,
     createResolver,
     createWebviewStateStore,
-    DmnFileQuery,
     DmnModelerSettingQuery,
-    FlushDocumentQuery,
     GetDmnFileCommand,
     GetDmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
     HOST_REPLY_TIMEOUT_MS,
-    type HostThemeAdapter,
     type HostThemeMode,
     initResizer,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
-    LanguageQuery,
-    LogErrorCommand,
     LogWarningCommand,
     PropertiesPanelStateQuery,
     PropertiesPanelUiStateAdapter,
     Query,
     readSavedPanelVisibility,
-    ReleaseDocumentFlushQuery,
     RequestFocusCommand,
     resolveHostThemeKind,
     SetPropertiesPanelStateCommand,
-    SyncDocumentCommand,
-    takeFocus,
 } from "@miragon/bpmn-modeler-shared";
-import { asyncDebounce, NoModelerError, serializeAsync } from "@miragon/bpmn-modeler-types";
 import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
-import {
-    createModeler,
-    type DmnAdditionalModules,
-    type DmnModelerHandle,
-} from "@miragon/dmn-modeler";
+import { createModeler, type DmnAdditionalModules } from "@miragon/dmn-modeler";
 
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
+import { DmnDocumentSession } from "./documentSession";
+import { routeDmnHostMessage } from "./hostMessageRouter";
 import type { WebviewState } from "./webviewState";
 
 /**
@@ -59,102 +47,50 @@ interface BootstrapOptions {
     additionalModules?: DmnAdditionalModules;
 }
 
-// Injected by bootstrap(); the entry chooses the concrete host and,
-// optionally, seeds the initial theme mode / locale.
-let host: HostApi<WebviewState, Command | Query>;
-let bootstrapOpts: BootstrapOptions = {};
-let modeler: DmnModelerHandle | undefined;
-let themeAdapter: HostThemeAdapter | undefined;
+type DmnHost = HostApi<WebviewState, Command | Query>;
 
 /**
- * Debounce the openXML function to avoid multiple calls when the user types fast.
- * @param dmn
- * @returns ImportWarning with warnings if any
- * @throws NoModelerError if the modeler is not initialized
- */
-const serializedOpenXML = serializeAsync(openHostXML);
-const debouncedUpdateXML = asyncDebounce(serializedOpenXML, 100);
-
-// Best-effort flush of the outbound sync debounce when the webview is hidden
-// (tab switch / close). Reliable in the persistent JCEF host; in VS Code the
-// webview context may die mid-export, so this only mitigates the ≤300ms
-// hide-loss window — the save path is fully covered by the flush protocol.
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-        void debouncedSendChanges.flush();
-    }
-});
-
-/**
- * Debounces the outbound document sync so a burst of model changes (e.g.
- * decision-table typing) collapses into one full export + host write instead of
- * one per keystroke. `maxWait` bounds starvation: sustained typing still syncs
- * at least once per second. The host recovers the sub-300ms tail via the flush
- * protocol ({@link respondToFlush}) so a save never persists stale XML.
+ * Starts the DMN webview against the given host. The entry chooses the host
+ * and, optionally, seeds the initial theme mode / locale when it has no host
+ * settings reply to wait on. Every call starts an independent session.
  *
+ * @returns Stops the session: it no longer reacts to the host or the page,
+ *   drops its pending syncs, and destroys its modeler.
  */
-const debouncedSendChanges = asyncDebounce(sendChanges, 300, { maxWait: 1000 });
+export function bootstrap(host: DmnHost, opts: BootstrapOptions = {}): () => void {
+    const session = new DmnDocumentSession(host);
+    const lifetime = new AbortController();
+    const stopErrorForwarding = installGlobalErrorForwarding((command) =>
+        host.postMessage(command),
+    );
 
-let inertBeforeDestructiveFlush: boolean | undefined;
-let hostUpdateVersion = 0;
-let hostDocumentRevision = 0;
-let latestHostDocumentRevision = 0;
-let initialDmnFileReceived = false;
-
-async function flushPendingChanges(): Promise<void> {
-    while (debouncedSendChanges.pending()) {
-        await debouncedSendChanges.flush();
-    }
-}
-
-async function flushPendingHostUpdates(): Promise<void> {
-    while (debouncedUpdateXML.pending()) {
-        try {
-            await debouncedUpdateXML.flush();
-        } catch {
-            // The message handler reports the import error; keep draining so a
-            // later valid host update can still complete bootstrap.
-        }
-    }
-}
-
-/**
- * Answers a host {@link FlushDocumentQuery} on the save/close path. Before the
- * first diagram loads `exportDiagram()` throws, so the responder leaves the
- * request unconfirmed. Rationale for the gate lives in {@link createFlushResponder}.
- */
-const respondToFlush = createFlushResponder(
-    {
-        isReady: () => modelerIsInitialized,
-        hasPendingSync: () => debouncedSendChanges.pending(),
-        hasPendingHostUpdate: () => debouncedUpdateXML.pending(),
-        hostUpdateVersion: () => hostUpdateVersion,
-        documentRevision: () => hostDocumentRevision,
-        flushPendingSync: flushPendingChanges,
-        beginDestructiveFlush: () => {
-            if (inertBeforeDestructiveFlush === undefined) {
-                inertBeforeDestructiveFlush = Boolean(document.body.inert);
-                document.body.inert = true;
+    // Best-effort flush of the outbound sync debounce when the webview is hidden
+    // (tab switch / close). Reliable in the persistent JCEF host; in VS Code the
+    // webview context may die mid-export, so this only mitigates the ≤300ms
+    // hide-loss window — the save path is fully covered by the flush protocol.
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+            if (document.visibilityState === "hidden") {
+                void session.flushPendingSync();
             }
         },
-        endDestructiveFlush: () => {
-            if (inertBeforeDestructiveFlush === undefined) return;
-            document.body.inert = inertBeforeDestructiveFlush;
-            inertBeforeDestructiveFlush = undefined;
-        },
-        exportContent: () => getModeler().exportDiagram(),
-    },
-    (reply) => host.postMessage(reply),
-);
+        { signal: lifetime.signal },
+    );
 
-// create resolver to wait for the response from the backend
-const dmnFileResolver = createResolver<DmnFileQuery>();
-// Resolves once the host replies with the persisted properties-panel default.
-const panelStateResolver = createResolver<PropertiesPanelStateQuery>();
-// Resolves once the host replies with the current color-theme preference.
-const settingsResolver = createResolver<DmnModelerSettingQuery>();
+    const start = (): void => void run(host, opts, session, lifetime.signal);
+    if (document.readyState === "complete") {
+        start();
+    } else {
+        window.addEventListener("load", start, { signal: lifetime.signal });
+    }
 
-let modelerIsInitialized = false;
+    return () => {
+        lifetime.abort();
+        stopErrorForwarding();
+        session.dispose();
+    };
+}
 
 /**
  * The Main function that gets executed after the webview is fully loaded.
@@ -163,14 +99,20 @@ let modelerIsInitialized = false;
  * 1. A new .dmn file was opened
  * 2. User switched to another tab and now switched back
  */
-async function run(): Promise<void> {
+async function run(
+    host: DmnHost,
+    opts: BootstrapOptions,
+    session: DmnDocumentSession,
+    stopSignal: AbortSignal,
+): Promise<void> {
     const canvas = requireElement("#js-canvas");
     const propertiesPanel = requireElement("#js-properties-panel");
     const panelUiState = new PropertiesPanelUiStateAdapter(
         createWebviewStateStore(host),
         propertiesPanel,
     );
-    window.addEventListener("message", onReceiveMessage);
+    const panelStateReply = createResolver<PropertiesPanelStateQuery>();
+    const settingsReply = createResolver<DmnModelerSettingQuery>();
 
     // Theme is host policy: drive the page-level scope (host chrome, keyed off
     // `:root[data-dmn-theme="dark"]`) and the modeler instance's own theme off
@@ -179,30 +121,44 @@ async function run(): Promise<void> {
     // a forced `opts.theme` seam, and later live theme switches. The host's
     // `colorTheme` preference (which may force light) is applied once the setting
     // query arrives below.
-    themeAdapter = createHostThemeAdapter((kind) => {
+    const themeAdapter = createHostThemeAdapter((kind) => {
         applyPageThemeScope("data-dmn-theme", kind);
-        modeler?.setTheme(kind);
+        session.modeler?.setTheme(kind);
     });
+    stopSignal.addEventListener("abort", () => themeAdapter.dispose());
+
+    const replies = { panelState: panelStateReply, settings: settingsReply, theme: themeAdapter };
+    window.addEventListener(
+        "message",
+        (event: MessageEvent<Query | Command>) =>
+            void routeDmnHostMessage(event.data, session, replies),
+        { signal: stopSignal },
+    );
 
     // Seed the locale before the modeler renders so the resizer labels and the
     // dmn-js UI come up translated on first paint.
-    if (bootstrapOpts.locale) {
-        i18n.setLanguage(bootstrapOpts.locale);
+    if (opts.locale) {
+        i18n.setLanguage(opts.locale);
     }
 
-    modeler = await createModeler(canvas, {
+    const modeler = await createModeler(canvas, {
         propertiesPanel: { parent: propertiesPanel },
         theme: resolveHostThemeKind(),
-        additionalModules: bootstrapOpts.additionalModules,
-        onContentChanged: () => void debouncedSendChanges(),
+        additionalModules: opts.additionalModules,
+        onContentChanged: () => session.scheduleSync(),
         onWarning: (message) => host.postMessage(new LogWarningCommand(message)),
     });
+    if (stopSignal.aborted) {
+        modeler.destroy();
+        return;
+    }
+    session.attachModeler(modeler);
 
     // Drive the mode only after the instance exists so a forced `opts.theme`
     // (an entry that never gets a settings reply) actually reaches
     // `modeler.setTheme`; "automatic" reproduces today's follow-the-IDE
     // behaviour and installs the live `<body>`-class observer.
-    themeAdapter.setMode(bootstrapOpts.theme ?? "automatic");
+    themeAdapter.setMode(opts.theme ?? "automatic");
 
     // Resizer labels reuse the shared i18n keys and follow the locale live via
     // `i18n.onChange` (the dmn-js UI itself re-translates on a view re-open).
@@ -213,6 +169,7 @@ async function run(): Promise<void> {
             ) + " (Shift+P)",
         onLabelChange: (apply) => i18n.onChange(apply),
     });
+    stopSignal.addEventListener("abort", () => propertiesPanelHandle.dispose());
 
     // Early-apply this editor's own saved panel visibility (if any) so the panel
     // snaps to the correct per-editor state without waiting on the host and
@@ -226,25 +183,23 @@ async function run(): Promise<void> {
     host.postMessage(new GetDmnFileCommand());
     host.postMessage(new GetPropertiesPanelStateCommand());
     host.postMessage(new GetDmnModelerSettingCommand());
-    const dmnFile = await dmnFileResolver.wait();
-    await initializeModeler(dmnFile?.content, dmnFile?.documentRevision);
-    await flushPendingHostUpdates();
-    modelerIsInitialized = true;
+    await session.openInitialDocument();
 
     // Block until the host's color-theme preference has been applied (the
-    // handler in onReceiveMessage swaps the stylesheet) so the modeler doesn't
-    // settle on the wrong theme before the user setting arrives. Timed out so a
-    // dropped reply can't stall the restore chain below.
-    await settingsResolver.wait(HOST_REPLY_TIMEOUT_MS);
+    // settings reply re-themes via the adapter) so the modeler doesn't settle on
+    // the wrong theme before the user setting arrives. Timed out so a dropped
+    // reply can't stall the restore chain below.
+    await settingsReply.wait(HOST_REPLY_TIMEOUT_MS);
 
     // Panel visibility: this editor's own saved entry (applied early above) wins;
     // only when absent do we fall back to the host's global default. Then report
     // toggles back — persisting per-editor state and seeding the global default.
     // Registered after restore so the restore itself can't echo back.
     if (savedPanelVisible === undefined) {
-        const panelState = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
+        const panelState = await panelStateReply.wait(HOST_REPLY_TIMEOUT_MS);
         panelUiState.restorePanelVisibility(propertiesPanelHandle, panelState?.visible ?? true);
     }
+    if (stopSignal.aborted) return;
     propertiesPanelHandle.onVisibilityChanged((visible) => {
         panelUiState.persistPanelVisibility(visible);
         host.postMessage(new SetPropertiesPanelStateCommand(visible));
@@ -255,161 +210,21 @@ async function run(): Promise<void> {
     // views (where Escape must not steal focus from cell editing).
     installPanelShortcuts({
         handle: propertiesPanelHandle,
-        focusCanvas: () => getModeler().focusCanvas(),
-        isCanvasFocused: () => getModeler().isCanvasFocused(),
-        isEnabled: () => getModeler().isDrdViewActive(),
+        focusCanvas: () => session.focusCanvas(),
+        isCanvasFocused: () => session.requireModeler().isCanvasFocused(),
+        // The shortcut listener cannot be removed, so a stopped session disables it here.
+        isEnabled: () => session.modeler?.isDrdViewActive() ?? false,
         escapeToCanvas: true,
     });
     // Ungated, unlike the shortcuts: the handle's focusCanvas already ignores non-DRD views.
-    installCanvasAutoFocus({ focusCanvas });
+    const removeCanvasAutoFocus = installCanvasAutoFocus({
+        focusCanvas: () => session.focusCanvas(),
+    });
+    stopSignal.addEventListener("abort", removeCanvasAutoFocus);
     host.postMessage(new RequestFocusCommand());
 
     panelUiState.restoreGroupsAndScroll();
     panelUiState.startPersisting();
-}
-
-async function initializeModeler(dmnFile: string | undefined, documentRevision = 0) {
-    try {
-        await serializedOpenXML(dmnFile, documentRevision);
-    } catch (error) {
-        if (error instanceof NoModelerError) {
-            host.postMessage(new LogErrorCommand(error.message));
-        } else {
-            const message = error instanceof Error ? error.message : `${error}`;
-            host.postMessage(new LogErrorCommand(`Unable to open XML ${message}`));
-        }
-    }
-}
-
-/**
- * Open the given XML content in the modeler.
- * @param dmn
- * @throws NoModelerError if the modeler is not initialized
- */
-async function openXML(dmn: string | undefined) {
-    if (!dmn) {
-        return;
-    }
-
-    await getModeler().loadDiagram(dmn);
-}
-
-async function openHostXML(dmn: string | undefined, documentRevision: number): Promise<void> {
-    await openXML(dmn);
-    if (documentRevision === latestHostDocumentRevision) {
-        hostDocumentRevision = documentRevision;
-    }
-}
-
-async function sendChanges() {
-    // A rejection here only reaches the global unhandledrejection hook (the
-    // dmn-js event bus discards the returned promise) as a context-free line —
-    // catch it so the failure is named and deterministic on the channel.
-    try {
-        const version = hostUpdateVersion;
-        const dmn = await getModeler().exportDiagram();
-        if (version !== hostUpdateVersion || debouncedUpdateXML.pending()) return;
-        host.postMessage(new SyncDocumentCommand(dmn, hostDocumentRevision));
-    } catch (error) {
-        const e = error instanceof Error ? error : new Error(String(error));
-        host.postMessage(
-            new LogErrorCommand(`Failed to sync diagram changes: ${e.message}`, e.stack),
-        );
-    }
-}
-
-async function onReceiveMessage(message: MessageEvent<Query | Command>) {
-    const queryOrCommand = message.data;
-
-    switch (true) {
-        case queryOrCommand.type === "DmnFileQuery": {
-            try {
-                const dmnFileQuery = message.data as DmnFileQuery;
-                const documentRevision = dmnFileQuery.documentRevision ?? 0;
-                if (documentRevision < latestHostDocumentRevision) break;
-                latestHostDocumentRevision = documentRevision;
-                hostUpdateVersion++;
-                if (!initialDmnFileReceived) {
-                    initialDmnFileReceived = true;
-                    dmnFileResolver.done(dmnFileQuery);
-                } else {
-                    // A host push is authoritative; drop any pending outbound
-                    // sync so a stale export can't clobber it after re-import.
-                    debouncedSendChanges.cancel();
-                    await debouncedUpdateXML(dmnFileQuery.content, documentRevision);
-                }
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : `${error}`;
-                host.postMessage(
-                    new LogErrorCommand(
-                        `Something went wrong when receiving the message ${errorMessage}`,
-                    ),
-                );
-            }
-            break;
-        }
-        case queryOrCommand.type === "PropertiesPanelStateQuery": {
-            panelStateResolver.done(message.data as PropertiesPanelStateQuery);
-            break;
-        }
-        case queryOrCommand.type === "DmnModelerSettingQuery": {
-            // Applied live so a VS Code theme change in `"automatic"` mode
-            // re-themes an already-open editor, not just on first load.
-            const settingQuery = message.data as DmnModelerSettingQuery;
-            themeAdapter?.setMode(settingQuery.setting.colorTheme);
-            settingsResolver.done(settingQuery);
-            break;
-        }
-        case queryOrCommand.type === "LanguageQuery": {
-            try {
-                // The handle compares resolved locales itself, so a re-push on a
-                // tab re-show is a no-op and never re-opens the view.
-                await getModeler().setLocale((message.data as LanguageQuery).locale);
-            } catch (error) {
-                const detail = error instanceof Error ? error.message : String(error);
-                host.postMessage(new LogErrorCommand(`Failed to set language: ${detail}`));
-            }
-            break;
-        }
-        case queryOrCommand.type === "TakeFocusQuery": {
-            takeFocus(focusCanvas);
-            break;
-        }
-        case ["FlushDocumentQuery", "ReleaseDocumentFlushQuery"].includes(queryOrCommand.type): {
-            await respondToFlush(message.data as FlushDocumentQuery | ReleaseDocumentFlushQuery);
-            break;
-        }
-    }
-}
-
-/**
- * Starts the DMN webview against the given host. The entry chooses the host
- * and, optionally, seeds the initial theme mode / locale when it has no host
- * settings reply to wait on.
- */
-export function bootstrap(
-    injectedHost: HostApi<WebviewState, Command | Query>,
-    opts: BootstrapOptions = {},
-): void {
-    host = injectedHost;
-    bootstrapOpts = opts;
-    installGlobalErrorForwarding((command) => host.postMessage(command));
-    if (document.readyState === "complete") {
-        void run();
-    } else {
-        window.addEventListener("load", () => void run());
-    }
-}
-
-function focusCanvas(): void {
-    getModeler().focusCanvas();
-}
-
-function getModeler(): DmnModelerHandle {
-    if (!modeler) {
-        throw new NoModelerError();
-    }
-    return modeler;
 }
 
 function requireElement(selector: string): HTMLElement {
