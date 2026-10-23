@@ -931,6 +931,34 @@ describe("bootstrap mode switching", () => {
         );
     });
 
+    it("keeps the page locked for a destructive flush that outlasts a mode switch", async () => {
+        let finishViewer!: () => void;
+        const viewer = makeViewer();
+        mocks.createModeler.mockResolvedValue(makeModeler());
+        mocks.createViewer.mockReturnValueOnce(
+            new Promise((resolve) => {
+                finishViewer = () => resolve(viewer);
+            }),
+        );
+        boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+        await drainAsyncWork();
+
+        modeButtons()[0].click();
+        await drainAsyncWork();
+        dispatch(new FlushDocumentQuery(8, true));
+        await drainAsyncWork();
+        finishViewer();
+        await drainAsyncWork();
+
+        expect(viewer.loadDiagram).toHaveBeenCalledOnce();
+        expect(document.body.inert).toBe(true);
+
+        dispatch(new ReleaseDocumentFlushQuery(8));
+        await drainMicrotasks();
+
+        expect(document.body.inert).toBe(false);
+    });
+
     it("keeps the page locked when an engine reload lands during a mode switch", async () => {
         let finishViewer!: () => void;
         mocks.createModeler.mockResolvedValue(makeModeler());

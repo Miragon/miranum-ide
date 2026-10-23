@@ -55,6 +55,7 @@ import {
     HOST_REPLY_TIMEOUT_MS,
     HostDocumentRevisions,
     createFlushResponder,
+    createInertLockGroup,
     createReplyRegistry,
     createResolver,
     extractProcessVariables,
@@ -216,13 +217,15 @@ function startSession(
     const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
     let switchPending = false;
     let initialSurfaceReady = false;
-    // Saved `document.body.inert` from the start of a recreate switch, restored
-    // when it lands (unless a concurrent engine reload has taken ownership).
-    let inertBeforeSwitch: boolean | undefined;
+
+    const pageInertLocks = createInertLockGroup(document.body);
+    const modeSwitchLock = pageInertLocks.createLock();
+    const destructiveFlushLock = pageInertLocks.createLock();
+    // Never released: the page stays locked until the reload replaces it.
+    const engineReloadLock = pageInertLocks.createLock();
 
     let modelerIsInitialized = false;
     let modelerCanImportHostUpdates = false;
-    let inertBeforeDestructiveFlush: boolean | undefined;
     const hostDocumentRevisions = new HostDocumentRevisions();
     let initialViewerMode = false;
     let latestBpmnFileQuery: BpmnFileQuery | undefined;
@@ -338,8 +341,7 @@ function startSession(
         cancelPendingVariablePublish?.();
         refreshDiagramWhenReady = false;
         pendingFocusId = undefined;
-        inertBeforeDestructiveFlush = undefined;
-        document.body.inert = true;
+        engineReloadLock.acquire();
 
         await serializedModelerOperation(async () => {
             try {
@@ -411,21 +413,8 @@ function startSession(
             hostUpdateVersion: () => hostDocumentRevisions.version,
             documentRevision: () => hostDocumentRevisions.representedRevision,
             flushPendingSync: flushPendingXmlChanges,
-            beginDestructiveFlush: () => {
-                if (inertBeforeDestructiveFlush === undefined) {
-                    inertBeforeDestructiveFlush = Boolean(document.body.inert);
-                    document.body.inert = true;
-                }
-            },
-            endDestructiveFlush: () => {
-                if (inertBeforeDestructiveFlush === undefined) return;
-                if (engineReloadPending) {
-                    inertBeforeDestructiveFlush = undefined;
-                    return;
-                }
-                document.body.inert = inertBeforeDestructiveFlush;
-                inertBeforeDestructiveFlush = undefined;
-            },
+            beginDestructiveFlush: () => destructiveFlushLock.acquire(),
+            endDestructiveFlush: () => destructiveFlushLock.release(),
             exportContent: () => surface.exportDiagram(),
         },
         (reply) => host.postMessage(reply),
@@ -968,11 +957,9 @@ function startSession(
                 onSwitchStateChanged: (busy) => {
                     switchPending = busy;
                     if (busy) {
-                        inertBeforeSwitch = Boolean(document.body.inert);
-                        document.body.inert = true;
-                    } else if (!engineReloadPending) {
-                        // A concurrent engine reload owns `inert` from here on.
-                        document.body.inert = inertBeforeSwitch ?? false;
+                        modeSwitchLock.acquire();
+                    } else {
+                        modeSwitchLock.release();
                     }
                     strip.render({ mode: surfaceMode, engine: modelerEngine, busy });
                 },
