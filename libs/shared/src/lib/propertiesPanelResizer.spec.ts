@@ -338,12 +338,25 @@ describe("initResizer", () => {
             expect(visibilityChanges).toEqual([]);
         });
 
-        it("stops notifying visibility listeners", () => {
-            const { handle, visibilityChanges } = setUp();
+        it("removes its document listeners", () => {
+            const addDocumentListener = vi.spyOn(document, "addEventListener");
+            const { handle } = setUp();
+
+            handle.dispose();
+
+            const documentListenersRemoved = addDocumentListener.mock.calls.map(
+                ([, , options]) => (options as AddEventListenerOptions | undefined)?.signal?.aborted,
+            );
+            expect(documentListenersRemoved).toEqual([true, true]);
+        });
+
+        it("no longer changes the panel or notifies through the disposed handle", () => {
+            const { panel, handle, visibilityChanges } = setUp();
             handle.dispose();
 
             handle.setVisible(false);
 
+            expect(panel.classList.contains("collapsed")).toBe(false);
             expect(visibilityChanges).toEqual([]);
         });
 

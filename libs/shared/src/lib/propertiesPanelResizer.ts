@@ -78,7 +78,8 @@ export interface PropertiesPanelHandle {
      * Ends an open drag, removes every listener the resizer installed and the
      * toggle button it appended. The panel keeps its current visibility and
      * width, so a later {@link initResizer} on the same markup takes over
-     * from there. Repeated calls are no-ops.
+     * from there; {@link setVisible} on the disposed handle no longer changes
+     * it. Repeated calls are no-ops.
      */
     dispose(): void;
 }
@@ -324,7 +325,7 @@ export function initResizer(opts: PropertiesPanelResizerOptions): PropertiesPane
     return {
         isVisible: () => !isCollapsed,
         setVisible: (visible: boolean) => {
-            if (visible === !isCollapsed) {
+            if (signal.aborted || visible === !isCollapsed) {
                 return;
             }
             if (visible) {
