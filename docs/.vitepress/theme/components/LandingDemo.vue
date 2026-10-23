@@ -248,7 +248,8 @@ const CHARGE_PAYMENT = { left: 110, bottom: 96 };
 const MODEL_BEAT_LIFT = 96;
 const POP_W = 228;
 
-const TOKEN_X = { start: 48, charge: 232, ship: 376, end: 416 };
+const TOKEN_X = { start: 48, charge: 160, ship: 304, end: 416 };
+const TOKEN_SPEED_PX_PER_MS = 0.24;
 type TokenStop = keyof typeof TOKEN_X;
 const FIRST_LOOP_DELAY_MS = 2200;
 const REVIEW_BEAT = 3;
@@ -264,6 +265,7 @@ const query = ref("");
 const typing = ref(false);
 const menuPressed = ref(false);
 const tokenX = ref(TOKEN_X.start);
+const tokenMs = ref(0);
 let logId = 0;
 const log = ref<{ id: number; label: string; icon: IconName }[]>([]);
 const activeStep = ref(REVIEW_BEAT);
@@ -332,9 +334,9 @@ function logEntry(label: string, icon: IconName = "logTask") {
     log.value = [...log.value, { id: logId++, label, icon }].slice(-5);
 }
 
-function tokenTo(stop: TokenStop, label: string, icon?: IconName) {
+function tokenTo(stop: TokenStop) {
+    tokenMs.value = Math.abs(TOKEN_X[stop] - tokenX.value) / TOKEN_SPEED_PX_PER_MS;
     tokenX.value = TOKEN_X[stop];
-    logEntry(label, icon);
 }
 
 interface Beat {
@@ -372,7 +374,7 @@ const BEATS: Beat[] = [
         ],
     },
     {
-        ms: 3300,
+        ms: 4100,
         base: "v-files is-after is-modified",
         steps: [
             [250, () => apply("is-sim")],
@@ -383,9 +385,12 @@ const BEATS: Beat[] = [
                     logEntry("Process started", "logStart");
                 },
             ],
-            [1050, () => tokenTo("charge", "Charge payment")],
-            [1650, () => tokenTo("ship", "Ship order")],
-            [2250, () => tokenTo("end", "Order shipped", "logEnd")],
+            [900, () => tokenTo("charge")],
+            [1370, () => logEntry("Charge payment")],
+            [1750, () => tokenTo("ship")],
+            [2350, () => logEntry("Ship order")],
+            [2750, () => tokenTo("end")],
+            [3220, () => logEntry("Order shipped", "logEnd")],
         ],
     },
     {
@@ -449,6 +454,7 @@ function applyBase(beat: Beat) {
         typing.value = false;
         log.value = [];
         tokenX.value = TOKEN_X.start;
+        tokenMs.value = 0;
     });
 }
 
@@ -766,7 +772,10 @@ onBeforeUnmount(() => {
                                             <rect width="16" height="16" rx="3" />
                                             <path d="M5.5 4L12 8L5.5 12Z" />
                                         </g>
-                                        <g class="token" :style="{ '--tx': `${tokenX}px` }">
+                                        <g
+                                            class="token"
+                                            :style="{ '--tx': `${tokenX}px`, '--tms': `${tokenMs}ms` }"
+                                        >
                                             <circle r="8" />
                                             <text y="3.6" font-size="10" font-weight="700">1</text>
                                         </g>
@@ -1157,7 +1166,7 @@ code {
 }
 .loop-step:last-child .track::before,
 .loop-step:last-child .fill {
-    display: none;
+    right: 0;
 }
 .fill {
     height: 2px;
@@ -2018,7 +2027,7 @@ code {
     opacity: 0;
     transform: translate(var(--tx, 48px), 56px);
     transition:
-        transform 330ms var(--cd-ease),
+        transform var(--tms, 0ms) ease-in-out,
         opacity 150ms var(--cd-ease);
 }
 .token circle {
@@ -2646,6 +2655,10 @@ code {
     }
     .loop-step:last-child {
         padding-bottom: 0;
+    }
+    .loop-step:last-child .track::before,
+    .loop-step:last-child .fill {
+        display: none;
     }
     .track {
         grid-row: 1 / span 2;
