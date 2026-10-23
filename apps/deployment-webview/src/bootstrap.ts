@@ -1,7 +1,6 @@
 import {
     AdditionalFilesQuery,
     Command,
-    createWebviewStateStore,
     DeploymentResultQuery,
     DeploymentTargetsQuery,
     FormDefaultsQuery,
@@ -77,9 +76,8 @@ export function bootstrap(host: DeploymentHost): void {
 function initTabs(host: DeploymentHost): void {
     const tabBtns = document.querySelectorAll<HTMLButtonElement>(".tab-btn");
     const tabPanels = document.querySelectorAll<HTMLElement>(".tab-panel");
-    const state = createWebviewStateStore(host);
 
-    const savedTab = state.read()?.activeTab;
+    const savedTab = host.getState()?.activeTab;
     if (savedTab) {
         activateTab(savedTab, tabBtns, tabPanels);
     }
@@ -89,7 +87,7 @@ function initTabs(host: DeploymentHost): void {
             const tab = btn.dataset.tab;
             if (!tab) return;
             activateTab(tab, tabBtns, tabPanels);
-            state.merge({ activeTab: tab });
+            host.updateState({ activeTab: tab });
         });
     }
 }

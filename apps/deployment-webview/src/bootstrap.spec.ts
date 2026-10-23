@@ -6,7 +6,6 @@ import {
     DeploymentTargetsQuery,
     FormDefaultsQuery,
     HostApiImpl,
-    MissingStateError,
     ProcessDefinitionKeyQuery,
     SelectedPayloadFileQuery,
     StartInstanceResultQuery,
@@ -24,10 +23,7 @@ type Posted = { type: string } & Record<string, unknown>;
 
 function fakeHost(savedState?: Record<string, unknown>) {
     return {
-        getState: vi.fn(() => {
-            if (!savedState) throw new MissingStateError();
-            return savedState;
-        }),
+        getState: vi.fn(() => savedState),
         setState: vi.fn(),
         updateState: vi.fn(),
         postMessage: vi.fn(),

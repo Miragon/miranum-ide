@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HostApiImpl, MissingStateError } from "./host";
+import { HostApiImpl, MockHostApi } from "./host";
 
 type ViewState = { mode?: string; zoom?: number };
 
@@ -23,10 +23,10 @@ afterEach(() => {
 });
 
 describe("HostApiImpl", () => {
-    it("throws MissingStateError when the host has no persisted state yet", () => {
+    it("reads nothing when the host has no persisted state yet", () => {
         createHostBridge(undefined);
 
-        expect(() => new HostApiImpl<ViewState, unknown>().getState()).toThrow(MissingStateError);
+        expect(new HostApiImpl<ViewState, unknown>().getState()).toBeUndefined();
     });
 
     it("returns the state the host persisted", () => {
@@ -53,12 +53,15 @@ describe("HostApiImpl", () => {
         expect(bridge.setState).toHaveBeenCalledWith({ mode: "design", zoom: 2 });
     });
 
-    it("rejects a partial update before any state exists, persisting nothing", () => {
+    it("seeds the state with the first partial update", () => {
         const bridge = createHostBridge(undefined);
         const host = new HostApiImpl<ViewState, unknown>();
 
-        expect(() => host.updateState({ zoom: 2 })).toThrow(MissingStateError);
-        expect(bridge.setState).not.toHaveBeenCalled();
+        host.updateState({ zoom: 2 });
+        host.updateState({ mode: "design" });
+
+        expect(bridge.setState).toHaveBeenNthCalledWith(1, { zoom: 2 });
+        expect(host.getState()).toEqual({ zoom: 2, mode: "design" });
     });
 
     it("forwards messages to the host unchanged", () => {
@@ -68,5 +71,41 @@ describe("HostApiImpl", () => {
         new HostApiImpl<ViewState, typeof message>().postMessage(message);
 
         expect(bridge.postMessage).toHaveBeenCalledWith(message);
+    });
+});
+
+class TestMockHost extends MockHostApi<ViewState, unknown> {
+    readonly postMessage = vi.fn();
+}
+
+describe("MockHostApi", () => {
+    it("reads nothing before any state is written", () => {
+        expect(new TestMockHost().getState()).toBeUndefined();
+    });
+
+    it("seeds the state with the first partial update", () => {
+        const host = new TestMockHost();
+
+        host.updateState({ zoom: 2 });
+
+        expect(host.getState()).toEqual({ zoom: 2 });
+    });
+
+    it("merges a partial update over the saved state", () => {
+        const host = new TestMockHost();
+        host.setState({ mode: "design", zoom: 1 });
+
+        host.updateState({ zoom: 2 });
+
+        expect(host.getState()).toEqual({ mode: "design", zoom: 2 });
+    });
+
+    it("replaces the whole state on setState", () => {
+        const host = new TestMockHost();
+        host.setState({ mode: "design", zoom: 1 });
+
+        host.setState({ zoom: 3 });
+
+        expect(host.getState()).toEqual({ zoom: 3 });
     });
 });

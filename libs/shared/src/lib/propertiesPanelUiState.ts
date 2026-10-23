@@ -1,9 +1,5 @@
 import type { PropertiesPanelHandle } from "./propertiesPanelResizer";
-import {
-    createWebviewStateStore,
-    type WebviewStateHost,
-    type WebviewStateStore,
-} from "./webviewStateStore";
+import type { WebviewStateHost, WebviewStateStore } from "./webviewStateStore";
 
 /** Per-editor properties-panel UI state that survives a tab-switch rebuild. */
 export interface PropertiesPanelUiState {
@@ -49,7 +45,7 @@ export function openGroupIndexes(openGroups: readonly boolean[]): number[] {
 export function readSavedPanelVisibility(
     host: WebviewStateHost<PropertiesPanelUiState>,
 ): boolean | undefined {
-    return createWebviewStateStore(host).read()?.panelVisible;
+    return host.getState()?.panelVisible;
 }
 
 const PANEL_SCROLL_CONTAINER = ".bio-properties-panel-scroll-container";
