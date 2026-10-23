@@ -496,6 +496,9 @@ describe("DmnModeler", () => {
         handle.destroy();
         expect(container.hasAttribute("data-dmn-theme")).toBe(false);
         expect(panel.hasAttribute("data-dmn-theme")).toBe(false);
+
+        expect(() => handle.setTheme("light")).toThrow("DMN modeler has been destroyed");
+        expect(container.hasAttribute("data-dmn-theme")).toBe(false);
     });
 
     it("destroys exactly once, detaches listeners, and rejects later operations", async () => {
