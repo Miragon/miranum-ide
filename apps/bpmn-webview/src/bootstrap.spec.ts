@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     BpmnFileQuery,
+    BpmnLintDisabledQuery,
     BpmnlintInPageQuery,
     BpmnlintResultsQuery,
     BpmnModelerSettingQuery,
@@ -14,6 +15,7 @@ import {
     FormReferenceStatusQuery,
     GetDiagramAsSVGCommand,
     HOST_REPLY_TIMEOUT_MS,
+    ImplementationStatusQuery,
     installCanvasAutoFocus,
     LanguageQuery,
     OpenAllScriptTasksQuery,
@@ -23,6 +25,7 @@ import {
     TextClipboardQuery,
     UpdateOpenScriptEditorsQuery,
     UpdateScriptContentQuery,
+    UpdateScriptFormatQuery,
     WorkspaceDefinitionsQuery,
 } from "@miragon/bpmn-modeler-shared";
 import { i18n } from "@miragon/bpmn-modeler-i18n";
@@ -1977,6 +1980,58 @@ describe("bootstrap mode switching", () => {
                         "Error receiving message: BpmnlintResultsQuery — Modeler is not initialized!",
                 }),
             ]);
+        });
+
+        it("turns in-page linting off when the host disables it", async () => {
+            const modeler = makeModeler();
+            await bootWith(modeler);
+
+            dispatch(new BpmnLintDisabledQuery());
+            await drainMicrotasks();
+
+            expect(modeler.applyLintingDisabled).toHaveBeenCalledOnce();
+        });
+
+        it("applies a script format chosen in the host editor", async () => {
+            const updateScriptFormat = vi.fn();
+            await bootWith(makeModeler({ updateScriptFormat }));
+
+            dispatch(new UpdateScriptFormatQuery("Task_1", "script-task", undefined, "groovy"));
+            await drainMicrotasks();
+
+            expect(updateScriptFormat).toHaveBeenCalledExactlyOnceWith(
+                "Task_1",
+                "script-task",
+                undefined,
+                "groovy",
+            );
+        });
+
+        it("marks the implementations the host resolved", async () => {
+            const applyImplementationStatus = vi.fn();
+            await bootWith(makeModeler({ applyImplementationStatus }));
+            const resolved = { "com.example.Delegate": true, "com.example.Missing": false };
+
+            dispatch(new ImplementationStatusQuery(resolved));
+            await drainMicrotasks();
+
+            expect(applyImplementationStatus).toHaveBeenCalledExactlyOnceWith(resolved);
+        });
+
+        it("ignores script, lint and implementation pushes on the readonly viewer", async () => {
+            const host = await bootWith(makeViewer());
+
+            dispatch(new BpmnlintResultsQuery({}));
+            dispatch(new BpmnLintDisabledQuery());
+            dispatch(new BpmnlintInPageQuery(undefined, "tok-1"));
+            dispatch(new UpdateScriptContentQuery("Task_1", "script-task", undefined, "x = 1"));
+            dispatch(new UpdateScriptFormatQuery("Task_1", "script-task", undefined, "groovy"));
+            dispatch(new UpdateOpenScriptEditorsQuery([]));
+            dispatch(new ImplementationStatusQuery({ "com.example.Delegate": true }));
+            dispatch(new OpenAllScriptTasksQuery());
+            await drainMicrotasks();
+
+            expect(host.postMessage).not.toHaveBeenCalled();
         });
     });
 
