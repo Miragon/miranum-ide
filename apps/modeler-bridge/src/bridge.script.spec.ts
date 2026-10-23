@@ -18,6 +18,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { ScriptUri } from "@miragon/bpmn-modeler-core";
 
+import { registerParams, settle, waitForFrame } from "./__fixtures__/bridgeHarness";
 import { createBridge } from "./bridge";
 import { Rpc } from "./rpc";
 
@@ -26,24 +27,7 @@ const C7_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <bpmn:process id="Process_1" isExecutable="true" />
 </bpmn:definitions>`;
 
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-/** Polls `frames` for a match, mirroring the navigation spec's deterministic wait. */
-async function waitForFrame(
-    frames: any[],
-    predicate: (frame: any) => boolean,
-    timeoutMs = 2000,
-): Promise<any> {
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-        const match = frames.find(predicate);
-        if (match) return match;
-        await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-    throw new Error("waitForFrame timed out");
-}
+const HOST_SESSION = { sessionId: 7, documentRevision: 0 };
 
 /** Polls until `path` no longer exists — deletions are fire-and-forget on the bridge. */
 async function waitForDeletion(path: string, timeoutMs = 2000): Promise<void> {
@@ -57,26 +41,6 @@ async function waitForDeletion(path: string, timeoutMs = 2000): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, 10));
     }
     throw new Error(`still exists: ${path}`);
-}
-
-function registerParams(
-    editorId: string,
-    root: string,
-    fsPath: string,
-    content: string,
-    sessionId?: number,
-) {
-    return {
-        editorId,
-        sessionId,
-        documentRevision: 0,
-        uriString: editorId,
-        path: editorId.replace(/^file:\/\//, ""),
-        fsPath,
-        scheme: "file",
-        workspaceRoot: root,
-        content,
-    };
 }
 
 interface OpenCommand {
@@ -124,7 +88,7 @@ describe("bridge script editor (real core over a fake transport)", () => {
         await rpc.handleLine(
             JSON.stringify({
                 method: "session/register",
-                params: registerParams(editorId, root, sourcePath, C7_XML, 7),
+                params: registerParams(editorId, root, sourcePath, C7_XML, HOST_SESSION),
             }),
         );
 
@@ -573,7 +537,7 @@ describe("bridge script editor (real core over a fake transport)", () => {
         await rpc.handleLine(
             JSON.stringify({
                 method: "session/register",
-                params: registerParams(editorId, root, sourcePath, C7_XML, 7),
+                params: registerParams(editorId, root, sourcePath, C7_XML, HOST_SESSION),
             }),
         );
         await settle();
@@ -584,7 +548,7 @@ describe("bridge script editor (real core over a fake transport)", () => {
                 method: "webview/message",
                 params: {
                     editorId,
-                    sessionId: 7,
+                    sessionId: HOST_SESSION.sessionId,
                     message: { type: "GetBpmnModelerSettingCommand" },
                 },
             }),
