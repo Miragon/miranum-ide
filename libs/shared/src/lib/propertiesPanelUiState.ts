@@ -8,7 +8,10 @@ import {
 /** Per-editor properties-panel UI state that survives a tab-switch rebuild. */
 export interface PropertiesPanelUiState {
     panelScroll?: number;
-    /** Positional rather than by label, so it survives a language switch. */
+    /**
+     * Positional rather than by label, so it survives a language switch. Absent
+     * until a group header first changes; an empty list means no group was open.
+     */
     expandedGroupIndexes?: number[];
     /** Absent until the user first toggles the panel; the host's global default applies until then. */
     panelVisible?: boolean;
@@ -24,15 +27,15 @@ export function resolvePanelVisibility(
 export function hasGroupsOrScrollToRestore(
     saved: PropertiesPanelUiState | undefined,
 ): saved is PropertiesPanelUiState {
-    return (saved?.expandedGroupIndexes?.length ?? 0) > 0 || saved?.panelScroll != null;
+    return saved?.expandedGroupIndexes != null || saved?.panelScroll != null;
 }
 
-/** An empty saved list leaves the panel's own default expansion untouched. */
+/** Without a saved list the panel keeps its own default expansion. */
 export function groupIndexesToToggle(
     openGroups: readonly boolean[],
     expandedGroupIndexes: readonly number[] | undefined,
 ): number[] {
-    if (!expandedGroupIndexes || expandedGroupIndexes.length === 0) {
+    if (!expandedGroupIndexes) {
         return [];
     }
     const wanted = new Set(expandedGroupIndexes);

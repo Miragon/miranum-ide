@@ -65,8 +65,12 @@ describe("properties-panel UI state rules", () => {
         expect(groupIndexesToToggle([true, false, false, true], [1, 3])).toEqual([0, 1]);
     });
 
-    it.each([[[]], [undefined]])("leaves the expansion alone for a saved list of %j", (saved) => {
-        expect(groupIndexesToToggle([true, false], saved)).toEqual([]);
+    it("keeps the panel's default expansion without a saved list", () => {
+        expect(groupIndexesToToggle([true, false], undefined)).toEqual([]);
+    });
+
+    it("collapses every open group for an empty saved list", () => {
+        expect(groupIndexesToToggle([true, false, true], [])).toEqual([0, 2]);
     });
 
     it("lists the open groups by position", () => {
@@ -76,7 +80,7 @@ describe("properties-panel UI state rules", () => {
     it.each<[PropertiesPanelUiState | undefined, boolean]>([
         [undefined, false],
         [{ panelVisible: true }, false],
-        [{ expandedGroupIndexes: [] }, false],
+        [{ expandedGroupIndexes: [] }, true],
         [{ expandedGroupIndexes: [0] }, true],
         [{ panelScroll: 0 }, true],
     ])("restores groups or scroll for %j: %s", (saved, expected) => {
@@ -193,7 +197,7 @@ describe("PropertiesPanelUiStateAdapter", () => {
             const { panelRoot, container, headers } = renderPanel({ groups: 2, openGroups: [0] });
             setScrollTop(container, 80);
             const adapter = new PropertiesPanelUiStateAdapter(
-                memoryStore({ expandedGroupIndexes: [], panelScroll: 0 }),
+                memoryStore({ panelScroll: 0 }),
                 panelRoot,
                 scheduleFrame,
             );
@@ -204,6 +208,43 @@ describe("PropertiesPanelUiStateAdapter", () => {
 
             expect(container.scrollTop).toBe(0);
             expect(headers.map(isOpen)).toEqual([true, false]);
+        });
+
+        it("collapses a default-open group when every group was saved collapsed", () => {
+            const { panelRoot, headers } = renderPanel({ groups: 2, openGroups: [1] });
+            const adapter = new PropertiesPanelUiStateAdapter(
+                memoryStore({ expandedGroupIndexes: [] }),
+                panelRoot,
+                scheduleFrame,
+            );
+
+            adapter.restoreGroupsAndScroll();
+
+            expect(frames).toHaveLength(1);
+
+            runNextFrame();
+
+            expect(headers.map(isOpen)).toEqual([false, false]);
+        });
+
+        it("keeps every group collapsed across a rebuild", async () => {
+            const store = memoryStore();
+            const before = renderPanel({ groups: 1, openGroups: [0] });
+            new PropertiesPanelUiStateAdapter(store, before.panelRoot).startPersisting();
+
+            before.headers[0].click();
+            await vi.waitFor(() => expect(store.read()).toEqual({ expandedGroupIndexes: [] }));
+
+            document.body.innerHTML = "";
+            const rebuilt = renderPanel({ groups: 1, openGroups: [0] });
+            new PropertiesPanelUiStateAdapter(
+                store,
+                rebuilt.panelRoot,
+                scheduleFrame,
+            ).restoreGroupsAndScroll();
+            runNextFrame();
+
+            expect(rebuilt.headers.map(isOpen)).toEqual([false]);
         });
 
         it.each<[string, PropertiesPanelUiState | undefined]>([
