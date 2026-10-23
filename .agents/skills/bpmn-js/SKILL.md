@@ -160,10 +160,11 @@ Settings are sent from the extension host as `BpmnModelerSettingQuery`:
 
 - `alignToOrigin`: boolean — enables/disables auto-align to origin on save
 - `showTransactionBoundaries`: boolean — shows/hides transaction boundary overlays (C7 only)
+- `favouriteBpmnElements`: string[] — BPMN types pinned at the top of the append menu (max 6)
 
-Applied via `bpmnModeler.setSettings()`, which merges the partial settings and immediately applies transaction boundary visibility for C7 engines using `transactionBoundaries.show()` / `transactionBoundaries.hide()`.
+Applied via `bpmnModeler.setSettings()`, which merges the partial settings and immediately applies transaction boundary visibility for C7 engines using `transactionBoundaries.show()` / `transactionBoundaries.hide()`. The engine-neutral designer (Design on an untagged model) has no `setSettings`: it honours only the favourites, through `setFavouriteBpmnElements()`.
 
-The host sends settings (and `UpdateOpenScriptEditorsQuery`) only on load and on change, so the webview remembers the latest of each in `apps/bpmn-webview/src/hostModelerState.ts`: a modeler a mode switch rebuilds gets the settings through `createModeler({ settings })` and the open-script locks once its import has finished.
+The host sends settings (and `UpdateOpenScriptEditorsQuery`) only on load and on change, so the webview remembers the latest of each in `apps/bpmn-webview/src/hostModelerState.ts`: a modeler a mode switch rebuilds gets the settings through `createModeler({ settings })` and the open-script locks once its import has finished; a rebuilt designer gets the favourites through `createDesigner({ favouriteBpmnElements })`.
 
 ## Theme Handling
 

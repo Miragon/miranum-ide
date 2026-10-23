@@ -702,6 +702,7 @@ describe("bootstrap mode switching", () => {
             exportDiagram: vi.fn(async () => "<exported />"),
             newDiagram: vi.fn(async () => ({ warnings: [] })),
             getDiagramSvg: vi.fn(),
+            setFavouriteBpmnElements: vi.fn(),
             captureViewState: vi.fn(() => ({})),
             applyViewState: vi.fn(),
             setTheme: vi.fn(),
@@ -1144,6 +1145,132 @@ describe("bootstrap mode switching", () => {
             await drainAsyncWork();
 
             expect(modeler.setSettings).toHaveBeenCalledExactlyOnceWith(pushedSettings);
+        });
+    });
+
+    describe("host favourites in Design", () => {
+        const hostSettings = {
+            alignToOrigin: true,
+            showTransactionBoundaries: false,
+            colorTheme: "light" as const,
+            favouriteBpmnElements: ["bpmn:UserTask"],
+        };
+        const pushedSettings = { ...hostSettings, favouriteBpmnElements: ["bpmn:ServiceTask"] };
+
+        function makeSettingsHost(file: BpmnFileQuery) {
+            const host = makeHost(file);
+            const answerDefaults = host.postMessage.getMockImplementation()!;
+            host.postMessage.mockImplementation((message: { type: string }) => {
+                if (message.type === "GetBpmnModelerSettingCommand") {
+                    dispatch(new BpmnModelerSettingQuery(hostSettings));
+                    return;
+                }
+                answerDefaults(message);
+            });
+            return host;
+        }
+
+        const untagged = () => new BpmnFileQuery("<untagged />", undefined, "modeler", 1);
+        const viewButton = () => modeButtons()[0];
+        const designButton = () => modeButtons()[1];
+
+        it("hands the host favourites to the initial designer", async () => {
+            const designer = makeDesigner();
+            mocks.createDesigner.mockResolvedValue(designer);
+
+            boot(makeSettingsHost(untagged()));
+            await drainAsyncWork();
+
+            expect(designer.setFavouriteBpmnElements).toHaveBeenCalledExactlyOnceWith([
+                "bpmn:UserTask",
+            ]);
+        });
+
+        it("updates the live designer when the host pushes new favourites", async () => {
+            const designer = makeDesigner();
+            mocks.createDesigner.mockResolvedValue(designer);
+
+            boot(makeSettingsHost(untagged()));
+            await drainAsyncWork();
+            dispatch(new BpmnModelerSettingQuery(pushedSettings));
+            await drainMicrotasks();
+
+            expect(designer.setFavouriteBpmnElements.mock.calls).toEqual([
+                [["bpmn:UserTask"]],
+                [["bpmn:ServiceTask"]],
+            ]);
+        });
+
+        it("leaves the designer's favourites alone when the host settings carry none", async () => {
+            const designer = makeDesigner();
+            mocks.createDesigner.mockResolvedValue(designer);
+
+            boot(makeHost(untagged()));
+            await drainAsyncWork();
+
+            expect(designer.setFavouriteBpmnElements).not.toHaveBeenCalled();
+        });
+
+        it("creates the designer of a Design → View → Design switch with the favourites", async () => {
+            const second = makeDesigner();
+            mocks.createDesigner
+                .mockResolvedValueOnce(makeDesigner())
+                .mockResolvedValueOnce(second);
+            mocks.createViewer.mockResolvedValue(makeViewer());
+
+            boot(makeSettingsHost(untagged()));
+            await drainAsyncWork();
+            viewButton().click();
+            await drainAsyncWork();
+            designButton().click();
+            await drainAsyncWork();
+
+            expect(mocks.createDesigner).toHaveBeenCalledTimes(2);
+            expect(mocks.createDesigner.mock.calls[1][1]).toMatchObject({
+                favouriteBpmnElements: ["bpmn:UserTask"],
+            });
+            expect(second.setFavouriteBpmnElements).not.toHaveBeenCalled();
+        });
+
+        it("applies favourites pushed while the rebuilt designer initialises", async () => {
+            mocks.savedMode = "view";
+            const designer = makeDesigner();
+            let finishDesignerInit!: () => void;
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            mocks.createDesigner.mockReturnValueOnce(
+                new Promise((resolve) => {
+                    finishDesignerInit = () => resolve(designer);
+                }),
+            );
+
+            boot(makeSettingsHost(untagged()));
+            await drainAsyncWork();
+            designButton().click();
+            await drainAsyncWork();
+            expect(mocks.createDesigner.mock.calls[0][1]).toMatchObject({
+                favouriteBpmnElements: ["bpmn:UserTask"],
+            });
+            dispatch(new BpmnModelerSettingQuery(pushedSettings));
+            finishDesignerInit();
+            await drainAsyncWork();
+
+            expect(designer.setFavouriteBpmnElements).toHaveBeenCalledExactlyOnceWith([
+                "bpmn:ServiceTask",
+            ]);
+        });
+
+        it("keeps handing a modeler its favourites through setSettings", async () => {
+            const setFavouriteBpmnElements = vi.fn();
+            const modeler = makeModeler({ setFavouriteBpmnElements });
+            mocks.createModeler.mockResolvedValue(modeler);
+
+            boot(makeSettingsHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+            await drainAsyncWork();
+            dispatch(new BpmnModelerSettingQuery(pushedSettings));
+            await drainMicrotasks();
+
+            expect(modeler.setSettings.mock.calls).toEqual([[hostSettings], [pushedSettings]]);
+            expect(setFavouriteBpmnElements).not.toHaveBeenCalled();
         });
     });
 

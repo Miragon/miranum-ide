@@ -790,8 +790,10 @@ function startSession(
                     loadDesignerModule(),
                     lintingOptions(),
                 ]);
-                return createDesigner(container, {
+                const settingsAtCreation = hostModelerState.settings;
+                const designer = await createDesigner(container, {
                     theme,
+                    favouriteBpmnElements: settingsAtCreation?.favouriteBpmnElements,
                     propertiesPanel: { parent: mountEl },
                     clipboard,
                     capabilities: {
@@ -801,6 +803,9 @@ function startSession(
                     additionalModules: extraModules,
                     ...linting,
                 });
+                // A push during the async init only reached the previous surface.
+                hostModelerState.applyFavouritesPushedSince(settingsAtCreation, designer);
+                return designer;
             },
             implement: async ({ container, theme, mode, engine: ctxEngine }) => {
                 if (ctxEngine === undefined) {
@@ -1385,10 +1390,13 @@ function startSession(
                     // instance theme off the VS Code `<body>`-class watcher here,
                     // because the package's setSettings does not apply `colorTheme`.
                     themeAdapter?.setMode(query.setting.colorTheme);
-                    // Theme always applies (page scope); the modeler-only settings
-                    // (align, favourites, …) only reach a modeler surface.
+                    // Theme always applies (page scope); of the rest, the designer
+                    // honours only the favourites and the viewer nothing.
+                    const favourites = query.setting.favouriteBpmnElements;
                     if (isModelerHandle(surface)) {
                         surface.setSettings(query.setting);
+                    } else if (isEditableHandle(surface) && favourites) {
+                        surface.setFavouriteBpmnElements(favourites);
                     }
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
