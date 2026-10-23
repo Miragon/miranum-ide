@@ -317,6 +317,15 @@ describe("BpmnModeler open script tabs on a freshly created modeler", () => {
             content: undefined,
         });
     });
+
+    it("keeps tabs applied before a failed first import open", async () => {
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        await expect(modeler.loadDiagram("<not-bpmn")).rejects.toThrow();
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        expect(scriptingPort.scriptSourceChanged).not.toHaveBeenCalled();
+    });
 });
 
 describe("BpmnModeler element templates", () => {

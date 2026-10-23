@@ -221,6 +221,16 @@ describe("ScriptSourceWatcher", () => {
         expect(fired).toEqual([REF_GONE]);
     });
 
+    it("keeps tabs broadcast before a failed first import open", () => {
+        elements.clear();
+        store.set([REF]);
+
+        eventBus.fire("import.done", { error: new Error("unparsable XML") });
+        store.set([REF]);
+
+        expect(fired).toEqual([]);
+    });
+
     it("drops baselines for scripts whose editor closed", () => {
         store.set([REF]);
         store.set([]);
