@@ -2220,8 +2220,21 @@ describe("bootstrap mode switching", () => {
 
         const stateManagerAt = (index: number) =>
             mocks.stateManagerCreated.mock.calls[index][0] as {
+                captureViewState: ReturnType<typeof vi.fn>;
                 applyViewState: ReturnType<typeof vi.fn>;
             };
+
+        function hidePage(): void {
+            Object.defineProperty(document, "visibilityState", {
+                configurable: true,
+                value: "hidden",
+            });
+            document.dispatchEvent(new Event("visibilitychange"));
+            Object.defineProperty(document, "visibilityState", {
+                configurable: true,
+                value: "visible",
+            });
+        }
 
         it("ignores a host document older than the latest revision", async () => {
             const { modeler, edit } = makeEditableModeler();
@@ -2265,6 +2278,52 @@ describe("bootstrap mode switching", () => {
             await drainAsyncWork();
 
             expect(sentOfType(host, "SyncDocumentCommand")).toEqual([]);
+        });
+
+        it("drops a pending edit when a host update arrives", async () => {
+            const { modeler, change } = makeEditableModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            change();
+            dispatch(new BpmnFileQuery("<pushed />", "c7", "modeler", 2));
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram).toHaveBeenLastCalledWith("<pushed />");
+            expect(modeler.exportDiagram).not.toHaveBeenCalled();
+            expect(sentOfType(host, "SyncDocumentCommand")).toEqual([]);
+        });
+
+        it("drops an edit flushed while a host update waits to import", async () => {
+            const { modeler, change } = makeEditableModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            dispatch(new BpmnFileQuery("<pushed />", "c7", "modeler", 2));
+            change();
+            hidePage();
+            await drainMicrotasks();
+            expect(modeler.exportDiagram).toHaveBeenCalledOnce();
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram).toHaveBeenLastCalledWith("<pushed />");
+            expect(sentOfType(host, "SyncDocumentCommand")).toEqual([]);
+        });
+
+        it("imports every push from a host that sends no revisions", async () => {
+            const modeler = makeModeler();
+            mocks.createModeler.mockResolvedValue(modeler);
+            boot(makeHost(new BpmnFileQuery("<first />", "c7")));
+            await drainAsyncWork();
+
+            dispatch(new BpmnFileQuery("<second />", "c7"));
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram.mock.calls).toEqual([["<first />"], ["<second />"]]);
         });
 
         it("syncs an edit to the host with the revision it was based on", async () => {
@@ -2354,6 +2413,25 @@ describe("bootstrap mode switching", () => {
             expect(document.body.inert).toBe(true);
         });
 
+        it("drains the sync an align-to-origin pass schedules before replying to a flush", async () => {
+            const { modeler, change } = makeEditableModeler();
+            modeler.alignElementsToOrigin.mockImplementationOnce(change);
+            mocks.createModeler.mockResolvedValue(modeler);
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            change();
+            dispatch(new FlushDocumentQuery(5, true));
+            await drainAsyncWork();
+
+            expect(
+                sentTypes(host).filter((type) =>
+                    ["SyncDocumentCommand", "DocumentFlushedCommand"].includes(type),
+                ),
+            ).toEqual(["SyncDocumentCommand", "SyncDocumentCommand", "DocumentFlushedCommand"]);
+        });
+
         it("syncs a pending edit before a mode switch destroys the surface", async () => {
             const { modeler, change } = makeEditableModeler();
             mocks.createModeler.mockResolvedValue(modeler);
@@ -2394,7 +2472,7 @@ describe("bootstrap mode switching", () => {
             ]);
         });
 
-        it("restores the captured view state after a host re-import", async () => {
+        it("captures the view before a host re-import and restores it after", async () => {
             const modeler = makeModeler();
             mocks.createModeler.mockResolvedValue(modeler);
             boot(makeHost(tagged()));
@@ -2408,7 +2486,11 @@ describe("bootstrap mode switching", () => {
             expect(stateManager.applyViewState).toHaveBeenCalledExactlyOnceWith(
                 mocks.viewStateSnapshot,
             );
-            expect(modeler.loadDiagram.mock.invocationCallOrder[1]).toBeLessThan(
+            const reimportOrder = modeler.loadDiagram.mock.invocationCallOrder[1];
+            expect(stateManager.captureViewState.mock.invocationCallOrder[0]).toBeLessThan(
+                reimportOrder,
+            );
+            expect(reimportOrder).toBeLessThan(
                 stateManager.applyViewState.mock.invocationCallOrder[0],
             );
         });
@@ -2593,12 +2675,31 @@ describe("bootstrap mode switching", () => {
             expect(modeler.destroy).toHaveBeenCalledOnce();
             expect(mocks.reload).toHaveBeenCalledOnce();
         });
+
+        it("answers only flush requests while the reload is pending", async () => {
+            mocks.createModeler.mockResolvedValue(makeModeler());
+            const host = makeHost(tagged("c7"));
+            bootReloadable(host);
+            await drainAsyncWork();
+            dispatch(new BpmnFileQuery("<c8 />", "c8", "modeler", 2));
+            await drainAsyncWork();
+            host.postMessage.mockClear();
+
+            dispatch(new GetDiagramAsSVGCommand());
+            dispatch(new FlushDocumentQuery(9, true));
+            await drainAsyncWork();
+
+            expect(sentOfType(host, "GetDiagramAsSVGCommand")).toEqual([]);
+            expect(sentOfType(host, "DocumentFlushedCommand")).toEqual([
+                expect.objectContaining({ token: 9, status: "unavailable" }),
+            ]);
+        });
     });
 
     describe("diff pane", () => {
         const deliverToSession = (data: unknown): Promise<unknown> =>
             Promise.all(
-                windowAddEventListener.mock.calls
+                (windowAddEventListener.mock.calls as Array<[string, unknown]>)
                     .filter(([type]) => type === "message")
                     .map(([, listener]) =>
                         (listener as (event: MessageEvent) => unknown)(
@@ -2615,7 +2716,7 @@ describe("bootstrap mode switching", () => {
                     new BpmnModelerSettingQuery({
                         alignToOrigin: false,
                         showTransactionBoundaries: false,
-                        colorTheme: "dark",
+                        colorTheme: "light",
                     }),
             ],
             ["ElementTemplatesQuery", () => new ElementTemplatesQuery([])],
