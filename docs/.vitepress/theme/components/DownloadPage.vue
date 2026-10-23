@@ -108,7 +108,8 @@ async function copyHomebrew() {
 
 <template>
     <main class="dl-page">
-        <section aria-label="Downloads">
+        <h1 id="dl-title" class="dl-h1">Download</h1>
+        <section aria-labelledby="dl-title">
             <ul class="dl-list">
                 <li v-for="platform in platforms" :key="`${platform.name} ${platform.format}`" class="dl-row">
                     <span class="dl-icon-sq"><component :is="platform.icon" /></span>

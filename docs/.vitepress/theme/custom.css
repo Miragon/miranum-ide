@@ -7,6 +7,46 @@
     line-height: 20px;
 }
 
+/* The header spans the full width and the sidebar starts below it, so the product name takes the
+   space it needs instead of the sidebar's fixed width. */
+@media (min-width: 960px) {
+    :root .Layout .VPNavBar.has-sidebar {
+        background-color: var(--vp-nav-bg-color);
+    }
+    :root .Layout .VPNavBar.has-sidebar .title {
+        position: static;
+        width: auto;
+        padding-right: 0;
+    }
+    :root .Layout .VPNavBarTitle.has-sidebar .title {
+        border-bottom-color: transparent;
+    }
+    :root .Layout .VPNavBar.has-sidebar .content {
+        padding-left: 0;
+    }
+    :root .Layout .VPNavBar.has-sidebar .divider {
+        padding-left: 0;
+    }
+    :root .Layout .VPSidebar {
+        top: calc(var(--vp-layout-top-height, 0px) + var(--vp-nav-height));
+        padding-top: 0;
+    }
+    :root .Layout .VPSidebar .curtain {
+        display: none;
+    }
+}
+@media (min-width: 1440px) {
+    :root .Layout .VPNavBar.has-sidebar .title {
+        width: auto;
+    }
+    :root .Layout .VPNavBar.has-sidebar .content {
+        padding-left: 0;
+    }
+    :root .Layout .VPNavBar.has-sidebar .divider {
+        padding-left: 0;
+    }
+}
+
 /* Screenshots and diagrams: a light card in both modes. */
 .vp-doc .shot {
     margin: 24px 0;

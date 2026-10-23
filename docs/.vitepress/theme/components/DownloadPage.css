@@ -9,6 +9,14 @@
     color: var(--cd-ui-text);
 }
 
+.dl-h1 {
+    margin: 0 0 var(--cd-space-4);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
 .dl-link {
     color: var(--cd-ui-link);
     font-weight: 500;
@@ -146,6 +154,13 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
+}
+
+@media (max-width: 767px) {
+    .dl-h1 {
+        font-size: 32px;
+        line-height: 1.15;
+    }
 }
 
 @media (max-width: 640px) {

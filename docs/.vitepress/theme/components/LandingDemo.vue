@@ -159,15 +159,11 @@ const Icon: FunctionalComponent<{ name: IconName }> = ({ name }) =>
 Icon.props = ["name"];
 
 const STEPS = [
-    { name: "Model", text: "Append the next step from the canvas.", link: "/vscode/features/append-menu" },
-    { name: "Simulate", text: "Run a token through every path.", link: "/vscode/features/token-simulation" },
-    {
-        name: "Code",
-        text: "Jump from a task to its code, DMN or form.",
-        link: "/vscode/features/code-navigation",
-    },
-    { name: "Review", text: "See a Git change side by side.", link: "/vscode/features/bpmn-diff" },
-    { name: "Deploy", text: "Deploy and start an instance.", link: "/vscode/features/deployment" },
+    { name: "Model", text: "Append the next step from the canvas." },
+    { name: "Simulate", text: "Run a token through every path." },
+    { name: "Code", text: "Jump from a task to its code, DMN or form." },
+    { name: "Review", text: "See a Git change side by side." },
+    { name: "Deploy", text: "Deploy and start an instance." },
 ];
 
 const MENU_ITEMS: { label: string; icon: IconName; template?: boolean }[] = [
@@ -476,10 +472,6 @@ function play(index: number) {
     }
     beat.steps.forEach(([ms, step]) => later(step, ms));
     later(() => play((index + 1) % BEATS.length), beat.ms);
-}
-
-function onStepClick(index: number, event: MouseEvent) {
-    if (!(event.target as HTMLElement).closest("a")) play(index);
 }
 
 // Throttled background timers must not replay late, so a hidden page pauses and a visible one
@@ -1082,7 +1074,7 @@ onBeforeUnmount(() => {
                     'is-active': index === activeStep,
                     'is-running': index === activeStep && run.duration > 0,
                 }"
-                @click="onStepClick(index, $event)"
+                @click="play(index)"
             >
                 <span class="track"
                     ><span
@@ -1101,9 +1093,7 @@ onBeforeUnmount(() => {
                         0{{ index + 1 }}
                     </button></span
                 >
-                <h2>
-                    <a :href="withBase(step.link)">{{ step.name }}</a>
-                </h2>
+                <h2>{{ step.name }}</h2>
                 <p>{{ step.text }}</p>
             </li>
         </ol>
@@ -1221,18 +1211,11 @@ code {
     line-height: 1.3;
     font-weight: 600;
     letter-spacing: normal;
-}
-.loop-step h2 a {
     color: var(--cd-ui-text);
-    text-decoration: none;
     transition: color 250ms var(--cd-ease);
 }
-.loop-step.is-done h2 a {
+.loop-step.is-done h2 {
     color: var(--cd-ui-text-leise);
-}
-.loop-step h2 a:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
 }
 .loop-step p {
     margin: 0;
