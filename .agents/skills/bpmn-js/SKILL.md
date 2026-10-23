@@ -83,8 +83,8 @@ bpmn-js events use a priority system. Higher priority listeners fire first and c
 
 Copy-paste in this project operates at three distinct layers. The **default is
 the native browser clipboard** — the engine stacks and the designer register
-`bpmn-js-native-copy-paste`'s `NativeCopyPaste`, so a plain browser (the demo,
-`serve`) needs nothing extra (#1374). The first two layers below are the
+`bpmn-js-native-copy-paste`'s `NativeCopyPaste`, so a plain browser (the webview
+`serve` preview) needs nothing extra (#1374). The first two layers below are the
 **host-bridge override**: bpmn-js DI modules in the shared `libs/bpmn-clipboard`
 package (`@miragon/bpmn-modeler-clipboard`), built by its `createClipboardModules({
 element, text? })` factory and registered only when the webview can't reach the

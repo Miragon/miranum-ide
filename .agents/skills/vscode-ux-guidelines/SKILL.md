@@ -184,9 +184,9 @@ the FEEL/contenteditable polyfill off `text ?? bridge`; `BpmnDesigner`
 (`packages/bpmn-modeler/src/design/designer.ts`) does the same.
 
 bootstrap passes no `clipboard` option (native path) for dev builds and for a
-`clipboard: "native"` caller; a real host gets the protocol bridge above. The
-demo skips bootstrap and calls `createModeler` without a `clipboard` option,
-which is the native path too. The single-bridge public override (`clipboard: { bridge }`) maps onto both
+`clipboard: "native"` caller; a real host gets the protocol bridge above. A
+consumer calling `createModeler` without a `clipboard` option gets the native
+path too. The single-bridge public override (`clipboard: { bridge }`) maps onto both
 channels because `createClipboardModules` defaults `text` to `element`.
 
 ## Webview Theming

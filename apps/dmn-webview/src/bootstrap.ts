@@ -45,7 +45,7 @@ import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { WebviewState } from "./webviewState";
 
 /**
- * Injection seam for the entry (real or demo). `theme`/`locale` seed the initial
+ * Injection seam for the entry. `theme`/`locale` seed the initial
  * mode; `additionalModules` lets the dev entry register per-view didi modules
  * (the translate-harvest recorder) without touching the production path.
  */
@@ -55,7 +55,7 @@ interface BootstrapOptions {
     additionalModules?: DmnAdditionalModules;
 }
 
-// Injected by bootstrap(); the app/demo entry chooses the concrete host and,
+// Injected by bootstrap(); the entry chooses the concrete host and,
 // optionally, seeds the initial theme mode / locale.
 let host: HostApi<WebviewState, Command | Query>;
 let bootstrapOpts: BootstrapOptions = {};
@@ -219,7 +219,7 @@ async function run(): Promise<void> {
     });
 
     // Drive the mode only after the instance exists so a forced `opts.theme`
-    // (the demo, which never gets a settings reply) actually reaches
+    // (an entry that never gets a settings reply) actually reaches
     // `modeler.setTheme`; "automatic" reproduces today's follow-the-IDE
     // behaviour and installs the live `<body>`-class observer.
     themeAdapter.setMode(bootstrapOpts.theme ?? "automatic");
@@ -403,9 +403,9 @@ async function onReceiveMessage(message: MessageEvent<Query | Command>) {
 }
 
 /**
- * Starts the DMN webview against the given host. The entry (real or demo)
- * chooses the host and, optionally, the initial theme mode / locale — the demo
- * seeds them directly since it has no host settings reply to wait on.
+ * Starts the DMN webview against the given host. The entry chooses the host
+ * and, optionally, seeds the initial theme mode / locale when it has no host
+ * settings reply to wait on.
  */
 export function bootstrap(
     injectedHost: HostApi<WebviewState, Command | Query>,
