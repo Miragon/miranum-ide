@@ -71,6 +71,8 @@ export function findListenerAt(
  * listener carries them on its nested `camunda:Script`. `undefined` means the
  * addressed surface has no inline script to write to — mirroring
  * {@link readScriptContent}, which reports the same surfaces as absent.
+ * modeler-core's `resolveScriptBodyTarget` mirrors the content half for the
+ * host-side XML fallback; keep the two in step.
  */
 export function resolveScriptWriteTarget(
     bo: ScriptTaskBusinessObject,
