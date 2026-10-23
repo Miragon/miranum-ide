@@ -13,6 +13,7 @@ import {
     LogWarningCommand,
     PropertiesPanelStateQuery,
     Query,
+    SyncDocumentCommand,
     TakeFocusQuery,
     HostApi,
     HostApiImpl,
@@ -97,10 +98,16 @@ class MockHost extends MockHostApi<StateType, MessageType> {
                 dispatchEvent(new TakeFocusQuery());
                 break;
             }
+            case message.type === "SyncDocumentCommand": {
+                // No document to persist in standalone browser runs.
+                console.debug(
+                    "[DEBUG] SyncDocumentCommand",
+                    (message as SyncDocumentCommand).content,
+                );
+                break;
+            }
             // The webview forwards log entries to the host; in a standalone
             // browser run there's no host, so mirror them onto the dev console.
-            // Cases are required because the base MockHost throws on unknown
-            // types — and the global error listeners now emit LogErrorCommand.
             case message.type === "LogDebugCommand": {
                 console.debug((message as LogDebugCommand).message);
                 break;
