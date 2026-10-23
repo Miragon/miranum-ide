@@ -122,7 +122,7 @@ The BPMN `WebviewMessageRouter` dispatches incoming `GetClipboardCommand` / `Set
 The webview runs two **bpmn-js DI modules** (from the shared
 `libs/bpmn-clipboard` package, `@miragon/bpmn-modeler-clipboard`) because diagram
 elements and contenteditable labels have different event handling. The webview
-only supplies the `clipboard` option (`apps/bpmn-webview/src/bootstrap.ts`);
+only supplies the `clipboard` option (`apps/bpmn-webview/src/session/protocolClipboard.ts`);
 `@miragon/bpmn-modeler` builds the DI modules from it via
 `createClipboardModules` in `packages/bpmn-modeler/src/modeler.ts`. Each module
 receives its host bridge through didi value injection — a `{ requestClipboard,
@@ -156,26 +156,27 @@ installed by `@miragon/bpmn-modeler` from the `clipboard` option).
 ### Wiring (bridge override only)
 
 The native browser clipboard is the default (#1374); the bridge modules are only
-built when the webview can't reach the system clipboard. `apps/bpmn-webview/src/bootstrap.ts`
-wires the bridges with a promise-based resolver pattern into a `ClipboardOptions`
-value and passes it as `clipboard` to `createModeler` / `createDesigner`:
+built when the webview can't reach the system clipboard.
+`resolveClipboard` (`apps/bpmn-webview/src/session/protocolClipboard.ts`) wires
+one host channel per clipboard with a promise-based resolver pattern into a
+`ClipboardOptions` value. bootstrap passes it as `clipboard` to `createModeler` /
+`createDesigner` and routes each `ClipboardQuery` / `TextClipboardQuery` reply to
+its channel:
 
 ```typescript
-const requestElementClipboard = async (): Promise<string> => {
-    elementClipboardResolver = createResolver<ClipboardQuery>();
-    host.postMessage(new GetClipboardCommand());
-    // Unanswered after HOST_REPLY_TIMEOUT_MS: logs a warning and pastes nothing.
-    return pastedText(await elementClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
+let pendingReply = createResolver<Reply>();
+const bridge: ClipboardBridge = {
+    requestClipboard: async () => {
+        pendingReply = createResolver<Reply>();
+        host.postMessage(commands.request()); // GetClipboardCommand / GetTextClipboardCommand
+        // Unanswered after HOST_REPLY_TIMEOUT_MS: logs a warning and pastes nothing.
+        return pastedText(await pendingReply.wait(HOST_REPLY_TIMEOUT_MS));
+    },
+    writeClipboard: (text) => host.postMessage(commands.write(text)), // Set(Text)ClipboardCommand
 };
-const writeElementClipboard = (text: string): void => {
-    host.postMessage(new SetClipboardCommand(text));
-};
-// (text bridge mirrors this with the *Text* commands / TextClipboardQuery)
+const receive = (reply: Reply) => pendingReply.done(reply);
 
-clipboard = {
-    bridge: { requestClipboard: requestElementClipboard, writeClipboard: writeElementClipboard },
-    text: { requestClipboard: requestTextClipboard, writeClipboard: writeTextClipboard },
-};
+options = { bridge: elementChannel.bridge, text: textChannel.bridge };
 ```
 
 `BpmnModeler.init()` turns that into
@@ -183,8 +184,8 @@ clipboard = {
 the FEEL/contenteditable polyfill off `text ?? bridge`; `BpmnDesigner`
 (`packages/bpmn-modeler/src/design/designer.ts`) does the same.
 
-bootstrap passes no `clipboard` option (native path) for dev builds and for a
-`clipboard: "native"` caller; a real host gets the protocol bridge above. A
+`resolveClipboard` returns no `clipboard` option (native path) for dev builds and
+for a `clipboard: "native"` caller; a real host gets the protocol bridge above. A
 consumer calling `createModeler` without a `clipboard` option gets the native
 path too. The single-bridge public override (`clipboard: { bridge }`) maps onto both
 channels because `createClipboardModules` defaults `text` to `element`.
