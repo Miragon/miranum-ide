@@ -72,7 +72,7 @@ function checkTarget(id, target) {
     if (target.typecheck && !manifest.scripts?.[target.typecheck]) {
         problems.push(`${id}: typecheck script "${target.typecheck}" is missing`);
     }
-    // No other CI job runs a typecheck-only build.
+    // Most typecheck-only builds run in no other CI job.
     if (!target.typecheck && TYPECHECK_ONLY_SCRIPT.test(manifest.scripts?.build ?? "")) {
         problems.push(`${id}: the "build" script only typechecks; set "typecheck": "build"`);
     }

@@ -135,8 +135,8 @@ runs in the lint job and pre-push. It fails when a workspace with a Vitest
 config is not a target, when a target does not declare the Vitest packages its
 focused install needs (including Vitest's `vite` peer), when its trigger
 paths miss a workspace or file its tests import, or when its `build` script
-only runs `tsc --noEmit` but the target names no `typecheck`, since no other CI
-job runs it. Before the registry, each workspace needed a hand-written job,
+only runs `tsc --noEmit` but the target names no `typecheck` (most such builds
+run in no other CI job). Before the registry, each workspace needed a hand-written job,
 filter and `ci.needs` entry, and twelve workspaces' specs never ran in CI.
 
 Only `<id>-src` matches upload coverage, so the release-please PR (changelogs,
