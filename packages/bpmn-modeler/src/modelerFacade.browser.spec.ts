@@ -6,7 +6,7 @@ import type { LintConfigService } from "./bpmnlint/LintConfigService";
 import { createModeler } from "./createModeler";
 import type { BpmnModeler } from "./modeler";
 import { C7_SCRIPTS_XML, FAR_FROM_ORIGIN_XML } from "./__fixtures__/bpmnXml";
-import { mountWithPanel, removeMounts } from "./__fixtures__/surfaceMount";
+import { animationFrames, mountWithPanel, removeMounts, wait } from "./__fixtures__/surfaceMount";
 
 /**
  * The modeler-only facade methods the webview bootstrap wires to host commands
@@ -14,6 +14,11 @@ import { mountWithPanel, removeMounts } from "./__fixtures__/surfaceMount";
  * resolve stringly-named DI services of the real engine stack, which jsdom
  * cannot stand up, so they run against a real modeler here.
  */
+
+const SCRIPT_TASK_MORPHED_XML = C7_SCRIPTS_XML.replace(
+    /<bpmn:scriptTask id="ScriptTask_1"[\s\S]*?<\/bpmn:scriptTask>/,
+    '<bpmn:userTask id="ScriptTask_1" />',
+);
 
 interface FlowElement {
     id: string;
@@ -235,6 +240,91 @@ describe("BpmnModeler host pushes without the matching capability", () => {
         expect(consoleMessages).toEqual(expectedWarnings);
 
         modeler.destroy();
+    });
+});
+
+describe("BpmnModeler open script tabs on a freshly created modeler", () => {
+    const scriptingPort = {
+        openScriptEditor: vi.fn(),
+        scriptSourceChanged: vi.fn(),
+    } satisfies InlineScriptingPort;
+    const scriptTaskTab = {
+        elementId: "ScriptTask_1",
+        kind: "script-task",
+        listenerIndex: undefined,
+        fileName: "ScriptTask_1.groovy",
+    } as const;
+    let modeler: BpmnModeler;
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+        const { container, panel } = mountWithPanel();
+        modeler = await createModeler(container, {
+            engine: "c7",
+            propertiesPanel: { parent: panel },
+            capabilities: { scripting: scriptingPort },
+            linting: false,
+        });
+    });
+
+    afterEach(async () => {
+        // Tearing down before the panel's after-paint effects trips them on a destroyed canvas.
+        await animationFrames(1);
+        await wait(0);
+        modeler.destroy();
+        removeMounts();
+    });
+
+    it("closes the tab of a script task that changed type while the webview was hidden", async () => {
+        // A rebuilt webview imports the current XML before the host re-broadcasts its open tabs.
+        await modeler.loadDiagram(SCRIPT_TASK_MORPHED_XML);
+
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        expect(scriptingPort.scriptSourceChanged).toHaveBeenCalledExactlyOnceWith({
+            elementId: "ScriptTask_1",
+            kind: "script-task",
+            listenerIndex: undefined,
+            content: undefined,
+        });
+    });
+
+    it("judges tabs applied before the first import against the imported diagram", async () => {
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        await modeler.loadDiagram(C7_SCRIPTS_XML);
+        expect(scriptingPort.scriptSourceChanged).not.toHaveBeenCalled();
+
+        modeler.updateScriptContent("ScriptTask_1", "script-task", undefined, "x = 2");
+        modeler.getService("commandStack").undo();
+        expect(scriptingPort.scriptSourceChanged).toHaveBeenCalledExactlyOnceWith({
+            elementId: "ScriptTask_1",
+            kind: "script-task",
+            listenerIndex: undefined,
+            content: "x = 1",
+        });
+    });
+
+    it("closes a tab applied before the first import when the imported diagram lacks it", async () => {
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        await modeler.loadDiagram(SCRIPT_TASK_MORPHED_XML);
+
+        expect(scriptingPort.scriptSourceChanged).toHaveBeenCalledExactlyOnceWith({
+            elementId: "ScriptTask_1",
+            kind: "script-task",
+            listenerIndex: undefined,
+            content: undefined,
+        });
+    });
+
+    it("keeps tabs applied before a failed first import open", async () => {
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        await expect(modeler.loadDiagram("<not-bpmn")).rejects.toThrow();
+        modeler.applyOpenScriptEditors([scriptTaskTab]);
+
+        expect(scriptingPort.scriptSourceChanged).not.toHaveBeenCalled();
     });
 });
 
