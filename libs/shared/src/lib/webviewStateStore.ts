@@ -1,6 +1,9 @@
 import type { HostApi } from "./host";
 
-export type WebviewStateHost<T> = Pick<HostApi<T, unknown>, "getState" | "setState" | "updateState">;
+export type WebviewStateHost<T> = Pick<
+    HostApi<T, unknown>,
+    "getState" | "setState" | "updateState"
+>;
 
 /**
  * Persisted webview state where "nothing saved yet" is a normal value rather

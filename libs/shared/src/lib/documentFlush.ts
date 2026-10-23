@@ -1,8 +1,4 @@
-import {
-    DocumentFlushedCommand,
-    FlushDocumentQuery,
-    ReleaseDocumentFlushQuery,
-} from "./messages";
+import { DocumentFlushedCommand, FlushDocumentQuery, ReleaseDocumentFlushQuery } from "./messages";
 
 /**
  * The webview-side capabilities the flush responder drives, named in domain
