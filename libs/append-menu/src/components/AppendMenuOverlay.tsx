@@ -34,7 +34,8 @@ import {
     type Highlight,
     type NavColumns,
 } from "../navigation";
-import { clampToCanvas } from "../positioning";
+import { clampToCanvas, type CanvasBounds } from "../positioning";
+import { offersTypePick } from "../templateTypeAction";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
 
@@ -44,7 +45,7 @@ interface AppendMenuOverlayProps {
     favourites: string[];
     translate: Translate;
     position: { x: number; y: number };
-    canvasBounds: { right: number; bottom: number };
+    canvasBounds: CanvasBounds;
     onSelect: (action: PopupMenuEntryAction | undefined, event: Event) => void;
     onTemplateTypeSelect: (
         template: ElementTemplate,
@@ -213,13 +214,11 @@ export function AppendMenuOverlay({
         return () => document.removeEventListener("keydown", handleKey, true);
     }, [onCancel]);
 
-    // Single-type templates apply immediately; multi-type ones become selected
-    // so the palette can be filtered (see the selection effect).
+    // Templates offering a type pick become selected so the palette can be
+    // filtered (see the selection effect); all others apply immediately.
     const handleTemplateClick = useCallback(
         (enriched: EnrichedTemplateEntry, event: Event) => {
-            const appliesTo = enriched.template?.appliesTo ?? [];
-
-            if (appliesTo.length <= 1) {
+            if (!offersTypePick(enriched.template)) {
                 onSelect(enriched.entry.action, event);
             } else {
                 setSelectedTemplate(enriched);
@@ -237,11 +236,7 @@ export function AppendMenuOverlay({
     const handleBpmnSelect = useCallback(
         (item: { id: string; entry: PopupMenuEntry }, event: Event) => {
             if (selectedTemplate?.template) {
-                const bpmnType = resolveSelectedType(
-                    item.id,
-                    item.entry.label,
-                    selectedTemplate.template.appliesTo,
-                );
+                const bpmnType = resolveSelectedType(item.id, selectedTemplate.template.appliesTo);
                 if (bpmnType) {
                     onTemplateTypeSelect(
                         selectedTemplate.template,
