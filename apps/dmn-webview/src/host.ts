@@ -108,8 +108,6 @@ class MockHost extends MockHostApi<StateType, MessageType> {
             }
             // The webview forwards log entries to the host; in a standalone
             // browser run there's no host, so mirror them onto the dev console.
-            // Cases are required because the base MockHost throws on unknown
-            // types — and the global error listeners now emit LogErrorCommand.
             case message.type === "LogDebugCommand": {
                 console.debug((message as LogDebugCommand).message);
                 break;
