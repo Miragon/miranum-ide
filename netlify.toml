@@ -1,0 +1,4 @@
+# The browser demo is gone, but the Netlify site still builds every pull request until someone
+# unlinks it in Netlify. Skipping the build turns its checks from failed into canceled.
+[build]
+  ignore = "exit 0"
