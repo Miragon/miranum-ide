@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { LintResults } from "@miragon/bpmn-modeler-types";
+import { NoModelerError, type LintResults } from "@miragon/bpmn-modeler-types";
 
 import type { LintConfigService } from "./bpmnlint/LintConfigService";
 import { createLintHandleMethods, type LintHandleMethods } from "./lintHandle";
@@ -64,6 +64,19 @@ describe("createLintHandleMethods", () => {
             expect(warn).toHaveBeenCalledExactlyOnceWith(
                 `${method} ignored: this surface was created without a lint module`,
             );
+        },
+    );
+
+    it.each(HOST_PUSHES)(
+        "lets a destroyed surface's NoModelerError through from $method",
+        ({ push }) => {
+            const warn = vi.fn();
+            const handle = createLintHandleMethods(() => {
+                throw new NoModelerError();
+            }, warn);
+
+            expect(() => push(handle)).toThrow(NoModelerError);
+            expect(warn).not.toHaveBeenCalled();
         },
     );
 });

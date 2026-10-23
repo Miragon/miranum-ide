@@ -25,7 +25,7 @@ import {
     WorkspaceDefinitionsQuery,
 } from "@miragon/bpmn-modeler-shared";
 import { i18n } from "@miragon/bpmn-modeler-i18n";
-import { UnsupportedEngineError } from "@miragon/bpmn-modeler-types";
+import { NoModelerError, UnsupportedEngineError } from "@miragon/bpmn-modeler-types";
 import type { ClipboardOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
 
 const mocks = vi.hoisted(() => ({
@@ -1736,6 +1736,26 @@ describe("bootstrap mode switching", () => {
             await drainMicrotasks();
 
             expect(modeler.applyLintResults).toHaveBeenCalledWith(results);
+        });
+
+        it("logs a lint push that reaches a destroyed surface instead of throwing", async () => {
+            const host = await bootWith(
+                makeModeler({
+                    applyLintResults: vi.fn(() => {
+                        throw new NoModelerError();
+                    }),
+                }),
+            );
+
+            dispatch(new BpmnlintResultsQuery({}));
+            await drainMicrotasks();
+
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([
+                expect.objectContaining({
+                    message:
+                        "Error receiving message: BpmnlintResultsQuery — Modeler is not initialized!",
+                }),
+            ]);
         });
     });
 

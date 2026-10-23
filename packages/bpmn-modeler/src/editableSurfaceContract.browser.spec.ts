@@ -1,6 +1,7 @@
 import type Modeling from "bpmn-js/lib/features/modeling/Modeling";
 import type EventBus from "diagram-js/lib/core/EventBus";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { NoModelerError } from "@miragon/bpmn-modeler-types";
 
 import { MESSY_LANES_BOUNDARY_SUBPROCESS } from "../../../libs/bpmn-layout/src/__fixtures__/integrationDiagrams";
 import { DIAGRAM_WITH_REAL_GARBAGE } from "../../../libs/bpmn-layout/src/cleanup/__fixtures__/models";
@@ -128,6 +129,25 @@ describe.each(EDITABLE_SURFACES)("$name editable-surface contract", (descriptor)
         );
         warn.mockRestore();
     });
+
+    it.each<{ label: string; linting: SharedOptions["linting"] }>([
+        { label: "without a lint module", linting: false },
+        { label: "with a lint module", linting: { module: lintModule, results: "external" } },
+    ])(
+        "throws NoModelerError from host lint pushes once destroyed, $label",
+        async ({ linting }) => {
+            const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const handle = await open({ linting });
+
+            handle.destroy();
+
+            expect(() => handle.applyLintResults(LINT_RESULTS)).toThrow(NoModelerError);
+            expect(() => handle.applyLintingDisabled()).toThrow(NoModelerError);
+            expect(() => handle.startInPageLinting()).toThrow(NoModelerError);
+            expect(warn).not.toHaveBeenCalled();
+            warn.mockRestore();
+        },
+    );
 
     it("paints host lint pushes and hands linting back to the page", async () => {
         const handle = await open({ linting: { module: lintModule, results: "external" } });

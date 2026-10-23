@@ -357,7 +357,12 @@ export interface BpmnModelerHandle {
      */
     applyViewState(state: ViewState): void;
 
-    /** [A] Tear the instance down and free its bpmn-js DI graph and DOM. */
+    /**
+     * [A] Tear the instance down and free its bpmn-js DI graph and DOM.
+     * Idempotent. Afterwards every other member except `setTheme` throws
+     * {@link NoModelerError} (async members reject with it), including the host
+     * pushes, so a host whose pushes can race teardown must catch it.
+     */
     destroy(): void;
 
     // ── [B] Opinionated built-ins ───────────────────────────────────────────

@@ -239,8 +239,8 @@ export class BpmnViewer {
     /**
      * Tears the instance down: disposes every registered lifecycle resource (the
      * canvas-size observer, focus features, theme controller, and the underlying
-     * bpmn-js viewer) in reverse order. Idempotent. A destroyed facade throws
-     * {@link NoModelerError} from every accessor.
+     * bpmn-js viewer) in reverse order. Idempotent. What the members do
+     * afterwards is the {@link BpmnViewerHandle.destroy} contract.
      */
     destroy(): void {
         this.store.dispose();
