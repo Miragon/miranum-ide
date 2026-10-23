@@ -513,5 +513,23 @@ describe("DMN bootstrap", () => {
 
             await vi.waitFor(() => expect(header.classList.contains("open")).toBe(true));
         });
+
+        it("collapses a default-open group when every group was saved collapsed", async () => {
+            renderShell(`
+                <div class="bio-properties-panel-scroll-container">
+                    <div class="bio-properties-panel-group">
+                        <div class="bio-properties-panel-group-header open"></div>
+                    </div>
+                </div>
+            `);
+            const header = document.querySelector<HTMLElement>(
+                ".bio-properties-panel-group-header",
+            )!;
+            header.addEventListener("click", () => header.classList.toggle("open"));
+
+            await startReady({ savedState: { expandedGroupIndexes: [] } });
+
+            await vi.waitFor(() => expect(header.classList.contains("open")).toBe(false));
+        });
     });
 });
