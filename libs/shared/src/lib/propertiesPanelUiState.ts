@@ -30,10 +30,7 @@ export function hasGroupsOrScrollToRestore(
     return saved?.expandedGroupIndexes != null || saved?.panelScroll != null;
 }
 
-/**
- * Without a saved list the panel keeps its own default expansion; an empty
- * list collapses every group.
- */
+/** Without a saved list the panel keeps its own default expansion. */
 export function groupIndexesToToggle(
     openGroups: readonly boolean[],
     expandedGroupIndexes: readonly number[] | undefined,
