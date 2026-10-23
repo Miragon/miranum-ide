@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { initResizer, type PropertiesPanelResizerOptions } from "./propertiesPanelResizer";
+import {
+    initResizer,
+    type PropertiesPanelHandle,
+    type PropertiesPanelResizerOptions,
+} from "./propertiesPanelResizer";
 
 const OPEN_LABEL = "Open properties panel";
 const CLOSE_LABEL = "Close properties panel";
@@ -27,9 +31,19 @@ function renderPanelMarkup({ width = 300, collapsed = false } = {}): {
     return { resizer, panel };
 }
 
+const liveHandles: PropertiesPanelHandle[] = [];
+
+function createResizer(
+    options: PropertiesPanelResizerOptions = { getToggleLabel: toggleLabels },
+): PropertiesPanelHandle {
+    const handle = initResizer(options);
+    liveHandles.push(handle);
+    return handle;
+}
+
 function setUp(markup: { width?: number; collapsed?: boolean } = {}) {
     const { resizer, panel } = renderPanelMarkup(markup);
-    const handle = initResizer({ getToggleLabel: toggleLabels });
+    const handle = createResizer();
     const visibilityChanges: boolean[] = [];
     handle.onVisibilityChanged((visible) => visibilityChanges.push(visible));
     const toggleButton = resizer.querySelector("button")!;
@@ -56,9 +70,9 @@ function release(): void {
 }
 
 afterEach(() => {
-    // initResizer has no dispose, so end any drag a test left open before the
-    // next test's document listeners join the stale ones.
-    release();
+    for (const handle of liveHandles.splice(0)) {
+        handle.dispose();
+    }
     document.body.replaceChildren();
     document.body.removeAttribute("style");
     vi.restoreAllMocks();
@@ -69,13 +83,14 @@ describe("initResizer", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
         const listener = vi.fn();
 
-        const handle = initResizer({ getToggleLabel: toggleLabels });
+        const handle = createResizer();
         handle.onVisibilityChanged(listener);
         handle.setVisible(false);
 
         expect(handle.isVisible()).toBe(true);
         expect(listener).not.toHaveBeenCalled();
         expect(warn).toHaveBeenCalledTimes(1);
+        expect(() => handle.dispose()).not.toThrow();
     });
 
     it("adopts a host pre-rendered collapsed panel without a spurious notification", () => {
@@ -169,7 +184,7 @@ describe("initResizer", () => {
         renderPanelMarkup();
         let language = "en";
         let reapplyLabel: () => void = () => undefined;
-        initResizer({
+        createResizer({
             getToggleLabel: (state) => `${language}:${state}`,
             onLabelChange: (apply) => {
                 reapplyLabel = apply;
@@ -285,6 +300,79 @@ describe("initResizer", () => {
 
             expect(handle.isVisible()).toBe(false);
             expect(visibilityChanges).toEqual([]);
+        });
+    });
+
+    describe("dispose", () => {
+        it("ends an open drag and ignores later pointer moves", () => {
+            const { resizer, panel, handle } = setUp({ width: 300 });
+            pressAt(resizer, 500);
+
+            handle.dispose();
+            moveTo(400);
+
+            expect(document.body.style.cursor).toBe("");
+            expect(document.body.style.userSelect).toBe("");
+            expect(panel.style.width).toBe("");
+        });
+
+        it("no longer starts a drag from the divider", () => {
+            const { resizer, panel, handle } = setUp({ width: 300 });
+            handle.dispose();
+
+            pressAt(resizer, 500);
+            moveTo(400);
+
+            expect(document.body.style.cursor).toBe("");
+            expect(panel.style.width).toBe("");
+        });
+
+        it("removes the toggle button and leaves it inert", () => {
+            const { resizer, handle, visibilityChanges, toggleButton } = setUp();
+            handle.dispose();
+
+            toggleButton.click();
+
+            expect(resizer.contains(toggleButton)).toBe(false);
+            expect(handle.isVisible()).toBe(true);
+            expect(visibilityChanges).toEqual([]);
+        });
+
+        it("stops notifying visibility listeners", () => {
+            const { handle, visibilityChanges } = setUp();
+            handle.dispose();
+
+            handle.setVisible(false);
+
+            expect(visibilityChanges).toEqual([]);
+        });
+
+        it("unsubscribes from label changes exactly once", () => {
+            renderPanelMarkup();
+            const unsubscribeLabelChange = vi.fn();
+            const handle = createResizer({
+                getToggleLabel: toggleLabels,
+                onLabelChange: () => unsubscribeLabelChange,
+            });
+
+            handle.dispose();
+            handle.dispose();
+
+            expect(unsubscribeLabelChange).toHaveBeenCalledTimes(1);
+        });
+
+        it("lets a new resizer take over the panel in its current state", () => {
+            const { resizer, panel, handle } = setUp({ width: 300 });
+            handle.setVisible(false);
+            handle.dispose();
+
+            const successor = createResizer();
+            pressAt(resizer, 500);
+            moveTo(250);
+
+            expect(resizer.querySelectorAll("button")).toHaveLength(1);
+            expect(successor.isVisible()).toBe(true);
+            expect(panel.style.width).toBe("250px");
         });
     });
 });

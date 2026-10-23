@@ -28,6 +28,7 @@ function panelHandle() {
         isVisible: () => true,
         setVisible,
         onVisibilityChanged: () => undefined,
+        dispose: () => undefined,
     };
     return { handle, setVisible };
 }
