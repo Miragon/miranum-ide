@@ -459,7 +459,13 @@ idempotent LIFO cleanup; internal `createSurface` disposes partial construction
 on failure. A shared initial-viewport policy prevents delayed fit from
 overwriting restored state. These primitives live in `modeler-types` so the
 restricted `/mode` graph and inlined feature libraries can reuse them.
-Post-destroy DiffViewer operations throw `NoModelerError`.
+After `destroy()`, every surface (modeler, designer, viewer, DiffViewer) throws
+`NoModelerError` from each member that reaches the diagram or its services,
+host pushes included; `setTheme` is the one exception and becomes a no-op.
+Host pushes for an optional capability (lint, code-link status, open script
+editors) no-op only when the surface was built without that capability, never
+because it was destroyed: a use-after-destroy bug stays visible, and hosts
+whose pushes can race teardown catch the error.
 
 Editable surfaces share debounced content-out (300 ms, 1000 ms max wait).
 `onContentSaved({ xml })` accepts and awaits `void | Promise<void>`. Catch
@@ -482,7 +488,9 @@ Use [API conformance tests](../../packages/bpmn-modeler/src/publicApi.spec.ts),
 the [design](../../packages/bpmn-modeler/scripts/check-design-pure-entry.mjs)
 and [mode](../../packages/bpmn-modeler/scripts/check-mode-pure-entry.mjs) import
 checks. [Lifecycle browser tests](../../packages/bpmn-modeler/src/lifecycleContract.browser.spec.ts)
-exercise all four surfaces;
+exercise all four surfaces, and the
+[editable-surface contract](../../packages/bpmn-modeler/src/editableSurfaceContract.browser.spec.ts)
+pins that post-destroy lint pushes throw;
 [session tests](../../packages/bpmn-modeler/src/modeSession/modeSession.spec.ts)
 cover transition failures and teardown. The test-environment limits and upstream
 shape gates are recorded in [Engineering practices](engineering-practices.md).

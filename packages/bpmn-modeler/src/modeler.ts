@@ -406,8 +406,9 @@ export class BpmnModeler {
      * Tears the instance down: disposes every registered lifecycle resource (the
      * debounced export, focus features, event subscriptions, mode attributes,
      * theme controller, clipboard polyfill, and the underlying bpmn-js modeler)
-     * in reverse order. Idempotent. A destroyed facade throws
-     * {@link NoModelerError} from every accessor.
+     * in reverse order. Idempotent.
+     *
+     * @see BpmnModelerHandle.destroy
      */
     destroy(): void {
         this.store.dispose();
