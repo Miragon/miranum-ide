@@ -146,9 +146,9 @@ const IMPORT_BOUND_QUERY_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Starts the BPMN webview against the given host. The entry (real or demo)
- * chooses the host, any host-specific bpmn-js modules, and — optionally — the
- * per-feature {@link ModelerCapabilities}. Omitting `capabilities` selects the
+ * Starts the BPMN webview against the given host. The entry chooses the host,
+ * any host-specific bpmn-js modules, and — optionally — the per-feature
+ * {@link ModelerCapabilities}. Omitting `capabilities` selects the
  * full protocol adapter, so every real host keeps all features; passing a
  * partial object turns off the features whose ports it omits.
  */
@@ -189,10 +189,9 @@ export function bootstrap(
  *   (host-pushed) tier that real hosts use.
  * @param injectedClipboard The clipboard tier; `undefined` selects dev-build
  *   native, otherwise the protocol bridge. `"native"` forces the browser
- *   clipboard (demo/browser consumers); `{ bridge }` routes through a
- *   caller-supplied override.
+ *   clipboard; `{ bridge }` routes through a caller-supplied override.
  * @param injectedOnLintResults In-page lint-run sink; only a consumer opting into
- *   in-page linting (the demo) passes one. Real hosts run the linter themselves.
+ *   in-page linting passes one. Real hosts run the linter themselves.
  * @param injectedReload Restarts the containing webview after an engine change.
  */
 function startSession(
@@ -605,7 +604,7 @@ function startSession(
         // - `undefined` (default): in dev (plain-browser `serve`) the native
         //   browser clipboard handles copy/paste, so no option is passed;
         //   otherwise route both channels through the host.
-        // - `"native"`: force the browser clipboard (demo/browser consumers) —
+        // - `"native"`: force the browser clipboard —
         //   no option, no polyfill.
         // - `{ bridge }`: public override — passed through unchanged; the
         //   package uses the single bridge for both element and text surfaces.

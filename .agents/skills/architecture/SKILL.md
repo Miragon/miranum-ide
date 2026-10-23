@@ -20,7 +20,7 @@ verify details against source because older guides and ADRs may be outdated.
 | Public-facing types and browser utilities | `libs/modeler-types`; keep the surface suitable for publication. |
 | Private messages and webview chrome | `libs/shared/src/lib/`; base/sync messages in `messages.ts`, feature payloads in their corresponding files, host channel in `host.ts`. |
 | Host-independent domain logic and services | Feature folders in `libs/modeler-core/src/`; consumers use its `index.ts`. |
-| IDE protocol-to-modeler adaptation | `apps/bpmn-webview/src/bootstrap.ts`, `apps/dmn-webview/src/bootstrap.ts`; direct embedding examples in `apps/demo-webapp`. |
+| IDE protocol-to-modeler adaptation | `apps/bpmn-webview/src/bootstrap.ts`, `apps/dmn-webview/src/bootstrap.ts`. |
 | Form editing and deployment UI | `apps/form-webview`; `apps/deployment-webview`, whose markup lives in `src/app/formTemplate.ts`. |
 | Host integration and lifecycle | `apps/vscode-plugin/src/main.ts` and `src/composition/`; `apps/modeler-bridge/src/bridge.ts` and `src/composition/`; Kotlin host in `apps/intellij-plugin`. |
 
