@@ -485,7 +485,7 @@ abort — the factory rejects with the thrown error and nothing is left mounted.
 | `setMode(mode)` / `getMode()`                                                                  | Switch / read the design-implement mode live (fires `onModeChanged`).                 |
 | `applyLintResults(results)` / `applyLintingDisabled()` / `startInPageLinting(config?, token?)` | Host-driven lint state.                                                               |
 | `getService(name)`                                                                             | Reach a [core service](#core-services--escape-hatch) or the escape hatch.             |
-| `destroy()`                                                                                    | Tear the instance down. Idempotent; every other member except `setTheme` then throws `NoModelerError`, including host pushes. |
+| `destroy()`                                                                                    | Tear the instance down. Idempotent; every other member except the no-op `setTheme` then throws `NoModelerError`, including host pushes. |
 
 ### Surviving design mode
 

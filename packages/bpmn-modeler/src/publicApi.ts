@@ -359,7 +359,7 @@ export interface BpmnModelerHandle {
 
     /**
      * [A] Tear the instance down and free its bpmn-js DI graph and DOM.
-     * Idempotent. Afterwards every other member except `setTheme` throws
+     * Idempotent. Afterwards every other member except the no-op `setTheme` throws
      * {@link NoModelerError} (async members reject with it), including the host
      * pushes, so a host whose pushes can race teardown must catch it.
      */

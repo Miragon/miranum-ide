@@ -161,7 +161,7 @@ export interface BpmnViewerHandle {
 
     /**
      * Tear the instance down and free its bpmn-js DI graph and DOM. Idempotent.
-     * Afterwards every other member except `setTheme` throws
+     * Afterwards every other member except the no-op `setTheme` throws
      * {@link NoModelerError} (async members reject with it).
      */
     destroy(): void;
