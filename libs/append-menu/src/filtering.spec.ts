@@ -57,10 +57,10 @@ describe("extractCategories", () => {
 describe("processPaletteGroups", () => {
     const groups = [
         group("tasks", "Tasks", [
-            ["create.service-task", "Service Task"],
-            ["create.user-task", "User Task"],
+            ["create-service-task", "Service Task"],
+            ["create-user-task", "User Task"],
         ]),
-        group("gateways", "Gateways", [["create.exclusive-gateway", "Exclusive Gateway"]]),
+        group("gateways", "Gateways", [["create-exclusive-gateway", "Exclusive Gateway"]]),
     ];
 
     it("marks nothing disabled or hidden without a filter or search", () => {
@@ -94,14 +94,14 @@ describe("processPaletteGroups", () => {
 });
 
 describe("flattenPaletteItems", () => {
-    const groups = [group("tasks", "Tasks", [["create.service-task", "Service Task"]])];
+    const groups = [group("tasks", "Tasks", [["create-service-task", "Service Task"]])];
 
     it("namespaces favourite and group instances of the same entry distinctly", () => {
         const processed = processPaletteGroups(groups, ["bpmn:ServiceTask"], "", null);
         const items = flattenPaletteItems(processed);
         expect(items.map((i) => i.key)).toEqual([
-            "fav:create.service-task",
-            "grp:tasks:create.service-task",
+            "fav:create-service-task",
+            "grp:tasks:create-service-task",
         ]);
     });
 
@@ -115,56 +115,54 @@ describe("flattenPaletteItems", () => {
     it("exposes the raw entry id alongside the namespaced key", () => {
         const processed = processPaletteGroups(groups, ["bpmn:ServiceTask"], "", null);
         const items = flattenPaletteItems(processed);
-        expect(items.map((i) => i.id)).toEqual(["create.service-task", "create.service-task"]);
+        expect(items.map((i) => i.id)).toEqual(["create-service-task", "create-service-task"]);
     });
 });
 
 describe("resolveSelectedType", () => {
     const appliesTo = ["bpmn:ServiceTask", "bpmn:SendTask"];
 
-    it("resolves the type by normalized label", () => {
-        expect(resolveSelectedType("append-send-task", "Send task", appliesTo)).toBe(
-            "bpmn:SendTask",
+    it("resolves the type the entry creates", () => {
+        expect(resolveSelectedType("append-send-task", appliesTo)).toBe("bpmn:SendTask");
+        expect(resolveSelectedType("create-service-task", appliesTo)).toBe("bpmn:ServiceTask");
+    });
+
+    it("does not let bpmn:Task shadow the subtype an entry creates", () => {
+        expect(resolveSelectedType("append-user-task", ["bpmn:Task", "bpmn:UserTask"])).toBe(
+            "bpmn:UserTask",
         );
     });
 
-    it("resolves the type by entry id when the label does not match", () => {
-        expect(resolveSelectedType("append-send-task", "Mail", appliesTo)).toBe("bpmn:SendTask");
-    });
-
-    it("prefers the exact label match over an id substring, avoiding type shadowing", () => {
-        // `append-user-task` contains "task", which would match bpmn:Task via
-        // id-substring, but the label pins bpmn:UserTask.
+    it.each([
+        ["a type outside appliesTo", "append-user-task"],
+        ["an unknown entry", "append-gateway"],
+        ["a variant of an appliesTo type", "append-message-intermediate-throw"],
+        ["a template entry", "append.template-mail"],
+    ])("returns undefined for %s", (_case, entryId) => {
         expect(
-            resolveSelectedType("append-user-task", "User task", ["bpmn:Task", "bpmn:UserTask"]),
-        ).toBe("bpmn:UserTask");
-    });
-
-    it("returns undefined when no type matches", () => {
-        expect(resolveSelectedType("append-gateway", "Gateway", appliesTo)).toBeUndefined();
+            resolveSelectedType(entryId, [...appliesTo, "bpmn:IntermediateThrowEvent"]),
+        ).toBeUndefined();
     });
 });
 
 // Ids as bpmn-js-create-append-anything builds them (`append-<actionName>`). Upstream
 // translates the labels, so a German UI hands the palette the German ones.
 describe("with upstream create-append-anything entries", () => {
-    const englishTasks = group("tasks", "Tasks", [
-        ["append-task", "Task"],
-        ["append-user-task", "User task"],
-        ["append-service-task", "Service task"],
-        ["append-rule-task", "Business rule task"],
-    ]);
     const germanTasks = group("tasks", "Aufgaben", [
         ["append-task", "Aufgabe"],
         ["append-user-task", "Benutzer-Aufgabe"],
         ["append-service-task", "Serviceaufgabe"],
+        ["append-send-task", "Sendeaufgabe"],
         ["append-rule-task", "Regel Aufgabe"],
-    ]);
-    const englishEvents = group("events", "Events", [
-        ["append-none-intermediate-throwing", "Intermediate throw event"],
     ]);
     const germanEvents = group("events", "Ereignisse", [
         ["append-none-intermediate-throwing", "Zwischenereignis (auslösend)"],
+        ["append-message-intermediate-throw", "Nachrichten-Zwischenereignis (auslösend)"],
+    ]);
+    const subProcesses = group("subprocess", "Sub-processes", [
+        ["append-event-subprocess", "Event sub-process"],
+        ["append-collapsed-subprocess", "Sub-process (collapsed)"],
+        ["append-expanded-subprocess", "Sub-process (expanded)"],
     ]);
 
     const favouriteIds = (groups: BpmnElementGroup[], favourites: string[]) =>
@@ -175,62 +173,40 @@ describe("with upstream create-append-anything entries", () => {
             .filter((e) => !e.hidden)
             .map((e) => e.id);
 
-    it("resolves favourites whose id does not name the type through the English label", () => {
-        expect(
-            favouriteIds(
-                [englishTasks, englishEvents],
-                ["bpmn:BusinessRuleTask", "bpmn:IntermediateThrowEvent"],
-            ),
-        ).toEqual(["append-rule-task", "append-none-intermediate-throwing"]);
-    });
-
-    it("resolves favourites through the entry id when the label is translated", () => {
-        expect(
-            favouriteIds([germanTasks], ["bpmn:ServiceTask", "bpmn:UserTask", "bpmn:Task"]),
-        ).toEqual(["append-service-task", "append-user-task", "append-task"]);
-    });
-
-    it("drops favourites named by neither the entry id nor the translated label", () => {
+    it("resolves favourites independently of the translated labels", () => {
         expect(
             favouriteIds(
                 [germanTasks, germanEvents],
-                ["bpmn:BusinessRuleTask", "bpmn:IntermediateThrowEvent"],
+                ["bpmn:BusinessRuleTask", "bpmn:IntermediateThrowEvent", "bpmn:UserTask"],
             ),
-        ).toEqual([]);
+        ).toEqual(["append-rule-task", "append-none-intermediate-throwing", "append-user-task"]);
     });
 
-    it("keeps every task variant pickable when a template applies to bpmn:Task", () => {
-        expect(visibleIds([englishTasks], ["bpmn:Task", "bpmn:UserTask"])).toEqual([
-            "append-task",
-            "append-user-task",
-            "append-service-task",
-            "append-rule-task",
+    it("resolves a bpmn:SubProcess favourite to the plain sub-process", () => {
+        expect(favouriteIds([subProcesses], ["bpmn:SubProcess"])).toEqual([
+            "append-collapsed-subprocess",
         ]);
     });
 
-    it("resolves a translated entry through its id when that names the type", () => {
-        expect(
-            resolveSelectedType("append-service-task", "Serviceaufgabe", [
-                "bpmn:ServiceTask",
-                "bpmn:SendTask",
-            ]),
-        ).toBe("bpmn:ServiceTask");
+    it("drops favourites without an entry in the menu", () => {
+        expect(favouriteIds([germanTasks], ["bpmn:StartEvent", "bpmn:Task"])).toEqual([
+            "append-task",
+        ]);
     });
 
-    it.each([
-        ["append-user-task", "Benutzer-Aufgabe", "bpmn:UserTask"],
-        ["append-service-task", "Serviceaufgabe", "bpmn:ServiceTask"],
-        ["append-task", "Aufgabe", "bpmn:Task"],
-    ])(
-        "resolves the translated %s to its own type, not the bpmn:Task its id also contains",
-        (entryId, translatedLabel, bpmnType) => {
-            expect(
-                resolveSelectedType(entryId, translatedLabel, [
-                    "bpmn:Task",
-                    "bpmn:UserTask",
-                    "bpmn:ServiceTask",
-                ]),
-            ).toBe(bpmnType);
-        },
-    );
+    it("offers only the entries that create an appliesTo type", () => {
+        expect(visibleIds([germanTasks], ["bpmn:Task", "bpmn:UserTask"])).toEqual([
+            "append-task",
+            "append-user-task",
+        ]);
+    });
+
+    it("hides the variants of an appliesTo type, which would create a different element", () => {
+        expect(
+            visibleIds(
+                [germanEvents, subProcesses],
+                ["bpmn:IntermediateThrowEvent", "bpmn:SubProcess"],
+            ),
+        ).toEqual(["append-none-intermediate-throwing", "append-collapsed-subprocess"]);
+    });
 });

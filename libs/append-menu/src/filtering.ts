@@ -13,6 +13,7 @@ import type {
     BpmnElementEntry,
     PopupMenuEntry,
 } from "./types";
+import { bpmnTypeOfPlainEntry } from "./plainEntryCatalog";
 
 /** A template category surfaced as a filter chip. */
 export interface TemplateCategory {
@@ -114,55 +115,18 @@ export interface ProcessedPalette {
     groups: ProcessedGroup[];
 }
 
-/**
- * Fuzzy-matches a BPMN type against a palette entry's normalized label or id,
- * the same heuristic the palette uses to map types↔entries in both directions.
- */
-function typeMatchesEntry(bpmnType: string, id: string, label: string): boolean {
-    const shortName = bpmnType.split(":")[1]?.toLowerCase() ?? "";
-    const normalizedLabel = label.toLowerCase().replace(/[\s-]/g, "");
-    if (normalizedLabel === shortName) {
-        return true;
-    }
-    const normalizedId = id.toLowerCase().replace(/[\s-]/g, "");
-    return normalizedId.includes(shortName);
+function entryCreatesOneOf(entry: BpmnElementEntry, bpmnTypes: Set<string>): boolean {
+    const bpmnType = bpmnTypeOfPlainEntry(entry.id);
+    return bpmnType !== undefined && bpmnTypes.has(bpmnType);
 }
 
 /**
- * Checks whether a BPMN palette entry matches any type in a filter set.
+ * Resolves which `appliesTo` type a clicked palette entry represents, or
+ * `undefined` when the entry does not create the plain element of one of them.
  */
-function entryMatchesFilter(entry: BpmnElementEntry, filter: Set<string>): boolean {
-    for (const bpmnType of filter) {
-        if (typeMatchesEntry(bpmnType, entry.id, entry.entry.label)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
- * Resolves which `appliesTo` type a clicked palette entry represents.
- *
- * The match order matters: exact-normalized-label equality is checked against
- * *all* candidate types first, then id-substring — otherwise `bpmn:Task` would
- * shadow `bpmn:UserTask` via `id.includes("task")`. Upstream labels arrive
- * translated, so the id fallback must also prefer the most specific type.
- */
-export function resolveSelectedType(
-    id: string,
-    label: string,
-    appliesTo: string[],
-): string | undefined {
-    const shortNameOf = (bpmnType: string) => bpmnType.split(":")[1]?.toLowerCase() ?? "";
-    const normalizedLabel = label.toLowerCase().replace(/[\s-]/g, "");
-    const byLabel = appliesTo.find((bpmnType) => shortNameOf(bpmnType) === normalizedLabel);
-    if (byLabel) {
-        return byLabel;
-    }
-    const normalizedId = id.toLowerCase().replace(/[\s-]/g, "");
-    return appliesTo
-        .filter((bpmnType) => normalizedId.includes(shortNameOf(bpmnType)))
-        .sort((a, b) => shortNameOf(b).length - shortNameOf(a).length)[0];
+export function resolveSelectedType(entryId: string, appliesTo: string[]): string | undefined {
+    const bpmnType = bpmnTypeOfPlainEntry(entryId);
+    return bpmnType !== undefined && appliesTo.includes(bpmnType) ? bpmnType : undefined;
 }
 
 /**
@@ -173,14 +137,11 @@ function entryMatchesSearch(entry: BpmnElementEntry, query: string): boolean {
     return haystack.includes(query);
 }
 
-/**
- * Finds a favourite BPMN entry by its type string among all palette entries.
- *
- * Matches on the normalized label first, then on the entry id — the same
- * fuzzy matching the palette originally used.
- */
-function findFavouriteEntry(entries: ProcessedEntry[], type: string): ProcessedEntry | undefined {
-    return entries.find((e) => typeMatchesEntry(type, e.id, e.entry.label));
+function findFavouriteEntry(
+    entries: ProcessedEntry[],
+    bpmnType: string,
+): ProcessedEntry | undefined {
+    return entries.find((e) => bpmnTypeOfPlainEntry(e.id) === bpmnType);
 }
 
 /**
@@ -207,7 +168,7 @@ export function processPaletteGroups(
             ...entry,
             disabled: false,
             hidden:
-                (appliesToFilter ? !entryMatchesFilter(entry, appliesToFilter) : false) ||
+                (appliesToFilter ? !entryCreatesOneOf(entry, appliesToFilter) : false) ||
                 (query ? !entryMatchesSearch(entry, query) : false),
         })),
     }));
