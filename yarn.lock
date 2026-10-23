@@ -792,7 +792,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bpmn-io/properties-panel@npm:3.57.0, @bpmn-io/properties-panel@npm:^3.55.0":
+"@bpmn-io/properties-panel@npm:3.57.1, @bpmn-io/properties-panel@npm:^3.57.0":
+  version: 3.57.1
+  resolution: "@bpmn-io/properties-panel@npm:3.57.1"
+  dependencies:
+    "@bpmn-io/feel-editor": "npm:^2.7.1"
+    "@bpmn-io/feelers-editor": "npm:^1.1.1"
+    "@codemirror/autocomplete": "npm:^6.18.6"
+    "@codemirror/commands": "npm:^6.10.3"
+    "@codemirror/lang-json": "npm:^6.0.2"
+    "@codemirror/language": "npm:^6.11.0"
+    "@codemirror/lint": "npm:^6.9.5"
+    "@codemirror/state": "npm:^6.6.0"
+    "@codemirror/view": "npm:^6.28.1"
+    classnames: "npm:^2.5.1"
+    focus-trap: "npm:^8.0.0"
+    min-dash: "npm:^5.1.0"
+    min-dom: "npm:^5.3.0"
+  checksum: 10c0/7164fc716a2516c6328907774cfa20ed3cc39ed3b35ed7fa33cb2cb266324b8efadcffd42909c50c141e0efd3637f753fd21caf724e915b72fb34b11c3641022
+  languageName: node
+  linkType: hard
+
+"@bpmn-io/properties-panel@npm:^3.55.0":
   version: 3.57.0
   resolution: "@bpmn-io/properties-panel@npm:3.57.0"
   dependencies:
@@ -2487,7 +2508,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-definition-search@workspace:libs/definition-search"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@miragon/bpmn-modeler-types": "workspace:*"
     "@typescript/native": "npm:typescript@7.0.2"
     "@vitest/coverage-v8": "npm:5.0.5"
@@ -2498,7 +2519,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.5"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.57.0
+    "@bpmn-io/properties-panel": 3.57.1
     bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
@@ -2614,7 +2635,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-inline-scripting@workspace:libs/inline-scripting"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@miragon/bpmn-modeler-types": "workspace:*"
     "@typescript/native": "npm:typescript@7.0.2"
     "@vitest/coverage-v8": "npm:5.0.5"
@@ -2623,7 +2644,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.5"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.57.0
+    "@bpmn-io/properties-panel": 3.57.1
     bpmn-js: 18.31.0
   languageName: unknown
   linkType: soft
@@ -2654,7 +2675,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-properties-panel@workspace:libs/properties-panel"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@typescript/native": "npm:typescript@7.0.2"
     "@vitest/coverage-v8": "npm:5.0.5"
     bpmn-js: "npm:18.31.0"
@@ -2668,7 +2689,7 @@ __metadata:
     vite: "npm:8.3.4"
     vitest: "npm:5.0.5"
   peerDependencies:
-    "@bpmn-io/properties-panel": 3.57.0
+    "@bpmn-io/properties-panel": 3.57.1
     bpmn-js: 18.31.0
     diagram-js: 15.28.1
     ids: 3.0.2
@@ -2783,7 +2804,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@miragon/bpmn-modeler-webview@workspace:apps/bpmn-webview"
   dependencies:
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@bpmn-io/svg-to-image": "npm:1.0.1"
     "@miragon/bpmn-modeler": "workspace:*"
     "@miragon/bpmn-modeler-i18n": "npm:0.2.0"
@@ -2815,7 +2836,7 @@ __metadata:
     "@bpmn-io/align-to-origin": "npm:0.7.0"
     "@bpmn-io/cm-theme": "npm:0.2.2"
     "@bpmn-io/element-template-icon-renderer": "npm:1.0.0"
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@bpmn-io/variable-resolver": "npm:3.3.0"
     "@camunda/example-data-properties-provider": "npm:1.5.2"
     "@lezer/lr": "npm:1.4.11"
@@ -2854,7 +2875,7 @@ __metadata:
     bpmn-js-token-simulation: "npm:1.0.0"
     bpmn-moddle: "npm:10.3.1"
     bpmnlint: "npm:11.15.0"
-    camunda-bpmn-js: "npm:5.36.0"
+    camunda-bpmn-js: "npm:5.37.0"
     camunda-bpmn-js-behaviors: "npm:1.18.0"
     camunda-bpmn-moddle: "npm:8.0.2"
     camunda-transaction-boundaries: "npm:1.1.2"
@@ -2936,7 +2957,7 @@ __metadata:
   resolution: "@miragon/dmn-modeler@workspace:packages/dmn-modeler"
   dependencies:
     "@bpmn-io/cm-theme": "npm:0.2.2"
-    "@bpmn-io/properties-panel": "npm:3.57.0"
+    "@bpmn-io/properties-panel": "npm:3.57.1"
     "@emaarco/dmn-js-simulation": "npm:0.3.2"
     "@microsoft/api-extractor": "npm:7.59.4"
     "@miragon/bpmn-modeler-i18n": "npm:0.2.0"
@@ -8346,7 +8367,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js-element-templates@npm:2.38.0, bpmn-js-element-templates@npm:^2.37.0":
+"bpmn-js-element-templates@npm:2.38.0, bpmn-js-element-templates@npm:^2.38.0":
   version: 2.38.0
   resolution: "bpmn-js-element-templates@npm:2.38.0"
   dependencies:
@@ -8444,7 +8465,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bpmn-js@npm:18.31.0, bpmn-js@npm:^18.30.1":
+"bpmn-js@npm:18.31.0, bpmn-js@npm:^18.31.0":
   version: 18.31.0
   resolution: "bpmn-js@npm:18.31.0"
   dependencies:
@@ -8868,39 +8889,39 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camunda-bpmn-js@npm:5.36.0":
-  version: 5.36.0
-  resolution: "camunda-bpmn-js@npm:5.36.0"
+"camunda-bpmn-js@npm:5.37.0":
+  version: 5.37.0
+  resolution: "camunda-bpmn-js@npm:5.37.0"
   dependencies:
     "@bpmn-io/align-to-origin": "npm:^0.7.0"
     "@bpmn-io/element-template-chooser": "npm:^3.0.0"
     "@bpmn-io/element-template-icon-renderer": "npm:^1.0.0"
-    "@bpmn-io/properties-panel": "npm:^3.55.0"
+    "@bpmn-io/properties-panel": "npm:^3.57.0"
     "@bpmn-io/variable-resolver": "npm:^3.3.0"
     "@camunda/example-data-properties-provider": "npm:^1.5.2"
-    bpmn-js: "npm:^18.30.1"
+    bpmn-js: "npm:^18.31.0"
     bpmn-js-color-picker: "npm:^0.7.2"
     bpmn-js-copy-as-image: "npm:^0.4.1"
     bpmn-js-create-append-anything: "npm:^2.1.0"
-    bpmn-js-element-templates: "npm:^2.37.0"
+    bpmn-js-element-templates: "npm:^2.38.0"
     bpmn-js-executable-fix: "npm:^0.2.2"
     bpmn-js-native-copy-paste: "npm:^0.3.0"
     camunda-bpmn-js-behaviors: "npm:^1.18.0"
-    camunda-bpmn-moddle: "npm:^8.0.1"
-    diagram-js: "npm:^15.27.1"
+    camunda-bpmn-moddle: "npm:^8.0.2"
+    diagram-js: "npm:^15.28.1"
     diagram-js-grid: "npm:^2.1.0"
-    diagram-js-minimap: "npm:^5.5.0"
+    diagram-js-minimap: "npm:^5.6.0"
     diagram-js-origin: "npm:^1.4.1"
     inherits-browser: "npm:^0.1.0"
     min-dash: "npm:^5.1.0"
     zeebe-bpmn-moddle: "npm:^2.0.0"
   peerDependencies:
     bpmn-js-properties-panel: ">= 3.0.0"
-  checksum: 10c0/2b62bc663720bdceb54e047c50157387e18a483fc7d1f5410b5676761bc514a1feca93c2204524af6e8ed654a526f1932dc10bdce02dc6d7b2122bcfc314a3c9
+  checksum: 10c0/55d7fb88c9992327b07e070770e5af3c51e4c3e9988fb85539ce6c8f2564da80a93d622671ece9a0c02a9cf31b9dd323edd34fd42ed7aadd5ca29e08d5835e94
   languageName: node
   linkType: hard
 
-"camunda-bpmn-moddle@npm:8.0.2, camunda-bpmn-moddle@npm:^8.0.1":
+"camunda-bpmn-moddle@npm:8.0.2, camunda-bpmn-moddle@npm:^8.0.2":
   version: 8.0.2
   resolution: "camunda-bpmn-moddle@npm:8.0.2"
   dependencies:
@@ -10395,7 +10416,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diagram-js-minimap@npm:5.6.0, diagram-js-minimap@npm:^5.5.0":
+"diagram-js-minimap@npm:5.6.0, diagram-js-minimap@npm:^5.6.0":
   version: 5.6.0
   resolution: "diagram-js-minimap@npm:5.6.0"
   dependencies:
@@ -10417,7 +10438,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diagram-js@npm:15.28.1, diagram-js@npm:^15.21.0, diagram-js@npm:^15.22.0, diagram-js@npm:^15.23.2, diagram-js@npm:^15.27.1, diagram-js@npm:^15.28.0":
+"diagram-js@npm:15.28.1, diagram-js@npm:^15.21.0, diagram-js@npm:^15.22.0, diagram-js@npm:^15.23.2, diagram-js@npm:^15.28.0, diagram-js@npm:^15.28.1":
   version: 15.28.1
   resolution: "diagram-js@npm:15.28.1"
   dependencies:
