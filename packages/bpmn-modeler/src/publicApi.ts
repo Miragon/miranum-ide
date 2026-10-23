@@ -282,10 +282,10 @@ export interface BpmnModelerHandle {
     exportDiagram(): Promise<string>;
 
     /**
-     * [A] Replace the diagram with a fresh empty one stamped for this instance's
-     * {@link ModelerOptions.engine} (and {@link ModelerOptions.engineVersion}),
-     * so it reopens with the same engine and mode availability, and fit it to
-     * view.
+     * [A] Replace the diagram with a fresh empty one and fit it to view. The new
+     * diagram is stamped for this instance's {@link ModelerOptions.engine} (and
+     * {@link ModelerOptions.engineVersion}), so it reopens with the same engine
+     * and mode availability.
      */
     newDiagram(): Promise<ImportXMLResult>;
 
