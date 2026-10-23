@@ -298,13 +298,8 @@ describe("readSavedMode", () => {
         expect(readSavedMode({ getState: () => ({}) } as any)).toBeUndefined();
     });
 
-    it("returns undefined when getState throws", () => {
-        const host = {
-            getState: () => {
-                throw new Error("no state yet");
-            },
-        } as any;
-        expect(readSavedMode(host)).toBeUndefined();
+    it("returns undefined on a first-ever open", () => {
+        expect(readSavedMode({ getState: () => undefined } as any)).toBeUndefined();
     });
 });
 

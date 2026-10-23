@@ -222,8 +222,9 @@ export function getHostApi(): HostApi<StateType, MessageType> {
 The API surface (the wrapped handle is conventionally named `host`):
 ```typescript
 host.postMessage(message);       // Send to host
-host.getState();                 // Read persisted state
-host.setState(state);            // Write persisted state
+host.getState();                 // Read persisted state; undefined until the first write
+host.setState(state);            // Replace persisted state
+host.updateState(partial);       // Merge into persisted state, seeding it when empty
 ```
 
 ## Theme Handling

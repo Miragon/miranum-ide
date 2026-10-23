@@ -1,7 +1,6 @@
 import {
     AuthConfigPayload,
     Command,
-    createWebviewStateStore,
     CreateTargetCommand,
     DeleteTargetCommand,
     DeployCommand,
@@ -387,13 +386,8 @@ export class DeploymentForm {
     private initSections(): void {
         const headers = document.querySelectorAll<HTMLElement>(".section-header");
 
-        let collapsed: string[];
-        try {
-            const state = this.host.getState() as WebviewState | undefined;
-            collapsed = state?.collapsedSections ?? this.defaultCollapsedSections();
-        } catch {
-            collapsed = this.defaultCollapsedSections();
-        }
+        const collapsed =
+            this.host.getState()?.collapsedSections ?? this.defaultCollapsedSections();
 
         for (const header of headers) {
             const sectionId = header.dataset.section;
@@ -444,7 +438,7 @@ export class DeploymentForm {
             }
         }
 
-        createWebviewStateStore(this.host).merge({ collapsedSections });
+        this.host.updateState({ collapsedSections });
     }
 
     private defaultCollapsedSections(): string[] {

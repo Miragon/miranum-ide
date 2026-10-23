@@ -14,23 +14,13 @@ import {
 
 import { FormEditorApp } from "./app/FormEditorApp";
 import { FORM_TEMPLATE } from "./app/formTemplate";
-import type { FormHost, WebviewState } from "./app/host";
+import type { FormHost } from "./app/host";
 import { shouldHandleHostMessage } from "./app/hostMessage";
 
 function requiredElement<T extends HTMLElement>(id: string): T {
     const element = document.getElementById(id);
     if (!element) throw new Error(`Missing form webview element: ${id}`);
     return element as T;
-}
-
-/** Seeds the state on a first-ever open, so the editor's later `updateState` calls cannot throw. */
-function initialMode(host: FormHost): WebviewState["mode"] {
-    try {
-        return host.getState().mode;
-    } catch {
-        host.setState({ mode: "edit" });
-        return "edit";
-    }
 }
 
 export function bootstrap(host: FormHost): void {
@@ -50,7 +40,7 @@ export function bootstrap(host: FormHost): void {
             editButton: requiredElement("edit-view"),
             previewButton: requiredElement("preview-view"),
         },
-        initialMode(host),
+        host.getState()?.mode,
     );
 
     const respondToFlush = createFlushResponder(app, (message) => host.postMessage(message));

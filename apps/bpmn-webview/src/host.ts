@@ -109,20 +109,6 @@ class MockHost extends MockHostApi<StateType, MessageType> {
     }
 
     /**
-     * Merges `state` into the current mock state, initialising it when no
-     * state has been set yet (i.e. when {@link getState} would throw).
-     *
-     * @param state Partial state to merge.
-     */
-    override updateState(state: Partial<WebviewState>): void {
-        try {
-            this.setState({ ...this.getState(), ...state });
-        } catch {
-            this.setState(state as WebviewState);
-        }
-    }
-
-    /**
      * Intercepts outbound messages and dispatches the corresponding inbound
      * response so the webview can operate without a real host.
      *

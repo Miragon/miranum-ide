@@ -26,7 +26,7 @@ describe("createWebviewStateStore over the production host API", () => {
         vi.unstubAllGlobals();
     });
 
-    it("reads nothing on a first-ever open instead of throwing", () => {
+    it("reads nothing on a first-ever open", () => {
         const store = createWebviewStateStore(new HostApiImpl<TestState, never>());
 
         expect(store.read()).toBeUndefined();
