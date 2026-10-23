@@ -213,12 +213,15 @@ function startSession(
     let surface!: SurfaceHandle;
     // The mode the live surface renders, and the mode strip that drives
     // it. `switchPending` blocks re-entrant switches while a recreate is in
-    // flight; `disposeCanvasObserver` tears down the per-surface size observer.
+    // flight; `initialSurfaceReady` blocks switches until the boot restore,
+    // which drives the live surface's state manager, has finished;
+    // `disposeCanvasObserver` tears down the per-surface size observer.
     let surfaceMode!: SurfaceMode;
     let strip!: ModeStrip;
     let modeSession: ModeSession | undefined;
     const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
     let switchPending = false;
+    let initialSurfaceReady = false;
     // Saved `document.body.inert` from the start of a recreate switch, restored
     // when it lands (unless a concurrent engine reload has taken ownership).
     let inertBeforeSwitch: boolean | undefined;
@@ -1033,9 +1036,9 @@ function startSession(
         // Always offer all three modes, greying out the ones the current
         // engine can't reach (Implement on an untagged model) so the mode is
         // discoverable — the strip ignores clicks on an aria-disabled entry. A
-        // click is also dropped while a switch or engine reload is in flight, and
-        // otherwise queues behind the other modeler operations so it never
-        // interleaves with an import.
+        // click is also dropped until the initial surface is ready and while a
+        // switch or engine reload is in flight, and otherwise queues behind the
+        // other modeler operations so it never interleaves with an import.
         strip = mountModeStrip({
             host: propertiesPanelParent,
             stripEl,
@@ -1043,7 +1046,7 @@ function startSession(
             translate: (template, replacements) => i18n.translate(template, replacements),
             onLabelChange: (apply) => i18n.onChange(apply),
             onSelect: (mode) => {
-                if (switchPending || engineReloadPending) return;
+                if (!initialSurfaceReady || switchPending || engineReloadPending) return;
                 void serializedModelerOperation(() => modeSession!.requestMode(mode));
             },
             onEscape: focusCanvas,
@@ -1180,6 +1183,7 @@ function startSession(
 
         // The initial surface is live: drop the strip's busy state and persist the
         // resolved mode so a first-ever open remembers where it landed.
+        initialSurfaceReady = true;
         strip.render({ mode: surfaceMode, engine: modelerEngine, busy: false });
         stateManager.persistMode(surfaceMode);
 

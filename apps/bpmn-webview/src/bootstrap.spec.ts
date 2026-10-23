@@ -36,6 +36,7 @@ const mocks = vi.hoisted(() => ({
     reload: vi.fn(),
     flushViewport: vi.fn(),
     persistMode: vi.fn(),
+    startPersisting: vi.fn(),
     persistPanelVisibility: vi.fn(),
     restorePanelVisibility: vi.fn(),
     savedMode: undefined as string | undefined,
@@ -111,7 +112,7 @@ vi.mock("./state", () => ({
         restorePanelVisibility = mocks.restorePanelVisibility;
         persistPanelVisibility = mocks.persistPanelVisibility;
         persistMode = mocks.persistMode;
-        startPersisting = vi.fn();
+        startPersisting = mocks.startPersisting;
         flushViewport = mocks.flushViewport;
     },
 }));
@@ -991,6 +992,31 @@ describe("bootstrap mode switching", () => {
         // Only the View switch ran: one destroy, the viewer stood up once.
         expect(modeler.destroy).toHaveBeenCalledOnce();
         expect(mocks.createViewer).toHaveBeenCalledOnce();
+    });
+
+    it("ignores mode clicks until the initial surface is ready", async () => {
+        let releaseImport!: () => void;
+        const modeler = makeModeler({
+            loadDiagram: vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        releaseImport = () => resolve({ warnings: [] });
+                    }),
+            ),
+        });
+        mocks.createModeler.mockResolvedValue(modeler);
+        mocks.createViewer.mockResolvedValue(makeViewer());
+        boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+        await drainAsyncWork();
+
+        modeButtons()[0].click();
+        await drainMicrotasks();
+        releaseImport();
+        await drainAsyncWork();
+
+        expect(mocks.createViewer).not.toHaveBeenCalled();
+        expect(modeler.destroy).not.toHaveBeenCalled();
+        expect(mocks.startPersisting).toHaveBeenCalledOnce();
     });
 
     describe("host state on a rebuilt modeler", () => {
