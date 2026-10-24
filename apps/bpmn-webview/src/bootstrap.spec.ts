@@ -2661,6 +2661,45 @@ describe("bootstrap mode switching", () => {
                 }),
             ]);
         });
+
+        it("drops the variable publish still pending when a mode switch destroys the modeler", async () => {
+            let definitions: unknown = {};
+            const { modeler, change } = makeEditableModeler({
+                getDefinitions: vi.fn(() => definitions),
+            });
+            mocks.createModeler.mockResolvedValue(modeler);
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            const host = makeHost(tagged("c7"));
+            bootstrap(host as never, {
+                capabilities: {
+                    scripting: { openScriptEditor: vi.fn(), scriptSourceChanged: vi.fn() },
+                },
+                clipboard: "native",
+                linting: false,
+            });
+            await drainAsyncWork();
+
+            definitions = {
+                rootElements: [
+                    {
+                        $type: "bpmn:Process",
+                        flowElements: [
+                            { $type: "bpmn:ScriptTask", id: "Task_1", resultVariable: "total" },
+                        ],
+                    },
+                ],
+            };
+            change();
+            modeButtons()[0].click();
+            await vi.advanceTimersByTimeAsync(0);
+            expect(modeler.destroy).toHaveBeenCalledOnce();
+            await vi.advanceTimersByTimeAsync(300);
+
+            expect(sentOfType(host, "SyncDocumentCommand")).toHaveLength(1);
+            expect(sentOfType(host, "UpdateScriptVariablesCommand")).toEqual([
+                expect.objectContaining({ variables: [] }),
+            ]);
+        });
     });
 
     describe("engine change", () => {
