@@ -19,7 +19,7 @@ function sessionHandlerGroups(): Record<string, object> {
     return {
         documentSession: new BpmnDocumentSession(host, {
             surface: {
-                importHostDocument: vi.fn(),
+                importDocument: vi.fn(),
                 exportDocument: vi.fn(),
                 afterSync: vi.fn(),
                 refreshDiagram: vi.fn(),

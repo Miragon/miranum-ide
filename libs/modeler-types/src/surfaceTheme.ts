@@ -1,20 +1,29 @@
-/** @internal */
-import type { ThemeMode } from "./publicApi";
+/**
+ * Theme selection for one modeler instance. `"automatic"` follows the
+ * OS/browser `prefers-color-scheme` live; `"light"`/`"dark"` force a fixed kind.
+ */
+export type SurfaceThemeMode = "light" | "dark" | "automatic";
 
 export type ResolvedThemeKind = "light" | "dark";
 
-export const THEME_ATTRIBUTE = "data-bpmn-theme";
-
+/**
+ * @internal Toggles one instance's theme attribute (`data-bpmn-theme`,
+ * `data-dmn-theme`) on its scope roots, so two instances on one page can hold
+ * different themes. Shared by the BPMN and DMN packages.
+ */
 export class ThemeController {
     // Leave unset so the first automatic-mode call applies the theme instead of returning early.
-    private mode: ThemeMode | undefined;
+    private mode: SurfaceThemeMode | undefined;
     private mediaQuery?: MediaQueryList;
     private mediaListener?: (event: MediaQueryListEvent) => void;
     private disposed = false;
 
-    constructor(private readonly scopeRoots: readonly HTMLElement[]) {}
+    constructor(
+        private readonly scopeRoots: readonly HTMLElement[],
+        private readonly attribute: string,
+    ) {}
 
-    setMode(mode: ThemeMode): void {
+    setMode(mode: SurfaceThemeMode): void {
         if (this.disposed || mode === this.mode) {
             return;
         }
@@ -32,13 +41,13 @@ export class ThemeController {
         this.disposed = true;
         this.stopFollowingPreferredScheme();
         for (const root of this.scopeRoots) {
-            root.removeAttribute(THEME_ATTRIBUTE);
+            root.removeAttribute(this.attribute);
         }
     }
 
     private apply(kind: ResolvedThemeKind): void {
         for (const root of this.scopeRoots) {
-            root.setAttribute(THEME_ATTRIBUTE, kind);
+            root.setAttribute(this.attribute, kind);
         }
         applyLegacyThemeLink(kind);
     }

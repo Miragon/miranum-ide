@@ -157,6 +157,24 @@ describe("BpmnModelerService.display", () => {
         await syncing;
     });
 
+    it("asks for the platform once when two displays of an empty document overlap", async () => {
+        const { service, host, editor } = createService("");
+        let pick: (engine: NewModelEngine) => void = () => {};
+        const prompt = vi.spyOn(host.picker, "pickNewModelEngine").mockReturnValueOnce(
+            new Promise<NewModelEngine>((resolve) => {
+                pick = resolve;
+            }),
+        );
+
+        const firstDisplay = service.display(editor.id);
+
+        expect(await service.display(editor.id)).toBe(false);
+        pick("c8");
+        expect(await firstDisplay).toBe(true);
+        expect(prompt).toHaveBeenCalledOnce();
+        expect(editor.postedOfType<BpmnFileQuery>("BpmnFileQuery")).toHaveLength(1);
+    });
+
     it("does not seed an empty document after the host revision changes during the prompt", async () => {
         const { service, host, editor } = createService("");
         let finishPick: (platform: NewModelEngine) => void = () => {};

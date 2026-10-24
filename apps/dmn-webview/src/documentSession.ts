@@ -1,44 +1,46 @@
 import {
     type Command,
-    createFlushResponder,
     createInertLock,
     createResolver,
     type DmnFileQuery,
-    type FlushSource,
     type HostApi,
-    HostDocumentRevisions,
     LogErrorCommand,
     type Query,
-    SyncDocumentCommand,
+    WebviewDocumentSync,
 } from "@miragon/bpmn-modeler-shared";
-import { asyncDebounce, NoModelerError, serializeAsync } from "@miragon/bpmn-modeler-types";
+import { NoModelerError } from "@miragon/bpmn-modeler-types";
 import type { DmnModelerHandle } from "@miragon/dmn-modeler";
 
 import type { WebviewState } from "./webviewState";
 
 type HostChannel = Pick<HostApi<WebviewState, Command | Query>, "postMessage">;
 
-export class DmnDocumentSession implements FlushSource {
+/** The DMN webview's document lifecycle on top of the shared {@link WebviewDocumentSync}. */
+export class DmnDocumentSession {
     private attachedModeler: DmnModelerHandle | undefined;
     private initialDocumentImported = false;
     private disposed = false;
-    private readonly revisions = new HostDocumentRevisions();
-    private readonly flushLock = createInertLock(document.body);
     private readonly initialHostFile = createResolver<DmnFileQuery>();
-    private readonly importHostDocument = serializeAsync(
-        (content: string | undefined, documentRevision: number): Promise<void> =>
-            this.loadHostDocument(content, documentRevision),
-    );
-    private readonly debouncedHostUpdate = asyncDebounce(this.importHostDocument, 100);
-    // Sustained decision-table typing still syncs once per `maxWait`; the host
-    // recovers the sub-300ms tail through the flush protocol.
-    private readonly debouncedSync = asyncDebounce(() => this.sendChanges(), 300, {
-        maxWait: 1000,
-    });
 
-    readonly respondToFlush = createFlushResponder(this, (reply) => this.post(reply));
+    readonly document: WebviewDocumentSync;
 
-    constructor(private readonly host: HostChannel) {}
+    readonly respondToFlush: WebviewDocumentSync["respondToFlush"];
+
+    constructor(private readonly host: HostChannel) {
+        this.document = new WebviewDocumentSync(host, {
+            surface: {
+                importDocument: async (content) => {
+                    if (content) {
+                        await this.requireModeler().loadDiagram(content);
+                    }
+                },
+                exportDocument: () => this.requireModeler().exportDiagram(),
+            },
+            flushLock: createInertLock(document.body),
+            isReady: () => this.initialDocumentImported,
+        });
+        this.respondToFlush = this.document.respondToFlush;
+    }
 
     get modeler(): DmnModelerHandle | undefined {
         return this.attachedModeler;
@@ -58,27 +60,26 @@ export class DmnDocumentSession implements FlushSource {
     async openInitialDocument(): Promise<void> {
         const initialFile = await this.initialHostFile.wait();
         try {
-            await this.importHostDocument(initialFile?.content, initialFile?.documentRevision ?? 0);
+            await this.document.importNow(initialFile?.content, initialFile?.documentRevision ?? 0);
         } catch (error) {
             const message = error instanceof Error ? error.message : `${error}`;
             this.post(new LogErrorCommand(`Unable to open XML ${message}`));
         }
-        await this.flushPendingHostUpdates();
+        // receiveHostFile reports each import error; keep draining so a later
+        // valid host update can still complete the initial import.
+        await this.document.flushPendingImports(() => undefined);
         this.initialDocumentImported = true;
     }
 
     async receiveHostFile(query: DmnFileQuery): Promise<void> {
         const documentRevision = query.documentRevision ?? 0;
-        switch (this.revisions.receive(documentRevision)) {
+        switch (this.document.receive(documentRevision)) {
             case "initial":
                 this.initialHostFile.done(query);
                 return;
             case "update":
-                // A host push is authoritative; drop any pending outbound sync so a
-                // stale export can't clobber it after re-import.
-                this.debouncedSync.cancel();
                 try {
-                    await this.debouncedHostUpdate(query.content, documentRevision);
+                    await this.document.importDebounced(query.content, documentRevision);
                 } catch (error) {
                     const message = error instanceof Error ? error.message : `${error}`;
                     this.post(
@@ -94,13 +95,11 @@ export class DmnDocumentSession implements FlushSource {
     }
 
     scheduleSync(): void {
-        void this.debouncedSync();
+        this.document.scheduleSync();
     }
 
-    async flushPendingSync(): Promise<void> {
-        while (this.debouncedSync.pending()) {
-            await this.debouncedSync.flush();
-        }
+    flushPendingSync(): Promise<void> {
+        return this.document.flushPendingSync();
     }
 
     async applyLanguage(locale: string): Promise<void> {
@@ -118,83 +117,11 @@ export class DmnDocumentSession implements FlushSource {
         this.requireModeler().focusCanvas();
     }
 
-    isReady(): boolean {
-        return this.initialDocumentImported;
-    }
-
-    hasPendingSync(): boolean {
-        return this.debouncedSync.pending();
-    }
-
-    hasPendingHostUpdate(): boolean {
-        return this.debouncedHostUpdate.pending();
-    }
-
-    hostUpdateVersion(): number {
-        return this.revisions.version;
-    }
-
-    documentRevision(): number {
-        return this.revisions.representedRevision;
-    }
-
-    beginDestructiveFlush(): void {
-        this.flushLock.acquire();
-    }
-
-    endDestructiveFlush(): void {
-        this.flushLock.release();
-    }
-
-    exportContent(): Promise<string> {
-        return this.requireModeler().exportDiagram();
-    }
-
     dispose(): void {
         this.disposed = true;
-        this.debouncedSync.cancel();
-        this.debouncedHostUpdate.cancel();
-        this.flushLock.release();
+        this.document.dispose();
         this.attachedModeler?.destroy();
         this.attachedModeler = undefined;
-    }
-
-    private async loadHostDocument(
-        content: string | undefined,
-        documentRevision: number,
-    ): Promise<void> {
-        if (content) {
-            await this.requireModeler().loadDiagram(content);
-        }
-        this.revisions.markImported(documentRevision);
-    }
-
-    private async flushPendingHostUpdates(): Promise<void> {
-        while (this.debouncedHostUpdate.pending()) {
-            try {
-                await this.debouncedHostUpdate.flush();
-            } catch {
-                // receiveHostFile reports the import error; keep draining so a
-                // later valid host update can still complete the initial import.
-            }
-        }
-    }
-
-    private async sendChanges(): Promise<void> {
-        // A rejection here only reaches the global unhandledrejection hook (the
-        // dmn-js event bus discards the returned promise) as a context-free line —
-        // catch it so the failure is named and deterministic on the channel.
-        try {
-            const versionAtExport = this.revisions.version;
-            const content = await this.requireModeler().exportDiagram();
-            if (!this.revisions.isCurrent(versionAtExport) || this.debouncedHostUpdate.pending()) {
-                return;
-            }
-            this.post(new SyncDocumentCommand(content, this.revisions.representedRevision));
-        } catch (error) {
-            const e = error instanceof Error ? error : new Error(String(error));
-            this.post(new LogErrorCommand(`Failed to sync diagram changes: ${e.message}`, e.stack));
-        }
     }
 
     private post(message: Command | Query): void {

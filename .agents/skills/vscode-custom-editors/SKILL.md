@@ -47,7 +47,7 @@ Lifecycle is split into independently testable `EditorSessionParticipant`s (cont
 | Concern | Where | Notes |
 |---|---|---|
 | Webview messages | `WebviewMessageRouter.dispatch` → handler factories (host-agnostic ones in `libs/modeler-core`, VS Code-only ones in `<feature>/controller/webview-handlers/`) | Replaces the old `switch(message.type)` |
-| Render + service session | `BpmnRenderParticipant` / `DmnRenderParticipant` | `service.registerSession` + doc-change → `service.display()` |
+| Render + service session | `DocumentRenderParticipant` (one per editor type, with the file extension) | `service.registerSession` + doc-change → `service.display()`; the services share `EditorDocumentSync` (echo guard, revision check, empty-file init) |
 | Element templates | `ElementTemplatesParticipant` (BPMN only) | config-folder watch via `ArtifactService.createWatcher()` |
 | Settings / language | `BpmnSettingsParticipant` (BPMN only) | subscribes `BpmnSettingsBroadcaster` (watches `miragon.bpmnModeler.*`) |
 | Engine-version status bar | `EngineVersionStatusBarParticipant` (BPMN only) | focus → show/hide |
@@ -93,7 +93,7 @@ Both editors share `ModelerEditorController`; the difference is purely in the `o
 | Concern | BPMN editor | DMN editor |
 |---|---|---|
 | **Router handlers** | full set (get-file, element-templates, settings + script resync, properties-panel get/set, structured + text clipboard, sync, open-script-editor, navigate-to-referenced-model) | 5 (`GetDmnFileCommand`, `GetDmnModelerSettingCommand`, `GetPropertiesPanelStateCommand`, `SetPropertiesPanelStateCommand`, `SyncDocumentCommand`) |
-| **Participants** | `BpmnRenderParticipant`, `FormReferenceStatusParticipant`, `DefinitionSearchParticipant`, `ElementTemplatesParticipant`, `BpmnlintParticipant`, `BpmnSettingsParticipant`, `EngineVersionStatusBarParticipant`, `DeploymentStatusParticipant`, `ScriptTaskTeardownParticipant`, `ScriptManifestParticipant`, `CodeLinkParticipant` | `DmnRenderParticipant`, `DmnSettingsParticipant` |
+| **Participants** | `DocumentRenderParticipant`, `FormReferenceStatusParticipant`, `DefinitionSearchParticipant`, `ElementTemplatesParticipant`, `BpmnlintParticipant`, `BpmnSettingsParticipant`, `EngineVersionStatusBarParticipant`, `DeploymentStatusParticipant`, `ScriptTaskTeardownParticipant`, `ScriptManifestParticipant`, `CodeLinkParticipant` | `DocumentRenderParticipant`, `DmnSettingsParticipant` |
 | **Diff delegation** | yes (`delegateResolve` → `BpmnDiffController`) | no |
 
 DMN files don't use element templates, BPMN settings, inline scripts, or the diff viewer, so the DMN editor simply gets fewer handlers and one participant.

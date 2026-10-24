@@ -1,15 +1,16 @@
 import type BaseViewer from "bpmn-js/lib/BaseViewer";
-import { type DisposableStore, NoModelerError } from "@miragon/bpmn-modeler-types";
+import { type DisposableStore, NoModelerError, ThemeController } from "@miragon/bpmn-modeler-types";
 
 import { installSurfaceFocusFeatures, type SurfaceFocusOptions } from "./focusFeatures";
 import type { ThemeMode } from "./publicApi";
 import type { RootElementManager } from "./rootElement";
 import type { SelectionManager } from "./selection";
-import { ThemeController } from "./theme";
 import { SurfaceView, type ViewState } from "./viewState";
 import type { ViewportManager } from "./viewport";
 
 type SurfaceInstance = Pick<BaseViewer, "get" | "destroy">;
+
+const THEME_ATTRIBUTE = "data-bpmn-theme";
 
 export interface SurfaceServices {
     /** @throws {NoModelerError} If no bpmn-js instance is live. */
@@ -115,7 +116,7 @@ export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
             return;
         }
         if (!this.themeController) {
-            this.themeController = new ThemeController(this.themeRoots);
+            this.themeController = new ThemeController(this.themeRoots, THEME_ATTRIBUTE);
             store.add(() => {
                 this.themeController?.dispose();
                 // A replacement store on the same surface must be able to rebuild it.

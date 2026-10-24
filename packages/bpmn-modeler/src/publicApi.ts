@@ -15,11 +15,8 @@ import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { LintCallbacks, LintTierInit } from "./bpmnlint/LintConfigService";
 import type { LintConfigOption } from "./bpmnlint/lintConfigResolution";
 import type { ModelerCapabilities } from "./capabilities";
-import type { ViewportManager } from "./viewport";
-import type { SelectionManager } from "./selection";
-import type { RootElementManager } from "./rootElement";
-import type { ViewState } from "./viewState";
 import type { ModelerMode } from "./mode";
+import type { BpmnSurfaceHandle } from "./surfaceHandle";
 
 export type { ModelerMode } from "./mode";
 export type { LintConfigByMode, LintConfigOption } from "./bpmnlint/lintConfigResolution";
@@ -271,16 +268,12 @@ export interface ModelerOptions {
 }
 
 /**
- * The instance handle {@link createModeler} resolves to.
+ * The instance handle {@link createModeler} resolves to. The inherited
+ * {@link BpmnSurfaceHandle} members are engine-intrinsic [A], except the
+ * opinionated `setTheme` [B].
  */
-export interface BpmnModelerHandle {
+export interface BpmnModelerHandle extends BpmnSurfaceHandle {
     // ── [A] Engine-intrinsic ────────────────────────────────────────────────
-    /** [A] Load BPMN 2.0 XML, replacing any current diagram, and fit it to view. */
-    loadDiagram(xml: string): Promise<ImportXMLResult>;
-
-    /** [A] Serialise the current diagram to formatted XML. */
-    exportDiagram(): Promise<string>;
-
     /**
      * [A] Replace the diagram with a fresh empty one and fit it to view. The new
      * diagram is stamped for this instance's {@link ModelerOptions.engine} (and
@@ -288,9 +281,6 @@ export interface BpmnModelerHandle {
      * and mode availability.
      */
     newDiagram(): Promise<ImportXMLResult>;
-
-    /** [A] Export the current diagram as SVG markup. */
-    getDiagramSvg(): Promise<string>;
 
     /**
      * [A] Rearrange the diagram left to right and reroute its connections.
@@ -338,51 +328,6 @@ export interface BpmnModelerHandle {
      * empty list clears the row. Takes effect the next time the menu opens.
      */
     setFavouriteBpmnElements(types: readonly string[]): void;
-
-    /** [A] Viewport (zoom/scroll/fit) accessor. */
-    readonly viewport: ViewportManager;
-
-    /** [A] Selection accessor. */
-    readonly selection: SelectionManager;
-
-    /**
-     * [A] Drill-down plane accessor. Host-adapter surface for restoring the
-     * active canvas root across an instance switch; the composed
-     * {@link captureViewState}/{@link applyViewState} pair covers the common case.
-     */
-    readonly rootElement: RootElementManager;
-
-    /**
-     * [A] Snapshot the drill-down plane, viewbox, and selection so they survive
-     * an instance switch — capture here, `destroy()`, create the next instance,
-     * `loadDiagram`, then {@link applyViewState}. See {@link ViewState}.
-     */
-    captureViewState(): ViewState;
-
-    /**
-     * [A] Re-apply a {@link captureViewState} snapshot: plane, viewbox, and
-     * selection are restored root → viewport → selection; a stale plane or
-     * missing element ids degrade gracefully, and an empty selection clears.
-     * A restore called right after `loadDiagram` survives the delayed initial
-     * fit — the snapshot viewport decides, not a later observer delivery.
-     */
-    applyViewState(state: ViewState): void;
-
-    /**
-     * [A] Tear the instance down and free its bpmn-js DI graph and DOM.
-     * Idempotent. Afterwards every other member except the no-op `setTheme` throws
-     * {@link NoModelerError} (async members reject with it), including the host
-     * pushes, so a host whose pushes can race teardown must catch it.
-     */
-    destroy(): void;
-
-    // ── [B] Opinionated built-ins ───────────────────────────────────────────
-    /**
-     * [B] Switch the colour theme live. Toggles this instance's
-     * `data-bpmn-theme` attribute and mirrors it to a legacy `#theme-link` when
-     * present. A no-op once the instance is destroyed.
-     */
-    setTheme(theme: ThemeMode): void;
 
     /**
      * [B] Switch the design/implement mode live on this same instance — no

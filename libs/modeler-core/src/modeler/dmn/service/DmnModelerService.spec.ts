@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DmnFileQuery } from "@miragon/bpmn-modeler-shared";
 
 import { UserCancelledError } from "../../../shared/domain/errors";
-import { createTestHost } from "../../../testing";
+import { createTestHost, TestHost } from "../../../testing";
 import { DmnModelerService } from "./DmnModelerService";
 
 const DMN_DOC =
@@ -15,6 +15,16 @@ function createService(content = DMN_DOC) {
     const service = new DmnModelerService(host.store, host.documents, host.notifier);
     service.registerSession(editor.id);
     return { service, host, editor };
+}
+
+function holdNextWrite(host: TestHost) {
+    let finishWrite: (applied: boolean) => void = () => {};
+    vi.spyOn(host.documents, "write").mockReturnValueOnce(
+        new Promise<boolean>((resolve) => {
+            finishWrite = resolve;
+        }),
+    );
+    return (applied: boolean) => finishWrite(applied);
 }
 
 describe("DmnModelerService.display", () => {
@@ -41,6 +51,44 @@ describe("DmnModelerService.display", () => {
         expect(editor.saveCount).toBe(1);
         const [msg] = editor.postedOfType<DmnFileQuery>("DmnFileQuery");
         expect(msg.content).toBe(editor.content);
+    });
+
+    it("seeds one diagram when two displays of an empty document overlap", async () => {
+        const { service, host, editor } = createService("");
+        const finishWrite = holdNextWrite(host);
+
+        const firstDisplay = service.display(editor.id);
+
+        expect(await service.display(editor.id)).toBe(false);
+        finishWrite(true);
+        expect(await firstDisplay).toBe(true);
+        expect(editor.postedOfType<DmnFileQuery>("DmnFileQuery")).toHaveLength(1);
+    });
+
+    it("does not save or render a seeded diagram into a replacement session", async () => {
+        const { service, host, editor } = createService("");
+        const finishWrite = holdNextWrite(host);
+
+        const displaying = service.display(editor.id);
+        const replacement = host.openEditor("/work/decision.dmn", "");
+        finishWrite(true);
+
+        expect(await displaying).toBe(false);
+        expect(editor.saveCount + replacement.saveCount).toBe(0);
+        expect([...editor.posted, ...replacement.posted]).toEqual([]);
+    });
+
+    it("does not render a seeded diagram after the host changed the document", async () => {
+        const { service, host, editor } = createService("");
+        const finishWrite = holdNextWrite(host);
+
+        const displaying = service.display(editor.id);
+        host.store.markHostDocumentUpdated(editor.id);
+        finishWrite(true);
+
+        expect(await displaying).toBe(false);
+        expect(editor.saveCount).toBe(0);
+        expect(editor.posted).toEqual([]);
     });
 
     it("skips the matching document-change echo while a sync write is pending", async () => {

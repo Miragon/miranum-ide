@@ -35,7 +35,7 @@ type PageFake = { [Method in keyof BpmnPageLifecycle]: Mock<BpmnPageLifecycle[Me
 
 function makeSurface(overrides: Partial<SurfaceFake> = {}): SurfaceFake {
     return {
-        importHostDocument: vi.fn(async (_content: string | undefined) => {}),
+        importDocument: vi.fn(async (_content: string | undefined) => {}),
         exportDocument: vi.fn(async () => "<exported />"),
         afterSync: vi.fn(),
         refreshDiagram: vi.fn(async () => {}),
@@ -127,8 +127,8 @@ describe("BpmnDocumentSession", () => {
 
             await openSession(context, 4);
 
-            expect(context.surface.importHostDocument).toHaveBeenCalledWith("<initial />");
-            expect(context.session.documentRevision()).toBe(4);
+            expect(context.surface.importDocument).toHaveBeenCalledWith("<initial />");
+            expect(context.session.document.documentRevision()).toBe(4);
             expect(context.session.isReady()).toBe(true);
         });
 
@@ -151,14 +151,14 @@ describe("BpmnDocumentSession", () => {
 
             await expect(context.session.openInitialDocument(first)).resolves.toBe(true);
 
-            expect(context.surface.importHostDocument).toHaveBeenCalledExactlyOnceWith("<newer />");
-            expect(context.session.documentRevision()).toBe(2);
+            expect(context.surface.importDocument).toHaveBeenCalledExactlyOnceWith("<newer />");
+            expect(context.session.document.documentRevision()).toBe(2);
         });
 
         it("imports a host push that arrived during the initial import right after it", async () => {
             const initialImport = deferred();
             const context = setup();
-            vi.mocked(context.surface.importHostDocument).mockImplementationOnce(
+            vi.mocked(context.surface.importDocument).mockImplementationOnce(
                 () => initialImport.promise,
             );
             void context.session.receiveHostFile(hostFile("<initial />", 1));
@@ -171,14 +171,14 @@ describe("BpmnDocumentSession", () => {
             await vi.runAllTimersAsync();
 
             expect(await opening).toBe(true);
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<pushed />");
-            expect(context.session.documentRevision()).toBe(2);
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<pushed />");
+            expect(context.session.document.documentRevision()).toBe(2);
         });
 
         it("keeps the initial document when the update queued behind it cannot be opened", async () => {
             const initialImport = deferred();
             const context = setup();
-            context.surface.importHostDocument
+            context.surface.importDocument
                 .mockImplementationOnce(() => initialImport.promise)
                 .mockRejectedValueOnce(new Error("broken update"));
             void context.session.receiveHostFile(hostFile("<initial />", 1));
@@ -191,7 +191,7 @@ describe("BpmnDocumentSession", () => {
             await vi.runAllTimersAsync();
 
             expect(await opening).toBe(true);
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<broken />");
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<broken />");
             expect(loggedErrors(context.posted)).toEqual([
                 "Unable to open host XML\nbroken update",
             ]);
@@ -200,7 +200,7 @@ describe("BpmnDocumentSession", () => {
         it("falls back to a newer host file when the initial one cannot be opened", async () => {
             const initialImport = deferred();
             const context = setup();
-            context.surface.importHostDocument.mockImplementationOnce(async () => {
+            context.surface.importDocument.mockImplementationOnce(async () => {
                 await initialImport.promise;
                 throw new Error("invalid initial document");
             });
@@ -213,8 +213,8 @@ describe("BpmnDocumentSession", () => {
             initialImport.resolve();
 
             expect(await opening).toBe(true);
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<valid />");
-            expect(context.session.documentRevision()).toBe(2);
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<valid />");
+            expect(context.session.document.documentRevision()).toBe(2);
             expect(loggedErrors(context.posted)).toEqual([
                 "Unable to open host XML\ninvalid initial document",
             ]);
@@ -222,7 +222,7 @@ describe("BpmnDocumentSession", () => {
 
         it("gives up on an initial host file that cannot be opened and ignores later pushes", async () => {
             const context = setup();
-            context.surface.importHostDocument.mockRejectedValue(new Error("not BPMN"));
+            context.surface.importDocument.mockRejectedValue(new Error("not BPMN"));
             void context.session.receiveHostFile(hostFile("<broken />", 1));
 
             const proceed = await context.session.openInitialDocument(
@@ -232,7 +232,7 @@ describe("BpmnDocumentSession", () => {
 
             expect(proceed).toBe(false);
             expect(loggedErrors(context.posted)).toEqual(["Unable to open XML\nnot BPMN"]);
-            expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
+            expect(context.surface.importDocument).toHaveBeenCalledOnce();
         });
 
         it.each([
@@ -250,9 +250,7 @@ describe("BpmnDocumentSession", () => {
                 ).resolves.toBe(true);
 
                 await pushHostFile(context.session, hostFile("<same engine />", 2, initialEngine));
-                expect(context.surface.importHostDocument).toHaveBeenLastCalledWith(
-                    "<same engine />",
-                );
+                expect(context.surface.importDocument).toHaveBeenLastCalledWith("<same engine />");
                 expect(context.page.reloadPage).not.toHaveBeenCalled();
 
                 await pushHostFile(context.session, hostFile("<other engine />", 3, otherEngine));
@@ -269,13 +267,13 @@ describe("BpmnDocumentSession", () => {
             await expect(context.session.openInitialDocument(first)).resolves.toBe(false);
 
             expect(context.page.reloadPage).toHaveBeenCalledOnce();
-            expect(context.surface.importHostDocument).not.toHaveBeenCalled();
+            expect(context.surface.importDocument).not.toHaveBeenCalled();
         });
 
         it("reloads when the update queued behind the initial import targets another engine", async () => {
             const initialImport = deferred();
             const context = setup();
-            context.surface.importHostDocument.mockImplementationOnce(() => initialImport.promise);
+            context.surface.importDocument.mockImplementationOnce(() => initialImport.promise);
             void context.session.receiveHostFile(hostFile("<c7 />", 1));
 
             const opening = context.session.openInitialDocument(
@@ -285,14 +283,14 @@ describe("BpmnDocumentSession", () => {
             initialImport.resolve();
 
             await expect(opening).resolves.toBe(false);
-            expect(context.surface.importHostDocument).toHaveBeenCalledExactlyOnceWith("<c7 />");
+            expect(context.surface.importDocument).toHaveBeenCalledExactlyOnceWith("<c7 />");
             expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("stops the boot when another engine arrives while a queued update waits to import", async () => {
             const initialImport = deferred();
             const context = setup();
-            context.surface.importHostDocument.mockImplementationOnce(() => initialImport.promise);
+            context.surface.importDocument.mockImplementationOnce(() => initialImport.promise);
             void context.session.receiveHostFile(hostFile("<initial />", 1));
 
             const opening = context.session.openInitialDocument(
@@ -301,13 +299,11 @@ describe("BpmnDocumentSession", () => {
             await context.session.receiveHostFile(hostFile("<queued />", 2));
             initialImport.resolve();
             await vi.advanceTimersByTimeAsync(0);
-            expect(context.session.hasPendingHostUpdate()).toBe(true);
+            expect(context.session.document.hasPendingHostUpdate()).toBe(true);
             await context.session.receiveHostFile(hostFile("<c8 />", 3, "c8"));
 
             await expect(opening).resolves.toBe(false);
-            expect(context.surface.importHostDocument).toHaveBeenCalledExactlyOnceWith(
-                "<initial />",
-            );
+            expect(context.surface.importDocument).toHaveBeenCalledExactlyOnceWith("<initial />");
             expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
     });
@@ -320,8 +316,8 @@ describe("BpmnDocumentSession", () => {
             await context.session.receiveHostFile(hostFile("<old />", 3));
             await vi.runAllTimersAsync();
 
-            expect(context.surface.importHostDocument).not.toHaveBeenCalledWith("<old />");
-            expect(context.session.hostUpdateVersion()).toBe(1);
+            expect(context.surface.importDocument).not.toHaveBeenCalledWith("<old />");
+            expect(context.session.document.hostUpdateVersion()).toBe(1);
         });
 
         it("keeps the pending edit when it ignores a stale push", async () => {
@@ -332,7 +328,7 @@ describe("BpmnDocumentSession", () => {
             await pushHostFile(context.session, hostFile("<stale />", 2));
             await vi.advanceTimersByTimeAsync(300);
 
-            expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
+            expect(context.surface.importDocument).toHaveBeenCalledOnce();
             expect(syncCommands(context.posted)).toEqual([
                 expect.objectContaining({ documentRevision: 3 }),
             ]);
@@ -360,7 +356,7 @@ describe("BpmnDocumentSession", () => {
             await vi.advanceTimersByTimeAsync(300);
 
             expect(context.surface.exportDocument).not.toHaveBeenCalled();
-            expect(context.surface.importHostDocument).not.toHaveBeenCalled();
+            expect(context.surface.importDocument).not.toHaveBeenCalled();
         });
 
         it("runs the deferred actions after a push only once the session is initialized", async () => {
@@ -375,7 +371,7 @@ describe("BpmnDocumentSession", () => {
             await pushHostFile(context.session, hostFile("<after initialized />", 3));
 
             expect(context.surface.centerOnElement).toHaveBeenCalledExactlyOnceWith("Task_1");
-            expect(context.surface.importHostDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
+            expect(context.surface.importDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
                 callOrder(context.surface.centerOnElement),
             );
         });
@@ -385,7 +381,7 @@ describe("BpmnDocumentSession", () => {
             await importInitialFile(context);
             await context.session.focusElement("Task_1");
             context.session.markInitialized();
-            context.surface.importHostDocument.mockRejectedValueOnce(new Error("broken push"));
+            context.surface.importDocument.mockRejectedValueOnce(new Error("broken push"));
 
             const received = context.session
                 .receiveHostFile(hostFile("<broken />", 2))
@@ -399,7 +395,7 @@ describe("BpmnDocumentSession", () => {
         it("keeps the last represented revision when a push cannot be imported", async () => {
             const context = setup();
             await openSession(context);
-            context.surface.importHostDocument.mockRejectedValueOnce(new Error("broken push"));
+            context.surface.importDocument.mockRejectedValueOnce(new Error("broken push"));
             const received = context.session
                 .receiveHostFile(hostFile("<broken />", 2))
                 .catch(() => undefined);
@@ -409,7 +405,7 @@ describe("BpmnDocumentSession", () => {
             context.session.scheduleSync();
             await vi.advanceTimersByTimeAsync(300);
 
-            expect(context.session.documentRevision()).toBe(1);
+            expect(context.session.document.documentRevision()).toBe(1);
             expect(syncCommands(context.posted)).toEqual([
                 expect.objectContaining({ documentRevision: 1 }),
             ]);
@@ -420,8 +416,8 @@ describe("BpmnDocumentSession", () => {
             const context = setup();
             await openSession(context);
             const revisionsSeenByImports: number[] = [];
-            context.surface.importHostDocument.mockImplementation(async (content) => {
-                revisionsSeenByImports.push(context.session.documentRevision());
+            context.surface.importDocument.mockImplementation(async (content) => {
+                revisionsSeenByImports.push(context.session.document.documentRevision());
                 if (content === "<overtaken />") await overtakenImport.promise;
             });
 
@@ -433,14 +429,14 @@ describe("BpmnDocumentSession", () => {
             await Promise.all([overtaken, newest]);
 
             expect(revisionsSeenByImports).toEqual([1, 1]);
-            expect(context.session.documentRevision()).toBe(3);
+            expect(context.session.document.documentRevision()).toBe(3);
         });
 
         it("reports a failing queued update and keeps draining the newer one", async () => {
             const brokenImport = deferred();
             const context = setup();
             await openSession(context);
-            context.surface.importHostDocument.mockImplementationOnce(async () => {
+            context.surface.importDocument.mockImplementationOnce(async () => {
                 await brokenImport.promise;
                 throw new Error("broken push");
             });
@@ -455,11 +451,11 @@ describe("BpmnDocumentSession", () => {
             await Promise.all([broken, newest, focused]);
 
             expect(await broken).toEqual(new Error("broken push"));
-            expect(context.session.hasPendingHostUpdate()).toBe(false);
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<newest />");
-            expect(context.session.documentRevision()).toBe(3);
+            expect(context.session.document.hasPendingHostUpdate()).toBe(false);
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<newest />");
+            expect(context.session.document.documentRevision()).toBe(3);
             expect(loggedErrors(context.posted)).toEqual(["Unable to open host XML\nbroken push"]);
-            expect(context.surface.importHostDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
+            expect(context.surface.importDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
                 callOrder(context.surface.centerOnElement),
             );
         });
@@ -474,7 +470,7 @@ describe("BpmnDocumentSession", () => {
             expect(context.session.isReady()).toBe(false);
             expect(context.page.destroySurface).toHaveBeenCalledOnce();
             expect(context.page.reloadPage).toHaveBeenCalledOnce();
-            expect(context.surface.importHostDocument).not.toHaveBeenCalledWith("<c8 />");
+            expect(context.surface.importDocument).not.toHaveBeenCalledWith("<c8 />");
             expect(document.body.inert).toBe(true);
         });
     });
@@ -488,21 +484,21 @@ describe("BpmnDocumentSession", () => {
 
             const pushed = context.session.receiveHostFile(hostFile("<pushed />", 2));
             await vi.advanceTimersByTimeAsync(500);
-            expect(context.surface.importHostDocument).not.toHaveBeenCalledWith("<pushed />");
+            expect(context.surface.importDocument).not.toHaveBeenCalledWith("<pushed />");
 
             modeSwitch.resolve();
             await vi.runAllTimersAsync();
             await pushed;
 
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<pushed />");
-            expect(context.session.documentRevision()).toBe(2);
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<pushed />");
+            expect(context.session.document.documentRevision()).toBe(2);
         });
 
         it("runs an exclusive operation only after the host import ahead of it", async () => {
             const pushImport = deferred();
             const context = setup();
             await openSession(context);
-            context.surface.importHostDocument.mockImplementationOnce(() => pushImport.promise);
+            context.surface.importDocument.mockImplementationOnce(() => pushImport.promise);
             const switchMode = vi.fn(async () => {});
 
             const pushed = context.session.receiveHostFile(hostFile("<pushed />", 2));
@@ -595,13 +591,13 @@ describe("BpmnDocumentSession", () => {
             await exportStarted.promise;
             await pushHostFile(context.session, hostFile("<pushed />", 2));
             // The push has imported, so only the revision check can drop the export.
-            expect(context.session.hasPendingHostUpdate()).toBe(false);
+            expect(context.session.document.hasPendingHostUpdate()).toBe(false);
             exportResult.resolve();
             await vi.runAllTimersAsync();
 
             expect(syncCommands(context.posted)).toEqual([]);
             expect(context.surface.afterSync).not.toHaveBeenCalled();
-            expect(context.session.documentRevision()).toBe(2);
+            expect(context.session.document.documentRevision()).toBe(2);
         });
 
         it("drops an export while a host push waits to import", async () => {
@@ -639,7 +635,7 @@ describe("BpmnDocumentSession", () => {
             await context.session.flushPendingSync();
 
             expect(syncCommands(context.posted)).toHaveLength(2);
-            expect(context.session.hasPendingSync()).toBe(false);
+            expect(context.session.document.hasPendingSync()).toBe(false);
         });
 
         it("lands every pending edit on the host before a surface destroy", async () => {
@@ -654,7 +650,7 @@ describe("BpmnDocumentSession", () => {
                 expect.objectContaining({ content: "<exported />", documentRevision: 4 }),
                 expect.objectContaining({ content: "<exported />", documentRevision: 4 }),
             ]);
-            expect(context.session.hasPendingSync()).toBe(false);
+            expect(context.session.document.hasPendingSync()).toBe(false);
         });
 
         it("fires the scheduled sync only once when the page hides", async () => {
@@ -667,7 +663,7 @@ describe("BpmnDocumentSession", () => {
             await vi.advanceTimersByTimeAsync(0);
 
             expect(syncCommands(context.posted)).toHaveLength(1);
-            expect(context.session.hasPendingSync()).toBe(true);
+            expect(context.session.document.hasPendingSync()).toBe(true);
         });
     });
 
@@ -731,9 +727,9 @@ describe("BpmnDocumentSession", () => {
         it("restores interaction after a declined destructive flush", () => {
             const context = setup();
 
-            context.session.beginDestructiveFlush();
+            context.session.document.beginDestructiveFlush();
             expect(document.body.inert).toBe(true);
-            context.session.endDestructiveFlush();
+            context.session.document.endDestructiveFlush();
 
             expect(document.body.inert).toBe(false);
         });
@@ -789,8 +785,8 @@ describe("BpmnDocumentSession", () => {
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
             await context.session.focusElement("Task_1");
 
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<pushed />");
-            expect(context.surface.importHostDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<pushed />");
+            expect(context.surface.importDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
                 callOrder(context.surface.centerOnElement),
             );
         });
@@ -805,8 +801,8 @@ describe("BpmnDocumentSession", () => {
             context.session.markInitialized();
             await context.session.drainPendingActions();
 
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<pushed />");
-            expect(context.surface.importHostDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<pushed />");
+            expect(context.surface.importDocument.mock.invocationCallOrder.at(-1)).toBeLessThan(
                 callOrder(context.surface.refreshDiagram),
             );
             expect(callOrder(context.surface.refreshDiagram)).toBeLessThan(
@@ -940,8 +936,8 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.session.isReloadingForEngine).toBe(true);
             expect(context.session.isReady()).toBe(false);
-            expect(context.session.hasPendingSync()).toBe(false);
-            expect(context.session.hasPendingHostUpdate()).toBe(false);
+            expect(context.session.document.hasPendingSync()).toBe(false);
+            expect(context.session.document.hasPendingHostUpdate()).toBe(false);
             expect(context.page.cancelPendingSurfaceWork).toHaveBeenCalledOnce();
             expect(document.body.inert).toBe(true);
             await vi.advanceTimersByTimeAsync(500);
@@ -956,7 +952,7 @@ describe("BpmnDocumentSession", () => {
             expect(callOrder(context.page.destroySurface)).toBeLessThan(
                 callOrder(context.page.reloadPage),
             );
-            expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
+            expect(context.surface.importDocument).toHaveBeenCalledOnce();
             expect(context.surface.exportDocument).not.toHaveBeenCalled();
             expect(document.body.inert).toBe(true);
         });
@@ -969,7 +965,7 @@ describe("BpmnDocumentSession", () => {
             await pushHostFile(context.session, hostFile("<after the reload began />", 2));
             await pushHostFile(context.session, hostFile("<c8 />", 3, "c8"));
 
-            expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
+            expect(context.surface.importDocument).toHaveBeenCalledOnce();
             expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
@@ -1076,13 +1072,13 @@ describe("BpmnDocumentSession", () => {
             await importInitialFile(context);
             await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
-            context.surface.importHostDocument.mockImplementationOnce(() => pushImport.promise);
+            context.surface.importDocument.mockImplementationOnce(() => pushImport.promise);
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
             context.session.markInitialized();
 
             const draining = context.session.drainPendingActions();
             await vi.advanceTimersByTimeAsync(0);
-            expect(context.surface.importHostDocument).toHaveBeenLastCalledWith("<pushed />");
+            expect(context.surface.importDocument).toHaveBeenLastCalledWith("<pushed />");
             const reloading = context.session.receiveHostFile(hostFile("<c8 />", 3, "c8"));
             pushImport.resolve();
             await Promise.all([draining, reloading]);
@@ -1096,7 +1092,7 @@ describe("BpmnDocumentSession", () => {
             const pushImport = deferred();
             const context = setup();
             await importInitialFile(context);
-            context.surface.importHostDocument.mockImplementationOnce(() => pushImport.promise);
+            context.surface.importDocument.mockImplementationOnce(() => pushImport.promise);
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
             context.session.markInitialized();
 

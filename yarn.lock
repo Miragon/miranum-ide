@@ -2975,6 +2975,7 @@ __metadata:
     "@bpmn-io/form-js-viewer": "npm:2.1.1"
     "@codemirror/state": "npm:6.7.6"
     "@miragon/bpmn-modeler-shared": "workspace:*"
+    "@miragon/bpmn-modeler-types": "workspace:*"
     "@types/node": "npm:26.6.5"
     "@types/vscode-webview": "npm:1.57.5"
     "@typescript/native": "npm:typescript@7.0.2"

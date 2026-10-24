@@ -84,7 +84,7 @@ notifier.logWarning('No element templates found in workspace');
 notifier.logError(new Error('Failed to parse element template: invalid JSON'));  // Error object, not string
 ```
 
-The webview sends `LogInfoCommand` / `LogWarningCommand` / `LogErrorCommand` messages to the host, which writes them to the output channel. This project uses a single channel for the modeler. In the BPMN webview the document lines come from `apps/bpmn-webview/src/session/documentSession.ts` (open, sync and refresh failures) and `session/surfaceDocument.ts` (import warnings), the surface-creation and mode-switch failures from `session/modeController.ts`, and a failed host message is prefixed with its type by `session/messageRouter.ts`.
+The webview sends `LogInfoCommand` / `LogWarningCommand` / `LogErrorCommand` messages to the host, which writes them to the output channel. This project uses a single channel for the modeler. In the BPMN webview the document lines come from `apps/bpmn-webview/src/session/documentSession.ts` (open and refresh failures) and the shared `libs/shared/src/lib/webviewDocumentSync.ts` (sync failures) and `session/surfaceDocument.ts` (import warnings), the surface-creation and mode-switch failures from `session/modeController.ts`, and a failed host message is prefixed with its type by `session/messageRouter.ts`.
 
 ## Clipboard Access
 

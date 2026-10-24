@@ -1,10 +1,12 @@
 import {
+    createInertLock,
     HostDocumentRevisions,
     LogErrorCommand,
     LogWarningCommand,
     SyncDocumentCommand,
     UpdateFormOutputValuesCommand,
 } from "@miragon/bpmn-modeler-shared";
+import { serializeAsync } from "@miragon/bpmn-modeler-types";
 
 import { FormHost } from "./host";
 
@@ -38,8 +40,13 @@ export interface FormEditorElements {
 export class FormEditorApp {
     private mode: "edit" | "preview" = "edit";
     private activeHostUpdates = 0;
-    private hostImportQueue: Promise<void> = Promise.resolve();
-    private previewImportQueue: Promise<void> = Promise.resolve();
+    private readonly importSchema = serializeAsync((schema: Schema) =>
+        this.formEditor.importSchema(schema),
+    );
+    private readonly importPreviewInOrder = serializeAsync((version: number) =>
+        this.importPreview(version),
+    );
+    private readonly flushLock = createInertLock(document.body);
     private readonly revisions = new HostDocumentRevisions();
     private previewRefreshVersion = 0;
     private sourceContent = "";
@@ -52,7 +59,6 @@ export class FormEditorApp {
     private outputValuesContent: string | undefined;
     private previewOutputActive = false;
     private syncDeliveryTimer: ReturnType<typeof setTimeout> | undefined;
-    private inertBeforeFlush: boolean | undefined;
 
     constructor(
         private readonly formEditor: FormEditorLike,
@@ -95,12 +101,7 @@ export class FormEditorApp {
 
         this.activeHostUpdates++;
         try {
-            const importing = this.hostImportQueue.then(() => this.formEditor.importSchema(schema));
-            this.hostImportQueue = importing.then(
-                () => undefined,
-                () => undefined,
-            );
-            const result = await importing;
+            const result = await this.importSchema(schema);
             if (!this.revisions.isCurrent(version)) return;
 
             this.revisions.markImported(documentRevision);
@@ -153,16 +154,11 @@ export class FormEditorApp {
     }
 
     beginDestructiveFlush(): void {
-        if (this.inertBeforeFlush === undefined) {
-            this.inertBeforeFlush = Boolean(document.body.inert);
-            document.body.inert = true;
-        }
+        this.flushLock.acquire();
     }
 
     endDestructiveFlush(): void {
-        if (this.inertBeforeFlush === undefined) return;
-        document.body.inert = this.inertBeforeFlush;
-        this.inertBeforeFlush = undefined;
+        this.flushLock.release();
     }
 
     async exportContent(): Promise<string> {
@@ -227,12 +223,7 @@ export class FormEditorApp {
     private async refreshPreview(): Promise<void> {
         const version = ++this.previewRefreshVersion;
         this.previewOutputActive = false;
-        const refreshing = this.previewImportQueue.then(() => this.importPreview(version));
-        this.previewImportQueue = refreshing.then(
-            () => undefined,
-            () => undefined,
-        );
-        return refreshing;
+        return this.importPreviewInOrder(version);
     }
 
     private async importPreview(version: number): Promise<void> {

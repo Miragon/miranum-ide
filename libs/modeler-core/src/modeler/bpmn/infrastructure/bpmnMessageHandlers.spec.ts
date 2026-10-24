@@ -5,12 +5,9 @@ import {
     SetClipboardCommand,
     SetPropertiesPanelStateCommand,
     SetTextClipboardCommand,
-    SyncDocumentCommand,
     UpdateLintResultsCommand,
 } from "@miragon/bpmn-modeler-shared";
-import { RecordingNotifier } from "../../../testing";
 
-import { getBpmnFileHandler, syncDocumentHandler } from "./bpmnDocumentHandlers";
 import {
     getBpmnlintConfigHandler,
     getBpmnModelerSettingHandler,
@@ -30,27 +27,6 @@ const ANY: Command = { type: "Ignored" } as Command;
 
 beforeEach(() => {
     vi.clearAllMocks();
-});
-
-describe("getBpmnFileHandler", () => {
-    it("logs readiness only when the diagram actually rendered", async () => {
-        const bpmnService = { display: vi.fn().mockResolvedValue(true) };
-        const notifier = new RecordingNotifier();
-
-        await getBpmnFileHandler(bpmnService as never, notifier)(ANY, EDITOR);
-
-        expect(bpmnService.display).toHaveBeenCalledWith(EDITOR);
-        expect(notifier.logged("debug")).toEqual(["Bpmn modeler is ready"]);
-    });
-
-    it("does not log when rendering was skipped", async () => {
-        const bpmnService = { display: vi.fn().mockResolvedValue(false) };
-        const notifier = new RecordingNotifier();
-
-        await getBpmnFileHandler(bpmnService as never, notifier)(ANY, EDITOR);
-
-        expect(notifier.logs).toEqual([]);
-    });
 });
 
 describe("read-style handlers forward the editor id", () => {
@@ -110,12 +86,6 @@ describe("set-style handlers forward the command payload", () => {
         const svc = { writeClipboard: vi.fn() };
         setTextClipboardHandler(svc as never)(new SetTextClipboardCommand("plain"), EDITOR);
         expect(svc.writeClipboard).toHaveBeenCalledWith("plain");
-    });
-
-    it("syncDocumentHandler → sync(editorId, content)", async () => {
-        const bpmnService = { sync: vi.fn().mockResolvedValue(true) };
-        await syncDocumentHandler(bpmnService as never)(new SyncDocumentCommand("<xml/>"), EDITOR);
-        expect(bpmnService.sync).toHaveBeenCalledWith(EDITOR, "<xml/>", 0);
     });
 });
 

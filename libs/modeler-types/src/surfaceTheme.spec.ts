@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { THEME_ATTRIBUTE, ThemeController } from "./theme";
+import { ThemeController } from "./surfaceTheme";
+
+const THEME_ATTRIBUTE = "data-test-theme";
+
+/**
+ * Per-instance theme controller. Each test constructs its own
+ * {@link ThemeController} over plain scope roots, so there is no page-singleton
+ * state to reset — unlike the old module-singleton, a fresh controller starts
+ * with `mode === undefined`, which is why a first `setMode("automatic")` engages
+ * rather than short-circuiting on the same-mode guard.
+ */
 
 const THEME_BASE = "http://localhost/assets/";
 
@@ -23,6 +33,10 @@ function makeRoot(): HTMLElement {
     return div;
 }
 
+/**
+ * Minimal `window.matchMedia` stub: a single controllable `matches` flag plus a
+ * `change`-listener registry so a test can emit a live OS/browser theme switch.
+ */
 function stubMatchMedia(initialDark: boolean) {
     let matches = initialDark;
     const listeners = new Set<(event: MediaQueryListEvent) => void>();
@@ -60,7 +74,7 @@ describe("ThemeController", () => {
         stubMatchMedia(false);
         const a = makeRoot();
         const b = makeRoot();
-        const controller = new ThemeController([a, b]);
+        const controller = new ThemeController([a, b], THEME_ATTRIBUTE);
 
         controller.setMode("dark");
 
@@ -71,7 +85,7 @@ describe("ThemeController", () => {
     it("forces the light attribute back from dark", () => {
         stubMatchMedia(false);
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
 
         controller.setMode("dark");
         controller.setMode("light");
@@ -82,7 +96,7 @@ describe("ThemeController", () => {
     it("engages on the first automatic call (no same-mode short-circuit)", () => {
         stubMatchMedia(true);
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
 
         controller.setMode("automatic");
 
@@ -92,7 +106,7 @@ describe("ThemeController", () => {
     it("automatic reacts to a live scheme change", () => {
         const media = stubMatchMedia(false);
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
 
         controller.setMode("automatic");
         expect(root.getAttribute(THEME_ATTRIBUTE)).toBe("light");
@@ -104,7 +118,7 @@ describe("ThemeController", () => {
     it("a forced mode detaches the scheme listener and stops reacting", () => {
         const media = stubMatchMedia(false);
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
 
         controller.setMode("automatic");
         controller.setMode("light");
@@ -117,7 +131,7 @@ describe("ThemeController", () => {
     it("dispose detaches the listener and clears the attribute", () => {
         const media = stubMatchMedia(true);
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
 
         controller.setMode("automatic");
         controller.dispose();
@@ -130,7 +144,7 @@ describe("ThemeController", () => {
         const media = stubMatchMedia(true);
         const link = setThemeLink("lightTheme.css");
         const root = makeRoot();
-        const controller = new ThemeController([root]);
+        const controller = new ThemeController([root], THEME_ATTRIBUTE);
         controller.setMode("light");
         controller.dispose();
 
@@ -145,7 +159,7 @@ describe("ThemeController", () => {
     it("mirrors the resolved kind onto a legacy #theme-link when present", () => {
         stubMatchMedia(false);
         const link = setThemeLink("lightTheme.css");
-        const controller = new ThemeController([makeRoot()]);
+        const controller = new ThemeController([makeRoot()], THEME_ATTRIBUTE);
 
         controller.setMode("dark");
 
@@ -155,7 +169,7 @@ describe("ThemeController", () => {
     it("does not throw or log when no #theme-link is present", () => {
         stubMatchMedia(false);
         const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-        const controller = new ThemeController([makeRoot()]);
+        const controller = new ThemeController([makeRoot()], THEME_ATTRIBUTE);
 
         expect(() => controller.setMode("dark")).not.toThrow();
         expect(error).not.toHaveBeenCalled();
@@ -165,8 +179,8 @@ describe("ThemeController", () => {
         stubMatchMedia(false);
         const a = makeRoot();
         const b = makeRoot();
-        const controllerA = new ThemeController([a]);
-        const controllerB = new ThemeController([b]);
+        const controllerA = new ThemeController([a], THEME_ATTRIBUTE);
+        const controllerB = new ThemeController([b], THEME_ATTRIBUTE);
 
         controllerA.setMode("dark");
         controllerB.setMode("light");

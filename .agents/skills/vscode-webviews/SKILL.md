@@ -110,10 +110,12 @@ host.postMessage(command);
 
 **Host receives Commands** — the host side uses an open/closed `WebviewMessageRouter` (one per editor) instead of a `switch`. The core `EditorSessionLifecycle` (run by `ModelerEditorController` in VS Code and by the IntelliJ bridge) forwards every message into the router; handlers are small factories, host-agnostic ones in `libs/modeler-core`, registered in `composition/editorFeature.ts`:
 ```typescript
-// handler factory (libs/modeler-core/src/modeler/bpmn/infrastructure/bpmnDocumentHandlers.ts)
-export function syncDocumentHandler(bpmnService: BpmnModelerService): MessageHandler {
-  return async (message, editorId) =>
-    bpmnService.sync(editorId, (message as SyncDocumentCommand).content);
+// handler factory (libs/modeler-core/src/shared/infrastructure/documentMessageHandlers.ts),
+// shared by the BPMN, DMN and Form editors
+export function syncDocumentHandler(service: ModelerDocumentService): MessageHandler<SyncDocumentCommand> {
+  return async (sync, editorId) => {
+    await service.sync(editorId, sync.content, sync.documentRevision);
+  };
 }
 
 // wiring (composition/editorFeature.ts)

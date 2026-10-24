@@ -214,8 +214,9 @@ describe("architecture", () => {
     describe("feature isolation (regression lock — green)", () => {
         // `migration`, `codeLink`, `navigation` and `definitionSearch` are
         // intentionally absent: after the engine extraction their only
-        // plugin-side file is an `index.ts` barrel.
-        const FEATURE_FOLDERS = ["diff", "deployment", "scriptTask", "modeler/bpmn", "modeler/dmn"];
+        // plugin-side file is an `index.ts` barrel. The DMN editor has no
+        // plugin-side code left at all.
+        const FEATURE_FOLDERS = ["diff", "deployment", "scriptTask", "modeler/bpmn"];
 
         for (const sourceFeature of FEATURE_FOLDERS) {
             for (const targetFeature of FEATURE_FOLDERS) {
