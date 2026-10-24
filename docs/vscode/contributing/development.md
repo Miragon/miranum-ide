@@ -231,7 +231,7 @@ A URL query parameter selects what the mock serves:
 | `/?mode=diff-after`                      | Readonly **after** (right) pane, with highlights for added / changed / moved elements.                     |
 
 The diff modes run `bpmn-js-differ` against two fixture XMLs
-(`apps/bpmn-webview/src/app/__fixtures__/mock-diff.ts`) so highlights reflect
+(`apps/bpmn-webview/src/__fixtures__/mock-diff.ts`) so highlights reflect
 the real differ's output. All mock code and its dependencies are gated on
 `NODE_ENV === "development"` and tree-shaken out of the production webview
 bundle.

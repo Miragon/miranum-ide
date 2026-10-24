@@ -84,7 +84,7 @@ notifier.logWarning('No element templates found in workspace');
 notifier.logError(new Error('Failed to parse element template: invalid JSON'));  // Error object, not string
 ```
 
-The webview sends `LogInfoCommand` / `LogErrorCommand` messages to the host, which writes them to the output channel. This project uses a single channel for the modeler.
+The webview sends `LogInfoCommand` / `LogWarningCommand` / `LogErrorCommand` messages to the host, which writes them to the output channel. This project uses a single channel for the modeler. In the BPMN webview the document lines come from `apps/bpmn-webview/src/session/documentSession.ts` (open, sync and refresh failures) and `session/surfaceDocument.ts` (import warnings), the surface-creation and mode-switch failures from `session/modeController.ts`, and a failed host message is prefixed with its type by `session/messageRouter.ts`.
 
 ## Clipboard Access
 
@@ -208,6 +208,8 @@ Webviews **must** respect the user's VS Code theme:
 - The properties panel uses standard HTML form elements with labels
 - Keyboard shortcuts (Cmd/Ctrl+C/V/A) work in both diagram and properties panel via the polyfills described above
 - The select-all guard (`onSelectAllKeydown` in `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`) ensures Cmd/Ctrl+A works correctly in contenteditable fields
+- The BPMN webview makes the page `inert` while a mode switch, a destructive flush or an engine reload runs. Take every such lock from the one `createInertLockGroup(document.body)` in `apps/bpmn-webview/src/bootstrap.ts` (the document session and `session/modeController.ts` each create theirs from it), so the last release restores the page's own `inert` state
+- Escape on the closed mode strip returns focus to the canvas (`session/modeController.ts`)
 
 ### `setContext` for Keybinding Visibility
 
