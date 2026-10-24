@@ -253,4 +253,21 @@ describe("append menu", () => {
             "am-palette-panel--expanded",
         );
     });
+
+    it("places the description card beside the menu while the menu is still appearing", async () => {
+        await openAppendMenu({ engine: "c8", locale: "en" });
+        document
+            .querySelector(".am-panel")!
+            .getAnimations()
+            .forEach((animation) => {
+                animation.pause();
+                animation.currentTime = 60;
+            });
+
+        await expect.poll(() => document.querySelector(".am-hover-card")).not.toBeNull();
+
+        expect(
+            document.querySelector(".am-hover-card")!.getBoundingClientRect().right,
+        ).toBeLessThanOrEqual(document.querySelector(".am-panel")!.getBoundingClientRect().left);
+    });
 });
