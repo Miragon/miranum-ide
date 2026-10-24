@@ -21,7 +21,7 @@ import type { HostChannel } from "./hostChannel";
 // The first search indexes the workspace cold, which can walk a whole directory tree.
 export const DEFINITION_SEARCH_TIMEOUT_MS = 30_000;
 
-export interface ProtocolCapabilityHandlers {
+interface ProtocolCapabilityHandlers {
     FormReferenceStatusQuery(query: FormReferenceStatusQuery): void;
     WorkspaceDefinitionsQuery(query: WorkspaceDefinitionsQuery): void;
 }
@@ -48,7 +48,8 @@ export class FormReferenceAvailability {
         };
     }
 
-    update(formIds: readonly string[]): void {
+    /** @returns whether the set of available form ids changed. */
+    update(formIds: readonly string[]): boolean {
         const nextFormIds = new Set(formIds);
         const changed =
             nextFormIds.size !== this.availableFormIds.size ||
@@ -57,6 +58,7 @@ export class FormReferenceAvailability {
         if (changed) {
             this.listeners.forEach((listener) => listener());
         }
+        return changed;
     }
 }
 
@@ -149,7 +151,9 @@ export function createProtocolCapabilities(
             definitionSearch: definitionSearch.port,
         },
         handlers: {
-            FormReferenceStatusQuery: (query) => formReferences.update(query.formIds),
+            FormReferenceStatusQuery: (query) => {
+                formReferences.update(query.formIds);
+            },
             WorkspaceDefinitionsQuery: (query) => definitionSearch.receive(query),
         },
         requestFormReferenceStatus: (engine) => {

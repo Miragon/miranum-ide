@@ -72,20 +72,24 @@ describe("FormReferenceAvailability", () => {
         expect(availability.has("Form_2")).toBe(false);
     });
 
-    it("notifies listeners only when the set of form ids changes", () => {
+    it("reports and notifies only a change in the set of form ids", () => {
         const availability = new FormReferenceAvailability();
         const changed = vi.fn();
         availability.onChanged(changed);
 
-        availability.update(["Form_1", "Form_2"]);
-        availability.update(["Form_2", "Form_1"]);
+        expect(availability.update(["Form_1", "Form_2"])).toBe(true);
+        expect(availability.update(["Form_2", "Form_1"])).toBe(false);
         expect(changed).toHaveBeenCalledOnce();
 
-        availability.update(["Form_1", "Form_3"]);
+        expect(availability.update(["Form_1", "Form_3"])).toBe(true);
         expect(changed).toHaveBeenCalledTimes(2);
 
-        availability.update(["Form_1"]);
+        expect(availability.update(["Form_1"])).toBe(true);
         expect(changed).toHaveBeenCalledTimes(3);
+
+        expect(availability.update([])).toBe(true);
+        expect(availability.update([])).toBe(false);
+        expect(changed).toHaveBeenCalledTimes(4);
     });
 
     it("stops notifying a listener that unsubscribed", () => {
