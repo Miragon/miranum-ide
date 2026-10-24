@@ -106,10 +106,8 @@ export function createModeController(
         surfaceMode = mode;
         boundViewState().persistMode(mode);
         renderStrip(switchPending);
+        // A toggle keeps the instance; a rebuilt one starts without locks, panel UI or persistence.
         if (transition === "toggle") return;
-        // A recreate/fallback stood up a fresh instance: re-apply the host's
-        // script locks, restore its panel UI, resume persistence, and re-request
-        // modeler resources.
         const viewState = boundViewState();
         // A recreate already applied the carried snapshot; a fallback applied
         // none, so the persisted state restores.
