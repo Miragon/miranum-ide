@@ -73,11 +73,16 @@ Each message class fixes its `type` as a string literal (`Command<"X">`), and
 `on(type, handler)` hands each handler the narrowed message, and webview and
 host switches narrow on `type` instead of casting, so a misspelt type or a
 payload mismatch fails to compile. Inbound messages stay untrusted JSON: a
-switch narrows them once (`asProtocolMessage`) and ignores unknown types.
-Switches that own a closed set (the BPMN webview's inbound queries, the
-deployment dispatcher) end in `exhaustiveMessageGuard`. The classes remain the
-constructors and the wire format is unchanged: the same `type` strings and
-fields, which the IntelliJ host matches.
+switch narrows them once (`asProtocolMessage`) and ignores unknown types, and a
+handler table finds no entry for them. Code that owns a closed set makes a
+missing type a compile error. A switch ends in `exhaustiveMessageGuard` (the
+deployment dispatcher). A handler table has a mapped type that needs an entry
+for every type (the BPMN webview's session messages in
+`apps/bpmn-webview/src/session/messageRouter.ts`). TypeScript does not check
+the keys a table gets through spreads, so a spec checks that no two spread
+handler groups name the same type. The classes remain the constructors and the
+wire format is unchanged: the same `type` strings and fields, which the
+IntelliJ host matches.
 
 Commands and Queries are not correlated by default: a request is a Command and
 the answer a later pushed Query. A webview port that answers a query while
