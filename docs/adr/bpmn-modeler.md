@@ -1,7 +1,7 @@
 # BPMN modeler
 
 - Status: accepted
-- Last reviewed: 2026-10-23
+- Last reviewed: 2026-10-24
 
 ## Context
 
@@ -480,7 +480,11 @@ whose pushes can race teardown catch the error.
 The modeler, designer and viewer facades delegate shared plumbing (bpmn-js
 instance, managers, view state, initial fit, focus, theme) to an internal
 `SurfaceCore`; the two editable facades add the `editableSurface` helpers. Each
-facade still owns its store, and with it its LIFO teardown order.
+facade still owns its store, and with it its LIFO teardown order. The three
+handle interfaces extend one type-only `BpmnSurfaceHandle` that declares and
+documents the members they share (document I/O, view state, theme, `destroy`).
+The theme controller lives in `modeler-types` and takes the attribute name, so
+the DMN package uses the same one.
 
 Editable surfaces share debounced content-out (300 ms, 1000 ms max wait).
 `onContentSaved({ xml })` accepts and awaits `void | Promise<void>`. Catch
