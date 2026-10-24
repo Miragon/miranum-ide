@@ -1,6 +1,6 @@
 import { posix } from "path";
 
-import { afterEach, describe, expect, it, MockInstance, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
     BasicAuth,
@@ -29,14 +29,15 @@ import {
     UnreadableDotEnvError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
-import { createTestHost, RecordingNotifier, TestHostOptions } from "../../testing";
+import { createTestHost, Prompt, TestHostOptions } from "../../testing";
 import { Engine } from "@miragon/bpmn-modeler-types";
 
 // A real, valid C8 document so `detectEngine` exercises the production
 // `BpmnDocument.detectPlatform` path instead of a stub.
 const C8_XML = BpmnDocument.empty("c8", "8.8.0").xml;
 
-const TARGET_SLOT = "/ws/.camunda/deployment-targets.json::dev";
+const TARGET_SLOT = `${targetsFileOf("/work")}::dev`;
+const AD_HOC_SLOT = "ad-hoc";
 const MAIN_FILE = { "/work/order-process.bpmn": "<xml/>" };
 
 /** `.env` variables, or the error reading that `.env` fails with. */
@@ -87,23 +88,23 @@ function createService({ dotEnvFiles = {}, engineClient, ...hostOptions }: Servi
 
     // Every document directory is its own project: the one holding its targets file.
     const targetsLocator = {
-        locateTargetsFile: vi.fn(async (documentDir?: string) => {
-            const projectDir = documentDir ?? "/work";
-            return {
-                filePath: posix.join(projectDir, ".camunda", "deployment-targets.json"),
-                exists: true,
-                projectDir,
-            };
-        }),
+        locateTargetsFile: vi.fn(async (documentDir = "/work") => ({
+            filePath: targetsFileOf(documentDir),
+            exists: true,
+            projectDir: documentDir,
+        })),
     };
     const envResolver = new EnvValueResolver(targetsLocator, host.workspace);
-    const createLookup = vi.spyOn(envResolver, "createLookup");
+    // Keyed like the real slot, so an approval lands under its target's project.
+    const targetSlots = {
+        resolveSlot: async (name: string, documentDir = "/work") =>
+            `${targetsFileOf(documentDir)}::${name}`,
+    };
     const credentialApproval = new CredentialApprovalService(
-        { resolveSlot: async () => TARGET_SLOT },
+        targetSlots,
         host.secrets,
         host.picker,
     );
-    const ensureApproved = vi.spyOn(credentialApproval, "ensureApproved");
 
     const restClient = {
         deploy: vi.fn(),
@@ -131,14 +132,16 @@ function createService({ dotEnvFiles = {}, engineClient, ...hostOptions }: Servi
         host,
         restClient,
         deploymentStatus,
-        createLookup,
-        ensureApproved,
         locateTargetsFile: targetsLocator.locateTargetsFile,
         dotEnvReads: () =>
             readFile.mock.calls
                 .map(([filePath]) => filePath)
                 .filter((filePath) => posix.basename(filePath) === ".env"),
     };
+}
+
+function targetsFileOf(projectDir: string): string {
+    return posix.join(projectDir, ".camunda", "deployment-targets.json");
 }
 
 function xmlFiles(...paths: string[]): Record<string, string> {
@@ -206,28 +209,30 @@ function refuseQuotingRequest() {
     });
 }
 
-/**
- * Everything the notifier recorded; the raw logged errors contribute message,
- * stack and cause, which the recording keeps only the message of.
- */
-function everythingNotified(
-    notifier: RecordingNotifier,
-    logError: MockInstance<RecordingNotifier["logError"]>,
-): string {
-    return [
-        ...notifier.infos,
-        ...notifier.errors,
-        ...notifier.logs.map((entry) => entry.message),
-        ...logError.mock.calls.flat().map(describeNotified),
-    ].join("\n");
+/** The prompt asking to send `connection`'s credentials and `.env` values to `origins`. */
+function approvalPrompt(origins: string, connection: string): Prompt {
+    return {
+        method: "confirmDestructive",
+        args: [
+            expect.objectContaining({
+                title: `Send credentials and .env values to ${origins}?`,
+                details: expect.arrayContaining([`They belong to ${connection}.`]),
+            }),
+        ],
+    };
 }
 
-function describeNotified(argument: unknown): string {
-    if (argument instanceof Error) {
-        const { cause } = argument as { cause?: unknown };
-        return [argument.message, argument.stack, describeNotified(cause)].join("\n");
-    }
-    return String(argument);
+/** Succeeds every deploy, noting what `slot` had approved as each request went out. */
+function approvalsAtEachDeploy(
+    { host, restClient }: Pick<ReturnType<typeof createService>, "host" | "restClient">,
+    slot: string,
+): string[][] {
+    const approvals: string[][] = [];
+    restClient.deploy.mockImplementation(async () => {
+        approvals.push(await host.secrets.getApprovedDestinations(slot));
+        return new DeploymentResult(true, "ok");
+    });
+    return approvals;
 }
 
 const ENV_TOKEN = "tok-9f8e7d";
@@ -506,12 +511,16 @@ describe("DeploymentService.deploy", () => {
     });
 
     it("keys the request and the ad-hoc ledger identity off a single .env read", async () => {
-        const { service, restClient, deploymentStatus, createLookup, dotEnvReads } = createService({
-            files: MAIN_FILE,
-            dotEnvFiles: {
-                "/work": { MIRAGON_URL: "https://prod.example.com/api", MIRAGON_TENANT: "acme" },
-            },
-        });
+        const { service, restClient, deploymentStatus, locateTargetsFile, dotEnvReads } =
+            createService({
+                files: MAIN_FILE,
+                dotEnvFiles: {
+                    "/work": {
+                        MIRAGON_URL: "https://prod.example.com/api",
+                        MIRAGON_TENANT: "acme",
+                    },
+                },
+            });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
         const config = buildConfig({
             endpoint: "${env:MIRAGON_URL}",
@@ -520,8 +529,8 @@ describe("DeploymentService.deploy", () => {
 
         await service.deploy(config);
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith("workspaceFolder", "/work", config);
         expect(dotEnvReads()).toEqual(["/work/.env"]);
+        expect(locateTargetsFile).not.toHaveBeenCalled();
         const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
         expect(sentConfig.endpoint).toBe("https://prod.example.com/api");
         // Keyed off the resolved values, but only as fingerprints: the ledger is persisted.
@@ -531,16 +540,18 @@ describe("DeploymentService.deploy", () => {
     });
 
     it("keys the request and the target ledger identity off a single .env read", async () => {
-        const { service, restClient, deploymentStatus, createLookup } = createService({
-            files: MAIN_FILE,
-            dotEnvFiles: { "/work": { MIRAGON_URL: "https://prod.example.com/api" } },
-        });
+        const { service, restClient, deploymentStatus, locateTargetsFile, dotEnvReads } =
+            createService({
+                files: MAIN_FILE,
+                dotEnvFiles: { "/work": { MIRAGON_URL: "https://prod.example.com/api" } },
+            });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
         const config = buildConfig({ endpoint: "${env:MIRAGON_URL}" });
 
         await service.deploy(config, TARGET_SLOT, targetAt("${env:MIRAGON_URL}"));
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith("targetsFile", "/work", config);
+        expect(locateTargetsFile).toHaveBeenCalledExactlyOnceWith("/work");
+        expect(dotEnvReads()).toEqual(["/work/.env"]);
         const sentConfig = restClient.deploy.mock.calls[0][0] as DeploymentConfig;
         expect(sentConfig.endpoint).toBe("https://prod.example.com/api");
         expect(deploymentStatus.recordDeployment.mock.calls[0][2].key()).toBe(
@@ -742,7 +753,6 @@ describe("DeploymentService.deploy", () => {
             dotEnvFiles: { "/work": { MIRAGON_URL: CREDENTIALLED_ENDPOINT } },
             engineClient: createRealRestClient(),
         });
-        const logError = vi.spyOn(host.notifier, "logError");
 
         const result = await service.deploy(buildConfig({ endpoint: "${env:MIRAGON_URL}" }));
 
@@ -753,15 +763,16 @@ describe("DeploymentService.deploy", () => {
         );
         expect(result.success).toBe(false);
         expect(result.message).toBe(CREDENTIALLED_URL_REJECTED.message);
-        expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect(host.notifier.loggedErrors).toEqual([
             expect.objectContaining({
                 host: CREDENTIALLED_URL_REJECTED.host,
                 reason: CREDENTIALLED_URL_REJECTED.reason,
             }),
-        );
-        expect(logError.mock.calls[0][0]).toBeInstanceOf(HttpTransportError);
+        ]);
+        expect(host.notifier.loggedErrors[0]).toBeInstanceOf(HttpTransportError);
+        expect(host.notifier.logged("error")).toEqual([CREDENTIALLED_URL_REJECTED.message]);
         expect(result.message).not.toContain("s3cret");
-        expect(everythingNotified(host.notifier, logError)).not.toContain("s3cret");
+        expect(host.notifier.transcript()).not.toContain("s3cret");
         expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
     });
 
@@ -772,7 +783,6 @@ describe("DeploymentService.deploy", () => {
             dotEnvFiles: { "/work": { MIRAGON_TOKEN: ENV_TOKEN } },
             engineClient: createRealRestClient(),
         });
-        const logError = vi.spyOn(host.notifier, "logError");
 
         const result = await service.deploy(
             buildConfig({
@@ -793,12 +803,12 @@ describe("DeploymentService.deploy", () => {
         );
         for (const secret of [ENV_TOKEN, LITERAL_PASSWORD]) {
             expect(result.message).not.toContain(secret);
-            expect(everythingNotified(host.notifier, logError)).not.toContain(secret);
+            expect(host.notifier.transcript()).not.toContain(secret);
         }
     });
 
     it("hands the config to the env resolver and never reads .env when nothing references it", async () => {
-        const { service, restClient, createLookup, dotEnvReads } = createService({
+        const { service, restClient, dotEnvReads } = createService({
             files: MAIN_FILE,
             dotEnvFiles: { "/work": new Error("EISDIR: illegal operation on a directory, read") },
         });
@@ -808,7 +818,7 @@ describe("DeploymentService.deploy", () => {
         const result = await service.deploy(config);
 
         expect(result.success).toBe(true);
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith("workspaceFolder", "/work", config);
+        expect(restClient.deploy).toHaveBeenCalledExactlyOnceWith(config, expect.any(Map));
         expect(dotEnvReads()).toEqual([]);
     });
 
@@ -894,11 +904,11 @@ describe("DeploymentService.deploy .env scope", () => {
 describe("DeploymentService.deploy credential approval", () => {
     it("asks to approve the origin a named target's endpoint resolves to before deploying", async () => {
         const envTarget = targetAt("${env:MIRAGON_URL}");
-        const { service, restClient, ensureApproved } = createService({
+        const { service, host, restClient } = createService({
             files: MAIN_FILE,
             dotEnvFiles: { "/work": { MIRAGON_URL: "https://prod.example.com:8443/engine-rest" } },
         });
-        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const approvedAtDeploy = approvalsAtEachDeploy({ host, restClient }, TARGET_SLOT);
 
         await service.deploy(
             buildConfig({
@@ -909,12 +919,10 @@ describe("DeploymentService.deploy credential approval", () => {
             envTarget,
         );
 
-        expect(ensureApproved).toHaveBeenCalledExactlyOnceWith(
-            envTarget,
-            "/work",
-            expect.objectContaining({ origins: ["https://prod.example.com:8443"] }),
-        );
-        expect(ensureApproved).toHaveBeenCalledBefore(restClient.deploy);
+        expect(host.picker.prompts).toEqual([
+            approvalPrompt("https://prod.example.com:8443", 'target "dev"'),
+        ]);
+        expect(approvedAtDeploy).toEqual([["https://prod.example.com:8443"]]);
     });
 
     it("deploys, persists and records nothing when the user declines the destination", async () => {
@@ -944,7 +952,7 @@ describe("DeploymentService.deploy credential approval", () => {
     });
 
     it("never asks on an ad-hoc deploy whose values are all typed, even beside a .env", async () => {
-        const { service, host, restClient, ensureApproved } = createService({
+        const { service, host, restClient } = createService({
             files: MAIN_FILE,
             dotEnvFiles: { "/work": { MIRAGON_URL: "https://from-env.example/engine-rest" } },
         });
@@ -958,8 +966,8 @@ describe("DeploymentService.deploy credential approval", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(ensureApproved).not.toHaveBeenCalled();
         expect(host.picker.prompts).toEqual([]);
+        await expect(host.secrets.getApprovedDestinations(AD_HOC_SLOT)).resolves.toEqual([]);
     });
 
     it.each([
@@ -981,20 +989,16 @@ describe("DeploymentService.deploy credential approval", () => {
     ])(
         "asks under the ad-hoc approvals before an ad-hoc deploy takes %s from .env",
         async (_field, dotEnv, config, origin) => {
-            const { service, restClient, ensureApproved } = createService({
+            const { service, host, restClient } = createService({
                 files: MAIN_FILE,
                 dotEnvFiles: { "/work": dotEnv },
             });
-            restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+            const approvedAtDeploy = approvalsAtEachDeploy({ host, restClient }, AD_HOC_SLOT);
 
             await service.deploy(config);
 
-            expect(ensureApproved).toHaveBeenCalledExactlyOnceWith(
-                undefined,
-                "/work",
-                expect.objectContaining({ origins: [origin] }),
-            );
-            expect(ensureApproved).toHaveBeenCalledBefore(restClient.deploy);
+            expect(host.picker.prompts).toEqual([approvalPrompt(origin, "the ad-hoc connection")]);
+            expect(approvedAtDeploy).toEqual([[origin]]);
         },
     );
 
@@ -1079,7 +1083,7 @@ describe("DeploymentService.deployFiles", () => {
     });
 
     it("never throws: an unreadable .env fails every file that references it and names the .env in the summary", async () => {
-        const { service, host, restClient, createLookup } = createService({
+        const { service, host, restClient, dotEnvReads } = createService({
             files: xmlFiles("/work/a.bpmn", "/work/b.bpmn"),
             dotEnvFiles: { "/work": new Error("EACCES: permission denied") },
         });
@@ -1097,7 +1101,7 @@ describe("DeploymentService.deployFiles", () => {
             `a: ${unreadable.message}`,
             `b: ${unreadable.message}`,
         ]);
-        expect(createLookup).toHaveBeenCalledOnce();
+        expect(dotEnvReads()).toEqual(["/work/.env"]);
         expect(restClient.deploy).not.toHaveBeenCalled();
         expect(host.notifier.errors).toEqual([
             `Deployed 0/2 file(s) to "dev". a: ${unreadable.message}`,
@@ -1156,7 +1160,7 @@ describe("DeploymentService.deployFiles", () => {
     ])(
         "deploys a target whose only ref is in %s without reading even a broken .env",
         async (_location, refOutsideDeployTarget, auth) => {
-            const { service, host, restClient, createLookup, dotEnvReads } = createService({
+            const { service, host, restClient, dotEnvReads } = createService({
                 files: xmlFiles("/work/a.bpmn", "/work/b.bpmn"),
                 dotEnvFiles: {
                     "/work": new Error("EISDIR: illegal operation on a directory, read"),
@@ -1172,7 +1176,6 @@ describe("DeploymentService.deployFiles", () => {
             );
 
             expect(results.map((r) => r.success)).toEqual([true, true]);
-            expect(createLookup).toHaveBeenCalledOnce();
             expect(dotEnvReads()).toEqual([]);
             expect(host.notifier.errors).toEqual([]);
             expect(host.notifier.infos).toEqual(['Deployed 2/2 file(s) to "dev".']);
@@ -1218,7 +1221,7 @@ describe("DeploymentService.deployFiles", () => {
             "",
         );
         const auth = new BasicAuth("admin", "${env:MIRAGON_PW}");
-        const { service, host, restClient, createLookup, dotEnvReads } = createService({
+        const { service, host, restClient, locateTargetsFile, dotEnvReads } = createService({
             files: xmlFiles("/work/a.bpmn", "/work/b.bpmn"),
             dotEnvFiles: { "/work": { MIRAGON_PW: "s3cret" } },
         });
@@ -1226,11 +1229,7 @@ describe("DeploymentService.deployFiles", () => {
 
         await service.deployFiles(["/work/a.bpmn", "/work/b.bpmn"], literalTarget, auth, "/work");
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
-            "targetsFile",
-            "/work",
-            expect.objectContaining({ mainFilePath: "/work/a.bpmn", auth }),
-        );
+        expect(locateTargetsFile).toHaveBeenCalledExactlyOnceWith("/work");
         expect(dotEnvReads()).toEqual(["/work/.env"]);
         const sentAuths = restClient.deploy.mock.calls.map(
             (call) => (call[0] as DeploymentConfig).auth,
@@ -1244,27 +1243,20 @@ describe("DeploymentService.deployFiles", () => {
     });
 
     it("expands every file with the target project's .env, never the .env of the file's own folder", async () => {
-        const { service, restClient, deploymentStatus, createLookup, dotEnvReads } = createService({
-            files: xmlFiles("/team-a/a.bpmn", "/team-b/b.bpmn"),
-            dotEnvFiles: {
-                "/team-a": { MIRAGON_URL: "https://a.example/api" },
-                "/team-b": { MIRAGON_URL: "https://b.example/api" },
-            },
-        });
+        const { service, restClient, deploymentStatus, locateTargetsFile, dotEnvReads } =
+            createService({
+                files: xmlFiles("/team-a/a.bpmn", "/team-b/b.bpmn"),
+                dotEnvFiles: {
+                    "/team-a": { MIRAGON_URL: "https://a.example/api" },
+                    "/team-b": { MIRAGON_URL: "https://b.example/api" },
+                },
+            });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
         const auth = new NoAuth();
 
         await service.deployFiles(["/team-a/a.bpmn", "/team-b/b.bpmn"], envTarget, auth, "/team-a");
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
-            "targetsFile",
-            "/team-a",
-            expect.objectContaining({
-                mainFilePath: "/team-a/a.bpmn",
-                endpoint: envTarget.endpoint,
-                auth,
-            }),
-        );
+        expect(locateTargetsFile).toHaveBeenCalledExactlyOnceWith("/team-a");
         expect(dotEnvReads()).toEqual(["/team-a/.env"]);
         const sentConfigs = restClient.deploy.mock.calls.map((call) => call[0] as DeploymentConfig);
         expect(sentConfigs.map((config) => config.endpoint)).toEqual([
@@ -1307,7 +1299,6 @@ describe("DeploymentService.deployFiles", () => {
             dotEnvFiles: { "/work": { MIRAGON_URL: CREDENTIALLED_ENDPOINT } },
             engineClient: createRealRestClient(),
         });
-        const logError = vi.spyOn(host.notifier, "logError");
 
         const results = await service.deployFiles(
             ["/work/a.bpmn", "/work/b.bpmn"],
@@ -1331,7 +1322,7 @@ describe("DeploymentService.deployFiles", () => {
             `Deployed 0/2 file(s) to "dev". a: ${CREDENTIALLED_URL_REJECTED.message}`,
         ]);
         expect(results.map((r) => r.message).join("\n")).not.toContain("s3cret");
-        expect(everythingNotified(host.notifier, logError)).not.toContain("s3cret");
+        expect(host.notifier.transcript()).not.toContain("s3cret");
     });
 
     it("masks a resolved .env value and a literal password in every result, log and the summary when the engine quotes the request", async () => {
@@ -1351,7 +1342,6 @@ describe("DeploymentService.deployFiles", () => {
             dotEnvFiles: { "/work": { MIRAGON_TOKEN: ENV_TOKEN } },
             engineClient: createRealRestClient(),
         });
-        const logError = vi.spyOn(host.notifier, "logError");
 
         const results = await service.deployFiles(
             ["/work/a.bpmn", "/work/b.bpmn"],
@@ -1371,16 +1361,16 @@ describe("DeploymentService.deployFiles", () => {
         expect(host.notifier.errors).toEqual([`Deployed 0/2 file(s) to "dev". a: ${refusal}`]);
         for (const secret of [ENV_TOKEN, LITERAL_PASSWORD]) {
             expect(results.map((r) => r.message).join("\n")).not.toContain(secret);
-            expect(everythingNotified(host.notifier, logError)).not.toContain(secret);
+            expect(host.notifier.transcript()).not.toContain(secret);
         }
     });
 
     it("asks once for the whole batch, for the origin the target resolves to, before the first deploy", async () => {
-        const { service, restClient, ensureApproved } = createService({
+        const { service, host, restClient } = createService({
             files: xmlFiles("/work/a.bpmn", "/work/b.bpmn", "/work/c.bpmn"),
             dotEnvFiles: { "/work": { MIRAGON_URL: "https://prod.example.com/api" } },
         });
-        restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        const approvedAtDeploy = approvalsAtEachDeploy({ host, restClient }, TARGET_SLOT);
 
         await service.deployFiles(
             ["/work/a.bpmn", "/work/b.bpmn", "/work/c.bpmn"],
@@ -1389,17 +1379,18 @@ describe("DeploymentService.deployFiles", () => {
             "/work",
         );
 
-        expect(ensureApproved).toHaveBeenCalledExactlyOnceWith(
-            envTarget,
-            "/work",
-            expect.objectContaining({ origins: ["https://prod.example.com"] }),
-        );
-        expect(ensureApproved).toHaveBeenCalledBefore(restClient.deploy);
-        expect(restClient.deploy).toHaveBeenCalledTimes(3);
+        expect(host.picker.prompts).toEqual([
+            approvalPrompt("https://prod.example.com", 'target "dev"'),
+        ]);
+        expect(approvedAtDeploy).toEqual([
+            ["https://prod.example.com"],
+            ["https://prod.example.com"],
+            ["https://prod.example.com"],
+        ]);
     });
 
     it("fails every file without a single deploy when the user declines the destination", async () => {
-        const { service, host, restClient, ensureApproved, deploymentStatus } = createService({
+        const { service, host, restClient, deploymentStatus } = createService({
             files: xmlFiles("/work/a.bpmn", "/work/b.bpmn"),
             answers: { confirmDestructive: false },
         });
@@ -1416,7 +1407,8 @@ describe("DeploymentService.deployFiles", () => {
             [false, `a: ${DECLINED.message}`],
             [false, `b: ${DECLINED.message}`],
         ]);
-        expect(ensureApproved).toHaveBeenCalledOnce();
+        expect(host.picker.prompts).toEqual([approvalPrompt("https://gw", 'target "dev"')]);
+        await expect(host.secrets.getApprovedDestinations(TARGET_SLOT)).resolves.toEqual([]);
         expect(restClient.deploy).not.toHaveBeenCalled();
         expect(deploymentStatus.recordDeployment).not.toHaveBeenCalled();
         expect(host.notifier.errors).toEqual([

@@ -10,7 +10,7 @@ import {
     UnreadableDotEnvError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
-import { createTestHost, RecordingNotifier } from "../../testing";
+import { createTestHost } from "../../testing";
 import { AuthConfig, BasicAuth, NoAuth } from "../domain/deployment";
 import { contentFingerprint, DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget, parseDeploymentTargetsFile } from "../domain/deploymentTarget";
@@ -43,37 +43,6 @@ interface EnvFailureCase {
     credentials?: AuthConfig;
     breakDotEnv?: (c: ServiceContext) => void;
     error: EnvReferenceError;
-}
-
-const NOTIFIER_METHODS = [
-    "logDebug",
-    "logInfo",
-    "logWarning",
-    "logError",
-    "showInfo",
-    "showError",
-    "notifyError",
-] as const;
-
-/** Spies recording every argument a notifier method receives, Error objects included. */
-function spyOnNotifications(notifier: RecordingNotifier) {
-    return NOTIFIER_METHODS.map((method) => vi.spyOn(notifier, method));
-}
-
-/** Every argument any notifier method received; errors contribute message, stack and cause. */
-function everythingNotified(spies: ReturnType<typeof spyOnNotifications>): string {
-    return spies
-        .flatMap((spy) => spy.mock.calls.flat())
-        .map(describeNotified)
-        .join("\n");
-}
-
-function describeNotified(argument: unknown): string {
-    if (argument instanceof Error) {
-        const { cause } = argument as { cause?: unknown };
-        return [argument.message, argument.stack, describeNotified(cause)].join("\n");
-    }
-    return String(argument);
 }
 
 /** The production REST stack down to `fetch`, so a failure's message is the shipped one. */
@@ -393,7 +362,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
         expect(c.host.notifier.errors).toEqual([
             `Could not verify deployment\n${transportFailure.message}`,
         ]);
-        expect(c.host.notifier.logged("error")).toEqual([transportFailure.message]);
+        expect(c.host.notifier.loggedErrors).toEqual([expect.any(HttpTransportError)]);
         expect(c.host.notifier.errors[0]).not.toContain(resolvedUrl);
         expect(c.host.notifier.errors[0]).not.toContain("/engine-rest");
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
@@ -582,7 +551,6 @@ describe("DeploymentVerificationService.verifyActive", () => {
         await c.service.verifyActive("/work");
 
         expect(c.deploymentTargetService.locateTargetsFile).toHaveBeenCalledWith("/work");
-        expect(c.dotEnvIo.readFile).toHaveBeenCalledWith(DOT_ENV_PATH);
         expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledWith(
             expect.objectContaining({
                 endpoint: c7Target.endpoint,
@@ -746,7 +714,6 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
             dotEnv: { MIRAGON_KEY: apiKey },
             inspectionClient: createRealRestClient(),
         });
-        const notifications = spyOnNotifications(c.host.notifier);
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(
             c7TargetWith("https://gw.example/keys/${env:MIRAGON_KEY}/engine-rest"),
         );
@@ -764,7 +731,7 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
             "Deployment verification failed with HTTP 500: Lookup of https://gw.example/keys/***/engine-rest/process-definition/key/order as ***:*** failed",
         ]);
         for (const secret of [apiKey, literalPassword]) {
-            expect(everythingNotified(notifications)).not.toContain(secret);
+            expect(c.host.notifier.transcript()).not.toContain(secret);
         }
     });
 });

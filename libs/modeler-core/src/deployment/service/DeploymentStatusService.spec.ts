@@ -114,7 +114,6 @@ function createService({
         isSymbolicLink: vi.spyOn(host.workspace, "isSymbolicLink"),
         readFile: vi.spyOn(host.workspace, "readFile"),
     };
-    const ledgerReads = vi.spyOn(host.deploymentState, "getDeployedRevision");
 
     const service = new DeploymentStatusService(
         host.store,
@@ -127,7 +126,7 @@ function createService({
         new EnvValueResolver(deploymentTargetService as never, host.workspace),
     );
 
-    return { service, host, editor, deploymentTargetService, dotEnvIo, ledgerReads };
+    return { service, host, editor, deploymentTargetService, dotEnvIo };
 }
 
 type ServiceContext = ReturnType<typeof createService>;
@@ -145,9 +144,23 @@ function useAdHocConnection(c: ServiceContext, endpoint: string, tenantId: strin
     c.host.deploymentState.tenantId = tenantId;
 }
 
-function readLedgerKey(c: ServiceContext): string {
-    expect(c.ledgerReads).toHaveBeenCalledOnce();
-    return c.ledgerReads.mock.calls[0][0];
+const RECORDED_REVISION = {
+    fingerprint: contentFingerprint("<a/>"),
+    deployedAt: "2026-09-17T14:32:00.000Z",
+};
+
+/** The item shows this revision only if refresh reads the ledger under `ledgerKey`. */
+async function recordRevisionUnder(c: ServiceContext, ledgerKey: string): Promise<void> {
+    await c.host.deploymentState.saveDeployedRevision(ledgerKey, RECORDED_REVISION);
+}
+
+function expectRecordedRevisionShown(c: ServiceContext, targetName: string | undefined): void {
+    expect(c.host.statusBar.deploymentTarget).toEqual({
+        name: targetName,
+        freshness: "deployed",
+        deployedAt: RECORDED_REVISION.deployedAt,
+        verifiedAt: undefined,
+    });
 }
 
 function expectNoDotEnvIo(c: ServiceContext): void {
@@ -352,7 +365,6 @@ describe("DeploymentStatusService.targetIdentity", () => {
         const identity = await c.service.targetIdentity(endpointRefTarget(), "/work");
 
         expect(c.deploymentTargetService.locateTargetsFile).toHaveBeenCalledWith("/work");
-        expect(c.dotEnvIo.readFile).toHaveBeenCalledWith(WORKSPACE_DOT_ENV);
         expect(identity.key()).toContain("env:");
         expect(identity.key()).not.toContain(PROD_HOST);
         expect(identity.key()).toBe(
@@ -502,6 +514,7 @@ describe("DeploymentStatusService.refresh", () => {
         "drops a refresh whose .env read $outcome after the item was $invalidation",
         async ({ invalidate, outcome }) => {
             const c = createService();
+            const ledgerReads = vi.spyOn(c.host.deploymentState, "getDeployedRevision");
             const dotEnvRead = deferred<string>();
             c.dotEnvIo.readFile.mockReturnValueOnce(dotEnvRead.promise);
             c.deploymentTargetService.getActiveTarget.mockResolvedValue(endpointRefTarget());
@@ -517,7 +530,7 @@ describe("DeploymentStatusService.refresh", () => {
             else dotEnvRead.reject(new Error("EISDIR: illegal operation"));
             await staleRefresh;
 
-            expect(c.ledgerReads).not.toHaveBeenCalled();
+            expect(ledgerReads).not.toHaveBeenCalled();
             expect(c.host.statusBar.deploymentTarget).toBe(shown);
         },
     );
@@ -581,20 +594,18 @@ describe("DeploymentStatusService.refresh", () => {
     it("reads the ledger under the fingerprinted host the endpoint ref resolves to", async () => {
         const c = createService(workspaceDotEnv(PROD_DOT_ENV));
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(endpointRefTarget());
+        const ledgerKey = ledgerKeyFor(
+            DeploymentTargetIdentity.fromTarget(endpointRefTarget(), lookupOf(PROD_DOT_ENV)),
+            FILE_PATH,
+        );
+        await recordRevisionUnder(c, ledgerKey);
 
         await c.service.refresh(c.editor.id);
 
         expect(c.deploymentTargetService.locateTargetsFile).toHaveBeenCalledWith("/work");
-        expect(c.dotEnvIo.readFile).toHaveBeenCalledWith(WORKSPACE_DOT_ENV);
-        const ledgerKey = readLedgerKey(c);
+        expectRecordedRevisionShown(c, "dev");
         expect(ledgerKey).toContain("env:");
         expect(ledgerKey).not.toContain(PROD_HOST);
-        expect(ledgerKey).toBe(
-            ledgerKeyFor(
-                DeploymentTargetIdentity.fromTarget(endpointRefTarget(), lookupOf(PROD_DOT_ENV)),
-                FILE_PATH,
-            ),
-        );
     });
 
     it.each(UNREADABLE_DOT_ENVS)(
@@ -603,21 +614,17 @@ describe("DeploymentStatusService.refresh", () => {
             const c = createService(workspaceDotEnv(PROD_DOT_ENV));
             breakDotEnv(c);
             c.deploymentTargetService.getActiveTarget.mockResolvedValue(endpointRefTarget());
-
-            await c.service.refresh(c.editor.id);
-
-            expect(readLedgerKey(c)).toBe(
+            await recordRevisionUnder(
+                c,
                 ledgerKeyFor(
                     DeploymentTargetIdentity.fromTarget(endpointRefTarget(), NO_ENV_VARIABLES),
                     FILE_PATH,
                 ),
             );
-            expect(c.host.statusBar.deploymentTarget).toEqual({
-                name: "dev",
-                freshness: "unknown",
-                deployedAt: undefined,
-                verifiedAt: undefined,
-            });
+
+            await c.service.refresh(c.editor.id);
+
+            expectRecordedRevisionShown(c, "dev");
             expectDotEnvLoggedAsUnreadable(c);
         },
     );
@@ -625,10 +632,11 @@ describe("DeploymentStatusService.refresh", () => {
     it("reads the ledger of a literal endpoint without touching .env", async () => {
         const c = createService();
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("dev"));
+        await recordRevisionUnder(c, `target:dev@localhost:8080::${FILE_PATH}`);
 
         await c.service.refresh(c.editor.id);
 
-        expect(readLedgerKey(c)).toBe(`target:dev@localhost:8080::${FILE_PATH}`);
+        expectRecordedRevisionShown(c, "dev");
         expect(c.dotEnvIo.isSymbolicLink).not.toHaveBeenCalled();
         expect(c.dotEnvIo.readFile).not.toHaveBeenCalled();
     });
@@ -639,16 +647,11 @@ describe("DeploymentStatusService.refresh", () => {
             const c = createService();
             breakDotEnv(c);
             c.deploymentTargetService.getActiveTarget.mockResolvedValue(credentialRefTarget());
+            await recordRevisionUnder(c, `target:dev@localhost:8080::${FILE_PATH}`);
 
             await c.service.refresh(c.editor.id);
 
-            expect(readLedgerKey(c)).toBe(`target:dev@localhost:8080::${FILE_PATH}`);
-            expect(c.host.statusBar.deploymentTarget).toEqual({
-                name: "dev",
-                freshness: "unknown",
-                deployedAt: undefined,
-                verifiedAt: undefined,
-            });
+            expectRecordedRevisionShown(c, "dev");
             expectNoDotEnvIo(c);
             expect(c.host.notifier.logged("debug")).toEqual([]);
         },
@@ -711,10 +714,11 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
     it("keys a literal endpoint and tenant without any .env IO", async () => {
         const c = createService();
         useAdHocConnection(c, LITERAL_ENDPOINT, "acme");
+        await recordRevisionUnder(c, `adhoc:localhost:8080/acme::${FILE_PATH}`);
 
         await c.service.refresh(c.editor.id);
 
-        expect(readLedgerKey(c)).toBe(`adhoc:localhost:8080/acme::${FILE_PATH}`);
+        expectRecordedRevisionShown(c, undefined);
         expectNoDotEnvIo(c);
     });
 
@@ -722,46 +726,43 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
         const dotEnv = { MIRAGON_TENANT: "acme" };
         const c = createService(workspaceDotEnv(dotEnv));
         useAdHocConnection(c, LITERAL_ENDPOINT, "${env:MIRAGON_TENANT}");
+        const ledgerKey = ledgerKeyFor(
+            DeploymentTargetIdentity.adHoc(
+                LITERAL_ENDPOINT,
+                "${env:MIRAGON_TENANT}",
+                lookupOf(dotEnv),
+            ),
+            FILE_PATH,
+        );
+        await recordRevisionUnder(c, ledgerKey);
 
         await c.service.refresh(c.editor.id);
 
-        expect(c.dotEnvIo.readFile).toHaveBeenCalledWith(WORKSPACE_DOT_ENV);
-        const ledgerKey = readLedgerKey(c);
+        expectRecordedRevisionShown(c, undefined);
         expect(ledgerKey).toMatch(/^adhoc:localhost:8080\/env:/);
         expect(ledgerKey).not.toContain("acme");
-        expect(ledgerKey).toBe(
-            ledgerKeyFor(
-                DeploymentTargetIdentity.adHoc(
-                    LITERAL_ENDPOINT,
-                    "${env:MIRAGON_TENANT}",
-                    lookupOf(dotEnv),
-                ),
-                FILE_PATH,
-            ),
-        );
     });
 
     it("fingerprints a resolved endpoint and tenant so neither value is persisted", async () => {
         const dotEnv = { ...PROD_DOT_ENV, MIRAGON_TENANT: "acme" };
         const c = createService(workspaceDotEnv(dotEnv));
         useAdHocConnection(c, "${env:MIRAGON_URL}", "${env:MIRAGON_TENANT}");
+        const ledgerKey = ledgerKeyFor(
+            DeploymentTargetIdentity.adHoc(
+                "${env:MIRAGON_URL}",
+                "${env:MIRAGON_TENANT}",
+                lookupOf(dotEnv),
+            ),
+            FILE_PATH,
+        );
+        await recordRevisionUnder(c, ledgerKey);
 
         await c.service.refresh(c.editor.id);
 
-        const ledgerKey = readLedgerKey(c);
+        expectRecordedRevisionShown(c, undefined);
         expect(ledgerKey).toMatch(/^adhoc:env:[0-9a-f]+\/env:[0-9a-f]+::/);
         expect(ledgerKey).not.toContain(PROD_HOST);
         expect(ledgerKey).not.toContain("acme");
-        expect(ledgerKey).toBe(
-            ledgerKeyFor(
-                DeploymentTargetIdentity.adHoc(
-                    "${env:MIRAGON_URL}",
-                    "${env:MIRAGON_TENANT}",
-                    lookupOf(dotEnv),
-                ),
-                FILE_PATH,
-            ),
-        );
     });
 
     it.each(UNREADABLE_DOT_ENVS)(
@@ -770,10 +771,8 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
             const c = createService(workspaceDotEnv({ ...PROD_DOT_ENV, MIRAGON_TENANT: "acme" }));
             breakDotEnv(c);
             useAdHocConnection(c, "${env:MIRAGON_URL}", "${env:MIRAGON_TENANT}");
-
-            await c.service.refresh(c.editor.id);
-
-            expect(readLedgerKey(c)).toBe(
+            await recordRevisionUnder(
+                c,
                 ledgerKeyFor(
                     DeploymentTargetIdentity.adHoc(
                         "${env:MIRAGON_URL}",
@@ -783,12 +782,10 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
                     FILE_PATH,
                 ),
             );
-            expect(c.host.statusBar.deploymentTarget).toEqual({
-                name: undefined,
-                freshness: "unknown",
-                deployedAt: undefined,
-                verifiedAt: undefined,
-            });
+
+            await c.service.refresh(c.editor.id);
+
+            expectRecordedRevisionShown(c, undefined);
             expectDotEnvLoggedAsUnreadable(c);
         },
     );
@@ -804,12 +801,9 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
                 },
             }),
         );
-        const findWorkspaceFolder = vi.spyOn(c.host.workspace, "findWorkspaceFolderForDocument");
         useAdHocConnection(c, "${env:MIRAGON_URL}", "${env:MIRAGON_TENANT}");
-
-        await c.service.refresh(c.editor.id);
-
-        expect(readLedgerKey(c)).toBe(
+        await recordRevisionUnder(
+            c,
             ledgerKeyFor(
                 DeploymentTargetIdentity.adHoc(
                     "${env:MIRAGON_URL}",
@@ -819,13 +813,17 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
                 `${NESTED_PROJECT_DIR}/order-process.bpmn`,
             ),
         );
-        expect(findWorkspaceFolder).toHaveBeenCalledWith(NESTED_PROJECT_DIR);
+
+        await c.service.refresh(c.editor.id);
+
+        expectRecordedRevisionShown(c, undefined);
         expect(c.deploymentTargetService.locateTargetsFile).not.toHaveBeenCalled();
         expect(c.dotEnvIo.readFile).toHaveBeenCalledExactlyOnceWith(WORKSPACE_DOT_ENV);
     });
 
     it("hides the item on a failure other than an unreadable .env", async () => {
         const c = createService();
+        const ledgerReads = vi.spyOn(c.host.deploymentState, "getDeployedRevision");
         useAdHocConnection(c, "${env:MIRAGON_URL}", "");
         vi.spyOn(c.host.workspace, "findWorkspaceFolderForDocument").mockImplementation(() => {
             throw new Error("workspace folders unavailable");
@@ -834,7 +832,7 @@ describe("DeploymentStatusService.refresh in ad-hoc mode", () => {
 
         await c.service.refresh(c.editor.id);
 
-        expect(c.ledgerReads).not.toHaveBeenCalled();
+        expect(ledgerReads).not.toHaveBeenCalled();
         expect(c.host.statusBar.deploymentTarget).toBeUndefined();
     });
 });

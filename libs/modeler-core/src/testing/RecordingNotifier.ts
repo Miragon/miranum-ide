@@ -11,6 +11,7 @@ export class RecordingNotifier implements NotifierPort {
     readonly infos: string[] = [];
     readonly errors: string[] = [];
     readonly logs: LogEntry[] = [];
+    readonly loggedErrors: Error[] = [];
     readonly openedDocuments: string[] = [];
     readonly progressTitles: string[] = [];
     loggingConsoleOpened = false;
@@ -32,6 +33,7 @@ export class RecordingNotifier implements NotifierPort {
     }
 
     logError(error: string | Error): void {
+        if (error instanceof Error) this.loggedErrors.push(error);
         this.logs.push({
             level: "error",
             message: typeof error === "string" ? error : error.message,
@@ -63,4 +65,21 @@ export class RecordingNotifier implements NotifierPort {
     async openDocument(absolutePath: string): Promise<void> {
         this.openedDocuments.push(absolutePath);
     }
+
+    /** Everything shown or logged, including each logged error's stack and cause chain. */
+    transcript(): string {
+        return [
+            ...this.infos,
+            ...this.errors,
+            ...this.progressTitles,
+            ...this.logs.map((entry) => entry.message),
+            ...this.loggedErrors.map(describeError),
+        ].join("\n");
+    }
+}
+
+function describeError(error: unknown): string {
+    if (!(error instanceof Error)) return String(error);
+    const { cause } = error as { cause?: unknown };
+    return [error.message, error.stack, cause === undefined ? "" : describeError(cause)].join("\n");
 }

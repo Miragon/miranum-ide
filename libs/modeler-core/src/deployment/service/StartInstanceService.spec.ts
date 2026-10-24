@@ -19,7 +19,7 @@ import {
     InvalidDeploymentConfigError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
-import { createTestHost, RecordingNotifier, TestHostOptions } from "../../testing";
+import { createTestHost, TestHostOptions } from "../../testing";
 
 // A real C7 document so `getProcessDefinitionKey` exercises the production
 // `BpmnDocument.extractProcessId` regex against valid XML rather than a stub.
@@ -65,8 +65,6 @@ function createService({ dotEnv, engineClient, ...options }: ServiceOptions = {}
         exists: true,
         projectDir: PROJECT_DIR,
     });
-    const envResolver = new EnvValueResolver({ locateTargetsFile }, host.workspace);
-    const createLookup = vi.spyOn(envResolver, "createLookup");
     const resolveSlot = vi.fn().mockResolvedValue(DEV_SLOT);
     const credentialApproval = new CredentialApprovalService(
         { resolveSlot },
@@ -74,8 +72,6 @@ function createService({ dotEnv, engineClient, ...options }: ServiceOptions = {}
         host.picker,
     );
     const readFile = vi.spyOn(host.workspace, "readFile");
-    // Keeps the logged Error objects, whose stack and cause the recorder drops.
-    const logError = vi.spyOn(host.notifier, "logError");
 
     const service = new StartInstanceService(
         host.documents,
@@ -84,7 +80,7 @@ function createService({ dotEnv, engineClient, ...options }: ServiceOptions = {}
         host.notifier,
         host.picker,
         artifactService as never,
-        envResolver,
+        new EnvValueResolver({ locateTargetsFile }, host.workspace),
         credentialApproval,
     );
 
@@ -94,9 +90,7 @@ function createService({ dotEnv, engineClient, ...options }: ServiceOptions = {}
         restClient,
         artifactService,
         readFile,
-        logError,
         locateTargetsFile,
-        createLookup,
         resolveSlot,
     };
 }
@@ -120,24 +114,6 @@ function rejectCredentialledUrlsLikeUndici() {
             `Request cannot be constructed from a URL that includes credentials: ${url}`,
         );
     });
-}
-
-/** Everything the notifier received; logged errors contribute message, stack and cause. */
-function everythingNotified(notifier: RecordingNotifier, loggedErrors: unknown[]): string {
-    return [
-        ...notifier.infos,
-        ...notifier.errors,
-        ...notifier.logs.map((entry) => entry.message),
-        ...loggedErrors.map(describeNotified),
-    ].join("\n");
-}
-
-function describeNotified(argument: unknown): string {
-    if (argument instanceof Error) {
-        const { cause } = argument as { cause?: unknown };
-        return [argument.message, argument.stack, describeNotified(cause)].join("\n");
-    }
-    return String(argument);
 }
 
 /** A gateway refusing the request by quoting it back: its URL and the decoded basic credentials. */
@@ -518,7 +494,7 @@ describe("StartInstanceService.startInstance", () => {
             "the URL must not contain credentials; use the authentication fields",
         );
         const fetchStub = rejectCredentialledUrlsLikeUndici();
-        const { service, host, logError } = createService({
+        const { service, host } = createService({
             dotEnv: { MIRAGON_URL: credentialledEndpoint },
             engineClient: createRealRestClient(),
         });
@@ -541,24 +517,23 @@ describe("StartInstanceService.startInstance", () => {
         );
         expect(result.success).toBe(false);
         expect(result.message).toBe(rejected.message);
-        expect(logError).toHaveBeenCalledExactlyOnceWith(
+        expect(host.notifier.logged("error")).toEqual([rejected.message]);
+        expect(host.notifier.loggedErrors).toEqual([
             expect.objectContaining({ host: rejected.host, reason: rejected.reason }),
-        );
-        expect(logError.mock.calls[0][0]).toBeInstanceOf(HttpTransportError);
+        ]);
+        expect(host.notifier.loggedErrors[0]).toBeInstanceOf(HttpTransportError);
         expect(host.notifier.logged("info")).toContain(
             "Instance start requested: Process_1 @ camunda.invalid",
         );
         expect(result.message).not.toContain("s3cret");
-        expect(everythingNotified(host.notifier, logError.mock.calls.flat())).not.toContain(
-            "s3cret",
-        );
+        expect(host.notifier.transcript()).not.toContain("s3cret");
     });
 
     it("masks a resolved .env value and a literal password in the result and every log when the engine quotes the request", async () => {
         const token = "tok-9f8e7d";
         const literalPassword = "lit-pa55word";
         const fetchStub = refuseQuotingRequest();
-        const { service, host, logError } = createService({
+        const { service, host } = createService({
             dotEnv: { MIRAGON_TOKEN: token },
             engineClient: createRealRestClient(),
         });
@@ -582,11 +557,10 @@ describe("StartInstanceService.startInstance", () => {
         expect(result.message).toBe(
             "Start instance failed with HTTP 403: Gateway refused https://gw.example/hooks/***/Process_1/start for ***:***",
         );
+        const transcript = host.notifier.transcript();
         for (const secret of [token, literalPassword]) {
             expect(result.message).not.toContain(secret);
-            expect(everythingNotified(host.notifier, logError.mock.calls.flat())).not.toContain(
-                secret,
-            );
+            expect(transcript).not.toContain(secret);
         }
     });
 
@@ -620,10 +594,16 @@ describe("StartInstanceService.startInstance", () => {
 describe("StartInstanceService.startInstance .env scope", () => {
     const NESTED_PROJECT_DIR = "/work/team";
 
-    /** Workspace folder `/work` holding a nested project with its own targets file and `.env`. */
+    /**
+     * Workspace folders `/other` and `/work`, the latter holding a nested project
+     * with its own targets file and `.env`. Every `.env` names a different host.
+     */
     function createNestedProjectService() {
         const context = createService({
+            // Listed first, so a lookup that dropped the document's directory would land here.
+            folders: ["/other", PROJECT_DIR],
             files: {
+                "/other/.env": "MIRAGON_URL=https://other-folder.example/engine-rest",
                 "/work/.env": "MIRAGON_URL=https://workspace.example/engine-rest",
                 "/work/team/.env": "MIRAGON_URL=https://team.example/engine-rest",
             },
@@ -655,16 +635,10 @@ describe("StartInstanceService.startInstance .env scope", () => {
         );
 
     it("reads the workspace folder's .env for the workspaceFolder scope, never a nested targets file's", async () => {
-        const { service, restClient, createLookup, locateTargetsFile, readFile } =
-            createNestedProjectService();
+        const { service, restClient, locateTargetsFile, readFile } = createNestedProjectService();
 
         await startWithEndpointRef(service, undefined);
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
-            "workspaceFolder",
-            NESTED_PROJECT_DIR,
-            expect.objectContaining({ endpoint: "${env:MIRAGON_URL}" }),
-        );
         expect(locateTargetsFile).not.toHaveBeenCalled();
         expect(readFile).toHaveBeenCalledExactlyOnceWith("/work/.env");
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
@@ -672,16 +646,10 @@ describe("StartInstanceService.startInstance .env scope", () => {
     });
 
     it("reads the .env beside the targets file for the targetsFile scope", async () => {
-        const { service, restClient, createLookup, locateTargetsFile, readFile } =
-            createNestedProjectService();
+        const { service, restClient, locateTargetsFile, readFile } = createNestedProjectService();
 
         await startWithEndpointRef(service, NAMED_TARGET);
 
-        expect(createLookup).toHaveBeenCalledExactlyOnceWith(
-            "targetsFile",
-            NESTED_PROJECT_DIR,
-            expect.objectContaining({ endpoint: "${env:MIRAGON_URL}" }),
-        );
         expect(locateTargetsFile).toHaveBeenCalledExactlyOnceWith(NESTED_PROJECT_DIR);
         expect(readFile).toHaveBeenCalledExactlyOnceWith("/work/team/.env");
         const config = restClient.startInstance.mock.calls[0][0] as StartInstanceConfig;
