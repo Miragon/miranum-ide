@@ -16,13 +16,13 @@ Append the next element from one panel that shows your element templates next to
 
 | Area | Use |
 |---|---|
-| Search bar | Filters both sides. Templates match on name, description, keywords, category and the BPMN types they apply to; elements match on label. |
+| Search bar | Filters both sides. Templates match on name, description, keywords, category and the BPMN types they apply to; elements match on label, description and keywords. |
 | Category chips | One chip per template `category`. Click to filter, click again or **All** to reset. |
 | Template list | Name, BPMN type icon, category badge and the template's own icon. Hover a card to see its implementation (Java class, delegate, topic, …), property count and documentation link. |
-| BPMN palette | Standard elements grouped as gateways, tasks, sub-processes, events and data. Icons only by default; the chevron next to **BPMN** shows labels. |
+| BPMN palette | Standard elements grouped as gateways, tasks, sub-processes, events and data. Icons only by default; the chevron next to **BPMN** shows labels. Hover an element, or move to it with the arrow keys, to see what it is for. |
 | Favourites | Pinned elements at the top of the palette (see below). |
 
-Searching for a type name such as "service task" also lists every template that applies to that type.
+Searching for a type name such as "service task" also lists every template that applies to that type. On Camunda 8, element keywords work too: "child process" finds the call activity.
 
 <figure class="shot"><img src="./images/am-search-filter.png" alt="Search for service task filtering both templates and BPMN elements"><figcaption>A search filters templates and BPMN elements together.</figcaption></figure>
 
@@ -48,8 +48,9 @@ Favourites follow the same search and type filtering as the rest of the palette.
 
 | Key | Action |
 |---|---|
-| <kbd>↓</kbd> / <kbd>↑</kbd> | Move through the template list |
-| <kbd>Enter</kbd> | Apply the focused template |
+| <kbd>↓</kbd> / <kbd>↑</kbd> | Move through the template list or the BPMN palette |
+| <kbd>←</kbd> / <kbd>→</kbd> | Switch between the template list and the BPMN palette |
+| <kbd>Enter</kbd> | Apply the focused template or element |
 | <kbd>Esc</kbd> | Close without applying (a click outside does the same) |
 
 ## Next steps

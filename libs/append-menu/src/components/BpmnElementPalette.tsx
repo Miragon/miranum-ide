@@ -3,18 +3,25 @@
  *
  * A thin renderer of the pre-processed palette (favourites row + categorised
  * groups). Filtering/favourite resolution lives in {@link ../filtering} and
- * the keyboard highlight in the parent overlay, so this component only draws
- * buttons and reflects the highlighted key.
+ * the keyboard highlight and previewed item in the parent overlay, so this
+ * component only draws buttons, reflects the highlighted key, and shows the
+ * previewed item's description card.
  */
-import { useEffect, useRef } from "preact/hooks";
+import type { RefObject } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 import {
     favouriteNavKey,
     groupNavKey,
     isEntryDisabled,
+    type PaletteNavItem,
     type ProcessedEntry,
     type ProcessedGroup,
 } from "../filtering";
 import type { Translate } from "../types";
+import { ElementDescriptionCard } from "./ElementDescriptionCard";
+import { useHoverCardPosition } from "./useHoverCardPosition";
+
+let descriptionCardCount = 0;
 
 interface BpmnElementPaletteProps {
     favouriteEntries: ProcessedEntry[];
@@ -23,9 +30,15 @@ interface BpmnElementPaletteProps {
     expanded: boolean;
     /** Nav key of the keyboard-highlighted button, or null when in the other column. */
     highlightedKey: string | null;
+    /** The item to preview (mouse hover, else the keyboard highlight), or null. */
+    previewedItem: PaletteNavItem | null;
+    /** The menu panel; the description card opens beside it so it covers neither column. */
+    previewAnchorRef: RefObject<HTMLElement>;
     onToggleExpand: () => void;
     /** Reports hover-peek state so the parent can transiently expand the palette on hover. */
     onPeekChange?: (peek: boolean) => void;
+    onEntryHover: (navKey: string, hovered: boolean) => void;
+    onPreviewHover: (hovered: boolean) => void;
     onSelect: (entry: ProcessedEntry, event: Event) => void;
 }
 
@@ -34,15 +47,19 @@ interface BpmnElementPaletteProps {
  *
  * In collapsed mode, buttons show only icons; expanded mode adds labels.
  * Each button carries a namespaced `data-nav-key` (`fav:…` / `grp:…`) so the
- * keyboard highlight can target the right instance — a favourite appears both
- * in the favourites row and in its own group.
+ * keyboard highlight and the preview can target the right instance — a
+ * favourite appears both in the favourites row and in its own group.
  *
  * @param props.favouriteEntries Resolved favourite entries (annotated).
  * @param props.groups Annotated BPMN element groups.
  * @param props.expanded Whether the palette shows labels alongside icons.
  * @param props.highlightedKey Nav key of the highlighted button, or null.
+ * @param props.previewedItem Item whose description card shows, or null.
+ * @param props.previewAnchorRef Element the description card opens beside.
  * @param props.onToggleExpand Callback to toggle expanded/collapsed state.
  * @param props.onPeekChange Callback reporting hover-peek enter/leave.
+ * @param props.onEntryHover Callback when the mouse enters or leaves a button.
+ * @param props.onPreviewHover Callback when the mouse enters or leaves the description card.
  * @param props.onSelect Callback invoked when a BPMN element button is clicked.
  */
 export function BpmnElementPalette({
@@ -51,11 +68,17 @@ export function BpmnElementPalette({
     translate,
     expanded,
     highlightedKey,
+    previewedItem,
+    previewAnchorRef,
     onToggleExpand,
     onPeekChange,
+    onEntryHover,
+    onPreviewHover,
     onSelect,
 }: BpmnElementPaletteProps) {
     const contentRef = useRef<HTMLDivElement>(null);
+    // Not useId: it restarts per Preact render root, so another root on the page could reuse the id.
+    const [descriptionCardId] = useState(() => `am-element-description-${++descriptionCardCount}`);
 
     /**
      * Scroll the keyboard-highlighted button into view.
@@ -66,6 +89,24 @@ export function BpmnElementPalette({
             el?.scrollIntoView({ block: "nearest" });
         }
     }, [highlightedKey]);
+
+    const describedItem = previewedItem?.entry.description ? previewedItem : null;
+    const descriptionPosition = useHoverCardPosition(previewAnchorRef, contentRef, (content) =>
+        describedItem ? content.querySelector(`[data-nav-key="${describedItem.key}"]`) : null,
+    );
+
+    const renderButton = (processed: ProcessedEntry, navKey: string) => (
+        <PaletteButton
+            key={navKey}
+            processed={processed}
+            navKey={navKey}
+            expanded={expanded}
+            focused={navKey === highlightedKey}
+            describedBy={navKey === describedItem?.key ? descriptionCardId : undefined}
+            onHoverChange={(hovered) => onEntryHover(navKey, hovered)}
+            onSelect={onSelect}
+        />
+    );
 
     return (
         <div
@@ -96,31 +137,11 @@ export function BpmnElementPalette({
                     <div class="am-bpmn-group am-bpmn-group--favourites">
                         {expanded && <h4 class="am-bpmn-group-title">{translate("Favourites")}</h4>}
                         <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
-                            {favouriteEntries.map((processed) => {
-                                const { id, entry, hidden } = processed;
-                                if (hidden) return null;
-                                const navKey = favouriteNavKey(id);
-                                const isDisabled = isEntryDisabled(processed);
-                                const isFocused = navKey === highlightedKey;
-                                return (
-                                    <button
-                                        key={navKey}
-                                        data-nav-key={navKey}
-                                        class={`am-bpmn-button ${isDisabled ? "am-bpmn-button--disabled" : ""} ${isFocused ? "am-bpmn-button--focused" : ""} ${expanded ? "" : "am-bpmn-button--icon-only"}`}
-                                        disabled={isDisabled}
-                                        onClick={(e) => onSelect(processed, e as unknown as Event)}
-                                        title={entry.label}
-                                        type="button"
-                                    >
-                                        {entry.className && (
-                                            <span class={`am-bpmn-icon ${entry.className}`} />
-                                        )}
-                                        {expanded && (
-                                            <span class="am-bpmn-label">{entry.label}</span>
-                                        )}
-                                    </button>
-                                );
-                            })}
+                            {favouriteEntries
+                                .filter((processed) => !processed.hidden)
+                                .map((processed) =>
+                                    renderButton(processed, favouriteNavKey(processed.id)),
+                                )}
                         </div>
                     </div>
                 )}
@@ -141,37 +162,63 @@ export function BpmnElementPalette({
                                 </h4>
                             )}
                             <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
-                                {visibleEntries.map((processed) => {
-                                    const { id, entry } = processed;
-                                    const navKey = groupNavKey(group.id, id);
-                                    const isDisabled = isEntryDisabled(processed);
-                                    const isFocused = navKey === highlightedKey;
-                                    return (
-                                        <button
-                                            key={navKey}
-                                            data-nav-key={navKey}
-                                            class={`am-bpmn-button ${isDisabled ? "am-bpmn-button--disabled" : ""} ${isFocused ? "am-bpmn-button--focused" : ""} ${expanded ? "" : "am-bpmn-button--icon-only"}`}
-                                            disabled={isDisabled}
-                                            onClick={(e) =>
-                                                onSelect(processed, e as unknown as Event)
-                                            }
-                                            title={entry.label}
-                                            type="button"
-                                        >
-                                            {entry.className && (
-                                                <span class={`am-bpmn-icon ${entry.className}`} />
-                                            )}
-                                            {expanded && (
-                                                <span class="am-bpmn-label">{entry.label}</span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
+                                {visibleEntries.map((processed) =>
+                                    renderButton(processed, groupNavKey(group.id, processed.id)),
+                                )}
                             </div>
                         </div>
                     );
                 })}
             </div>
+
+            {describedItem && descriptionPosition && (
+                <ElementDescriptionCard
+                    id={descriptionCardId}
+                    entry={describedItem.entry}
+                    position={descriptionPosition}
+                    onHoverChange={onPreviewHover}
+                />
+            )}
         </div>
+    );
+}
+
+interface PaletteButtonProps {
+    processed: ProcessedEntry;
+    navKey: string;
+    expanded: boolean;
+    focused: boolean;
+    describedBy: string | undefined;
+    onHoverChange: (hovered: boolean) => void;
+    onSelect: (entry: ProcessedEntry, event: Event) => void;
+}
+
+function PaletteButton({
+    processed,
+    navKey,
+    expanded,
+    focused,
+    describedBy,
+    onHoverChange,
+    onSelect,
+}: PaletteButtonProps) {
+    const { entry } = processed;
+    const isDisabled = isEntryDisabled(processed);
+    return (
+        <button
+            data-nav-key={navKey}
+            class={`am-bpmn-button ${isDisabled ? "am-bpmn-button--disabled" : ""} ${focused ? "am-bpmn-button--focused" : ""} ${expanded ? "" : "am-bpmn-button--icon-only"}`}
+            disabled={isDisabled}
+            aria-describedby={describedBy}
+            onClick={(e) => onSelect(processed, e as unknown as Event)}
+            onMouseEnter={() => onHoverChange(true)}
+            onMouseLeave={() => onHoverChange(false)}
+            // Also the accessible name while the button shows only its icon.
+            title={entry.label}
+            type="button"
+        >
+            {entry.className && <span class={`am-bpmn-icon ${entry.className}`} />}
+            {expanded && <span class="am-bpmn-label">{entry.label}</span>}
+        </button>
     );
 }

@@ -7,11 +7,12 @@
  * {@link ./navigation}) unit-testable and prevents the two columns from each
  * re-deriving their own — and therefore divergent — filtered lists.
  */
-import type {
-    EnrichedTemplateEntry,
-    BpmnElementGroup,
-    BpmnElementEntry,
-    PopupMenuEntry,
+import {
+    searchTermsOf,
+    type EnrichedTemplateEntry,
+    type BpmnElementGroup,
+    type BpmnElementEntry,
+    type PopupMenuEntry,
 } from "./types";
 import { bpmnTypeOfPlainEntry } from "./plainEntryCatalog";
 
@@ -60,17 +61,22 @@ export function filterTemplates(
             return true;
         }
         const appliesToLabels = (template?.appliesTo ?? []).map(bpmnTypeToLabel);
-        const haystack = [
-            entry.label,
-            entry.description ?? "",
-            template?.category?.name ?? "",
-            ...(entry.search ?? []),
-            ...appliesToLabels,
-        ]
-            .join(" ")
-            .toLowerCase();
-        return haystack.includes(q);
+        return fieldsInclude(
+            [
+                entry.label,
+                entry.description ?? "",
+                template?.category?.name ?? "",
+                ...searchTermsOf(entry),
+                ...appliesToLabels,
+            ],
+            q,
+        );
     });
+}
+
+/** Whether the lowercase, trimmed `query` occurs in the space-joined `fields`. */
+function fieldsInclude(fields: string[], query: string): boolean {
+    return fields.join(" ").toLowerCase().includes(query);
 }
 
 /**
@@ -129,12 +135,9 @@ export function resolveSelectedType(entryId: string, appliesTo: string[]): strin
     return bpmnType !== undefined && appliesTo.includes(bpmnType) ? bpmnType : undefined;
 }
 
-/**
- * Checks whether a BPMN palette entry matches a search query.
- */
-function entryMatchesSearch(entry: BpmnElementEntry, query: string): boolean {
-    const haystack = [entry.entry.label, entry.entry.description ?? ""].join(" ").toLowerCase();
-    return haystack.includes(query);
+/** Matches a BPMN palette entry on its label, description, and search keywords. */
+function entryMatchesSearch(entry: PopupMenuEntry, query: string): boolean {
+    return fieldsInclude([entry.label, entry.description ?? "", ...searchTermsOf(entry)], query);
 }
 
 function findFavouriteEntry(
@@ -169,7 +172,7 @@ export function processPaletteGroups(
             disabled: false,
             hidden:
                 (appliesToFilter ? !entryCreatesOneOf(entry, appliesToFilter) : false) ||
-                (query ? !entryMatchesSearch(entry, query) : false),
+                (query ? !entryMatchesSearch(entry.entry, query) : false),
         })),
     }));
 

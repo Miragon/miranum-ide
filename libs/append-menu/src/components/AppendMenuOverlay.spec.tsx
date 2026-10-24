@@ -15,6 +15,25 @@ const tasks = group("tasks", "Tasks", [
 const gateways = group("gateways", "Gateways", [["append-exclusive-gateway", "Exclusive gateway"]]);
 const [userTask] = tasks.entries;
 const [exclusiveGateway] = gateways.entries;
+const describedTasks = group("tasks", "Tasks", [
+    ["append-user-task", "User task", { description: "Work that needs to be done by a person" }],
+    [
+        "append-service-task",
+        "Service task",
+        { description: "Automated work carried out by a job worker or connector" },
+    ],
+    ["append-send-task", "Send task", { description: "Publishes a message to a receiver" }],
+    ["append-manual-task", "Manual task"],
+]);
+const subProcesses = group("subprocess", "Sub-processes", [
+    [
+        "append-call-activity",
+        "Call activity",
+        { description: "Calls another process as a reusable subprocess", search: "child process" },
+    ],
+]);
+
+const HOVER_HIDE_DELAY = 150;
 
 const invoiceWorker = templateEntry("invoice", "Invoice Worker", {
     appliesTo: ["bpmn:ServiceTask"],
@@ -37,6 +56,7 @@ beforeEach(() => {
 afterEach(() => {
     render(null, container);
     container.remove();
+    vi.useRealTimers();
 });
 
 function renderOverlay(overrides: Partial<OverlayProps> = {}) {
@@ -73,6 +93,15 @@ const paletteKeys = () =>
     );
 const palettePanel = () => container.querySelector(".am-palette-panel")!;
 const isPaletteExpanded = () => palettePanel().classList.contains("am-palette-panel--expanded");
+const paletteButton = (navKey: string) => container.querySelector(`[data-nav-key="${navKey}"]`);
+const previews = () =>
+    [...container.querySelectorAll(".am-hover-card .am-hover-card-name")].map(
+        (name) => name.textContent,
+    );
+const elapse = (milliseconds: number) =>
+    act(() => {
+        vi.advanceTimersByTime(milliseconds);
+    });
 
 describe("AppendMenuOverlay", () => {
     it("focuses the search and highlights the first template so Enter appends it", () => {
@@ -311,5 +340,98 @@ describe("AppendMenuOverlay", () => {
         expect(container.querySelector(".am-hover-param-value")?.textContent).toBe(
             "Payment reminder",
         );
+    });
+
+    describe("hover previews", () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        it("previews a hovered element and returns to the highlighted one shortly after", () => {
+            renderOverlay({ templateEntries: [], bpmnGroups: [describedTasks] });
+            expect(previews()).toEqual(["User task"]);
+
+            hover(paletteButton("grp:tasks:append-send-task"), true);
+            expect(previews()).toEqual(["Send task"]);
+
+            hover(paletteButton("grp:tasks:append-send-task"), false);
+            elapse(HOVER_HIDE_DELAY - 1);
+            expect(previews()).toEqual(["Send task"]);
+            elapse(1);
+            expect(previews()).toEqual(["User task"]);
+        });
+
+        it("previews the element the arrow keys move to and describes its button by it", () => {
+            const { searchInput } = renderOverlay({
+                templateEntries: [],
+                bpmnGroups: [describedTasks],
+            });
+
+            pressKey(searchInput, "ArrowDown");
+
+            expect(previews()).toEqual(["Service task"]);
+            expect(
+                paletteButton("grp:tasks:append-service-task")?.getAttribute("aria-describedby"),
+            ).toBe(container.querySelector(".am-hover-card")?.id);
+        });
+
+        it("shows no preview while the mouse is on an element without a description", () => {
+            renderOverlay({ templateEntries: [], bpmnGroups: [describedTasks] });
+
+            hover(paletteButton("grp:tasks:append-manual-task"), true);
+
+            expect(previews()).toEqual([]);
+        });
+
+        it("replaces the highlighted template's preview with a hovered element's", () => {
+            renderOverlay({ bpmnGroups: [describedTasks] });
+            expect(previews()).toEqual(["Invoice Worker"]);
+
+            hover(paletteButton("grp:tasks:append-user-task"), true);
+            expect(previews()).toEqual(["User task"]);
+
+            hover(paletteButton("grp:tasks:append-user-task"), false);
+            elapse(HOVER_HIDE_DELAY);
+            expect(previews()).toEqual(["Invoice Worker"]);
+        });
+
+        it("keeps a hovered template's preview open while the mouse travels onto it", () => {
+            renderOverlay();
+            hover(templateCard("Notify Customer"), true);
+            hover(templateCard("Notify Customer"), false);
+
+            hover(container.querySelector(".am-hover-card"), true);
+            elapse(HOVER_HIDE_DELAY * 3);
+            expect(previews()).toEqual(["Notify Customer"]);
+
+            hover(container.querySelector(".am-hover-card"), false);
+            elapse(HOVER_HIDE_DELAY);
+            expect(previews()).toEqual(["Invoice Worker"]);
+        });
+
+        it("previews in the collapsed palette once a keyword search leaves no template", () => {
+            const { searchInput } = renderOverlay({
+                templateEntries: [invoiceWorker],
+                bpmnGroups: [describedTasks, subProcesses],
+            });
+
+            typeInto(searchInput, "child process");
+
+            expect(isPaletteExpanded()).toBe(false);
+            expect(highlightedPaletteKey()).toBe("grp:subprocess:append-call-activity");
+            expect(previews()).toEqual(["Call activity"]);
+        });
+
+        it("drops the hovered element when a search changes the lists", () => {
+            const { searchInput } = renderOverlay({
+                templateEntries: [],
+                bpmnGroups: [describedTasks],
+            });
+            hover(paletteButton("grp:tasks:append-service-task"), true);
+
+            typeInto(searchInput, "send");
+
+            expect(previews()).toEqual(["Send task"]);
+        });
     });
 });

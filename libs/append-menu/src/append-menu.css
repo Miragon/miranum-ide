@@ -419,6 +419,10 @@
     line-height: 1.4;
 }
 
+.am-hover-card-desc:last-child {
+    margin-bottom: 0;
+}
+
 .am-hover-card-meta {
     display: flex;
     align-items: center;
