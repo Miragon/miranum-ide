@@ -3,22 +3,16 @@ import {
     Command,
     ElementTemplatesQuery,
     GetBpmnFileCommand,
-    GetBpmnlintConfigCommand,
     GetBpmnModelerSettingCommand,
-    GetElementTemplatesCommand,
     GetPropertiesPanelStateCommand,
-    DiagramFormattedCommand,
     LogErrorCommand,
-    LogWarningCommand,
     PropertiesPanelStateQuery,
     Query,
     RequestFocusCommand,
     SetPropertiesPanelStateCommand,
-    UpdateScriptVariablesCommand,
     HOST_REPLY_TIMEOUT_MS,
     createInertLockGroup,
     createResolver,
-    extractProcessVariables,
     initResizer,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
@@ -29,7 +23,6 @@ import {
 import {
     NoModelerError,
     UnsupportedEngineError,
-    asyncDebounce,
     type SurfaceMode,
 } from "@miragon/bpmn-modeler-types";
 import {
@@ -38,7 +31,6 @@ import {
     mountModeStrip,
     type ModeSession,
     type ModeStrip,
-    type SurfaceFactories,
 } from "@miragon/bpmn-modeler/mode";
 import {
     applyPageThemeScope,
@@ -47,16 +39,9 @@ import {
 } from "@miragon/bpmn-modeler-shared";
 import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
 import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
-import type {
-    ClipboardOptions,
-    LintingOptions,
-    ModelerCapabilities,
-    ModelerMode,
-} from "@miragon/bpmn-modeler";
+import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
-import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
-import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
@@ -72,21 +57,12 @@ import {
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
 import { createSessionActions } from "./session/sessionActions";
+import { createSurfaceBinder, type SurfaceBinding } from "./session/surfaceBinding";
+import { createSurfaceFactories } from "./session/surfaceFactories";
 import { createSurfaceRequests } from "./session/surfaceRequests";
-import { readSavedMode, WebviewStateManager } from "./state";
-import {
-    loadDesignerModule,
-    loadModelerModule,
-    loadViewerModule,
-    prefetchSurfaceModules,
-} from "./surfaceModules";
-import {
-    isEditableHandle,
-    isFormattableHandle,
-    isLintingHandle,
-    isModelerHandle,
-    type SurfaceHandle,
-} from "./surface";
+import { readSavedMode } from "./state";
+import { prefetchSurfaceModules } from "./surfaceModules";
+import { isEditableHandle, isModelerHandle, type SurfaceHandle } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
 
 /**
@@ -182,7 +158,6 @@ function startSession(
             surface?.setTheme(kind);
         }
     });
-    let cancelPendingVariablePublish: (() => void) | undefined;
     const protocolCapabilities = createProtocolCapabilities(host, () => surface);
     const clipboard = resolveClipboard(injectedClipboard, {
         isDevelopment: process.env.NODE_ENV === "development",
@@ -214,13 +189,14 @@ function startSession(
     });
 
     /**
-     * State manager for persisting and restoring viewport/selection across tab
-     * switches. Initialised after the modeler is created.
+     * The live surface's subscriptions and state manager for persisting and
+     * restoring viewport/selection across tab switches. Bound after the initial
+     * import, then rebound on every mode switch.
      */
-    let stateManager: WebviewStateManager;
+    let binding: SurfaceBinding | undefined;
 
     const documentSync = new BpmnDocumentSync(host, () => surface, {
-        getViewState: () => stateManager,
+        getViewState: () => binding?.stateManager,
         flushLock: destructiveFlushLock,
         followUps: {
             reloadForEngineChange: () => sessionActions.reloadForEngineChange(),
@@ -230,9 +206,9 @@ function startSession(
 
     const sessionActions = createSessionActions(host, () => surface, {
         documentSync,
-        getViewState: () => stateManager,
+        getViewState: () => binding?.stateManager,
         reloadLock: engineReloadLock,
-        cancelPendingVariablePublish: () => cancelPendingVariablePublish?.(),
+        cancelPendingVariablePublish: () => binding?.dispose(),
         reloadPage: injectedReload ?? (() => window.location.reload()),
     });
 
@@ -386,171 +362,29 @@ function startSession(
         const engine = bpmnFileQuery?.engine;
 
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
-        const extraModules = (injectedModules as unknown[]) ?? [];
 
-        // The three surface factories the mode session switches between. View →
-        // readonly viewer; Design on an untagged model → the engine-neutral
-        // designer; Design/Implement on a tagged model → one createModeler whose
-        // `mode` toggles live. Every surface is born in the IDE's forced theme so
-        // the first frame paints correctly (the body class is the IDE signal, not
-        // "automatic"). Both editable surfaces share the lint bridge's options;
-        // the designer resolves the engine-neutral Design config, the modeler
-        // re-resolves per mode on a live toggle.
-        const surfaces: SurfaceFactories = {
-            view: async ({ container, theme }) => {
-                const { createViewer } = await loadViewerModule();
-                return createViewer(container, {
-                    theme,
-                    propertiesPanel: { parent: mountEl },
-                    capabilities: { modelNavigation: capabilities.modelNavigation },
-                    additionalModules: extraModules,
-                });
+        const surfaces = createSurfaceFactories(host, {
+            propertiesPanelParent: mountEl,
+            capabilities,
+            extraModules: injectedModules ?? [],
+            clipboard: clipboard.options,
+            lintBridge,
+            hostModelerState,
+            reportElementTemplateErrors: surfaceRequests.reportElementTemplateErrors,
+            onModelerModeChanged: (mode) => {
+                surfaceMode = mode;
+                binding?.stateManager.persistMode(mode);
+                strip?.render({ mode, engine, busy: switchPending });
             },
-            design: async ({ container, theme }) => {
-                const [{ createDesigner }, linting] = await Promise.all([
-                    loadDesignerModule(),
-                    lintBridge.surfaceOptions(),
-                ]);
-                const settingsAtCreation = hostModelerState.settings;
-                const designer = await createDesigner(container, {
-                    theme,
-                    favouriteBpmnElements: settingsAtCreation?.favouriteBpmnElements,
-                    propertiesPanel: { parent: mountEl },
-                    clipboard: clipboard.options,
-                    capabilities: {
-                        modelNavigation: capabilities.modelNavigation,
-                        definitionSearch: capabilities.definitionSearch,
-                    },
-                    additionalModules: extraModules,
-                    ...linting,
-                });
-                // A push during the async init only reached the previous surface.
-                hostModelerState.applyFavouritesPushedSince(settingsAtCreation, designer);
-                return designer;
-            },
-            implement: async ({ container, theme, mode, engine: ctxEngine }) => {
-                if (ctxEngine === undefined) {
-                    // The session only routes Implement (and tagged-model Design)
-                    // here, so this is unreachable — throw rather than lie to
-                    // createModeler's `engine: Engine`.
-                    throw new Error("implement surface requires a tagged model");
-                }
-                const [{ createModeler }, linting] = await Promise.all([
-                    loadModelerModule(),
-                    lintBridge.surfaceOptions(),
-                ]);
-                const settingsAtCreation = hostModelerState.settings;
-                const modeler = await createModeler(container, {
-                    engine: ctxEngine,
-                    mode,
-                    theme,
-                    settings: settingsAtCreation,
-                    propertiesPanel: { parent: mountEl },
-                    additionalModules: extraModules,
-                    clipboard: clipboard.options,
-                    capabilities,
-                    ...linting,
-                    onWarning: (warning: string) =>
-                        host.postMessage(new LogWarningCommand(warning)),
-                    onElementTemplatesErrors: surfaceRequests.reportElementTemplateErrors,
-                    // The modeler's own toggle notification. The session also
-                    // fires onModeChanged("toggle"); both write the same values, so
-                    // keeping this (the session cannot inject into the options bag)
-                    // is a harmless redundancy, not a second source of truth.
-                    onModeChanged: (m: ModelerMode) => {
-                        surfaceMode = m;
-                        stateManager?.persistMode(m);
-                        strip?.render({ mode: m, engine, busy: switchPending });
-                    },
-                    handleGlobalEscape: true,
-                });
-                // A push during the async init only reached the previous surface.
-                hostModelerState.applySettingsPushedSince(settingsAtCreation, modeler);
-                return modeler;
-            },
-        };
-
-        // Rebinds the per-surface subscriptions on every (re)creation: outbound
-        // sync, the C7 variable publisher, and the state manager. All of these
-        // live on the instance and die with it, so a mode switch that forgot to
-        // rebind would silently stop syncing/persisting.
-        function bindSurface(handle: SurfaceHandle): void {
-            // Outbound sync: the modeler exposes onCommandStackChanged; the
-            // designer emits via the shared eventBus; the readonly viewer never
-            // schedules a sync (so respondToFlush sees nothing pending in View).
-            if (isModelerHandle(handle)) {
-                handle.onCommandStackChanged(() => documentSync.scheduleSync());
-            } else if (isEditableHandle(handle)) {
-                handle
-                    .getService<{ on(event: string, cb: () => void): void }>("eventBus")
-                    .on("commandStack.changed", () => documentSync.scheduleSync());
-            }
-
-            // One report path for both triggers: the canvas shortcut and the
-            // host command both end in `Layouter.format`, which announces every
-            // outcome here rather than returning it to two different callers.
-            if (isFormattableHandle(handle)) {
-                handle
-                    .getService<{
-                        on(event: string, cb: (outcome: LayoutOutcome) => void): void;
-                    }>("eventBus")
-                    .on(LAYOUT_FORMATTED_EVENT, (outcome) => {
-                        host.postMessage(
-                            new DiagramFormattedCommand(
-                                outcome.status,
-                                outcome.diagnostics,
-                                outcome.code,
-                                outcome.message,
-                            ),
-                        );
-                    });
-            }
-
-            // C7 process-variable publisher — modeler-only (scripting is a C7
-            // cluster). Gated on the engine and the port being present, like the
-            // capability that owns it.
-            if (isModelerHandle(handle) && engine === "c7" && capabilities.scripting) {
-                let lastVariablesJson = "";
-                const sendVariables = asyncDebounce(async () => {
-                    if (sessionActions.isReloading()) return;
-                    const variables = extractProcessVariables(handle.getDefinitions());
-                    const json = JSON.stringify(variables);
-                    if (json === lastVariablesJson) {
-                        return;
-                    }
-                    lastVariablesJson = json;
-                    host.postMessage(new UpdateScriptVariablesCommand(variables));
-                }, 300);
-                cancelPendingVariablePublish = () => sendVariables.cancel();
-                handle.onCommandStackChanged(() => {
-                    if (!sessionActions.isReloading()) void sendVariables();
-                });
-                // commandStack.changed doesn't fire on import, and a webview
-                // reload starts with an empty host-side store, so seed it.
-                void sendVariables();
-            } else {
-                cancelPendingVariablePublish = undefined;
-            }
-
-            stateManager = new WebviewStateManager(host, handle, mountEl);
-        }
-
-        // Element templates are modeler-only; a viewer/designer never receives
-        // them, so its ElementTemplatesQuery would never arrive and the restore
-        // chain's Promise.all would stall — resolve the templates gate immediately
-        // instead. The lint config request goes to any editable (linting) surface:
-        // the designer lints too, and the host answers an untagged doc
-        // with the engine-less default the webview builds.
-        function requestSurfaceResources(): void {
-            if (isModelerHandle(surface)) {
-                host.postMessage(new GetElementTemplatesCommand());
-            } else {
-                elementTemplatesResolver.done(undefined);
-            }
-            if (isLintingHandle(surface)) {
-                host.postMessage(new GetBpmnlintConfigCommand());
-            }
-        }
+        });
+        const binder = createSurfaceBinder(host, {
+            documentSync,
+            lifecycle: sessionActions,
+            panelRoot: mountEl,
+            engine,
+            capabilities,
+            elementTemplatesReply: elementTemplatesResolver,
+        });
 
         // The session owns the single live surface and switches it between the
         // available modes: a Design↔Implement change on a tagged model is a live
@@ -570,7 +404,7 @@ function startSession(
                     // the pre-session flow; a recreate/fallback binds here, before
                     // the session loads the carried XML.
                     if (documentSync.isReady()) {
-                        bindSurface(surface);
+                        binding = binder.bindSurface(surface);
                     }
                 },
                 onSwitchStateChanged: (busy) => {
@@ -584,6 +418,7 @@ function startSession(
                 },
                 onModeChanged: (mode, transition) => {
                     surfaceMode = mode;
+                    const stateManager = binding!.stateManager;
                     stateManager.persistMode(mode);
                     strip.render({ mode, engine, busy: switchPending });
                     // A recreate/fallback stood up a fresh instance: re-apply the
@@ -602,12 +437,12 @@ function startSession(
                         }
                         stateManager.restorePanelUiState();
                         stateManager.startPersisting();
-                        requestSurfaceResources();
+                        binder.requestSurfaceResources(surface);
                     }
                 },
                 beforeDestroy: async () => {
                     await documentSync.flushBeforeSurfaceDestroy();
-                    cancelPendingVariablePublish?.();
+                    binding?.dispose();
                 },
                 onError: (error) => {
                     const cause = error instanceof Error ? error : new Error(String(error));
@@ -631,7 +466,7 @@ function startSession(
             return;
         }
         surfaceMode = modeSession.getMode();
-        requestSurfaceResources();
+        binder.requestSurfaceResources(surface);
 
         // Always offer all three modes, greying out the ones the current
         // engine can't reach (Implement on an untagged model) so the mode is
@@ -663,7 +498,9 @@ function startSession(
 
         console.debug("[DEBUG] Modeler is initialized...");
 
-        bindSurface(surface);
+        // Mode switches stay closed until the boot finishes, so this binding stays live throughout run().
+        binding = binder.bindSurface(surface);
+        const { stateManager } = binding;
 
         // Lets the IntelliJ JCEF host drive undo/redo: it swallows Ctrl+Z/Ctrl+Y
         // at the IDE level before bpmn-js sees them. Installed once, over the
@@ -708,7 +545,7 @@ function startSession(
         // host's global default so the latest preference seeds new editors.
         // Registered after restore so the restore itself can't echo back.
         propertiesPanelHandle.onVisibilityChanged((visible) => {
-            stateManager.persistPanelVisibility(visible);
+            binding?.stateManager.persistPanelVisibility(visible);
             host.postMessage(new SetPropertiesPanelStateCommand(visible));
         });
 
@@ -759,7 +596,7 @@ function startSession(
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden" && !sessionActions.isReloading()) {
             void documentSync.flushOutbound();
-            stateManager?.flushViewport();
+            binding?.stateManager.flushViewport();
         }
     });
 
