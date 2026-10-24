@@ -73,7 +73,7 @@ onMounted(async () => {
         <div class="hero">
             <section class="pitch" aria-labelledby="landing-title">
                 <div>
-                    <h1 id="landing-title">Model processes where their code lives.</h1>
+                    <h1 id="landing-title">Model processes where their <span class="accent">code</span> lives.</h1>
                     <p class="lede">
                         Models, element templates and lint rules live in your repository, so a
                         process change ships in one pull request with the code behind it.
@@ -294,6 +294,10 @@ code {
     display: flex;
     flex-direction: column;
     gap: 32px;
+}
+
+.accent {
+    color: var(--cd-ui-link);
 }
 
 h1 {
