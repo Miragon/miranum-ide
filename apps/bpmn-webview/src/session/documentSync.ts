@@ -107,7 +107,10 @@ export class BpmnDocumentSync implements FlushSource {
         }
     }
 
-    /** Resolves `false` when the session cannot go on: nothing opened, or the engine changed. */
+    /**
+     * Resolves `false` when nothing opened or this import began an engine reload. A
+     * host push during the import can begin one too; only the reload state shows that.
+     */
     async importInitial(initialFile: BpmnFileQuery | undefined): Promise<boolean> {
         this.documentEngine = initialFile?.engine;
         let importedFile = this.latestHostFile ?? initialFile;

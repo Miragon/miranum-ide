@@ -30,7 +30,6 @@ import {
     NoModelerError,
     UnsupportedEngineError,
     asyncDebounce,
-    type DetectedEngine,
     type SurfaceMode,
 } from "@miragon/bpmn-modeler-types";
 import {
@@ -170,7 +169,6 @@ function startSession(
     // Never released: the page stays locked until the reload replaces it.
     const engineReloadLock = pageInertLocks.createLock();
 
-    let modelerEngine: DetectedEngine;
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
     // own theme off the VS Code `<body>`-class signal.
@@ -386,7 +384,6 @@ function startSession(
         // this editor's saved mode, then the host's default, then the engine's
         // own default — the mode session vets it against availability.
         const engine = bpmnFileQuery?.engine;
-        modelerEngine = engine;
 
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
@@ -463,7 +460,7 @@ function startSession(
                     onModeChanged: (m: ModelerMode) => {
                         surfaceMode = m;
                         stateManager?.persistMode(m);
-                        strip?.render({ mode: m, engine: modelerEngine, busy: switchPending });
+                        strip?.render({ mode: m, engine, busy: switchPending });
                     },
                     handleGlobalEscape: true,
                 });
@@ -512,7 +509,7 @@ function startSession(
             // C7 process-variable publisher — modeler-only (scripting is a C7
             // cluster). Gated on the engine and the port being present, like the
             // capability that owns it.
-            if (isModelerHandle(handle) && modelerEngine === "c7" && capabilities.scripting) {
+            if (isModelerHandle(handle) && engine === "c7" && capabilities.scripting) {
                 let lastVariablesJson = "";
                 const sendVariables = asyncDebounce(async () => {
                     if (sessionActions.isReloading()) return;
@@ -583,12 +580,12 @@ function startSession(
                     } else {
                         modeSwitchLock.release();
                     }
-                    strip.render({ mode: surfaceMode, engine: modelerEngine, busy });
+                    strip.render({ mode: surfaceMode, engine, busy });
                 },
                 onModeChanged: (mode, transition) => {
                     surfaceMode = mode;
                     stateManager.persistMode(mode);
-                    strip.render({ mode, engine: modelerEngine, busy: switchPending });
+                    strip.render({ mode, engine, busy: switchPending });
                     // A recreate/fallback stood up a fresh instance: re-apply the
                     // host's script locks, restore its panel UI, resume persistence,
                     // and re-request modeler resources.
@@ -746,7 +743,7 @@ function startSession(
         // The initial surface is live: drop the strip's busy state and persist the
         // resolved mode so a first-ever open remembers where it landed.
         initialSurfaceReady = true;
-        strip.render({ mode: surfaceMode, engine: modelerEngine, busy: false });
+        strip.render({ mode: surfaceMode, engine, busy: false });
         stateManager.persistMode(surfaceMode);
 
         // Phase 3: begin persisting changes
