@@ -2,40 +2,69 @@ import {
     type BpmnFileQuery,
     createFlushResponder,
     createResolver,
+    type FlushDocumentQuery,
     type FlushSource,
+    type FocusElementQuery,
     HostDocumentRevisions,
     type InertLock,
     type InertLockGroup,
+    type LanguageQuery,
     LogErrorCommand,
+    type ReleaseDocumentFlushQuery,
     SyncDocumentCommand,
 } from "@miragon/bpmn-modeler-shared";
 import { asyncDebounce, serializeAsync, type DetectedEngine } from "@miragon/bpmn-modeler-types";
 
 import type { HostChannel } from "./hostChannel";
 
-/** What the session needs from the live surface; bootstrap backs it with whichever surface is current. */
+/** The document I/O the session needs from whichever surface is live. */
 export interface BpmnDocumentSurface {
-    engine(): DetectedEngine;
     importHostDocument(content: string | undefined): Promise<void>;
     exportDocument(): Promise<string>;
     afterSync(): void;
     refreshDiagram(): Promise<void>;
     centerOnElement(elementId: string): void;
-    cancelPendingVariablePublish(): void;
+}
+
+/** The page teardown an engine change runs before the reload replaces the page. */
+export interface BpmnPageLifecycle {
+    cancelPendingSurfaceWork(): void;
     flushViewport(): void;
-    destroy(): void;
-    reload(): void;
+    destroySurface(): void;
+    reloadPage(): void;
+}
+
+export interface Translator {
+    getLocale(): string;
+    setLanguage(locale: string): void;
+}
+
+interface BpmnDocumentSessionPorts {
+    readonly surface: BpmnDocumentSurface;
+    readonly page: BpmnPageLifecycle;
+    readonly translator: Translator;
+    readonly pageInertLocks: InertLockGroup;
+}
+
+interface DocumentSessionHandlers {
+    BpmnFileQuery(query: BpmnFileQuery): Promise<void>;
+    LanguageQuery(query: LanguageQuery): Promise<void>;
+    FocusElementQuery(query: FocusElementQuery): Promise<void>;
+    FlushDocumentQuery(query: FlushDocumentQuery): Promise<void>;
+    ReleaseDocumentFlushQuery(query: ReleaseDocumentFlushQuery): Promise<void>;
 }
 
 /**
  * The BPMN webview's document lifecycle: host revisions, the serialized
  * host-update queue, the debounced outbound sync, mode-switch and engine-reload
- * latches, and actions (refresh, focus) deferred until the modeler is ready.
+ * latches, and actions (language refresh, focus) deferred until the modeler is ready.
  */
 export class BpmnDocumentSession implements FlushSource {
     private readonly revisions = new HostDocumentRevisions();
     private readonly initialHostFile = createResolver<BpmnFileQuery>();
     private latestFile: BpmnFileQuery | undefined;
+    // The surface was built for the initial file's engine; any other engine reloads the page.
+    private documentEngine: DetectedEngine;
     private initialized = false;
     private canImportHostUpdates = false;
     private engineReloadPending = false;
@@ -63,13 +92,29 @@ export class BpmnDocumentSession implements FlushSource {
     // Never released: the page stays locked until the reload replaces it.
     private readonly engineReloadLock: InertLock;
 
-    readonly respondToFlush = createFlushResponder(this, (reply) => this.host.postMessage(reply));
+    private readonly surface: BpmnDocumentSurface;
+    private readonly page: BpmnPageLifecycle;
+    private readonly translator: Translator;
+
+    private readonly respondToFlush = createFlushResponder(this, (reply) =>
+        this.host.postMessage(reply),
+    );
+
+    readonly handlers: DocumentSessionHandlers = {
+        BpmnFileQuery: (query) => this.receiveHostFile(query),
+        LanguageQuery: (query) => this.applyLanguage(query.locale),
+        FocusElementQuery: (query) => this.focusElement(query.elementId),
+        FlushDocumentQuery: (query) => this.respondToFlush(query),
+        ReleaseDocumentFlushQuery: (query) => this.respondToFlush(query),
+    };
 
     constructor(
         private readonly host: HostChannel,
-        private readonly surface: BpmnDocumentSurface,
-        pageInertLocks: InertLockGroup,
+        { surface, page, translator, pageInertLocks }: BpmnDocumentSessionPorts,
     ) {
+        this.surface = surface;
+        this.page = page;
+        this.translator = translator;
         this.modeSwitchLock = pageInertLocks.createLock();
         this.destructiveFlushLock = pageInertLocks.createLock();
         this.engineReloadLock = pageInertLocks.createLock();
@@ -106,7 +151,7 @@ export class BpmnDocumentSession implements FlushSource {
         // stale export can't clobber it after the re-import.
         this.debouncedSync.cancel();
         if (!this.canImportHostUpdates) return;
-        if (query.engine !== this.surface.engine()) {
+        if (query.engine !== this.documentEngine) {
             await this.reloadForEngineChange();
             return;
         }
@@ -119,11 +164,15 @@ export class BpmnDocumentSession implements FlushSource {
         }
     }
 
-    /** Imports the newest host file into a fresh surface; `false` when the boot must stop. */
+    /**
+     * Imports the newest host file into a surface built for `firstFile`'s
+     * engine; `false` when the boot must stop.
+     */
     async openInitialDocument(firstFile: BpmnFileQuery | undefined): Promise<boolean> {
+        this.documentEngine = firstFile?.engine;
         let importedFile = this.latestFile ?? firstFile;
         while (importedFile) {
-            if (importedFile.engine !== this.surface.engine()) {
+            if (importedFile.engine !== this.documentEngine) {
                 await this.reloadForEngineChange();
                 return false;
             }
@@ -145,7 +194,7 @@ export class BpmnDocumentSession implements FlushSource {
         this.canImportHostUpdates = true;
 
         if (this.latestFile && this.latestFile !== importedFile) {
-            if (this.latestFile.engine !== this.surface.engine()) {
+            if (this.latestFile.engine !== this.documentEngine) {
                 await this.reloadForEngineChange();
                 return false;
             }
@@ -170,7 +219,12 @@ export class BpmnDocumentSession implements FlushSource {
         this.initialSurfaceReady = true;
     }
 
-    async requestDiagramRefresh(): Promise<void> {
+    async applyLanguage(locale: string): Promise<void> {
+        // The host pushes the language on every (re)load and an unknown code falls back
+        // to "en", so only a changed resolved locale pays for the re-translating re-import.
+        const localeBefore = this.translator.getLocale();
+        this.translator.setLanguage(locale);
+        if (this.translator.getLocale() === localeBefore) return;
         this.refreshDiagramWhenReady = true;
         if (this.initialized) {
             await this.drainPendingActions();
@@ -232,7 +286,7 @@ export class BpmnDocumentSession implements FlushSource {
         this.canImportHostUpdates = false;
         this.debouncedSync.cancel();
         this.debouncedHostUpdate.cancel();
-        this.surface.cancelPendingVariablePublish();
+        this.page.cancelPendingSurfaceWork();
         this.refreshDiagramWhenReady = false;
         this.pendingFocusId = undefined;
         this.engineReloadLock.acquire();
@@ -242,12 +296,12 @@ export class BpmnDocumentSession implements FlushSource {
                 this.debouncedSync.cancel();
                 this.debouncedHostUpdate.cancel();
                 await this.debouncedSync.flush();
-                this.surface.flushViewport();
+                this.page.flushViewport();
             } finally {
                 try {
-                    this.surface.destroy();
+                    this.page.destroySurface();
                 } finally {
-                    this.surface.reload();
+                    this.page.reloadPage();
                 }
             }
         });
