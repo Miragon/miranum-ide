@@ -24,12 +24,12 @@ import type { HostChannel } from "./hostChannel";
 
 type ViewStateKeeper = Pick<WebviewStateManager, "captureViewState" | "applyViewState">;
 
-export interface HostDocumentFollowUps {
+interface HostDocumentFollowUps {
     reloadForEngineChange(): Promise<void>;
     drainPendingActions(): Promise<void>;
 }
 
-export interface DocumentSyncPorts {
+interface DocumentSyncPorts {
     /** `undefined` until the surface is bound after its first import. */
     getViewState(): ViewStateKeeper | undefined;
     flushLock: InertLock;

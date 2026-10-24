@@ -55,8 +55,8 @@ function fakeDocumentSync() {
         },
         isReady: vi.fn(() => ready),
         hasPendingHostUpdate: vi.fn(() => false),
-        flushHostUpdates: vi.fn(async () => undefined),
-        flushOutbound: vi.fn(async () => undefined),
+        flushHostUpdates: vi.fn(async (): Promise<void> => undefined),
+        flushOutbound: vi.fn(async (): Promise<void> => undefined),
         enqueueModelerOperation: vi.fn((operation: () => Promise<void>) =>
             modelerOperations(operation),
         ),

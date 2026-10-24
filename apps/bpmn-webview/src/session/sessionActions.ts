@@ -26,7 +26,7 @@ type SessionViewState = Pick<
     "captureViewState" | "applyViewState" | "flushViewport"
 >;
 
-export interface SessionActionPorts {
+interface SessionActionPorts {
     documentSync: SessionDocument;
     /** `undefined` until the surface is bound after its first import. */
     getViewState(): SessionViewState | undefined;
