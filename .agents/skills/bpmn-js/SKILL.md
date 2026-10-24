@@ -24,12 +24,12 @@ Both variants share the `commonModules` array in `BpmnModeler.init()` — e.g. `
 
 ### Lifecycle
 
-1. `apps/bpmn-webview/src/main.ts` calls `bootstrap(getHostApi(), { extraModules })`; `bootstrap.ts` starts `run()` once the window has loaded
-2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` and a language-only message router here)
-3. `createModeSession` builds the initial surface: View → `createViewer`, Design on an untagged model → `createDesigner`, otherwise `createModeler` (each lazily imported via `surfaceModules.ts`)
+1. `apps/bpmn-webview/src/main.ts` calls `bootstrap(getHostApi(), { extraModules })`; `bootstrap.ts` wires the `src/session/` modules, resolving the `clipboard` option (see Copy-Paste below), and starts `run()` once the window has loaded
+2. `run()` registers the message listener, starts the host theme adapter, sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` and a language-only message router here)
+3. `session/modeController.ts` starts `createModeSession`, which builds the initial surface from the factories in `session/surfaceFactories.ts`: View → `createViewer`, Design on an untagged model → `createDesigner`, otherwise `createModeler` (each lazily imported via `surfaceModules.ts`)
 4. `createModeler` constructs `BpmnModeler` and awaits `init()` — load the engine stack, build the module list, install the FEEL/contenteditable clipboard polyfill when `clipboard` is set, then construct `bpmn-js/lib/Modeler` — and afterwards applies the `elementTemplates`, `settings`, `theme`, and `locale` options
 5. The webview requests element templates (modeler only) and the lint config (designer/modeler only), then imports the XML via `loadDiagram(xml)` (`newDiagram()` for an empty file)
-6. `bindSurface` subscribes `commandStack.changed` to the debounced `SyncDocumentCommand` and creates the `WebviewStateManager`
+6. `bindSurface` (`session/surfaceBinding.ts`) subscribes `commandStack.changed` to the debounced `SyncDocumentCommand` and creates the `WebviewStateManager`; a mode switch rebinds the surface it stands up
 7. `WebviewStateManager` restores the viewport from `host.getState()`, then — once element templates and settings have arrived — the selection and panel UI state, and finally starts persisting viewport, selection, and drill-down changes
 
 ### Modeler Options
@@ -63,7 +63,7 @@ Services are accessed via `modeler.get('serviceName')`. Key services used:
 
 | Event                      | Where                                                                    | Purpose                                                                                                          |
 |----------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `commandStack.changed`     | `apps/bpmn-webview/src/bootstrap.ts` (`bindSurface`)                     | Triggered after any modeler command. `session/documentSync.ts` exports XML and sends a debounced `SyncDocumentCommand` to host. |
+| `commandStack.changed`     | `apps/bpmn-webview/src/session/surfaceBinding.ts` (`bindSurface`)        | Triggered after any modeler command. `session/documentSync.ts` exports XML and sends a debounced `SyncDocumentCommand` to host. |
 | `canvas.viewbox.changed`   | `packages/bpmn-modeler/src/viewport.ts`                                  | Triggered on scroll/zoom. Debounced (100ms); `WebviewStateManager` (`state.ts`) persists it via `host.setState()`. |
 | `copyPaste.elementsCopied` | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when elements are copied. Intercepted to write descriptor JSON to system clipboard via extension host. |
 | `copyPaste.pasteElements`  | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when paste occurs. Intercepted to read descriptor JSON from system clipboard via extension host.       |
@@ -191,6 +191,9 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 - **Host message routing** (type-keyed handler table, engine-reload allow-list, held import-bound replies, diff-pane router): `apps/bpmn-webview/src/session/messageRouter.ts`
 - **Document sync** (host pushes, debounced outbound sync, flush handshake, host revisions, modeler operation queue): `apps/bpmn-webview/src/session/documentSync.ts`
 - **Deferred session actions** (pending focus, language re-import, drain loop, engine reload kill switch): `apps/bpmn-webview/src/session/sessionActions.ts`
+- **Mode controller** (live surface, mode session, mode strip and its boot gate, switch inert lock): `apps/bpmn-webview/src/session/modeController.ts`
+- **Surface factories and binding** (View/Design/Implement factories; per-surface sync, format reports, C7 variable publisher, state manager): `apps/bpmn-webview/src/session/surfaceFactories.ts`, `apps/bpmn-webview/src/session/surfaceBinding.ts`
+- **Editor chrome** (mode strip and panel mount, resizer, saved panel visibility): `apps/bpmn-webview/src/session/editorChrome.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`

@@ -71,7 +71,7 @@ export class WebviewStateManager {
 
     /**
      * Persists this editor's surface mode so a later tab-switch rebuild reopens
-     * in the same mode. The single writer is bootstrap's mode session.
+     * in the same mode. The single writer is the session's mode controller.
      */
     persistMode(mode: SurfaceMode): void {
         this.stateStore.merge({ mode });
