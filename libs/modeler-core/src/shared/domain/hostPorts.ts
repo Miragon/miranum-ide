@@ -5,7 +5,7 @@
  *
  * These exist so `service/` depends on *interfaces*, not the concrete `Vs*`
  * adapters. That keeps the layer boundary honest (a service can be unit-tested
- * against a tiny in-memory stub instead of a hand-rolled `vscode` mock) and
+ * against the in-memory fakes in `src/testing` instead of a `vscode` mock) and
  * names, in domain terms, exactly which host facilities the core relies on —
  * the contract any non-VS-Code host would have to satisfy. The concrete
  * `VsCode*` classes in `infrastructure/` `implements` these.

@@ -1,5 +1,5 @@
 import { BpmnDocument } from "@miragon/bpmn-modeler-core";
-import { VsCodeDocument } from "../../../../shared/infrastructure/VsCodeDocument";
+import { EditorSessionDocuments } from "@miragon/bpmn-modeler-core";
 import { VsCodeStatusBar } from "../../../../shared/infrastructure/VsCodeStatusBar";
 import {
     EditorSessionContext,
@@ -14,7 +14,7 @@ import {
 export class EngineVersionStatusBarParticipant implements EditorSessionParticipant {
     constructor(
         private readonly statusBar: VsCodeStatusBar,
-        private readonly vsDocument: VsCodeDocument,
+        private readonly vsDocument: EditorSessionDocuments,
     ) {}
 
     onResolve(session: EditorSessionContext): void {

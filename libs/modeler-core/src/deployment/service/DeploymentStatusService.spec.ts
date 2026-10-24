@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { createTestHost, PickerAnswers } from "../../testing";
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import {
     contentFingerprint,
@@ -22,59 +23,27 @@ const FILE_PATH = "/work/order-process.bpmn";
 const target = (name: string): DeploymentTarget =>
     new DeploymentTarget(name, "c7", "http://localhost:8080/engine-rest", "", "none", "", "");
 
-function createService() {
-    const editorStore = {
-        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-    };
-    const documentPort = {
-        getFilePath: vi.fn().mockReturnValue(FILE_PATH),
-        getContent: vi.fn().mockReturnValue("<a/>"),
-    };
+function createService(answers: PickerAnswers = {}) {
+    const host = createTestHost({ answers });
+    const editor = host.openEditor(FILE_PATH, "<a/>");
     const deploymentTargetService = {
         getActiveTarget: vi.fn().mockResolvedValue(undefined),
     };
-    const deploymentState = {
-        getEndpoint: vi.fn().mockReturnValue("http://localhost:8080/engine-rest"),
-        getTenantId: vi.fn().mockReturnValue(""),
-        getDeployedRevision: vi.fn().mockReturnValue(undefined),
-        saveDeployedRevision: vi.fn().mockResolvedValue(undefined),
-        listLedgerKeys: vi.fn().mockReturnValue([]),
-        deleteDeployedRevisions: vi.fn().mockResolvedValue(undefined),
-    };
-    const statusBar = {
-        showDeploymentTarget: vi.fn(),
-        hideDeploymentTarget: vi.fn(),
-    };
-    const picker = {
-        pickDeploymentStatusAction: vi.fn().mockResolvedValue(undefined),
-    };
-    const notifier = {
-        logDebug: vi.fn(),
-    };
 
     const service = new DeploymentStatusService(
-        editorStore as never,
-        documentPort as never,
+        host.store,
+        host.documents,
         deploymentTargetService as never,
-        deploymentState as never,
-        statusBar as never,
-        picker as never,
-        notifier as never,
+        host.deploymentState,
+        host.statusBar,
+        host.picker,
+        host.notifier,
     );
 
-    return {
-        service,
-        editorStore,
-        documentPort,
-        deploymentTargetService,
-        deploymentState,
-        statusBar,
-        picker,
-        notifier,
-    };
+    return { service, host, editor, deploymentTargetService };
 }
 
-beforeEach(() => vi.clearAllMocks());
+const DEV_KEY = "target:dev@localhost:8080::/work/order-process.bpmn";
 
 describe("DeploymentStatusService.recordDeployment", () => {
     it("stores a fingerprint + timestamp under the identity/file ledger key", async () => {
@@ -87,8 +56,7 @@ describe("DeploymentStatusService.recordDeployment", () => {
             "dep-42",
         );
 
-        expect(c.deploymentState.saveDeployedRevision).toHaveBeenCalledWith(
-            "target:dev@localhost:8080::/work/order-process.bpmn",
+        expect(c.host.deploymentState.ledger.get(DEV_KEY)).toEqual(
             expect.objectContaining({
                 fingerprint: contentFingerprint("<a/>"),
                 deploymentId: "dep-42",
@@ -113,60 +81,72 @@ describe("DeploymentStatusService ledger writes", () => {
 
         await c.service.adoptRevision(FILE_PATH, identity(), revision);
 
-        expect(c.deploymentState.saveDeployedRevision).toHaveBeenCalledWith(
-            "target:dev@localhost:8080::/work/order-process.bpmn",
-            revision,
-        );
+        expect(c.host.deploymentState.ledger.get(DEV_KEY)).toEqual(revision);
     });
 
     it("forgets a single revision", async () => {
         const c = createService();
+        const otherKey = "target:dev@localhost:8080::/work/other.bpmn";
+        await c.host.deploymentState.saveDeployedRevision(DEV_KEY, {
+            fingerprint: "a",
+            deployedAt: "",
+        });
+        await c.host.deploymentState.saveDeployedRevision(otherKey, {
+            fingerprint: "b",
+            deployedAt: "",
+        });
 
         await c.service.forgetRevision(FILE_PATH, identity());
 
-        expect(c.deploymentState.deleteDeployedRevisions).toHaveBeenCalledWith([
-            "target:dev@localhost:8080::/work/order-process.bpmn",
-        ]);
+        expect(c.host.deploymentState.listLedgerKeys()).toEqual([otherKey]);
     });
 
     it("prunes exactly the identity's rows", async () => {
         const c = createService();
-        c.deploymentState.listLedgerKeys.mockReturnValue([
+        const keys = [
             "target:dev@localhost:8080::/work/a.bpmn",
             "target:dev@localhost:8080::/work/b.bpmn",
             "target:dev@other.example.com::/work/a.bpmn",
             "target:prod@localhost:8080::/work/a.bpmn",
-        ]);
+        ];
+        for (const key of keys) {
+            await c.host.deploymentState.saveDeployedRevision(key, {
+                fingerprint: "f",
+                deployedAt: "",
+            });
+        }
 
         await c.service.pruneTarget(identity());
 
-        expect(c.deploymentState.deleteDeployedRevisions).toHaveBeenCalledWith([
-            "target:dev@localhost:8080::/work/a.bpmn",
-            "target:dev@localhost:8080::/work/b.bpmn",
+        expect(c.host.deploymentState.listLedgerKeys()).toEqual([
+            "target:dev@other.example.com::/work/a.bpmn",
+            "target:prod@localhost:8080::/work/a.bpmn",
         ]);
     });
 
     it("skips the delete round-trip when nothing matches", async () => {
         const c = createService();
+        const deleteDeployedRevisions = vi.spyOn(c.host.deploymentState, "deleteDeployedRevisions");
 
         await c.service.pruneTarget(identity());
 
-        expect(c.deploymentState.deleteDeployedRevisions).not.toHaveBeenCalled();
+        expect(deleteDeployedRevisions).not.toHaveBeenCalled();
     });
 });
 
 describe("DeploymentStatusService.pickStatusBarAction", () => {
     it("offers verify for a named C7 target", async () => {
-        const c = createService();
+        const c = createService({ deploymentStatusAction: "verify" });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("dev"));
-        c.picker.pickDeploymentStatusAction.mockResolvedValue("verify");
 
         await expect(c.service.pickStatusBarAction("/work")).resolves.toBe("verify");
 
-        expect(c.picker.pickDeploymentStatusAction).toHaveBeenCalledWith({
-            targetName: "dev",
-            canVerify: true,
-        });
+        expect(c.host.picker.prompts).toEqual([
+            {
+                method: "pickDeploymentStatusAction",
+                args: [{ targetName: "dev", canVerify: true }],
+            },
+        ]);
     });
 
     it("withholds verify without a named target", async () => {
@@ -174,10 +154,12 @@ describe("DeploymentStatusService.pickStatusBarAction", () => {
 
         await c.service.pickStatusBarAction();
 
-        expect(c.picker.pickDeploymentStatusAction).toHaveBeenCalledWith({
-            targetName: undefined,
-            canVerify: false,
-        });
+        expect(c.host.picker.prompts).toEqual([
+            {
+                method: "pickDeploymentStatusAction",
+                args: [{ targetName: undefined, canVerify: false }],
+            },
+        ]);
     });
 
     it("withholds verify for a Camunda 8 target", async () => {
@@ -188,145 +170,150 @@ describe("DeploymentStatusService.pickStatusBarAction", () => {
 
         await c.service.pickStatusBarAction();
 
-        expect(c.picker.pickDeploymentStatusAction).toHaveBeenCalledWith({
-            targetName: "cloud",
-            canVerify: false,
-        });
+        expect(c.host.picker.prompts).toEqual([
+            {
+                method: "pickDeploymentStatusAction",
+                args: [{ targetName: "cloud", canVerify: false }],
+            },
+        ]);
     });
 });
 
 describe("DeploymentStatusService.refresh", () => {
     it("ignores requests from an inactive editor", async () => {
         const c = createService();
+        c.host.statusBar.showDeploymentTarget("shown", "deployed");
+        const shown = c.host.statusBar.deploymentTarget;
         await c.service.refresh("background");
-        expect(c.statusBar.showDeploymentTarget).not.toHaveBeenCalled();
-        expect(c.statusBar.hideDeploymentTarget).not.toHaveBeenCalled();
+        expect(c.host.statusBar.deploymentTarget).toBe(shown);
     });
 
     it.each(["resolve", "reject"])("ignores a stale lookup that later %s", async (outcome) => {
         const c = createService();
         const pending = deferred<DeploymentTarget | undefined>();
         c.deploymentTargetService.getActiveTarget.mockReturnValueOnce(pending.promise);
-        const oldRefresh = c.service.refresh("editor-1");
-        c.editorStore.getActiveEditorId.mockReturnValue("editor-2");
-        await c.service.refresh("editor-2");
-        c.statusBar.showDeploymentTarget.mockClear();
+        const oldRefresh = c.service.refresh(c.editor.id);
+        const other = c.host.openEditor("/work/other.bpmn", "<a/>");
+        await c.service.refresh(other.id);
+        const shown = c.host.statusBar.deploymentTarget;
         if (outcome === "resolve") pending.resolve(target("old"));
         else pending.reject(new Error("stale error"));
         await oldRefresh;
-        expect(c.statusBar.showDeploymentTarget).not.toHaveBeenCalled();
-        expect(c.statusBar.hideDeploymentTarget).not.toHaveBeenCalled();
+        expect(c.host.statusBar.deploymentTarget).toBe(shown);
     });
 
     it("invalidates pending refreshes when hidden, even if the active pointer is unchanged", async () => {
         const c = createService();
         const pending = deferred<DeploymentTarget | undefined>();
         c.deploymentTargetService.getActiveTarget.mockReturnValueOnce(pending.promise);
-        const refresh = c.service.refresh("editor-1");
+        const refresh = c.service.refresh(c.editor.id);
         c.service.hide();
         pending.resolve(target("old"));
         await refresh;
-        expect(c.statusBar.showDeploymentTarget).not.toHaveBeenCalled();
+        expect(c.host.statusBar.deploymentTarget).toBeUndefined();
     });
 
     it("only publishes the newest lookup for the same editor", async () => {
         const c = createService();
         const pending = deferred<DeploymentTarget | undefined>();
         c.deploymentTargetService.getActiveTarget.mockReturnValueOnce(pending.promise);
-        const old = c.service.refresh("editor-1");
+        const old = c.service.refresh(c.editor.id);
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("new"));
-        await c.service.refresh("editor-1");
+        await c.service.refresh(c.editor.id);
+        const shown = c.host.statusBar.deploymentTarget;
         pending.resolve(target("old"));
         await old;
-        expect(c.statusBar.showDeploymentTarget).toHaveBeenCalledExactlyOnceWith(
-            "new",
-            "unknown",
-            undefined,
-            undefined,
-        );
+        expect(shown).toEqual({
+            name: "new",
+            freshness: "unknown",
+            deployedAt: undefined,
+            verifiedAt: undefined,
+        });
+        expect(c.host.statusBar.deploymentTarget).toBe(shown);
     });
     it("renders unknown when no revision is recorded", async () => {
         const c = createService();
 
-        await c.service.refresh("editor-1");
+        await c.service.refresh(c.editor.id);
 
-        expect(c.statusBar.showDeploymentTarget).toHaveBeenCalledWith(
-            undefined,
-            "unknown",
-            undefined,
-            undefined,
-        );
+        expect(c.host.statusBar.deploymentTarget).toEqual({
+            name: undefined,
+            freshness: "unknown",
+            deployedAt: undefined,
+            verifiedAt: undefined,
+        });
     });
 
     it("renders deployed (green) when content matches the recorded fingerprint", async () => {
         const c = createService();
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("dev"));
-        c.deploymentState.getDeployedRevision.mockReturnValue({
-            fingerprint: contentFingerprint("<a/>"),
-            deployedAt: "2026-09-17T14:32:00.000Z",
-        });
-
-        await c.service.refresh("editor-1");
-
-        expect(c.deploymentState.getDeployedRevision).toHaveBeenCalledWith(
+        await c.host.deploymentState.saveDeployedRevision(
             ledgerKeyFor(DeploymentTargetIdentity.fromTarget(target("dev")), FILE_PATH),
+            {
+                fingerprint: contentFingerprint("<a/>"),
+                deployedAt: "2026-09-17T14:32:00.000Z",
+            },
         );
-        expect(c.statusBar.showDeploymentTarget).toHaveBeenCalledWith(
-            "dev",
-            "deployed",
-            "2026-09-17T14:32:00.000Z",
-            undefined,
-        );
+
+        await c.service.refresh(c.editor.id);
+
+        expect(c.host.statusBar.deploymentTarget).toEqual({
+            name: "dev",
+            freshness: "deployed",
+            deployedAt: "2026-09-17T14:32:00.000Z",
+            verifiedAt: undefined,
+        });
     });
 
     it("renders changed (yellow) when content differs from the recorded fingerprint", async () => {
         const c = createService();
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("dev"));
-        c.documentPort.getContent.mockReturnValue("<b/>");
-        c.deploymentState.getDeployedRevision.mockReturnValue({
+        c.editor.content = "<b/>";
+        await c.host.deploymentState.saveDeployedRevision(DEV_KEY, {
             fingerprint: contentFingerprint("<a/>"),
             deployedAt: "2026-09-17T14:32:00.000Z",
         });
 
-        await c.service.refresh("editor-1");
+        await c.service.refresh(c.editor.id);
 
-        expect(c.statusBar.showDeploymentTarget).toHaveBeenCalledWith(
-            "dev",
-            "changed",
-            "2026-09-17T14:32:00.000Z",
-            undefined,
-        );
+        expect(c.host.statusBar.deploymentTarget).toEqual({
+            name: "dev",
+            freshness: "changed",
+            deployedAt: "2026-09-17T14:32:00.000Z",
+            verifiedAt: undefined,
+        });
     });
 
     it("renders superseded (blue) and passes verifiedAt for an engine-origin mismatch", async () => {
         const c = createService();
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(target("dev"));
-        c.documentPort.getContent.mockReturnValue("<b/>");
-        c.deploymentState.getDeployedRevision.mockReturnValue({
+        c.editor.content = "<b/>";
+        await c.host.deploymentState.saveDeployedRevision(DEV_KEY, {
             fingerprint: contentFingerprint("<a/>"),
             deployedAt: "2026-09-17T14:40:00.000Z",
             origin: "engine",
             verifiedAt: "2026-09-17T15:00:00.000Z",
         });
 
-        await c.service.refresh("editor-1");
+        await c.service.refresh(c.editor.id);
 
-        expect(c.statusBar.showDeploymentTarget).toHaveBeenCalledWith(
-            "dev",
-            "superseded",
-            "2026-09-17T14:40:00.000Z",
-            "2026-09-17T15:00:00.000Z",
-        );
+        expect(c.host.statusBar.deploymentTarget).toEqual({
+            name: "dev",
+            freshness: "superseded",
+            deployedAt: "2026-09-17T14:40:00.000Z",
+            verifiedAt: "2026-09-17T15:00:00.000Z",
+        });
     });
 
     it("hides the item when the editor has no resolvable document", async () => {
         const c = createService();
-        c.documentPort.getFilePath.mockImplementation(() => {
+        c.host.statusBar.showDeploymentTarget("shown", "deployed");
+        vi.spyOn(c.host.documents, "getFilePath").mockImplementation(() => {
             throw new Error("no active editor");
         });
 
-        await c.service.refresh("editor-1");
+        await c.service.refresh(c.editor.id);
 
-        expect(c.statusBar.hideDeploymentTarget).toHaveBeenCalled();
+        expect(c.host.statusBar.deploymentTarget).toBeUndefined();
     });
 });

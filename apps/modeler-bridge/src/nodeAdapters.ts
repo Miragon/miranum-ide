@@ -36,6 +36,7 @@ import {
     DirectoryNotFound,
     EditorSubscription,
     FileNotFound,
+    globToRegExp,
     NoWorkspaceFolderFoundError,
     SettingChange,
     SettingsPort,
@@ -46,53 +47,6 @@ import { SurfaceMode } from "@miragon/bpmn-modeler-types";
 /** Strips a leading `file://` so the string is a real OS path Node `fs` accepts. */
 function toFsPath(path: string): string {
     return path.replace(/^file:\/\//, "");
-}
-
-/** Backslash-escapes every regex-special character in a literal glob run. */
-function escapeRegExpLiteral(literal: string): string {
-    return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Compiles a glob into a path-matching `RegExp`. Two callers rely on it: the
- * `exclude` argument of {@link NodeWorkspace.findFiles} (Node's `fs.glob` accepts
- * the positive pattern natively, but its `exclude` option shape differs across
- * Node and Bun, so we match excluded paths ourselves to stay portable) and
- * {@link NodeWorkspace.createWatcher}, which honours its `glob` param this way.
- *
- * Supports the operators the callers use: a double-star (across path segments,
- * with a trailing slash swallowed so a leading double-star also matches at the
- * root), single `*` / `?` within one segment, and `{a,b,c}` brace alternation —
- * the code-link source glob (extensions `{java,kt,…}`) needs the last one.
- */
-function globToRegExp(glob: string): RegExp {
-    let re = "";
-    for (let i = 0; i < glob.length; i++) {
-        const c = glob[i];
-        if (c === "*" && glob[i + 1] === "*") {
-            re += ".*";
-            i++;
-            if (glob[i + 1] === "/") i++;
-        } else if (c === "*") {
-            re += "[^/]*";
-        } else if (c === "?") {
-            re += "[^/]";
-        } else if (c === "{") {
-            // `{a,b,c}` → `(?:a|b|c)`. An unterminated brace degrades to a literal
-            // so a stray `{` can't produce an invalid regex.
-            const end = glob.indexOf("}", i);
-            if (end === -1) {
-                re += "\\{";
-            } else {
-                const alternatives = glob.slice(i + 1, end).split(",");
-                re += `(?:${alternatives.map(escapeRegExpLiteral).join("|")})`;
-                i = end;
-            }
-        } else {
-            re += escapeRegExpLiteral(c);
-        }
-    }
-    return new RegExp(`^${re}$`);
 }
 
 /**

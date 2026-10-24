@@ -1,5 +1,5 @@
-import { DocumentPort } from "@miragon/bpmn-modeler-core";
-import { EditorSessionStore } from "@miragon/bpmn-modeler-core";
+import { DocumentPort } from "../domain/hostPorts";
+import { EditorSessionStore } from "./EditorSessionStore";
 
 /**
  * {@link DocumentPort} adapter: routes an `editorId` to the owning
@@ -8,10 +8,10 @@ import { EditorSessionStore } from "@miragon/bpmn-modeler-core";
  * Every method takes an explicit `editorId` so operations always reach the
  * correct document when editors are open side-by-side — avoiding the split-view
  * white-screen bug that occurred when I/O implicitly routed through the active
- * editor. The scheme guards and `WorkspaceEdit` mechanics live on the handle,
- * the only holder of the concrete `TextDocument`.
+ * editor. Host specifics such as scheme guards and the actual document edit
+ * live on the handle, the only holder of the host's document.
  */
-export class VsCodeDocument implements DocumentPort {
+export class EditorSessionDocuments implements DocumentPort {
     constructor(private readonly editorStore: EditorSessionStore) {}
 
     getContent(editorId: string): string {

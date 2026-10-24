@@ -14,6 +14,7 @@ import { posix } from "path";
 import { DeployActiveDiagramService } from "@miragon/bpmn-modeler-core";
 import { DeployFilesService } from "@miragon/bpmn-modeler-core";
 import { DeploymentMessageDispatcher } from "@miragon/bpmn-modeler-core";
+import { EditorSessionDocuments } from "@miragon/bpmn-modeler-core";
 import { EditorSessionStore } from "@miragon/bpmn-modeler-core";
 import { DeploymentService } from "@miragon/bpmn-modeler-core";
 import { DeploymentStatusService } from "@miragon/bpmn-modeler-core";
@@ -22,7 +23,6 @@ import { DeploymentVerificationService } from "@miragon/bpmn-modeler-core";
 import { StartInstanceService } from "@miragon/bpmn-modeler-core";
 import { Command, Query } from "@miragon/bpmn-modeler-shared";
 import { deploymentWebviewHtml } from "../infrastructure/DeploymentWebviewHtml";
-import { VsCodeDocument } from "../../shared/infrastructure/VsCodeDocument";
 import { VsCodeNotifier } from "../../shared/infrastructure/VsCodeNotifier";
 import { getContext } from "../../shared/infrastructure/extensionContext";
 
@@ -62,7 +62,7 @@ export class DeploymentController implements WebviewViewProvider {
 
     constructor(
         private readonly editorStore: EditorSessionStore,
-        private readonly vsDocument: VsCodeDocument,
+        private readonly vsDocument: EditorSessionDocuments,
         private readonly deploymentService: DeploymentService,
         private readonly startInstanceService: StartInstanceService,
         private readonly deploymentTargetService: DeploymentTargetService,

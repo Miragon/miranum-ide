@@ -72,8 +72,8 @@ When the user edits the diagram in the webview:
 1. `commandStack.changed` fires in bpmn-js
 2. Webview exports current XML, sends `SyncDocumentCommand` to extension host
 3. The editor's `WebviewMessageRouter` dispatches it to `syncDocumentHandler`, which calls `service.sync(editorId, content)`
-4. Service acquires echo-prevention guard, writes XML to document via `VsCodeDocument`
-5. `VsCodeDocument` uses `WorkspaceEdit.replace()` to update the full document content
+4. Service acquires echo-prevention guard, writes XML to document via `EditorSessionDocuments`
+5. `EditorSessionDocuments` delegates to the editor's `VsCodeEditorHandle`, which uses `WorkspaceEdit.replace()` to update the full document content
 
 ### WorkspaceEdit.replace() Pattern
 
@@ -131,7 +131,7 @@ Services operate on the active editor by default. The echo-prevention guard is p
 - **Deployment Controller**: `apps/vscode-plugin/src/deployment/controller/DeploymentController.ts`
 - **Editor session store**: `libs/modeler-core/src/shared/infrastructure/EditorSessionStore.ts` (`vscode`-free registry; moved to modeler-core)
 - **Editor handle**: `apps/vscode-plugin/src/shared/infrastructure/VsCodeEditorHandle.ts` (concrete VS Code adapter; stays in the app)
-- **Document Adapter**: `apps/vscode-plugin/src/shared/infrastructure/VsCodeDocument.ts`
+- **Document Adapter**: `libs/modeler-core/src/shared/infrastructure/EditorSessionDocuments.ts` (host-agnostic `DocumentPort` over the session store; moved to modeler-core)
 - **Message Types**: `libs/shared/src/lib/modeler.ts` (modeler `Command`/`Query` classes) + `messages.ts` (base + cross-cutting)
 - **Registration**: `apps/vscode-plugin/package.json` → `contributes.customEditors`
 - **Editor wiring**: `apps/vscode-plugin/src/composition/editorFeature.ts`; **activation**: `apps/vscode-plugin/src/main.ts`

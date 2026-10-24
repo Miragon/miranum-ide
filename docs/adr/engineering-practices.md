@@ -1,7 +1,7 @@
 # Engineering practices
 
 - Status: accepted
-- Last reviewed: 2026-10-23
+- Last reviewed: 2026-10-24
 
 ## Context
 
@@ -39,6 +39,17 @@ Test library behaviour in the library that owns it. Clipboard modules and the
 static moddle-extension check have their specs in `libs/bpmn-clipboard` and
 `libs/modeler-types`; the package keeps only the Chromium round trips and
 installed-shape pins that need a real modeler.
+
+Specs reach the core's host ports through the in-memory adapters in
+`@miragon/bpmn-modeler-core/testing` (`createTestHost`, `FakeEditorHandle` and
+one fake per port), not through hand-rolled partial mocks cast to the port.
+The fakes keep state, so specs assert what the host shows or holds rather than
+which methods were called. They follow each port's documented conventions, so a
+port change breaks every spec that relies on it. Each fake is a third adapter
+beside VS Code and the bridge. The entry is test-only: production code
+does not import it, and specs that test a host adapter itself keep mocking the
+host API underneath. A spec spies on a fake only to inject a failure or hang,
+or when the call itself is the behaviour under test.
 
 Real browser tests are necessary for SVG geometry, viewbox transforms and
 ResizeObserver delivery. Mocks can test viewport-latch decisions but cannot
