@@ -159,9 +159,9 @@ The native browser clipboard is the default (#1374); the bridge modules are only
 built when the webview can't reach the system clipboard.
 `resolveClipboard` (`apps/bpmn-webview/src/session/protocolClipboard.ts`) wires
 one host channel per clipboard with a promise-based resolver pattern into a
-`ClipboardOptions` value. bootstrap passes it as `clipboard` to `createModeler` /
-`createDesigner` and routes each `ClipboardQuery` / `TextClipboardQuery` reply to
-its channel:
+`ClipboardOptions` value. The surface factories (`session/surfaceFactories.ts`)
+pass it as `clipboard` to `createModeler` / `createDesigner`, and the session
+router routes each `ClipboardQuery` / `TextClipboardQuery` reply to its channel:
 
 ```typescript
 let pendingReply = createResolver<Reply>();
