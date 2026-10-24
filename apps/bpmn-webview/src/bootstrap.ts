@@ -463,7 +463,7 @@ function startSession(
         function bindSurface(handle: SurfaceHandle): void {
             // Outbound sync: the modeler exposes onCommandStackChanged; the
             // designer emits via the shared eventBus; the readonly viewer never
-            // schedules a sync (so respondToFlush sees nothing pending in View).
+            // schedules a sync (so a host flush finds nothing pending in View).
             if (isModelerHandle(handle)) {
                 handle.onCommandStackChanged(() => session.scheduleSync());
             } else if (isEditableHandle(handle)) {
@@ -659,7 +659,7 @@ function startSession(
         });
 
         // Phase 1: restore the persisted plane and viewport (canvas exists after
-        // openXml); the surface itself fits a fresh open.
+        // the initial import); the surface itself fits a fresh open.
         stateManager.restoreViewport();
 
         await session.drainPendingActions();

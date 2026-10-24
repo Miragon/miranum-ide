@@ -525,7 +525,7 @@ describe("BpmnDocumentSession", () => {
             const modeSwitch = deferred();
             context.session.requestMode(() => modeSwitch.promise);
 
-            const refreshing = context.session.requestDiagramRefresh();
+            const refreshing = context.session.applyLanguage("de");
             await vi.advanceTimersByTimeAsync(0);
             expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
 
@@ -756,7 +756,7 @@ describe("BpmnDocumentSession", () => {
             );
 
             await context.session.focusElement("Task_1");
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             expect(context.surface.centerOnElement).not.toHaveBeenCalled();
             expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
 
@@ -806,7 +806,7 @@ describe("BpmnDocumentSession", () => {
         it("imports the queued host update, then refreshes, then centres the element", async () => {
             const context = setup();
             await importInitialFile(context);
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
 
@@ -826,7 +826,7 @@ describe("BpmnDocumentSession", () => {
             const context = setup();
             await importInitialFile(context);
             context.surface.refreshDiagram.mockRejectedValueOnce(new Error("broken refresh"));
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
 
             context.session.markInitialized();
@@ -843,7 +843,7 @@ describe("BpmnDocumentSession", () => {
             const context = setup();
             await importInitialFile(context);
             context.surface.refreshDiagram.mockImplementationOnce(() => refresh.promise);
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             context.session.markInitialized();
 
             const first = context.session.drainPendingActions();
@@ -1066,7 +1066,7 @@ describe("BpmnDocumentSession", () => {
         it("drops the refresh and focus the host asked for", async () => {
             const context = setup();
             await importInitialFile(context);
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
 
             await context.session.reloadForEngineChange();
@@ -1082,7 +1082,7 @@ describe("BpmnDocumentSession", () => {
             const pushImport = deferred();
             const context = setup();
             await importInitialFile(context);
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
             context.surface.importHostDocument.mockImplementationOnce(() => pushImport.promise);
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
@@ -1111,7 +1111,7 @@ describe("BpmnDocumentSession", () => {
             const draining = context.session.drainPendingActions();
             await vi.advanceTimersByTimeAsync(0);
             const reloading = context.session.receiveHostFile(hostFile("<c8 />", 3, "c8"));
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
             pushImport.resolve();
             await Promise.all([draining, reloading]);
@@ -1124,7 +1124,7 @@ describe("BpmnDocumentSession", () => {
         it("stops a drain when the reload lands during the refresh", async () => {
             const context = setup();
             await importInitialFile(context);
-            await context.session.requestDiagramRefresh();
+            await context.session.applyLanguage("de");
             await context.session.focusElement("Task_1");
             let reloading: Promise<void> | undefined;
             context.surface.refreshDiagram.mockImplementationOnce(async () => {

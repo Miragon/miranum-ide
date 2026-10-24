@@ -224,12 +224,7 @@ export class BpmnDocumentSession implements FlushSource {
         // to "en", so only a changed resolved locale pays for the re-translating re-import.
         const localeBefore = this.translator.getLocale();
         this.translator.setLanguage(locale);
-        if (this.translator.getLocale() !== localeBefore) {
-            await this.requestDiagramRefresh();
-        }
-    }
-
-    async requestDiagramRefresh(): Promise<void> {
+        if (this.translator.getLocale() === localeBefore) return;
         this.refreshDiagramWhenReady = true;
         if (this.initialized) {
             await this.drainPendingActions();
