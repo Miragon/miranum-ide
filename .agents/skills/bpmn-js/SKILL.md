@@ -25,7 +25,7 @@ Both variants share the `commonModules` array in `BpmnModeler.init()` — e.g. `
 ### Lifecycle
 
 1. `apps/bpmn-webview/src/main.ts` calls `bootstrap(getHostApi(), { extraModules })`; `bootstrap.ts` starts `run()` once the window has loaded
-2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` here)
+2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` and a language-only message router here)
 3. `createModeSession` builds the initial surface: View → `createViewer`, Design on an untagged model → `createDesigner`, otherwise `createModeler` (each lazily imported via `surfaceModules.ts`)
 4. `createModeler` constructs `BpmnModeler` and awaits `init()` — load the engine stack, build the module list, install the FEEL/contenteditable clipboard polyfill when `clipboard` is set, then construct `bpmn-js/lib/Modeler` — and afterwards applies the `elementTemplates`, `settings`, `theme`, and `locale` options
 5. The webview requests element templates (modeler only) and the lint config (designer/modeler only), then imports the XML via `loadDiagram(xml)` (`newDiagram()` for an empty file)
@@ -188,6 +188,7 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 - **Clipboard option** (native, override or host protocol): `apps/bpmn-webview/src/session/protocolClipboard.ts`
 - **Lint wiring** (lint options, host lint pushes, config token echo): `apps/bpmn-webview/src/session/lintBridge.ts`
 - **Host surface requests** (SVG, format, cleanup, scripts, element templates, settings): `apps/bpmn-webview/src/session/surfaceRequests.ts`
+- **Host message routing** (type-keyed handler table, engine-reload allow-list, held import-bound replies, diff-pane router): `apps/bpmn-webview/src/session/messageRouter.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`
