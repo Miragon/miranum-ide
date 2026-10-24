@@ -13,18 +13,27 @@ import { asyncDebounce, serializeAsync, type DetectedEngine } from "@miragon/bpm
 
 import type { HostChannel } from "./hostChannel";
 
-/** What the session needs from the live surface; bootstrap backs it with whichever surface is current. */
+/** The document I/O the session needs from whichever surface is live. */
 export interface BpmnDocumentSurface {
-    engine(): DetectedEngine;
     importHostDocument(content: string | undefined): Promise<void>;
     exportDocument(): Promise<string>;
     afterSync(): void;
     refreshDiagram(): Promise<void>;
     centerOnElement(elementId: string): void;
-    cancelPendingVariablePublish(): void;
+}
+
+/** The page teardown an engine change runs before the reload replaces the page. */
+export interface BpmnPageLifecycle {
+    cancelPendingSurfaceWork(): void;
     flushViewport(): void;
-    destroy(): void;
-    reload(): void;
+    destroySurface(): void;
+    reloadPage(): void;
+}
+
+interface BpmnDocumentSessionPorts {
+    readonly surface: BpmnDocumentSurface;
+    readonly page: BpmnPageLifecycle;
+    readonly pageInertLocks: InertLockGroup;
 }
 
 /**
@@ -36,6 +45,8 @@ export class BpmnDocumentSession implements FlushSource {
     private readonly revisions = new HostDocumentRevisions();
     private readonly initialHostFile = createResolver<BpmnFileQuery>();
     private latestFile: BpmnFileQuery | undefined;
+    // The surface was built for the initial file's engine; any other engine reloads the page.
+    private documentEngine: DetectedEngine;
     private initialized = false;
     private canImportHostUpdates = false;
     private engineReloadPending = false;
@@ -63,13 +74,17 @@ export class BpmnDocumentSession implements FlushSource {
     // Never released: the page stays locked until the reload replaces it.
     private readonly engineReloadLock: InertLock;
 
+    private readonly surface: BpmnDocumentSurface;
+    private readonly page: BpmnPageLifecycle;
+
     readonly respondToFlush = createFlushResponder(this, (reply) => this.host.postMessage(reply));
 
     constructor(
         private readonly host: HostChannel,
-        private readonly surface: BpmnDocumentSurface,
-        pageInertLocks: InertLockGroup,
+        { surface, page, pageInertLocks }: BpmnDocumentSessionPorts,
     ) {
+        this.surface = surface;
+        this.page = page;
         this.modeSwitchLock = pageInertLocks.createLock();
         this.destructiveFlushLock = pageInertLocks.createLock();
         this.engineReloadLock = pageInertLocks.createLock();
@@ -106,7 +121,7 @@ export class BpmnDocumentSession implements FlushSource {
         // stale export can't clobber it after the re-import.
         this.debouncedSync.cancel();
         if (!this.canImportHostUpdates) return;
-        if (query.engine !== this.surface.engine()) {
+        if (query.engine !== this.documentEngine) {
             await this.reloadForEngineChange();
             return;
         }
@@ -119,11 +134,15 @@ export class BpmnDocumentSession implements FlushSource {
         }
     }
 
-    /** Imports the newest host file into a fresh surface; `false` when the boot must stop. */
+    /**
+     * Imports the newest host file into a surface built for `firstFile`'s
+     * engine; `false` when the boot must stop.
+     */
     async openInitialDocument(firstFile: BpmnFileQuery | undefined): Promise<boolean> {
+        this.documentEngine = firstFile?.engine;
         let importedFile = this.latestFile ?? firstFile;
         while (importedFile) {
-            if (importedFile.engine !== this.surface.engine()) {
+            if (importedFile.engine !== this.documentEngine) {
                 await this.reloadForEngineChange();
                 return false;
             }
@@ -145,7 +164,7 @@ export class BpmnDocumentSession implements FlushSource {
         this.canImportHostUpdates = true;
 
         if (this.latestFile && this.latestFile !== importedFile) {
-            if (this.latestFile.engine !== this.surface.engine()) {
+            if (this.latestFile.engine !== this.documentEngine) {
                 await this.reloadForEngineChange();
                 return false;
             }
@@ -232,7 +251,7 @@ export class BpmnDocumentSession implements FlushSource {
         this.canImportHostUpdates = false;
         this.debouncedSync.cancel();
         this.debouncedHostUpdate.cancel();
-        this.surface.cancelPendingVariablePublish();
+        this.page.cancelPendingSurfaceWork();
         this.refreshDiagramWhenReady = false;
         this.pendingFocusId = undefined;
         this.engineReloadLock.acquire();
@@ -242,12 +261,12 @@ export class BpmnDocumentSession implements FlushSource {
                 this.debouncedSync.cancel();
                 this.debouncedHostUpdate.cancel();
                 await this.debouncedSync.flush();
-                this.surface.flushViewport();
+                this.page.flushViewport();
             } finally {
                 try {
-                    this.surface.destroy();
+                    this.page.destroySurface();
                 } finally {
-                    this.surface.reload();
+                    this.page.reloadPage();
                 }
             }
         });

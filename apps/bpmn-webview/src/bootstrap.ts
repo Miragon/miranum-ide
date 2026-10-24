@@ -1,6 +1,3 @@
-// bpmn.js
-import type { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
-
 import {
     BpmnModelerSettingQuery,
     Command,
@@ -34,8 +31,6 @@ import {
     NoModelerError,
     UnsupportedEngineError,
     asyncDebounce,
-    formatErrors,
-    type DetectedEngine,
     type SurfaceMode,
 } from "@miragon/bpmn-modeler-types";
 import {
@@ -76,6 +71,7 @@ import {
 } from "./session/messageRouter";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
+import { createSurfaceDocument } from "./session/surfaceDocument";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
@@ -162,7 +158,6 @@ function startSession(
     let modeSession: ModeSession | undefined;
     const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
 
-    let modelerEngine: DetectedEngine;
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
     // own theme off the VS Code `<body>`-class signal.
@@ -213,27 +208,19 @@ function startSession(
      */
     let stateManager: WebviewStateManager;
 
-    const session = new BpmnDocumentSession(
-        host,
-        {
-            engine: () => modelerEngine,
-            importHostDocument: (bpmn) => reloadXmlPreservingView(bpmn),
-            exportDocument: () => surface.exportDiagram(),
-            afterSync: () => {
-                // Align-to-origin is a modeler-only feature; the designer/viewer skip it.
-                if (isModelerHandle(surface)) {
-                    surface.alignElementsToOrigin();
-                }
-            },
-            refreshDiagram,
-            centerOnElement: (elementId) => surface.viewport.centerOnElement(elementId),
-            cancelPendingVariablePublish: () => cancelPendingVariablePublish?.(),
+    const session = new BpmnDocumentSession(host, {
+        surface: createSurfaceDocument(host, {
+            getSurface: () => surface,
+            getViewState: () => stateManager,
+        }),
+        page: {
+            cancelPendingSurfaceWork: () => cancelPendingVariablePublish?.(),
             flushViewport: () => stateManager?.flushViewport(),
-            destroy: () => surface.destroy(),
-            reload: () => (injectedReload ?? (() => window.location.reload()))(),
+            destroySurface: () => surface.destroy(),
+            reloadPage: () => (injectedReload ?? (() => window.location.reload()))(),
         },
-        createInertLockGroup(document.body),
-    );
+        pageInertLocks: createInertLockGroup(document.body),
+    });
 
     const sessionMessages = createSessionMessageRouter(
         host,
@@ -253,26 +240,6 @@ function startSession(
         },
         session,
     );
-
-    /**
-     * Re-imports the XML while preserving the user's drill-down plane, viewbox,
-     * and selection. The snapshot is taken from the live canvas inside the
-     * debounced function so a burst of host pushes captures once, not from a
-     * half-imported intermediate.
-     */
-    async function reloadXmlPreservingView(bpmn: string | undefined): Promise<void> {
-        const snapshot = stateManager?.captureViewState();
-        try {
-            await openXml(bpmn);
-        } finally {
-            // Re-apply even when a post-import side-effect threw — the import
-            // itself already reset the canvas to the top-level plane, and
-            // skipping the restore would strand the user there.
-            if (snapshot) {
-                stateManager.applyViewState(snapshot);
-            }
-        }
-    }
 
     /**
      * Entry point executed once the webview DOM is fully loaded.
@@ -405,7 +372,6 @@ function startSession(
         // this editor's saved mode, then the host's default, then the engine's
         // own default — the mode session vets it against availability.
         const engine = bpmnFileQuery?.engine;
-        modelerEngine = engine;
 
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
@@ -482,11 +448,7 @@ function startSession(
                     onModeChanged: (m: ModelerMode) => {
                         surfaceMode = m;
                         stateManager?.persistMode(m);
-                        strip?.render({
-                            mode: m,
-                            engine: modelerEngine,
-                            busy: session.isSwitching,
-                        });
+                        strip?.render({ mode: m, engine, busy: session.isSwitching });
                     },
                     handleGlobalEscape: true,
                 });
@@ -535,7 +497,7 @@ function startSession(
             // C7 process-variable publisher — modeler-only (scripting is a C7
             // cluster). Gated on the engine and the port being present, like the
             // capability that owns it.
-            if (isModelerHandle(handle) && modelerEngine === "c7" && capabilities.scripting) {
+            if (isModelerHandle(handle) && engine === "c7" && capabilities.scripting) {
                 let lastVariablesJson = "";
                 const sendVariables = asyncDebounce(async () => {
                     if (session.isReloadingForEngine) return;
@@ -601,12 +563,12 @@ function startSession(
                 },
                 onSwitchStateChanged: (busy) => {
                     session.setSwitching(busy);
-                    strip.render({ mode: surfaceMode, engine: modelerEngine, busy });
+                    strip.render({ mode: surfaceMode, engine, busy });
                 },
                 onModeChanged: (mode, transition) => {
                     surfaceMode = mode;
                     stateManager.persistMode(mode);
-                    strip.render({ mode, engine: modelerEngine, busy: session.isSwitching });
+                    strip.render({ mode, engine, busy: session.isSwitching });
                     // A recreate/fallback stood up a fresh instance: re-apply the
                     // host's script locks, restore its panel UI, resume persistence,
                     // and re-request modeler resources.
@@ -764,34 +726,11 @@ function startSession(
         // The initial surface is live: drop the strip's busy state and persist the
         // resolved mode so a first-ever open remembers where it landed.
         session.markSurfaceReady();
-        strip.render({ mode: surfaceMode, engine: modelerEngine, busy: false });
+        strip.render({ mode: surfaceMode, engine, busy: false });
         stateManager.persistMode(surfaceMode);
 
         // Phase 3: begin persisting changes
         stateManager.startPersisting();
-    }
-
-    /**
-     * Loads or replaces the diagram in the modeler with the given BPMN XML.
-     * Creates a blank diagram when `bpmn` is `undefined` or empty.
-     *
-     * @param bpmn BPMN XML string, or `undefined` for a new blank diagram.
-     * @throws {NoModelerError} If the modeler is not available.
-     */
-    async function openXml(bpmn?: string): Promise<void> {
-        let result: ImportXMLResult;
-        // Only an editable surface can create a blank diagram; the readonly
-        // viewer always loads the host XML (a diff/View pane never opens blank).
-        if (!bpmn && isEditableHandle(surface)) {
-            result = await surface.newDiagram();
-        } else {
-            result = await surface.loadDiagram(bpmn ?? "");
-        }
-
-        if (result.warnings.length > 0) {
-            const warnings = `Diagram opened with following warnings: ${formatErrors(result.warnings)}`;
-            host.postMessage(new LogWarningCommand(warnings));
-        }
     }
 
     async function applyHostLanguage(query: LanguageQuery): Promise<void> {
@@ -802,25 +741,6 @@ function startSession(
         i18n.setLanguage(query.locale as SupportedLocale);
         if (i18n.getLocale() !== localeBefore) {
             await session.requestDiagramRefresh();
-        }
-    }
-
-    /**
-     * Re-renders the diagram by exporting and re-importing the XML.
-     *
-     * Preserves the current drill-down plane, viewport, and selection so the
-     * user does not lose their place. Used after a language switch to force
-     * bpmn-js to re-invoke `translate()` for all UI elements.
-     */
-    async function refreshDiagram(): Promise<void> {
-        const xml = await surface.exportDiagram();
-        const snapshot = stateManager.captureViewState();
-        try {
-            await surface.loadDiagram(xml);
-        } finally {
-            // Same rationale as reloadXmlPreservingView: the re-import has
-            // already reset the plane, so restore even on a late throw.
-            stateManager.applyViewState(snapshot);
         }
     }
 

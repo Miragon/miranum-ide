@@ -12,7 +12,11 @@ import {
     ReleaseDocumentFlushQuery,
 } from "@miragon/bpmn-modeler-shared";
 
-import { BpmnDocumentSession, type BpmnDocumentSurface } from "./documentSession";
+import {
+    type BpmnDocumentSurface,
+    BpmnDocumentSession,
+    type BpmnPageLifecycle,
+} from "./documentSession";
 
 function deferred<T = void>() {
     let resolve!: (value: T) => void;
@@ -25,35 +29,40 @@ function deferred<T = void>() {
 }
 
 type SurfaceFake = { [Method in keyof BpmnDocumentSurface]: Mock<BpmnDocumentSurface[Method]> };
+type PageFake = { [Method in keyof BpmnPageLifecycle]: Mock<BpmnPageLifecycle[Method]> };
 
 function makeSurface(overrides: Partial<SurfaceFake> = {}): SurfaceFake {
     return {
-        engine: vi.fn<BpmnDocumentSurface["engine"]>(() => "c7"),
         importHostDocument: vi.fn(async (_content: string | undefined) => {}),
         exportDocument: vi.fn(async () => "<exported />"),
         afterSync: vi.fn(),
         refreshDiagram: vi.fn(async () => {}),
         centerOnElement: vi.fn(),
-        cancelPendingVariablePublish: vi.fn(),
-        flushViewport: vi.fn(),
-        destroy: vi.fn(),
-        reload: vi.fn(),
         ...overrides,
     };
 }
 
-function setup(overrides: Partial<SurfaceFake> = {}) {
-    const posted: (Command | Query)[] = [];
-    const surface = makeSurface(overrides);
-    const session = new BpmnDocumentSession(
-        { postMessage: (m) => posted.push(m) },
-        surface,
-        createInertLockGroup(document.body),
-    );
-    return { session, surface, posted };
+function makePage(): PageFake {
+    return {
+        cancelPendingSurfaceWork: vi.fn(),
+        flushViewport: vi.fn(),
+        destroySurface: vi.fn(),
+        reloadPage: vi.fn(),
+    };
 }
 
-const hostFile = (content: string, revision: number, engine: "c7" | "c8" = "c7") =>
+function setup(surfaceOverrides: Partial<SurfaceFake> = {}) {
+    const posted: (Command | Query)[] = [];
+    const surface = makeSurface(surfaceOverrides);
+    const page = makePage();
+    const session = new BpmnDocumentSession(
+        { postMessage: (m) => posted.push(m) },
+        { surface, page, pageInertLocks: createInertLockGroup(document.body) },
+    );
+    return { session, surface, page, posted };
+}
+
+const hostFile = (content: string, revision: number, engine: "c7" | "c8" | undefined = "c7") =>
     new BpmnFileQuery(content, engine, "modeler", revision);
 
 /** Opens the initial document but leaves the session short of initialized, as mid-boot. */
@@ -213,17 +222,30 @@ describe("BpmnDocumentSession", () => {
             expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
         });
 
-        it("stops the boot when the initial file targets another engine", async () => {
-            const context = setup({ engine: vi.fn(() => "c8" as const) });
-            void context.session.receiveHostFile(hostFile("<c7 />", 1));
+        it.each([
+            ["a C8", "c8", "c7"],
+            ["an untagged", undefined, "c8"],
+        ] as const)(
+            "keeps %s initial file's engine for later pushes",
+            async (_case, initialEngine, otherEngine) => {
+                const context = setup();
+                void context.session.receiveHostFile(hostFile("<initial />", 1, initialEngine));
+                await expect(
+                    context.session.openInitialDocument(
+                        await context.session.waitForInitialHostFile(),
+                    ),
+                ).resolves.toBe(true);
 
-            const proceed = await context.session.openInitialDocument(
-                await context.session.waitForInitialHostFile(),
-            );
+                await pushHostFile(context.session, hostFile("<same engine />", 2, initialEngine));
+                expect(context.surface.importHostDocument).toHaveBeenLastCalledWith(
+                    "<same engine />",
+                );
+                expect(context.page.reloadPage).not.toHaveBeenCalled();
 
-            expect(proceed).toBe(false);
-            expect(context.surface.reload).toHaveBeenCalledOnce();
-        });
+                await pushHostFile(context.session, hostFile("<other engine />", 3, otherEngine));
+                expect(context.page.reloadPage).toHaveBeenCalledOnce();
+            },
+        );
 
         it("reloads instead of opening a newest host file for another engine", async () => {
             const context = setup();
@@ -233,7 +255,7 @@ describe("BpmnDocumentSession", () => {
 
             await expect(context.session.openInitialDocument(first)).resolves.toBe(false);
 
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
             expect(context.surface.importHostDocument).not.toHaveBeenCalled();
         });
 
@@ -251,7 +273,7 @@ describe("BpmnDocumentSession", () => {
 
             await expect(opening).resolves.toBe(false);
             expect(context.surface.importHostDocument).toHaveBeenCalledExactlyOnceWith("<c7 />");
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("stops the boot when another engine arrives while a queued update waits to import", async () => {
@@ -273,7 +295,7 @@ describe("BpmnDocumentSession", () => {
             expect(context.surface.importHostDocument).toHaveBeenCalledExactlyOnceWith(
                 "<initial />",
             );
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
     });
 
@@ -437,8 +459,8 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.session.isReloadingForEngine).toBe(true);
             expect(context.session.isReady()).toBe(false);
-            expect(context.surface.destroy).toHaveBeenCalledOnce();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.destroySurface).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
             expect(context.surface.importHostDocument).not.toHaveBeenCalledWith("<c8 />");
             expect(document.body.inert).toBe(true);
         });
@@ -843,19 +865,19 @@ describe("BpmnDocumentSession", () => {
             expect(context.session.isReady()).toBe(false);
             expect(context.session.hasPendingSync()).toBe(false);
             expect(context.session.hasPendingHostUpdate()).toBe(false);
-            expect(context.surface.cancelPendingVariablePublish).toHaveBeenCalledOnce();
+            expect(context.page.cancelPendingSurfaceWork).toHaveBeenCalledOnce();
             expect(document.body.inert).toBe(true);
             await vi.advanceTimersByTimeAsync(500);
-            expect(context.surface.destroy).not.toHaveBeenCalled();
+            expect(context.page.destroySurface).not.toHaveBeenCalled();
 
             modeSwitch.resolve();
             await reloading;
 
-            expect(callOrder(context.surface.flushViewport)).toBeLessThan(
-                callOrder(context.surface.destroy),
+            expect(callOrder(context.page.flushViewport)).toBeLessThan(
+                callOrder(context.page.destroySurface),
             );
-            expect(callOrder(context.surface.destroy)).toBeLessThan(
-                callOrder(context.surface.reload),
+            expect(callOrder(context.page.destroySurface)).toBeLessThan(
+                callOrder(context.page.reloadPage),
             );
             expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
             expect(context.surface.exportDocument).not.toHaveBeenCalled();
@@ -871,7 +893,7 @@ describe("BpmnDocumentSession", () => {
             await pushHostFile(context.session, hostFile("<c8 />", 3, "c8"));
 
             expect(context.surface.importHostDocument).toHaveBeenCalledOnce();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("tears the page down only once", async () => {
@@ -883,8 +905,8 @@ describe("BpmnDocumentSession", () => {
                 context.session.reloadForEngineChange(),
             ]);
 
-            expect(context.surface.destroy).toHaveBeenCalledOnce();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.destroySurface).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("lets an in-flight sync reach the host before it tears the page down", async () => {
@@ -893,7 +915,7 @@ describe("BpmnDocumentSession", () => {
             await openSession(context);
             context.surface.exportDocument.mockImplementationOnce(() => finishExport.promise);
             const syncsPostedBeforeDestroy: number[] = [];
-            context.surface.destroy.mockImplementation(() => {
+            context.page.destroySurface.mockImplementation(() => {
                 syncsPostedBeforeDestroy.push(syncCommands(context.posted).length);
             });
 
@@ -901,7 +923,7 @@ describe("BpmnDocumentSession", () => {
             await vi.advanceTimersByTimeAsync(300);
             const reloading = context.session.reloadForEngineChange();
             await vi.advanceTimersByTimeAsync(0);
-            expect(context.surface.destroy).not.toHaveBeenCalled();
+            expect(context.page.destroySurface).not.toHaveBeenCalled();
 
             finishExport.resolve("<last edit />");
             await reloading;
@@ -927,33 +949,33 @@ describe("BpmnDocumentSession", () => {
             expect(loggedErrors(context.posted)).toEqual([
                 "Failed to sync diagram changes: export broke",
             ]);
-            expect(context.surface.destroy).toHaveBeenCalledOnce();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.destroySurface).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("destroys the surface and reloads even when the viewport cannot be saved", async () => {
             const context = setup();
             await openSession(context);
-            context.surface.flushViewport.mockImplementationOnce(() => {
+            context.page.flushViewport.mockImplementationOnce(() => {
                 throw new Error("no viewport");
             });
 
             await expect(context.session.reloadForEngineChange()).rejects.toThrow("no viewport");
 
-            expect(context.surface.destroy).toHaveBeenCalledOnce();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.destroySurface).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("reloads even when the surface cannot be destroyed", async () => {
             const context = setup();
             await openSession(context);
-            context.surface.destroy.mockImplementationOnce(() => {
+            context.page.destroySurface.mockImplementationOnce(() => {
                 throw new Error("already gone");
             });
 
             await expect(context.session.reloadForEngineChange()).rejects.toThrow("already gone");
 
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("drops the refresh and focus the host asked for", async () => {
@@ -990,7 +1012,7 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
             expect(context.surface.centerOnElement).not.toHaveBeenCalled();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("drops a refresh and focus asked for after the reload landed mid-drain", async () => {
@@ -1011,7 +1033,7 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
             expect(context.surface.centerOnElement).not.toHaveBeenCalled();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
 
         it("stops a drain when the reload lands during the refresh", async () => {
@@ -1030,7 +1052,7 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.surface.refreshDiagram).toHaveBeenCalledOnce();
             expect(context.surface.centerOnElement).not.toHaveBeenCalled();
-            expect(context.surface.reload).toHaveBeenCalledOnce();
+            expect(context.page.reloadPage).toHaveBeenCalledOnce();
         });
     });
 });
