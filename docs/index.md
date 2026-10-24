@@ -1,6 +1,7 @@
 ---
 layout: page
-title: Miragon BPMN Modeler
+title: bpmn-modeler | Miragon
+titleTemplate: false
 sidebar: false
 aside: false
 editLink: false
