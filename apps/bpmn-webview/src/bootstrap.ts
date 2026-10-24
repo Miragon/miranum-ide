@@ -182,7 +182,6 @@ function startSession(
     let modelerIsInitialized = false;
     let modelerCanImportHostUpdates = false;
     const hostDocumentRevisions = new HostDocumentRevisions();
-    let initialViewerMode = false;
     let latestBpmnFileQuery: BpmnFileQuery | undefined;
     let refreshDiagramWhenReady = false;
     let modelerEngine: DetectedEngine;
@@ -1031,43 +1030,38 @@ function startSession(
         latestBpmnFileQuery = bpmnFileQuery;
 
         if (receipt === "initial") {
-            initialViewerMode = bpmnFileQuery.viewerMode === "viewer";
             bpmnFileResolver.done(bpmnFileQuery);
-        } else if (!initialViewerMode) {
-            // A host push (e.g. a raw-XML side-by-side edit) is
-            // authoritative. Drop any pending outbound sync first so a
-            // stale export firing after the re-import can't clobber it.
-            debouncedSendXmlChanges.cancel();
-            if (modelerCanImportHostUpdates) {
-                if (bpmnFileQuery.engine !== modelerEngine) {
-                    await reloadForEngineChange();
-                    return;
-                }
-                try {
-                    await debouncedUpdateXML(bpmnFileQuery.content, documentRevision);
-                } finally {
-                    if (modelerIsInitialized) {
-                        await drainPendingSessionActions();
-                    }
-                }
+            return;
+        }
+
+        // A host push (e.g. a raw-XML side-by-side edit) is authoritative. Drop
+        // any pending outbound sync first so a stale export firing after the
+        // re-import can't clobber it.
+        debouncedSendXmlChanges.cancel();
+        if (!modelerCanImportHostUpdates) return;
+        if (bpmnFileQuery.engine !== modelerEngine) {
+            await reloadForEngineChange();
+            return;
+        }
+        try {
+            await debouncedUpdateXML(bpmnFileQuery.content, documentRevision);
+        } finally {
+            if (modelerIsInitialized) {
+                await drainPendingSessionActions();
             }
         }
     }
 
     async function applyHostLanguage(query: LanguageQuery): Promise<void> {
-        // Switch the shared translator; the DI-bound service and all
-        // onChange subscribers (resizer, diff legend, …) pick it up.
-        // bpmn-js itself still needs a diagram re-import to re-invoke
-        // translate() for already-rendered elements — skipped in
-        // viewer mode where there is no editable modeler.
-        // The host pushes the language on every (re)load, not only on
-        // change. Compare resolved locales (setLanguage falls back to
-        // "en" for unknown codes) and skip the destructive re-import
-        // when nothing changed — a tab re-show must not re-import.
+        // The translator's onChange subscribers follow on their own, but bpmn-js
+        // needs a re-import to re-translate already-rendered elements. The host
+        // pushes the language on every (re)load, not only on change, so compare
+        // resolved locales (setLanguage falls back to "en" for unknown codes):
+        // a tab re-show must not re-import.
         const localeBefore = i18n.getLocale();
         i18n.setLanguage(query.locale as SupportedLocale);
         if (i18n.getLocale() !== localeBefore) {
-            refreshDiagramWhenReady = !initialViewerMode;
+            refreshDiagramWhenReady = true;
             if (modelerIsInitialized) {
                 await drainPendingSessionActions();
             }
