@@ -2,13 +2,11 @@ import {
     BpmnModelerSettingQuery,
     Command,
     ElementTemplatesQuery,
-    FocusElementQuery,
     GetBpmnFileCommand,
     GetBpmnlintConfigCommand,
     GetBpmnModelerSettingCommand,
     GetElementTemplatesCommand,
     GetPropertiesPanelStateCommand,
-    LanguageQuery,
     DiagramFormattedCommand,
     LogErrorCommand,
     LogWarningCommand,
@@ -74,6 +72,7 @@ import {
 } from "./session/messageRouter";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
+import { createSessionActions } from "./session/sessionActions";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
@@ -171,7 +170,6 @@ function startSession(
     // Never released: the page stays locked until the reload replaces it.
     const engineReloadLock = pageInertLocks.createLock();
 
-    let refreshDiagramWhenReady = false;
     let modelerEngine: DetectedEngine;
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
@@ -186,8 +184,6 @@ function startSession(
             surface?.setTheme(kind);
         }
     });
-    let engineReloadPending = false;
-    let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
     const protocolCapabilities = createProtocolCapabilities(host, () => surface);
     const clipboard = resolveClipboard(injectedClipboard, {
@@ -200,10 +196,6 @@ function startSession(
         { linting: injectedLinting, onLintResults: injectedOnLintResults },
         () => surface,
     );
-
-    // A FocusElementQuery can arrive before the import finishes (host opens the
-    // editor and focuses in one tick); apply it once the modeler is ready.
-    let pendingFocusId: string | undefined;
 
     // Resolvers that signal when element templates and settings have been
     // applied. Selection restore is deferred until both complete so that
@@ -233,75 +225,18 @@ function startSession(
         getViewState: () => stateManager,
         flushLock: destructiveFlushLock,
         followUps: {
-            reloadForEngineChange,
-            drainPendingActions: drainPendingSessionActions,
+            reloadForEngineChange: () => sessionActions.reloadForEngineChange(),
+            drainPendingActions: () => sessionActions.drainPendingActions(),
         },
     });
 
-    async function reloadForEngineChange(): Promise<void> {
-        if (engineReloadPending) return;
-        engineReloadPending = true;
-        documentSync.cancelAll();
-        cancelPendingVariablePublish?.();
-        refreshDiagramWhenReady = false;
-        pendingFocusId = undefined;
-        engineReloadLock.acquire();
-
-        await documentSync.enqueueModelerOperation(async () => {
-            try {
-                documentSync.cancelAll();
-                await documentSync.flushOutbound();
-                stateManager?.flushViewport();
-            } finally {
-                try {
-                    surface.destroy();
-                } finally {
-                    (injectedReload ?? (() => window.location.reload()))();
-                }
-            }
-        });
-    }
-
-    function drainPendingSessionActions(): Promise<void> {
-        if (!pendingSessionActionDrain) {
-            pendingSessionActionDrain = (async () => {
-                while (!engineReloadPending) {
-                    await documentSync.flushHostUpdates();
-                    if (engineReloadPending) return;
-
-                    if (refreshDiagramWhenReady) {
-                        refreshDiagramWhenReady = false;
-                        try {
-                            await documentSync.enqueueModelerOperation(refreshDiagram);
-                        } catch (error) {
-                            const cause = error instanceof Error ? error : new Error(String(error));
-                            host.postMessage(
-                                new LogErrorCommand(
-                                    `Unable to refresh diagram\n${cause.message}`,
-                                    cause.stack,
-                                ),
-                            );
-                        }
-                        if (engineReloadPending) return;
-                        continue;
-                    }
-
-                    if (documentSync.hasPendingHostUpdate()) {
-                        continue;
-                    }
-
-                    if (pendingFocusId !== undefined) {
-                        surface.viewport.centerOnElement(pendingFocusId);
-                        pendingFocusId = undefined;
-                    }
-                    return;
-                }
-            })().finally(() => {
-                pendingSessionActionDrain = undefined;
-            });
-        }
-        return pendingSessionActionDrain;
-    }
+    const sessionActions = createSessionActions(host, () => surface, {
+        documentSync,
+        getViewState: () => stateManager,
+        reloadLock: engineReloadLock,
+        cancelPendingVariablePublish: () => cancelPendingVariablePublish?.(),
+        reloadPage: injectedReload ?? (() => window.location.reload()),
+    });
 
     const sessionMessages = createSessionMessageRouter(
         host,
@@ -312,13 +247,12 @@ function startSession(
             ...protocolCapabilities.handlers,
             BpmnFileQuery: (query) => documentSync.receiveHostFile(query),
             PropertiesPanelStateQuery: (query) => panelStateResolver.done(query),
-            LanguageQuery: applyHostLanguage,
-            FocusElementQuery: focusElementWhenReady,
+            ...sessionActions.handlers,
             TakeFocusQuery: () => takeFocus(focusCanvas),
             FlushDocumentQuery: documentSync.respondToFlush,
             ReleaseDocumentFlushQuery: documentSync.respondToFlush,
         },
-        { isReloading: () => engineReloadPending },
+        sessionActions,
     );
 
     /**
@@ -581,7 +515,7 @@ function startSession(
             if (isModelerHandle(handle) && modelerEngine === "c7" && capabilities.scripting) {
                 let lastVariablesJson = "";
                 const sendVariables = asyncDebounce(async () => {
-                    if (engineReloadPending) return;
+                    if (sessionActions.isReloading()) return;
                     const variables = extractProcessVariables(handle.getDefinitions());
                     const json = JSON.stringify(variables);
                     if (json === lastVariablesJson) {
@@ -592,7 +526,7 @@ function startSession(
                 }, 300);
                 cancelPendingVariablePublish = () => sendVariables.cancel();
                 handle.onCommandStackChanged(() => {
-                    if (!engineReloadPending) void sendVariables();
+                    if (!sessionActions.isReloading()) void sendVariables();
                 });
                 // commandStack.changed doesn't fire on import, and a webview
                 // reload starts with an empty host-side store, so seed it.
@@ -715,7 +649,7 @@ function startSession(
             translate: (template, replacements) => i18n.translate(template, replacements),
             onLabelChange: (apply) => i18n.onChange(apply),
             onSelect: (mode) => {
-                if (!initialSurfaceReady || switchPending || engineReloadPending) return;
+                if (!initialSurfaceReady || switchPending || sessionActions.isReloading()) return;
                 void documentSync.enqueueModelerOperation(() => modeSession!.requestMode(mode));
             },
             onEscape: focusCanvas,
@@ -723,7 +657,7 @@ function startSession(
         strip.render({ mode: surfaceMode, engine, busy: true });
 
         const opened = await documentSync.importInitial(bpmnFileQuery);
-        if (!opened || engineReloadPending) return;
+        if (!opened || sessionActions.isReloading()) return;
 
         // Equals the latest host document's engine: any other would have reloaded the page.
         if (injectedCapabilities === undefined) {
@@ -750,14 +684,14 @@ function startSession(
         // openXml); the surface itself fits a fresh open.
         stateManager.restoreViewport();
 
-        await drainPendingSessionActions();
-        if (engineReloadPending) return;
+        await sessionActions.drainPendingActions();
+        if (sessionActions.isReloading()) return;
         documentSync.markReady();
         sessionMessages.openImportBound();
         // A held LanguageQuery may have queued a refresh; it must land before
         // the selection restore below.
-        await drainPendingSessionActions();
-        if (engineReloadPending) return;
+        await sessionActions.drainPendingActions();
+        if (sessionActions.isReloading()) return;
 
         // Panel visibility: this editor's own saved entry (applied early above)
         // wins. Only when absent do we fall back to the host's global default —
@@ -766,7 +700,7 @@ function startSession(
         // cannot leave the panel stuck at the pre-rendered default.
         if (savedPanelVisible === undefined) {
             const panelStateQuery = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
-            if (engineReloadPending) return;
+            if (sessionActions.isReloading()) return;
             stateManager.restorePanelVisibility(
                 propertiesPanelHandle,
                 panelStateQuery?.visible ?? true,
@@ -803,7 +737,7 @@ function startSession(
             elementTemplatesResolver.wait(HOST_REPLY_TIMEOUT_MS),
             settingsResolver.wait(HOST_REPLY_TIMEOUT_MS),
         ]);
-        if (engineReloadPending) return;
+        if (sessionActions.isReloading()) return;
 
         // Phase 2: restore selection + panel-side UI state (side-effects done)
         stateManager.restoreSelection();
@@ -819,48 +753,6 @@ function startSession(
         stateManager.startPersisting();
     }
 
-    async function applyHostLanguage(query: LanguageQuery): Promise<void> {
-        // The translator's onChange subscribers follow on their own, but bpmn-js
-        // needs a re-import to re-translate already-rendered elements. The host
-        // pushes the language on every (re)load, not only on change, so compare
-        // resolved locales (setLanguage falls back to "en" for unknown codes):
-        // a tab re-show must not re-import.
-        const localeBefore = i18n.getLocale();
-        i18n.setLanguage(query.locale as SupportedLocale);
-        if (i18n.getLocale() !== localeBefore) {
-            refreshDiagramWhenReady = true;
-            if (documentSync.isReady()) {
-                await drainPendingSessionActions();
-            }
-        }
-    }
-
-    async function focusElementWhenReady({ elementId }: FocusElementQuery): Promise<void> {
-        pendingFocusId = elementId;
-        if (documentSync.isReady()) {
-            await drainPendingSessionActions();
-        }
-    }
-
-    /**
-     * Re-renders the diagram by exporting and re-importing the XML.
-     *
-     * Preserves the current drill-down plane, viewport, and selection so the
-     * user does not lose their place. Used after a language switch to force
-     * bpmn-js to re-invoke `translate()` for all UI elements.
-     */
-    async function refreshDiagram(): Promise<void> {
-        const xml = await surface.exportDiagram();
-        const snapshot = stateManager.captureViewState();
-        try {
-            await surface.loadDiagram(xml);
-        } finally {
-            // Same rationale as reloadXmlPreservingView: the re-import has
-            // already reset the plane, so restore even on a late throw.
-            stateManager.applyViewState(snapshot);
-        }
-    }
-
     // Best-effort flush of the outbound sync debounce when the webview is hidden
     // (tab switch / close). Reliable in the persistent JCEF host; in VS Code the
     // webview context may be torn down mid-export, so this is a best-effort
@@ -868,7 +760,7 @@ function startSession(
     // by the flush protocol instead. Registered per-session (not at import) so a
     // torn-down session leaves no listener behind.
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden" && !engineReloadPending) {
+        if (document.visibilityState === "hidden" && !sessionActions.isReloading()) {
             void documentSync.flushOutbound();
             stateManager?.flushViewport();
         }
