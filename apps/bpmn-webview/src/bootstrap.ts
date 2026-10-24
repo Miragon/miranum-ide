@@ -15,12 +15,9 @@ import {
     BpmnlintInPageQuery,
     GetBpmnlintConfigCommand,
     GetBpmnModelerSettingCommand,
-    GetClipboardCommand,
     GetDiagramAsSVGCommand,
     GetElementTemplatesCommand,
-    GetFormReferenceStatusCommand,
     GetPropertiesPanelStateCommand,
-    GetTextClipboardCommand,
     ImplementationStatusQuery,
     LanguageQuery,
     CleanupDiagramQuery,
@@ -28,35 +25,26 @@ import {
     DiagramFormattedCommand,
     LogErrorCommand,
     LogWarningCommand,
-    NavigateToImplementationCommand,
-    NavigateToReferencedModelCommand,
-    OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
-    SearchWorkspaceDefinitionsCommand,
     ShowInfoCommand,
-    SetClipboardCommand,
     SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
-    SetTextClipboardCommand,
-    SyncActivitiesCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
     UpdateLintResultsCommand,
     UpdateOpenScriptEditorsQuery,
     UpdateScriptContentQuery,
     UpdateScriptFormatQuery,
-    UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
     WorkspaceDefinitionsQuery,
     HOST_REPLY_TIMEOUT_MS,
     HostDocumentRevisions,
     createFlushResponder,
     createInertLockGroup,
-    createReplyRegistry,
     createResolver,
     extractProcessVariables,
     initResizer,
@@ -105,6 +93,8 @@ import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
+import { createProtocolCapabilities } from "./session/protocolCapabilities";
+import { resolveClipboard } from "./session/protocolClipboard";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
@@ -121,9 +111,6 @@ import {
     type SurfaceHandle,
 } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
-
-// The first search indexes the workspace cold, which can walk a whole directory tree.
-export const DEFINITION_SEARCH_TIMEOUT_MS = 30_000;
 
 /**
  * Host replies that act on the imported diagram. The webview requests their
@@ -237,11 +224,11 @@ function startSession(
     let engineReloadPending = false;
     let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
-    let availableProtocolFormIds = new Set<string>();
-    const referenceAvailabilityListeners = new Set<() => void>();
-    const definitionSearchReplies = createReplyRegistry<WorkspaceDefinitionsQuery>(
-        DEFINITION_SEARCH_TIMEOUT_MS,
-    );
+    const protocolCapabilities = createProtocolCapabilities(host, () => surface);
+    const clipboard = resolveClipboard(injectedClipboard, {
+        isDevelopment: process.env.NODE_ENV === "development",
+        host,
+    });
     const hostModelerState = new HostModelerState();
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
@@ -259,10 +246,6 @@ function startSession(
     // message can be delivered as a fresh macrotask and swap this closure. So the
     // token read here always belongs to the config that drove this very run.
     let currentLintConfigToken: string | undefined;
-
-    // Separate resolvers for element clipboard and text (label) clipboard.
-    let elementClipboardResolver = createResolver<ClipboardQuery>();
-    let textClipboardResolver = createResolver<TextClipboardQuery>();
 
     const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
@@ -444,81 +427,6 @@ function startSession(
     }
 
     /**
-     * The default capability adapter: each port posts the protocol command to
-     * the host. Selected whenever `bootstrap()` is called without explicit
-     * capabilities, so every real host (VS Code, IntelliJ, Theia) runs through
-     * it. Closes over the session {@link host} and {@link surface}.
-     *
-     * `scripting` is always populated here even though its DI cluster is C7-only;
-     * `capabilityModules` gates the registration, so the surplus port on C8 is inert.
-     */
-    function createProtocolCapabilities(): ModelerCapabilities {
-        return {
-            modelNavigation: {
-                openReference: ({ id, kind }) =>
-                    host.postMessage(new NavigateToReferencedModelCommand(id, kind)),
-                isReferenceAvailable: ({ id, kind }) =>
-                    kind !== "form" || availableProtocolFormIds.has(id),
-                onReferenceAvailabilityChanged: (listener) => {
-                    referenceAvailabilityListeners.add(listener);
-                    return () => referenceAvailabilityListeners.delete(listener);
-                },
-            },
-            codeLink: {
-                navigateToImplementation: (reference, kind) =>
-                    host.postMessage(new NavigateToImplementationCommand(reference, kind)),
-                syncActivities: (entries) => host.postMessage(new SyncActivitiesCommand(entries)),
-            },
-            scripting: {
-                // The process-variable model is re-extracted per open so
-                // completion reflects the diagram at the moment the tab opens.
-                openScriptEditor: (event) =>
-                    host.postMessage(
-                        new OpenScriptEditorCommand(
-                            event.elementId,
-                            event.kind,
-                            event.listenerIndex,
-                            event.eventName,
-                            event.scriptFormat,
-                            event.content,
-                            // Scripting is a modeler-only cluster (C7), but the
-                            // port closes over the polymorphic surface.
-                            isModelerHandle(surface)
-                                ? extractProcessVariables(surface.getDefinitions())
-                                : [],
-                        ),
-                    ),
-                scriptSourceChanged: (event) =>
-                    host.postMessage(
-                        new UpdateScriptSourceCommand(
-                            event.elementId,
-                            event.kind,
-                            event.listenerIndex,
-                            event.content,
-                        ),
-                    ),
-            },
-            definitionSearch: {
-                search: async ({ kind, text }) => {
-                    const { requestId, reply } = definitionSearchReplies.open();
-                    host.postMessage(new SearchWorkspaceDefinitionsCommand(requestId, kind, text));
-                    const answer = await reply;
-                    if (!answer) {
-                        host.postMessage(
-                            new LogWarningCommand("No workspace search reply from the host"),
-                        );
-                        throw new Error("The host did not answer the search");
-                    }
-                    if (answer.failed) {
-                        throw new Error("The host could not search other models");
-                    }
-                    return answer.definitions;
-                },
-            },
-        };
-    }
-
-    /**
      * Entry point executed once the webview DOM is fully loaded.
      *
      * Registers the message listener first so no backend messages are missed,
@@ -563,68 +471,6 @@ function startSession(
         // panel + palette, so we don't call initResizer() here — the chrome is
         // hidden by .viewer-mode CSS once we confirm the mode below. For the
         // modeler path, initResizer() is called after the branch check.
-
-        // Resolve the clipboard option passed to createModeler. The package
-        // builds the DI modules and installs the contenteditable/FEEL polyfill
-        // from it, so the polyfill installs during createModeler.
-        //
-        // - `undefined` (default): in dev (plain-browser `serve`) the native
-        //   browser clipboard handles copy/paste, so no option is passed;
-        //   otherwise route both channels through the host.
-        // - `"native"`: force the browser clipboard —
-        //   no option, no polyfill.
-        // - `{ bridge }`: public override — passed through unchanged; the
-        //   package uses the single bridge for both element and text surfaces.
-        let clipboard: ClipboardOptions | undefined;
-
-        if (injectedClipboard === "native") {
-            // Native browser clipboard: pass no option so bpmn-js's
-            // NativeCopyPaste stays in charge.
-        } else if (injectedClipboard) {
-            clipboard = injectedClipboard;
-        } else if (process.env.NODE_ENV !== "development") {
-            const pastedText = (reply: ClipboardQuery | TextClipboardQuery | undefined): string => {
-                if (!reply) {
-                    host.postMessage(
-                        new LogWarningCommand("No clipboard reply from the host; paste skipped"),
-                    );
-                    return "";
-                }
-                return reply.text ?? "";
-            };
-
-            const requestElementClipboard = async (): Promise<string> => {
-                elementClipboardResolver = createResolver<ClipboardQuery>();
-                host.postMessage(new GetClipboardCommand());
-                return pastedText(await elementClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
-            };
-            const writeElementClipboard = (text: string): void => {
-                host.postMessage(new SetClipboardCommand(text));
-            };
-
-            const requestTextClipboard = async (): Promise<string> => {
-                textClipboardResolver = createResolver<TextClipboardQuery>();
-                host.postMessage(new GetTextClipboardCommand());
-                return pastedText(await textClipboardResolver.wait(HOST_REPLY_TIMEOUT_MS));
-            };
-            const writeTextClipboard = (text: string): void => {
-                host.postMessage(new SetTextClipboardCommand(text));
-            };
-
-            // Two independent protocol channels so element and label/FEEL
-            // clipboards stay separate. The package installs the contenteditable
-            // polyfill off the `text` bridge.
-            clipboard = {
-                bridge: {
-                    requestClipboard: requestElementClipboard,
-                    writeClipboard: writeElementClipboard,
-                },
-                text: {
-                    requestClipboard: requestTextClipboard,
-                    writeClipboard: writeTextClipboard,
-                },
-            };
-        }
 
         host.postMessage(new GetBpmnFileCommand());
         host.postMessage(new GetBpmnModelerSettingCommand());
@@ -716,7 +562,7 @@ function startSession(
         const engine = bpmnFileQuery?.engine;
         modelerEngine = engine;
 
-        const capabilities = injectedCapabilities ?? createProtocolCapabilities();
+        const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
 
         // The shared lint options for both editable surfaces (Implement + Design):
@@ -779,7 +625,7 @@ function startSession(
                     theme,
                     favouriteBpmnElements: settingsAtCreation?.favouriteBpmnElements,
                     propertiesPanel: { parent: mountEl },
-                    clipboard,
+                    clipboard: clipboard.options,
                     capabilities: {
                         modelNavigation: capabilities.modelNavigation,
                         definitionSearch: capabilities.definitionSearch,
@@ -810,7 +656,7 @@ function startSession(
                     settings: settingsAtCreation,
                     propertiesPanel: { parent: mountEl },
                     additionalModules: extraModules,
-                    clipboard,
+                    clipboard: clipboard.options,
                     capabilities,
                     ...linting,
                     onWarning: (warning: string) =>
@@ -1080,8 +926,8 @@ function startSession(
 
         const currentBpmnFileQuery = latestBpmnFileQuery ?? bpmnFileQuery;
 
-        if (currentBpmnFileQuery?.engine === "c8" && injectedCapabilities === undefined) {
-            host.postMessage(new GetFormReferenceStatusCommand());
+        if (injectedCapabilities === undefined) {
+            protocolCapabilities.requestFormReferenceStatus(currentBpmnFileQuery?.engine);
         }
 
         console.debug("[DEBUG] Modeler is initialized...");
@@ -1382,11 +1228,11 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "ClipboardQuery": {
-                elementClipboardResolver.done(message.data as ClipboardQuery);
+                clipboard.handlers.ClipboardQuery(message.data as ClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "TextClipboardQuery": {
-                textClipboardResolver.done(message.data as TextClipboardQuery);
+                clipboard.handlers.TextClipboardQuery(message.data as TextClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "LanguageQuery": {
@@ -1551,23 +1397,18 @@ function startSession(
             }
             case queryOrCommand.type === "FormReferenceStatusQuery": {
                 try {
-                    const query = message.data as FormReferenceStatusQuery;
-                    const nextFormIds = new Set(query.formIds);
-                    const changed =
-                        nextFormIds.size !== availableProtocolFormIds.size ||
-                        [...nextFormIds].some((formId) => !availableProtocolFormIds.has(formId));
-                    availableProtocolFormIds = nextFormIds;
-                    if (changed) {
-                        referenceAvailabilityListeners.forEach((listener) => listener());
-                    }
+                    protocolCapabilities.handlers.FormReferenceStatusQuery(
+                        message.data as FormReferenceStatusQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
                 break;
             }
             case queryOrCommand.type === "WorkspaceDefinitionsQuery": {
-                const query = message.data as WorkspaceDefinitionsQuery;
-                definitionSearchReplies.settle(query.requestId, query);
+                protocolCapabilities.handlers.WorkspaceDefinitionsQuery(
+                    message.data as WorkspaceDefinitionsQuery,
+                );
                 break;
             }
             case queryOrCommand.type === "FocusElementQuery": {

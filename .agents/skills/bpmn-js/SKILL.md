@@ -88,8 +88,8 @@ the native browser clipboard** — the engine stacks and the designer register
 **host-bridge override**: bpmn-js DI modules in the shared `libs/bpmn-clipboard`
 package (`@miragon/bpmn-modeler-clipboard`), built by its `createClipboardModules({
 element, text? })` factory and registered only when the webview can't reach the
-system clipboard; the third is a document-level polyfill the package installs outside bpmn-js DI. `apps/bpmn-webview/src/bootstrap.ts`
-selects between them (native for dev / `clipboard: "native"`, otherwise the
+system clipboard; the third is a document-level polyfill the package installs outside bpmn-js DI. `resolveClipboard`
+in `apps/bpmn-webview/src/session/protocolClipboard.ts` selects between them (native for dev / `clipboard: "native"`, otherwise the
 protocol bridge). The two DI modules receive their host bridges through didi
 value injection — `elementClipboardBridge` (element JSON) and
 `textClipboardBridge` (plain text), each a `{ requestClipboard, writeClipboard }`
@@ -182,7 +182,8 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 
 - **Public factory**: `packages/bpmn-modeler/src/createModeler.ts`
 - **Modeler wrapper** (builds the clipboard modules via `createClipboardModules`): `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
-- **Webview session** (chooses the `clipboard` option): `apps/bpmn-webview/src/bootstrap.ts` (entry: `main.ts`)
+- **Webview session**: `apps/bpmn-webview/src/bootstrap.ts` (entry: `main.ts`)
+- **Clipboard option** (native, override or host protocol): `apps/bpmn-webview/src/session/protocolClipboard.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`
