@@ -932,6 +932,32 @@ describe("bootstrap mode switching", () => {
         );
     });
 
+    it.each([false, true])(
+        "restores the page's inert state (%s) once a mode switch finishes",
+        async (inertBeforeSwitch) => {
+            let finishViewer!: () => void;
+            mocks.createModeler.mockResolvedValue(makeModeler());
+            mocks.createViewer.mockReturnValueOnce(
+                new Promise((resolve) => {
+                    finishViewer = () => resolve(makeViewer());
+                }),
+            );
+            boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+            await drainAsyncWork();
+            document.body.inert = inertBeforeSwitch;
+
+            modeButtons()[0].click();
+            await drainAsyncWork();
+            expect(document.body.inert).toBe(true);
+
+            finishViewer();
+            await drainAsyncWork();
+
+            expect(mocks.createViewer).toHaveBeenCalledOnce();
+            expect(document.body.inert).toBe(inertBeforeSwitch);
+        },
+    );
+
     it("keeps the page locked for a destructive flush that outlasts a mode switch", async () => {
         let finishViewer!: () => void;
         const viewer = makeViewer();
