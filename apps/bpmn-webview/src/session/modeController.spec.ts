@@ -46,14 +46,15 @@ function fakeViewer(overrides: Record<string, unknown> = {}) {
 
 function fakeModeler(initialMode: "design" | "implement", overrides: Record<string, unknown> = {}) {
     let mode = initialMode;
-    return fakeViewer({
+    const modeler = {
+        ...fakeViewer(),
         newDiagram: vi.fn(),
         setMode: vi.fn((next: "design" | "implement") => {
             mode = next;
         }),
         getMode: () => mode,
-        ...overrides,
-    });
+    };
+    return Object.assign(modeler, overrides);
 }
 
 function fakeViewState() {

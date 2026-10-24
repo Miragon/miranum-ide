@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ClipboardOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
+import type { ClipboardOptions, LintModule, ModelerCapabilities } from "@miragon/bpmn-modeler";
 import type { Command, Query } from "@miragon/bpmn-modeler-shared";
 import type { BpmnModelerSetting } from "@miragon/bpmn-modeler-types";
 
@@ -29,7 +29,7 @@ const settings = (favouriteBpmnElements: string[]): BpmnModelerSetting => ({
 });
 
 const lintOptions = {
-    linting: { results: "external" as const, module: {} },
+    linting: { results: "external" as const, module: {} as LintModule },
     onLintResults: vi.fn(),
     onLintingToggled: vi.fn(),
 };
