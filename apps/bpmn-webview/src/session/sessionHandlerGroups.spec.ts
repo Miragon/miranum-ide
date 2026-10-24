@@ -6,8 +6,8 @@ import { createProtocolCapabilities } from "./protocolCapabilities";
 import { resolveClipboard } from "./protocolClipboard";
 import { createSurfaceRequests } from "./surfaceRequests";
 
-// bootstrap spreads these into one session table, where TypeScript reports neither
-// a type two groups both handle nor which of them wins.
+// Spread into one session table, where TypeScript reports neither a type two
+// groups both handle nor which of them wins.
 function sessionHandlerGroups(): Record<string, object> {
     const host = { postMessage: vi.fn() };
     const getSurface = (): SurfaceHandle => {

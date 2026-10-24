@@ -36,7 +36,6 @@ export type SessionMessageType =
     | "FlushDocumentQuery"
     | "ReleaseDocumentFlushQuery";
 
-/** The host messages an editing session acts on, keyed by their `type`. */
 export type SessionHostMessages = { [Type in SessionMessageType]: MessageOfType<Type> };
 
 // The router finds a handler by the message's `type`, so each key must be that type.
