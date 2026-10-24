@@ -6,7 +6,6 @@ import {
     GetBpmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
     LogErrorCommand,
-    LogWarningCommand,
     PropertiesPanelStateQuery,
     Query,
     RequestFocusCommand,
@@ -32,7 +31,6 @@ import {
     mountModeStrip,
     type ModeSession,
     type ModeStrip,
-    type SurfaceFactories,
 } from "@miragon/bpmn-modeler/mode";
 import {
     applyPageThemeScope,
@@ -41,12 +39,7 @@ import {
 } from "@miragon/bpmn-modeler-shared";
 import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
 import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
-import type {
-    ClipboardOptions,
-    LintingOptions,
-    ModelerCapabilities,
-    ModelerMode,
-} from "@miragon/bpmn-modeler";
+import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
 import type { WebviewState } from "./webviewState";
@@ -64,14 +57,10 @@ import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
 import { createSurfaceBinder, type SurfaceBinding } from "./session/surfaceBinding";
 import { createSurfaceDocument } from "./session/surfaceDocument";
+import { createSurfaceFactories } from "./session/surfaceFactories";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode } from "./state";
-import {
-    loadDesignerModule,
-    loadModelerModule,
-    loadViewerModule,
-    prefetchSurfaceModules,
-} from "./surfaceModules";
+import { prefetchSurfaceModules } from "./surfaceModules";
 import { isEditableHandle, isModelerHandle, type SurfaceHandle } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
 
@@ -355,90 +344,21 @@ function startSession(
         const engine = bpmnFileQuery?.engine;
 
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
-        const extraModules = (injectedModules as unknown[]) ?? [];
 
-        // The three surface factories the mode session switches between. View →
-        // readonly viewer; Design on an untagged model → the engine-neutral
-        // designer; Design/Implement on a tagged model → one createModeler whose
-        // `mode` toggles live. Every surface is born in the IDE's forced theme so
-        // the first frame paints correctly (the body class is the IDE signal, not
-        // "automatic"). Both editable surfaces share the lint bridge's options;
-        // the designer resolves the engine-neutral Design config, the modeler
-        // re-resolves per mode on a live toggle.
-        const surfaces: SurfaceFactories = {
-            view: async ({ container, theme }) => {
-                const { createViewer } = await loadViewerModule();
-                return createViewer(container, {
-                    theme,
-                    propertiesPanel: { parent: mountEl },
-                    capabilities: { modelNavigation: capabilities.modelNavigation },
-                    additionalModules: extraModules,
-                });
+        const surfaces = createSurfaceFactories(host, {
+            propertiesPanelParent: mountEl,
+            capabilities,
+            extraModules: injectedModules ?? [],
+            clipboard: clipboard.options,
+            lintBridge,
+            hostModelerState,
+            reportElementTemplateErrors: surfaceRequests.reportElementTemplateErrors,
+            onModelerModeChanged: (mode) => {
+                surfaceMode = mode;
+                binding?.stateManager.persistMode(mode);
+                strip?.render({ mode, engine, busy: session.isSwitching });
             },
-            design: async ({ container, theme }) => {
-                const [{ createDesigner }, linting] = await Promise.all([
-                    loadDesignerModule(),
-                    lintBridge.surfaceOptions(),
-                ]);
-                const settingsAtCreation = hostModelerState.settings;
-                const designer = await createDesigner(container, {
-                    theme,
-                    favouriteBpmnElements: settingsAtCreation?.favouriteBpmnElements,
-                    propertiesPanel: { parent: mountEl },
-                    clipboard: clipboard.options,
-                    capabilities: {
-                        modelNavigation: capabilities.modelNavigation,
-                        definitionSearch: capabilities.definitionSearch,
-                    },
-                    additionalModules: extraModules,
-                    ...linting,
-                });
-                // A push during the async init only reached the previous surface.
-                hostModelerState.applyFavouritesPushedSince(settingsAtCreation, designer);
-                return designer;
-            },
-            implement: async ({ container, theme, mode, engine: ctxEngine }) => {
-                if (ctxEngine === undefined) {
-                    // The session only routes Implement (and tagged-model Design)
-                    // here, so this is unreachable — throw rather than lie to
-                    // createModeler's `engine: Engine`.
-                    throw new Error("implement surface requires a tagged model");
-                }
-                const [{ createModeler }, linting] = await Promise.all([
-                    loadModelerModule(),
-                    lintBridge.surfaceOptions(),
-                ]);
-                const settingsAtCreation = hostModelerState.settings;
-                const modeler = await createModeler(container, {
-                    engine: ctxEngine,
-                    mode,
-                    theme,
-                    settings: settingsAtCreation,
-                    propertiesPanel: { parent: mountEl },
-                    additionalModules: extraModules,
-                    clipboard: clipboard.options,
-                    capabilities,
-                    ...linting,
-                    onWarning: (warning: string) =>
-                        host.postMessage(new LogWarningCommand(warning)),
-                    onElementTemplatesErrors: surfaceRequests.reportElementTemplateErrors,
-                    // The modeler's own toggle notification. The session also
-                    // fires onModeChanged("toggle"); both write the same values, so
-                    // keeping this (the session cannot inject into the options bag)
-                    // is a harmless redundancy, not a second source of truth.
-                    onModeChanged: (m: ModelerMode) => {
-                        surfaceMode = m;
-                        binding?.stateManager.persistMode(m);
-                        strip?.render({ mode: m, engine, busy: session.isSwitching });
-                    },
-                    handleGlobalEscape: true,
-                });
-                // A push during the async init only reached the previous surface.
-                hostModelerState.applySettingsPushedSince(settingsAtCreation, modeler);
-                return modeler;
-            },
-        };
-
+        });
         const binder = createSurfaceBinder(host, {
             session,
             panelRoot: mountEl,
