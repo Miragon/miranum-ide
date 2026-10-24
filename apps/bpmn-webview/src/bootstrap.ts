@@ -1,8 +1,4 @@
-// bpmn.js
-import type { ImportXMLResult } from "bpmn-js/lib/BaseViewer";
-
 import {
-    BpmnFileQuery,
     BpmnModelerSettingQuery,
     Command,
     ElementTemplatesQuery,
@@ -20,11 +16,8 @@ import {
     Query,
     RequestFocusCommand,
     SetPropertiesPanelStateCommand,
-    SyncDocumentCommand,
     UpdateScriptVariablesCommand,
     HOST_REPLY_TIMEOUT_MS,
-    HostDocumentRevisions,
-    createFlushResponder,
     createInertLockGroup,
     createResolver,
     extractProcessVariables,
@@ -39,8 +32,6 @@ import {
     NoModelerError,
     UnsupportedEngineError,
     asyncDebounce,
-    formatErrors,
-    serializeAsync,
     type DetectedEngine,
     type SurfaceMode,
 } from "@miragon/bpmn-modeler-types";
@@ -72,6 +63,7 @@ import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
+import { BpmnDocumentSync } from "./session/documentSync";
 import { createLintBridge } from "./session/lintBridge";
 import {
     createHostMessageRouter,
@@ -179,10 +171,6 @@ function startSession(
     // Never released: the page stays locked until the reload replaces it.
     const engineReloadLock = pageInertLocks.createLock();
 
-    let modelerIsInitialized = false;
-    let modelerCanImportHostUpdates = false;
-    const hostDocumentRevisions = new HostDocumentRevisions();
-    let latestBpmnFileQuery: BpmnFileQuery | undefined;
     let refreshDiagramWhenReady = false;
     let modelerEngine: DetectedEngine;
     // Theme is host policy: drive the page-level scope (host chrome + the
@@ -217,8 +205,6 @@ function startSession(
     // editor and focuses in one tick); apply it once the modeler is ready.
     let pendingFocusId: string | undefined;
 
-    const bpmnFileResolver = createResolver<BpmnFileQuery>();
-
     // Resolvers that signal when element templates and settings have been
     // applied. Selection restore is deferred until both complete so that
     // side-effects (e.g. transaction-boundary rendering) do not clear the
@@ -243,66 +229,28 @@ function startSession(
      */
     let stateManager: WebviewStateManager;
 
-    /**
-     * Debounce the update of the XML content to avoid too many updates.
-     */
-    const serializedModelerOperation = serializeAsync(
-        async (operation: () => Promise<void>): Promise<void> => operation(),
-    );
-    const serializedOpenXml = (bpmn: string | undefined, documentRevision: number): Promise<void> =>
-        serializedModelerOperation(() => reloadXmlPreservingView(bpmn, documentRevision));
-    const debouncedUpdateXML = asyncDebounce(serializedOpenXml, 100);
-
-    /**
-     * Debounces the outbound document sync so a burst of model changes (e.g.
-     * properties-panel typing) collapses into one full export + host write
-     * instead of one per keystroke. `maxWait` bounds starvation: sustained
-     * typing still syncs at least once per second. 300ms/1000ms mirrors the
-     * script-streaming debounce. The host recovers the sub-300ms tail via the
-     * flush protocol ({@link respondToFlush}) so a save never persists stale XML.
-     */
-    const debouncedSendXmlChanges = asyncDebounce(sendXmlChanges, 300, { maxWait: 1000 });
-
-    async function flushPendingXmlChanges(): Promise<void> {
-        while (debouncedSendXmlChanges.pending()) {
-            await debouncedSendXmlChanges.flush();
-        }
-    }
-
-    function reportHostImportError(error: unknown): void {
-        const cause = error instanceof Error ? error : new Error(String(error));
-        host.postMessage(
-            new LogErrorCommand(`Unable to open host XML\n${cause.message}`, cause.stack),
-        );
-    }
-
-    async function flushPendingHostUpdates(): Promise<void> {
-        while (debouncedUpdateXML.pending()) {
-            try {
-                await debouncedUpdateXML.flush();
-            } catch (error) {
-                reportHostImportError(error);
-            }
-        }
-    }
+    const documentSync = new BpmnDocumentSync(host, () => surface, {
+        getViewState: () => stateManager,
+        flushLock: destructiveFlushLock,
+        followUps: {
+            reloadForEngineChange,
+            drainPendingActions: drainPendingSessionActions,
+        },
+    });
 
     async function reloadForEngineChange(): Promise<void> {
         if (engineReloadPending) return;
         engineReloadPending = true;
-        modelerIsInitialized = false;
-        modelerCanImportHostUpdates = false;
-        debouncedSendXmlChanges.cancel();
-        debouncedUpdateXML.cancel();
+        documentSync.cancelAll();
         cancelPendingVariablePublish?.();
         refreshDiagramWhenReady = false;
         pendingFocusId = undefined;
         engineReloadLock.acquire();
 
-        await serializedModelerOperation(async () => {
+        await documentSync.enqueueModelerOperation(async () => {
             try {
-                debouncedSendXmlChanges.cancel();
-                debouncedUpdateXML.cancel();
-                await debouncedSendXmlChanges.flush();
+                documentSync.cancelAll();
+                await documentSync.flushOutbound();
                 stateManager?.flushViewport();
             } finally {
                 try {
@@ -318,13 +266,13 @@ function startSession(
         if (!pendingSessionActionDrain) {
             pendingSessionActionDrain = (async () => {
                 while (!engineReloadPending) {
-                    await flushPendingHostUpdates();
+                    await documentSync.flushHostUpdates();
                     if (engineReloadPending) return;
 
                     if (refreshDiagramWhenReady) {
                         refreshDiagramWhenReady = false;
                         try {
-                            await serializedModelerOperation(refreshDiagram);
+                            await documentSync.enqueueModelerOperation(refreshDiagram);
                         } catch (error) {
                             const cause = error instanceof Error ? error : new Error(String(error));
                             host.postMessage(
@@ -338,7 +286,7 @@ function startSession(
                         continue;
                     }
 
-                    if (debouncedUpdateXML.pending()) {
+                    if (documentSync.hasPendingHostUpdate()) {
                         continue;
                     }
 
@@ -355,26 +303,6 @@ function startSession(
         return pendingSessionActionDrain;
     }
 
-    /**
-     * Answers a host {@link FlushDocumentQuery} on the save/close path: exports
-     * and returns the pending XML (or reports nothing-pending). The `pending()`
-     * gate and cancel-and-carry rationale live in {@link createFlushResponder}.
-     */
-    const respondToFlush = createFlushResponder(
-        {
-            isReady: () => modelerIsInitialized,
-            hasPendingSync: () => debouncedSendXmlChanges.pending(),
-            hasPendingHostUpdate: () => debouncedUpdateXML.pending(),
-            hostUpdateVersion: () => hostDocumentRevisions.version,
-            documentRevision: () => hostDocumentRevisions.representedRevision,
-            flushPendingSync: flushPendingXmlChanges,
-            beginDestructiveFlush: () => destructiveFlushLock.acquire(),
-            endDestructiveFlush: () => destructiveFlushLock.release(),
-            exportContent: () => surface.exportDiagram(),
-        },
-        (reply) => host.postMessage(reply),
-    );
-
     const sessionMessages = createSessionMessageRouter(
         host,
         {
@@ -382,39 +310,16 @@ function startSession(
             ...lintBridge.handlers,
             ...clipboard.handlers,
             ...protocolCapabilities.handlers,
-            BpmnFileQuery: receiveHostFile,
+            BpmnFileQuery: (query) => documentSync.receiveHostFile(query),
             PropertiesPanelStateQuery: (query) => panelStateResolver.done(query),
             LanguageQuery: applyHostLanguage,
             FocusElementQuery: focusElementWhenReady,
             TakeFocusQuery: () => takeFocus(focusCanvas),
-            FlushDocumentQuery: respondToFlush,
-            ReleaseDocumentFlushQuery: respondToFlush,
+            FlushDocumentQuery: documentSync.respondToFlush,
+            ReleaseDocumentFlushQuery: documentSync.respondToFlush,
         },
         { isReloading: () => engineReloadPending },
     );
-
-    /**
-     * Re-imports the XML while preserving the user's drill-down plane, viewbox,
-     * and selection. The snapshot is taken from the live canvas inside the
-     * debounced function so a burst of host pushes captures once, not from a
-     * half-imported intermediate.
-     */
-    async function reloadXmlPreservingView(
-        bpmn: string | undefined,
-        documentRevision: number,
-    ): Promise<void> {
-        const snapshot = stateManager?.captureViewState();
-        try {
-            await openHostXml(bpmn, documentRevision);
-        } finally {
-            // Re-apply even when a post-import side-effect threw — the import
-            // itself already reset the canvas to the top-level plane, and
-            // skipping the restore would strand the user there.
-            if (snapshot) {
-                stateManager.applyViewState(snapshot);
-            }
-        }
-    }
 
     /**
      * Entry point executed once the webview DOM is fully loaded.
@@ -461,7 +366,7 @@ function startSession(
             prefetchSurfaceModules(savedMode, { linting: injectedLinting === undefined });
         }
 
-        const bpmnFileQuery = await bpmnFileResolver.wait();
+        const bpmnFileQuery = await documentSync.waitForInitialFile();
 
         // Before any surface exists, so the matching LanguageQuery later skips the re-import.
         if (bpmnFileQuery?.locale) {
@@ -643,11 +548,11 @@ function startSession(
             // designer emits via the shared eventBus; the readonly viewer never
             // schedules a sync (so respondToFlush sees nothing pending in View).
             if (isModelerHandle(handle)) {
-                handle.onCommandStackChanged(() => void debouncedSendXmlChanges());
+                handle.onCommandStackChanged(() => documentSync.scheduleSync());
             } else if (isEditableHandle(handle)) {
                 handle
                     .getService<{ on(event: string, cb: () => void): void }>("eventBus")
-                    .on("commandStack.changed", () => void debouncedSendXmlChanges());
+                    .on("commandStack.changed", () => documentSync.scheduleSync());
             }
 
             // One report path for both triggers: the canvas shortcut and the
@@ -733,7 +638,7 @@ function startSession(
                     // The initial surface binds after its import (below), matching
                     // the pre-session flow; a recreate/fallback binds here, before
                     // the session loads the carried XML.
-                    if (modelerIsInitialized) {
+                    if (documentSync.isReady()) {
                         bindSurface(surface);
                     }
                 },
@@ -770,8 +675,7 @@ function startSession(
                     }
                 },
                 beforeDestroy: async () => {
-                    await flushPendingXmlChanges();
-                    debouncedSendXmlChanges.cancel();
+                    await documentSync.flushBeforeSurfaceDestroy();
                     cancelPendingVariablePublish?.();
                 },
                 onError: (error) => {
@@ -812,59 +716,18 @@ function startSession(
             onLabelChange: (apply) => i18n.onChange(apply),
             onSelect: (mode) => {
                 if (!initialSurfaceReady || switchPending || engineReloadPending) return;
-                void serializedModelerOperation(() => modeSession!.requestMode(mode));
+                void documentSync.enqueueModelerOperation(() => modeSession!.requestMode(mode));
             },
             onEscape: focusCanvas,
         });
         strip.render({ mode: surfaceMode, engine, busy: true });
 
-        let importedBpmnFileQuery = latestBpmnFileQuery ?? bpmnFileQuery;
-        while (importedBpmnFileQuery) {
-            if (importedBpmnFileQuery.engine !== modelerEngine) {
-                await reloadForEngineChange();
-                return;
-            }
-            try {
-                await serializedOpenXml(
-                    importedBpmnFileQuery.content,
-                    importedBpmnFileQuery.documentRevision,
-                );
-                break;
-            } catch (error) {
-                if (latestBpmnFileQuery && latestBpmnFileQuery !== importedBpmnFileQuery) {
-                    reportHostImportError(error);
-                    importedBpmnFileQuery = latestBpmnFileQuery;
-                    continue;
-                }
-                const message = error instanceof Error ? error.message : String(error);
-                host.postMessage(new LogErrorCommand(`Unable to open XML\n${message}`));
-                return;
-            }
-        }
+        const opened = await documentSync.importInitial(bpmnFileQuery);
+        if (!opened || engineReloadPending) return;
 
-        modelerCanImportHostUpdates = true;
-
-        if (latestBpmnFileQuery && latestBpmnFileQuery !== importedBpmnFileQuery) {
-            if (latestBpmnFileQuery.engine !== modelerEngine) {
-                await reloadForEngineChange();
-                return;
-            }
-            try {
-                await debouncedUpdateXML(
-                    latestBpmnFileQuery.content,
-                    latestBpmnFileQuery.documentRevision,
-                );
-            } catch (error) {
-                reportHostImportError(error);
-            }
-        }
-        await flushPendingHostUpdates();
-        if (engineReloadPending) return;
-
-        const currentBpmnFileQuery = latestBpmnFileQuery ?? bpmnFileQuery;
-
+        // Equals the latest host document's engine: any other would have reloaded the page.
         if (injectedCapabilities === undefined) {
-            protocolCapabilities.requestFormReferenceStatus(currentBpmnFileQuery?.engine);
+            protocolCapabilities.requestFormReferenceStatus(engine);
         }
 
         console.debug("[DEBUG] Modeler is initialized...");
@@ -889,7 +752,7 @@ function startSession(
 
         await drainPendingSessionActions();
         if (engineReloadPending) return;
-        modelerIsInitialized = true;
+        documentSync.markReady();
         sessionMessages.openImportBound();
         // A held LanguageQuery may have queued a refresh; it must land before
         // the selection restore below.
@@ -956,102 +819,6 @@ function startSession(
         stateManager.startPersisting();
     }
 
-    async function openHostXml(bpmn: string | undefined, documentRevision: number): Promise<void> {
-        await openXml(bpmn);
-        hostDocumentRevisions.markImported(documentRevision);
-    }
-
-    /**
-     * Loads or replaces the diagram in the modeler with the given BPMN XML.
-     * Creates a blank diagram when `bpmn` is `undefined` or empty.
-     *
-     * @param bpmn BPMN XML string, or `undefined` for a new blank diagram.
-     * @throws {NoModelerError} If the modeler is not available.
-     */
-    async function openXml(bpmn?: string): Promise<void> {
-        let result: ImportXMLResult;
-        // Only an editable surface can create a blank diagram; the readonly
-        // viewer always loads the host XML (a diff/View pane never opens blank).
-        if (!bpmn && isEditableHandle(surface)) {
-            result = await surface.newDiagram();
-        } else {
-            result = await surface.loadDiagram(bpmn ?? "");
-        }
-
-        if (result.warnings.length > 0) {
-            const warnings = `Diagram opened with following warnings: ${formatErrors(result.warnings)}`;
-            host.postMessage(new LogWarningCommand(warnings));
-        }
-    }
-
-    /**
-     * Exports the current diagram XML and sends it to the backend to persist the
-     * changes, then triggers an align-to-origin pass if the setting is enabled.
-     *
-     * Runs at debounce-fire time now, not per model change. Align-to-origin
-     * therefore also runs debounced (and is skipped on the flush path, where we
-     * only export); the next edit realigns. That align emits its own
-     * `commandStack.changed`, which schedules one more debounced cycle — but a
-     * no-op align executes no commands, so the cycle terminates rather than looping.
-     */
-    async function sendXmlChanges(): Promise<void> {
-        // A rejection here only reaches the global unhandledrejection hook
-        // (diagram-js discards the returned promise) as a context-free line —
-        // catch it so the failure is named and deterministic on the channel.
-        try {
-            const versionAtExport = hostDocumentRevisions.version;
-            const bpmn = await surface.exportDiagram();
-
-            if (!hostDocumentRevisions.isCurrent(versionAtExport) || debouncedUpdateXML.pending()) {
-                return;
-            }
-
-            host.postMessage(
-                new SyncDocumentCommand(bpmn, hostDocumentRevisions.representedRevision),
-            );
-            // Align-to-origin is a modeler-only feature; the designer/viewer skip it.
-            if (isModelerHandle(surface)) {
-                surface.alignElementsToOrigin();
-            }
-        } catch (error) {
-            const e = error instanceof Error ? error : new Error(String(error));
-            host.postMessage(
-                new LogErrorCommand(`Failed to sync diagram changes: ${e.message}`, e.stack),
-            );
-        }
-    }
-
-    async function receiveHostFile(bpmnFileQuery: BpmnFileQuery): Promise<void> {
-        const documentRevision = bpmnFileQuery.documentRevision ?? 0;
-        const receipt = hostDocumentRevisions.receive(documentRevision);
-
-        if (receipt === "stale") return;
-
-        latestBpmnFileQuery = bpmnFileQuery;
-
-        if (receipt === "initial") {
-            bpmnFileResolver.done(bpmnFileQuery);
-            return;
-        }
-
-        // A host push (e.g. a raw-XML side-by-side edit) is authoritative. Drop
-        // any pending outbound sync first so a stale export firing after the
-        // re-import can't clobber it.
-        debouncedSendXmlChanges.cancel();
-        if (!modelerCanImportHostUpdates) return;
-        if (bpmnFileQuery.engine !== modelerEngine) {
-            await reloadForEngineChange();
-            return;
-        }
-        try {
-            await debouncedUpdateXML(bpmnFileQuery.content, documentRevision);
-        } finally {
-            if (modelerIsInitialized) {
-                await drainPendingSessionActions();
-            }
-        }
-    }
-
     async function applyHostLanguage(query: LanguageQuery): Promise<void> {
         // The translator's onChange subscribers follow on their own, but bpmn-js
         // needs a re-import to re-translate already-rendered elements. The host
@@ -1062,7 +829,7 @@ function startSession(
         i18n.setLanguage(query.locale as SupportedLocale);
         if (i18n.getLocale() !== localeBefore) {
             refreshDiagramWhenReady = true;
-            if (modelerIsInitialized) {
+            if (documentSync.isReady()) {
                 await drainPendingSessionActions();
             }
         }
@@ -1070,7 +837,7 @@ function startSession(
 
     async function focusElementWhenReady({ elementId }: FocusElementQuery): Promise<void> {
         pendingFocusId = elementId;
-        if (modelerIsInitialized) {
+        if (documentSync.isReady()) {
             await drainPendingSessionActions();
         }
     }
@@ -1102,7 +869,7 @@ function startSession(
     // torn-down session leaves no listener behind.
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden" && !engineReloadPending) {
-            void debouncedSendXmlChanges.flush();
+            void documentSync.flushOutbound();
             stateManager?.flushViewport();
         }
     });
