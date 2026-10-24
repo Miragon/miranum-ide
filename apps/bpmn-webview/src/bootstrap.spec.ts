@@ -1035,6 +1035,38 @@ describe("bootstrap mode switching", () => {
         expect(recreated.restoreViewport).not.toHaveBeenCalled();
     });
 
+    it("asks the host for the templates and lint config of a modeler a mode switch creates", async () => {
+        mocks.savedMode = "view";
+        mocks.createViewer.mockResolvedValue(makeViewer());
+        mocks.createModeler.mockResolvedValue(makeModeler());
+        const host = makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1));
+
+        boot(host);
+        await drainAsyncWork();
+        host.postMessage.mockClear();
+        modeButtons()[2].click();
+        await drainAsyncWork();
+
+        expect(
+            sentTypes(host).filter(
+                (type) =>
+                    type === "GetElementTemplatesCommand" || type === "GetBpmnlintConfigCommand",
+            ),
+        ).toEqual(["GetElementTemplatesCommand", "GetBpmnlintConfigCommand"]);
+    });
+
+    it("persists and shows a mode toggle the modeler announces itself", async () => {
+        mocks.createModeler.mockResolvedValue(makeModeler());
+
+        boot(makeHost(new BpmnFileQuery("<tagged />", "c7", "modeler", 1)));
+        await drainAsyncWork();
+        mocks.persistMode.mockClear();
+        mocks.createModeler.mock.calls[0][1].onModeChanged("design");
+
+        expect(mocks.persistMode).toHaveBeenCalledExactlyOnceWith("design");
+        expect(modeButtons()[1].getAttribute("aria-checked")).toBe("true");
+    });
+
     it("restores the persisted viewport on a fallback surface after its import", async () => {
         const first = makeModeler();
         const fallback = makeModeler();

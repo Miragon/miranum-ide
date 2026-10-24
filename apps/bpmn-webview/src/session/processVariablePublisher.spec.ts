@@ -97,7 +97,7 @@ describe("createProcessVariablePublisher", () => {
         expect(posted).toEqual([]);
     });
 
-    it("neither schedules nor publishes once an engine reload began", async () => {
+    it("publishes nothing once an engine reload began", async () => {
         const { posted, modeler, publisher, beginEngineReload } = publisherOn();
 
         publisher.schedule();

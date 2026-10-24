@@ -15,7 +15,7 @@ export default defineConfig({
         coverage: {
             // Import-time entry wiring and a re-export barrel without logic of their own.
             ...coveragePreset(__dirname, { exclude: ["src/main.ts", "src/index.ts"] }),
-            thresholds: { statements: 89, branches: 87, functions: 91, lines: 90 },
+            thresholds: { statements: 90, branches: 87, functions: 92, lines: 91 },
         },
     },
 });
