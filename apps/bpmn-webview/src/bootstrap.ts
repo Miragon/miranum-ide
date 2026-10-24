@@ -13,11 +13,9 @@ import {
     HOST_REPLY_TIMEOUT_MS,
     createInertLockGroup,
     createResolver,
-    initResizer,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
-    readSavedPanelVisibility,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
 import {
@@ -46,6 +44,7 @@ import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { BpmnDocumentSession, type Translator } from "./session/documentSession";
+import { mountEditorChrome } from "./session/editorChrome";
 import { createLintBridge } from "./session/lintBridge";
 import {
     createHostMessageRouter,
@@ -248,7 +247,7 @@ function startSession(
         // Viewer mode (one side of a diff view) skips the resizer + properties
         // panel + palette, so we don't call initResizer() here — the chrome is
         // hidden by .viewer-mode CSS once we confirm the mode below. For the
-        // modeler path, initResizer() is called after the branch check.
+        // modeler path, mountEditorChrome() calls it after the branch check.
 
         host.postMessage(new GetBpmnFileCommand());
         host.postMessage(new GetBpmnModelerSettingCommand());
@@ -289,53 +288,8 @@ function startSession(
             return;
         }
 
-        // Host HTML keeps its `js-canvas` / `js-properties-panel` ids; the
-        // facade takes the resolved elements, not selectors, so a second modeler
-        // (in-page diff) can pass its own DOM hosts with no ids.
-        const canvasEl = document.getElementById("js-canvas");
-        const propertiesPanelParent = document.getElementById("js-properties-panel");
-        if (!canvasEl || !propertiesPanelParent) {
-            host.postMessage(
-                new LogErrorCommand("Missing #js-canvas or #js-properties-panel in host HTML"),
-            );
-            return;
-        }
-
-        // The mode strip + panel mount are created at runtime (all three shells
-        // ship only the empty `#js-canvas` / `#js-properties-panel`). The strip
-        // sits on the canvas; the panel mount — not the host — is
-        // the properties-panel parent and the panel-shortcut root. `initResizer`
-        // still binds to the host by its hard-coded id, so its collapse behaviour
-        // is unchanged.
-        propertiesPanelParent.classList.add("panel-host");
-        const stripEl = document.createElement("div");
-        stripEl.id = "js-mode-strip";
-        stripEl.className = "mode-strip";
-        const mountEl = document.createElement("div");
-        mountEl.id = "js-properties-panel-mount";
-        mountEl.className = "panel-mount";
-        canvasEl.prepend(stripEl);
-        propertiesPanelParent.append(mountEl);
-
-        const propertiesPanelHandle = initResizer({
-            getToggleLabel: (state) =>
-                i18n.translate(
-                    state === "collapsed" ? "Open properties panel" : "Close properties panel",
-                ) + " (Shift+P)",
-            onLabelChange: (apply) => i18n.onChange(apply),
-        });
-
-        // Early-apply this editor's own saved panel visibility (if any) before
-        // diagram import so the panel snaps straight to the correct per-editor
-        // state — no flash, no wait on the host round-trip, and it neutralizes
-        // the stale global-default hint baked into the pre-rendered HTML. When
-        // absent, the host global default is applied later (once its reply
-        // arrives). Applied via the handle so the resizer's DOM-seeded
-        // `isCollapsed` stays in sync.
-        const savedPanelVisible = readSavedPanelVisibility(host);
-        if (savedPanelVisible !== undefined) {
-            propertiesPanelHandle.setVisible(savedPanelVisible);
-        }
+        const chrome = mountEditorChrome(host);
+        if (!chrome) return;
 
         // The engine may be undefined here — an untagged (engine-neutral) model
         // is first-class now and opens in Design. The initial mode resolves from
@@ -346,7 +300,7 @@ function startSession(
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
 
         const surfaces = createSurfaceFactories(host, {
-            propertiesPanelParent: mountEl,
+            propertiesPanelParent: chrome.panelMount,
             capabilities,
             extraModules: injectedModules ?? [],
             clipboard: clipboard.options,
@@ -361,7 +315,7 @@ function startSession(
         });
         const binder = createSurfaceBinder(host, {
             session,
-            panelRoot: mountEl,
+            panelRoot: chrome.panelMount,
             engine,
             capabilities,
             elementTemplatesReply: elementTemplatesResolver,
@@ -374,7 +328,7 @@ function startSession(
         // not load a diagram — the webview's own import path (below) does that.
         try {
             modeSession = await createModeSession({
-                container: canvasEl,
+                container: chrome.canvas,
                 engine,
                 surfaces,
                 initialMode: savedMode ?? bpmnFileQuery?.defaultMode ?? null,
@@ -452,8 +406,8 @@ function startSession(
         // switch or engine reload is in flight, and otherwise queues behind the
         // other modeler operations so it never interleaves with an import.
         strip = mountModeStrip({
-            host: propertiesPanelParent,
-            stripEl,
+            host: chrome.panelHost,
+            stripEl: chrome.stripEl,
             modes: SURFACE_MODES,
             translate: (template, replacements) => i18n.translate(template, replacements),
             onLabelChange: (apply) => i18n.onChange(apply),
@@ -501,16 +455,16 @@ function startSession(
         await session.drainPendingActions();
         if (session.isReloadingForEngine) return;
 
-        // Panel visibility: this editor's own saved entry (applied early above)
+        // Panel visibility: this editor's own saved entry (applied by mountEditorChrome)
         // wins. Only when absent do we fall back to the host's global default —
         // the seed for a first-ever open. This branch is deliberately *not*
         // gated on templates/settings, so a slow or dropped templates reply
         // cannot leave the panel stuck at the pre-rendered default.
-        if (savedPanelVisible === undefined) {
+        if (chrome.savedPanelVisible === undefined) {
             const panelStateQuery = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
             if (session.isReloadingForEngine) return;
             binding.stateManager.restorePanelVisibility(
-                propertiesPanelHandle,
+                chrome.panel,
                 panelStateQuery?.visible ?? true,
             );
         }
@@ -518,7 +472,7 @@ function startSession(
         // Report user toggles: persist this editor's own state AND update the
         // host's global default so the latest preference seeds new editors.
         // Registered after restore so the restore itself can't echo back.
-        propertiesPanelHandle.onVisibilityChanged((visible) => {
+        chrome.panel.onVisibilityChanged((visible) => {
             binding?.stateManager.persistPanelVisibility(visible);
             host.postMessage(new SetPropertiesPanelStateCommand(visible));
         });
@@ -527,12 +481,12 @@ function startSession(
         // toggles panel visibility. Installed once, over the polymorphic surface.
         installPanelShortcuts(
             {
-                handle: propertiesPanelHandle,
+                handle: chrome.panel,
                 focusCanvas,
                 isCanvasFocused: () =>
                     surface.getService<{ isFocused(): boolean }>("canvas").isFocused(),
             },
-            { getPanelRoot: () => mountEl },
+            { getPanelRoot: () => chrome.panelMount },
         );
         installCanvasAutoFocus({ focusCanvas });
         host.postMessage(new RequestFocusCommand());
