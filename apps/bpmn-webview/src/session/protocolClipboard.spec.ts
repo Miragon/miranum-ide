@@ -67,7 +67,7 @@ describe("resolveClipboard", () => {
         const { host, bridge, text, handlers } = protocolClipboard();
 
         const elementPaste = bridge.requestClipboard();
-        handlers.TextClipboardQuery(new TextClipboardQuery("label text"));
+        handlers.TextClipboardQuery(new TextClipboardQuery("unrequested label"));
         handlers.ClipboardQuery(new ClipboardQuery("<bpmn-elements />"));
         const textPaste = text.requestClipboard();
         handlers.TextClipboardQuery(new TextClipboardQuery("label text"));
@@ -75,6 +75,18 @@ describe("resolveClipboard", () => {
         await expect(elementPaste).resolves.toBe("<bpmn-elements />");
         await expect(textPaste).resolves.toBe("label text");
         expect(host.sentTypes()).toEqual(["GetClipboardCommand", "GetTextClipboardCommand"]);
+    });
+
+    it("waits for a fresh host reply on every paste", async () => {
+        const { bridge, handlers } = protocolClipboard();
+
+        const firstPaste = bridge.requestClipboard();
+        handlers.ClipboardQuery(new ClipboardQuery("<first />"));
+        await expect(firstPaste).resolves.toBe("<first />");
+
+        const secondPaste = bridge.requestClipboard();
+        handlers.ClipboardQuery(new ClipboardQuery("<second />"));
+        await expect(secondPaste).resolves.toBe("<second />");
     });
 
     it("writes each channel to its own host command", () => {
