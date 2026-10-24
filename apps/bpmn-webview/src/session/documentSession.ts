@@ -56,8 +56,8 @@ interface DocumentSessionHandlers {
 
 /**
  * The BPMN webview's document lifecycle: host revisions, the serialized
- * host-update queue, the debounced outbound sync, mode-switch and engine-reload
- * latches, and actions (language refresh, focus) deferred until the modeler is ready.
+ * modeler-operation queue, the debounced outbound sync, the engine-reload latch,
+ * and actions (language refresh, focus) deferred until the modeler is ready.
  */
 export class BpmnDocumentSession implements FlushSource {
     private readonly revisions = new HostDocumentRevisions();
@@ -68,8 +68,6 @@ export class BpmnDocumentSession implements FlushSource {
     private initialized = false;
     private canImportHostUpdates = false;
     private engineReloadPending = false;
-    private switchPending = false;
-    private initialSurfaceReady = false;
     private refreshDiagramWhenReady = false;
     private pendingFocusId: string | undefined;
     private pendingActionDrain: Promise<void> | undefined;
@@ -87,7 +85,6 @@ export class BpmnDocumentSession implements FlushSource {
         maxWait: 1000,
     });
 
-    private readonly modeSwitchLock: InertLock;
     private readonly destructiveFlushLock: InertLock;
     // Never released: the page stays locked until the reload replaces it.
     private readonly engineReloadLock: InertLock;
@@ -115,7 +112,6 @@ export class BpmnDocumentSession implements FlushSource {
         this.surface = surface;
         this.page = page;
         this.translator = translator;
-        this.modeSwitchLock = pageInertLocks.createLock();
         this.destructiveFlushLock = pageInertLocks.createLock();
         this.engineReloadLock = pageInertLocks.createLock();
     }
@@ -126,10 +122,6 @@ export class BpmnDocumentSession implements FlushSource {
 
     get isReloadingForEngine(): boolean {
         return this.engineReloadPending;
-    }
-
-    get isSwitching(): boolean {
-        return this.switchPending;
     }
 
     waitForInitialHostFile(): Promise<BpmnFileQuery | undefined> {
@@ -215,10 +207,6 @@ export class BpmnDocumentSession implements FlushSource {
         this.initialized = true;
     }
 
-    markSurfaceReady(): void {
-        this.initialSurfaceReady = true;
-    }
-
     async applyLanguage(locale: string): Promise<void> {
         // The host pushes the language on every (re)load and an unknown code falls back
         // to "en", so only a changed resolved locale pays for the re-translating re-import.
@@ -238,26 +226,13 @@ export class BpmnDocumentSession implements FlushSource {
         }
     }
 
-    requestMode(switchMode: () => Promise<void>): void {
-        if (!this.initialSurfaceReady || this.switchPending || this.engineReloadPending) return;
-        void this.serializedModelerOperation(switchMode);
-    }
-
-    setSwitching(busy: boolean): void {
-        this.switchPending = busy;
-        if (busy) {
-            this.modeSwitchLock.acquire();
-        } else {
-            this.modeSwitchLock.release();
-        }
+    /** Queues `operation` behind every import, refresh and the reload teardown ahead of it. */
+    runExclusive(operation: () => Promise<void>): Promise<void> {
+        return this.serializedModelerOperation(operation);
     }
 
     scheduleSync(): void {
         void this.debouncedSync();
-    }
-
-    cancelSync(): void {
-        this.debouncedSync.cancel();
     }
 
     flushSyncOnHide(): void {
@@ -268,6 +243,11 @@ export class BpmnDocumentSession implements FlushSource {
         while (this.debouncedSync.pending()) {
             await this.debouncedSync.flush();
         }
+    }
+
+    async flushBeforeSurfaceDestroy(): Promise<void> {
+        await this.flushPendingSync();
+        this.debouncedSync.cancel();
     }
 
     drainPendingActions(): Promise<void> {

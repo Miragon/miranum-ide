@@ -90,7 +90,6 @@ async function importInitialFile(setupResult: ReturnType<typeof setup>, revision
 async function openSession(setupResult: ReturnType<typeof setup>, revision = 1) {
     await importInitialFile(setupResult, revision);
     setupResult.session.markInitialized();
-    setupResult.session.markSurfaceReady();
 }
 
 async function pushHostFile(session: BpmnDocumentSession, file: BpmnFileQuery): Promise<void> {
@@ -480,12 +479,12 @@ describe("BpmnDocumentSession", () => {
         });
     });
 
-    describe("modeler operation queue", () => {
-        it("queues a host push that arrives during a mode switch and replays it afterwards", async () => {
+    describe("exclusive operations", () => {
+        it("queues a host push that arrives during an exclusive operation and replays it afterwards", async () => {
             const context = setup();
             await openSession(context);
             const modeSwitch = deferred();
-            context.session.requestMode(() => modeSwitch.promise);
+            void context.session.runExclusive(() => modeSwitch.promise);
 
             const pushed = context.session.receiveHostFile(hostFile("<pushed />", 2));
             await vi.advanceTimersByTimeAsync(500);
@@ -499,7 +498,7 @@ describe("BpmnDocumentSession", () => {
             expect(context.session.documentRevision()).toBe(2);
         });
 
-        it("runs a mode switch only after the host import ahead of it", async () => {
+        it("runs an exclusive operation only after the host import ahead of it", async () => {
             const pushImport = deferred();
             const context = setup();
             await openSession(context);
@@ -508,22 +507,21 @@ describe("BpmnDocumentSession", () => {
 
             const pushed = context.session.receiveHostFile(hostFile("<pushed />", 2));
             await vi.advanceTimersByTimeAsync(100);
-            context.session.requestMode(switchMode);
+            const switching = context.session.runExclusive(switchMode);
             await vi.advanceTimersByTimeAsync(0);
             expect(switchMode).not.toHaveBeenCalled();
 
             pushImport.resolve();
-            await pushed;
-            await vi.runAllTimersAsync();
+            await Promise.all([pushed, switching]);
 
             expect(switchMode).toHaveBeenCalledOnce();
         });
 
-        it("refreshes the diagram only after the mode switch ahead of it", async () => {
+        it("refreshes the diagram only after the exclusive operation ahead of it", async () => {
             const context = setup();
             await openSession(context);
             const modeSwitch = deferred();
-            context.session.requestMode(() => modeSwitch.promise);
+            void context.session.runExclusive(() => modeSwitch.promise);
 
             const refreshing = context.session.applyLanguage("de");
             await vi.advanceTimersByTimeAsync(0);
@@ -535,41 +533,20 @@ describe("BpmnDocumentSession", () => {
             expect(context.surface.refreshDiagram).toHaveBeenCalledOnce();
         });
 
-        it("drops a mode request until the initial surface is ready", async () => {
-            const context = setup();
-            const switchMode = vi.fn(async () => {});
-
-            context.session.requestMode(switchMode);
-            await vi.runAllTimersAsync();
-
-            expect(switchMode).not.toHaveBeenCalled();
-        });
-
-        it("drops a mode request while a switch is in flight and makes the page inert", async () => {
+        it("runs the next operation even when the one ahead of it failed", async () => {
             const context = setup();
             await openSession(context);
-            const switchMode = vi.fn(async () => {});
+            const nextOperation = vi.fn(async () => {});
 
-            context.session.setSwitching(true);
-            context.session.requestMode(switchMode);
-            await vi.runAllTimersAsync();
+            const failing = expect(
+                context.session.runExclusive(async () => {
+                    throw new Error("switch broke");
+                }),
+            ).rejects.toThrow("switch broke");
+            await context.session.runExclusive(nextOperation);
 
-            expect(switchMode).not.toHaveBeenCalled();
-            expect(document.body.inert).toBe(true);
-            context.session.setSwitching(false);
-            expect(document.body.inert).toBe(false);
-        });
-
-        it("drops a mode request once the page reloads for another engine", async () => {
-            const context = setup();
-            await openSession(context);
-            const switchMode = vi.fn(async () => {});
-
-            await context.session.reloadForEngineChange();
-            context.session.requestMode(switchMode);
-            await vi.runAllTimersAsync();
-
-            expect(switchMode).not.toHaveBeenCalled();
+            await failing;
+            expect(nextOperation).toHaveBeenCalledOnce();
         });
     });
 
@@ -662,6 +639,21 @@ describe("BpmnDocumentSession", () => {
             await context.session.flushPendingSync();
 
             expect(syncCommands(context.posted)).toHaveLength(2);
+            expect(context.session.hasPendingSync()).toBe(false);
+        });
+
+        it("lands every pending edit on the host before a surface destroy", async () => {
+            const context = setup();
+            await openSession(context, 4);
+            context.surface.afterSync.mockImplementationOnce(() => context.session.scheduleSync());
+
+            context.session.scheduleSync();
+            await context.session.flushBeforeSurfaceDestroy();
+
+            expect(syncCommands(context.posted)).toEqual([
+                expect.objectContaining({ content: "<exported />", documentRevision: 4 }),
+                expect.objectContaining({ content: "<exported />", documentRevision: 4 }),
+            ]);
             expect(context.session.hasPendingSync()).toBe(false);
         });
 
@@ -940,7 +932,7 @@ describe("BpmnDocumentSession", () => {
             const context = setup();
             await openSession(context);
             const modeSwitch = deferred();
-            context.session.requestMode(() => modeSwitch.promise);
+            void context.session.runExclusive(() => modeSwitch.promise);
             void context.session.receiveHostFile(hostFile("<pending />", 2));
             context.session.scheduleSync();
 

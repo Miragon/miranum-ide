@@ -1,46 +1,30 @@
+import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
+import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
+import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
 import {
-    BpmnModelerSettingQuery,
-    Command,
-    ElementTemplatesQuery,
+    type BpmnModelerSettingQuery,
+    type Command,
+    type ElementTemplatesQuery,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
-    LogErrorCommand,
-    PropertiesPanelStateQuery,
-    Query,
+    HOST_REPLY_TIMEOUT_MS,
+    type HostApi,
+    type PropertiesPanelStateQuery,
+    type Query,
     RequestFocusCommand,
     SetPropertiesPanelStateCommand,
-    HOST_REPLY_TIMEOUT_MS,
+    applyPageThemeScope,
+    createHostThemeAdapter,
     createInertLockGroup,
     createResolver,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
+    resolveHostThemeKind,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
-import {
-    NoModelerError,
-    UnsupportedEngineError,
-    type SurfaceMode,
-} from "@miragon/bpmn-modeler-types";
-import {
-    SURFACE_MODES,
-    createModeSession,
-    mountModeStrip,
-    type ModeSession,
-    type ModeStrip,
-} from "@miragon/bpmn-modeler/mode";
-import {
-    applyPageThemeScope,
-    createHostThemeAdapter,
-    resolveHostThemeKind,
-} from "@miragon/bpmn-modeler-shared";
-import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
-import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
-import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
-import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
-import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { BpmnDocumentSession, type Translator } from "./session/documentSession";
@@ -52,16 +36,43 @@ import {
     type DiffPaneHostMessages,
     type HostMessage,
 } from "./session/messageRouter";
+import { createModeController } from "./session/modeController";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
-import { createSurfaceBinder, type SurfaceBinding } from "./session/surfaceBinding";
+import { createSurfaceBinder } from "./session/surfaceBinding";
 import { createSurfaceDocument } from "./session/surfaceDocument";
 import { createSurfaceFactories } from "./session/surfaceFactories";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode } from "./state";
+import { isEditableHandle } from "./surface";
 import { prefetchSurfaceModules } from "./surfaceModules";
-import { isEditableHandle, isModelerHandle, type SurfaceHandle } from "./surface";
+import type { WebviewState } from "./webviewState";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
+
+interface BootstrapOptions {
+    /** Host-specific extra bpmn-js DI modules. */
+    extraModules?: unknown[];
+    /**
+     * Explicit per-feature ports; `undefined` selects the full protocol adapter
+     * so every real host keeps all features.
+     */
+    capabilities?: ModelerCapabilities;
+    /** The bpmnlint tier; `undefined` selects the external (host-pushed) tier that real hosts use. */
+    linting?: LintingOptions;
+    /**
+     * The clipboard tier; `undefined` selects dev-build native, otherwise the
+     * protocol bridge. `"native"` forces the browser clipboard; `{ bridge }`
+     * routes through a caller-supplied override.
+     */
+    clipboard?: ClipboardOptions | "native";
+    /**
+     * In-page lint-run sink; only a consumer opting into in-page linting passes
+     * one. Real hosts run the linter themselves.
+     */
+    onLintResults?: (event: LintRunEvent) => void;
+    /** Restarts the containing webview after an engine change. */
+    reload?: () => void;
+}
 
 /**
  * Starts the BPMN webview against the given host. The entry chooses the host,
@@ -69,96 +80,42 @@ import "../../../packages/bpmn-modeler/src/styles/mode.css";
  * {@link ModelerCapabilities}. Omitting `capabilities` selects the
  * full protocol adapter, so every real host keeps all features; passing a
  * partial object turns off the features whose ports it omits.
- */
-export function bootstrap(
-    injectedHost: HostApi<WebviewState, Command | Query>,
-    opts: {
-        extraModules?: unknown[];
-        capabilities?: ModelerCapabilities;
-        linting?: LintingOptions;
-        clipboard?: ClipboardOptions | "native";
-        onLintResults?: (event: LintRunEvent) => void;
-        reload?: () => void;
-    } = {},
-): void {
-    startSession(
-        injectedHost,
-        opts.extraModules,
-        opts.capabilities,
-        opts.linting,
-        opts.clipboard,
-        opts.onLintResults,
-        opts.reload,
-    );
-}
-
-/**
- * One webview session. The modeler, resolvers, debounced syncs, flush
- * responder, and the "is initialized" latch are scoped to this closure so a
+ *
+ * Each call is one webview session. The modeler, resolvers, debounced syncs,
+ * flush responder, and the "is initialized" latch are scoped to it so a
  * session owns its own lifetime rather than a page-wide singleton — the
  * prerequisite for hosting more than one modeler on a page. Single-instance
- * hosts (VS Code, IntelliJ, Theia) call {@link bootstrap} exactly once.
- *
- * @param host The injected host adapter.
- * @param injectedModules Host-specific extra bpmn-js DI modules.
- * @param injectedCapabilities Explicit per-feature ports; `undefined` selects
- *   the full protocol adapter so every real host keeps all features.
- * @param injectedLinting The bpmnlint tier; `undefined` selects the external
- *   (host-pushed) tier that real hosts use.
- * @param injectedClipboard The clipboard tier; `undefined` selects dev-build
- *   native, otherwise the protocol bridge. `"native"` forces the browser
- *   clipboard; `{ bridge }` routes through a caller-supplied override.
- * @param injectedOnLintResults In-page lint-run sink; only a consumer opting into
- *   in-page linting passes one. Real hosts run the linter themselves.
- * @param injectedReload Restarts the containing webview after an engine change.
+ * hosts (VS Code, IntelliJ, Theia) call it exactly once.
  */
-function startSession(
+export function bootstrap(
     host: HostApi<WebviewState, Command | Query>,
-    injectedModules: unknown[] | undefined,
-    injectedCapabilities: ModelerCapabilities | undefined,
-    injectedLinting: LintingOptions | undefined,
-    injectedClipboard: ClipboardOptions | "native" | undefined,
-    injectedOnLintResults: ((event: LintRunEvent) => void) | undefined,
-    injectedReload: (() => void) | undefined,
+    opts: BootstrapOptions = {},
 ): void {
-    // The single live surface (View / Design / Implement). Assigned in run()
-    // once the engine + initial mode are known, and reassigned on every mode
-    // switch — flush/capability callbacks only fire post-init, so the
-    // definite-assignment assertion is safe.
-    let surface!: SurfaceHandle;
-    // The mode the live surface renders, and the mode strip that drives it.
-    let surfaceMode!: SurfaceMode;
-    let strip!: ModeStrip;
-    let modeSession: ModeSession | undefined;
-    const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
     const translator: Translator = {
         getLocale: () => i18n.getLocale(),
         setLanguage: (locale) => i18n.setLanguage(locale as SupportedLocale),
     };
+    const pageInertLocks = createInertLockGroup(document.body);
+    const hostModelerState = new HostModelerState();
+    const modeController = createModeController(host, { hostModelerState, pageInertLocks });
+    const { getSurface, focusCanvas } = modeController;
 
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
     // own theme off the VS Code `<body>`-class signal.
     const themeAdapter = createHostThemeAdapter((kind) => {
         applyPageThemeScope("data-bpmn-theme", kind);
-        // Route through the session so its stored theme stays current — a
-        // later recreate then builds the next surface in the right theme.
-        if (modeSession) {
-            modeSession.setTheme(kind);
-        } else {
-            surface?.setTheme(kind);
-        }
+        modeController.setTheme(kind);
     });
-    const protocolCapabilities = createProtocolCapabilities(host, () => surface);
-    const clipboard = resolveClipboard(injectedClipboard, {
+    const protocolCapabilities = createProtocolCapabilities(host, getSurface);
+    const clipboard = resolveClipboard(opts.clipboard, {
         isDevelopment: process.env.NODE_ENV === "development",
         host,
     });
-    const hostModelerState = new HostModelerState();
     const lintBridge = createLintBridge(
         host,
-        { linting: injectedLinting, onLintResults: injectedOnLintResults },
-        () => surface,
+        { linting: opts.linting, onLintResults: opts.onLintResults },
+        getSurface,
     );
 
     // Resolvers that signal when element templates and settings have been
@@ -173,28 +130,22 @@ function startSession(
     // no panelVisible entry — see WebviewStateManager.restorePanelVisibility.
     const panelStateResolver = createResolver<PropertiesPanelStateQuery>();
 
-    const surfaceRequests = createSurfaceRequests(host, () => surface, {
+    const surfaceRequests = createSurfaceRequests(host, getSurface, {
         hostModelerState,
         theme: themeAdapter,
         replies: { elementTemplates: elementTemplatesResolver, settings: settingsResolver },
     });
 
-    // Bound after the initial import, then rebound to every surface a mode switch creates.
-    let binding: SurfaceBinding | undefined;
-
     const session = new BpmnDocumentSession(host, {
-        surface: createSurfaceDocument(host, {
-            getSurface: () => surface,
-            getViewState: () => binding?.stateManager,
-        }),
+        surface: createSurfaceDocument(host, modeController),
         page: {
-            cancelPendingSurfaceWork: () => binding?.dispose(),
-            flushViewport: () => binding?.stateManager.flushViewport(),
-            destroySurface: () => surface.destroy(),
-            reloadPage: () => (injectedReload ?? (() => window.location.reload()))(),
+            cancelPendingSurfaceWork: modeController.disposeSurfaceBinding,
+            flushViewport: () => modeController.getViewState()?.flushViewport(),
+            destroySurface: () => getSurface().destroy(),
+            reloadPage: () => (opts.reload ?? (() => window.location.reload()))(),
         },
         translator,
-        pageInertLocks: createInertLockGroup(document.body),
+        pageInertLocks,
     });
 
     const sessionMessages = createSessionMessageRouter(
@@ -254,7 +205,7 @@ function startSession(
         host.postMessage(new GetPropertiesPanelStateCommand());
         const savedMode = readSavedMode(host);
         if (savedMode) {
-            prefetchSurfaceModules(savedMode, { linting: injectedLinting === undefined });
+            prefetchSurfaceModules(savedMode, { linting: opts.linting === undefined });
         }
 
         const bpmnFileQuery = await session.waitForInitialHostFile();
@@ -297,144 +248,53 @@ function startSession(
         // own default — the mode session vets it against availability.
         const engine = bpmnFileQuery?.engine;
 
-        const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
+        const capabilities = opts.capabilities ?? protocolCapabilities.capabilities;
 
-        const surfaces = createSurfaceFactories(host, {
-            propertiesPanelParent: chrome.panelMount,
-            capabilities,
-            extraModules: injectedModules ?? [],
-            clipboard: clipboard.options,
-            lintBridge,
-            hostModelerState,
-            reportElementTemplateErrors: surfaceRequests.reportElementTemplateErrors,
-            onModelerModeChanged: (mode) => {
-                surfaceMode = mode;
-                binding?.stateManager.persistMode(mode);
-                strip?.render({ mode, engine, busy: session.isSwitching });
-            },
-        });
-        const binder = createSurfaceBinder(host, {
+        const started = await modeController.start({
             session,
-            panelRoot: chrome.panelMount,
-            engine,
-            capabilities,
-            elementTemplatesReply: elementTemplatesResolver,
-        });
-
-        // The session owns the single live surface and switches it between the
-        // available modes: a Design↔Implement change on a tagged model is a live
-        // `setMode` toggle (undo/selection/plane survive), anything else exports →
-        // destroys → recreates → restores. It builds the initial surface but does
-        // not load a diagram — the webview's own import path (below) does that.
-        try {
-            modeSession = await createModeSession({
-                container: chrome.canvas,
+            binder: createSurfaceBinder(host, {
+                session,
+                panelRoot: chrome.panelMount,
                 engine,
-                surfaces,
-                initialMode: savedMode ?? bpmnFileQuery?.defaultMode ?? null,
-                theme: resolveHostThemeKind(),
-                onSurfaceCreated: (handle) => {
-                    surface = handle as SurfaceHandle;
-                    // The initial surface binds after its import (below), matching
-                    // the pre-session flow; a recreate/fallback binds here, before
-                    // the session loads the carried XML.
-                    if (session.isReady()) {
-                        binding = binder.bindSurface(surface);
-                    }
-                },
-                onSwitchStateChanged: (busy) => {
-                    session.setSwitching(busy);
-                    strip.render({ mode: surfaceMode, engine, busy });
-                },
-                onModeChanged: (mode, transition) => {
-                    surfaceMode = mode;
-                    const { stateManager } = binding!;
-                    stateManager.persistMode(mode);
-                    strip.render({ mode, engine, busy: session.isSwitching });
-                    // A recreate/fallback stood up a fresh instance: re-apply the
-                    // host's script locks, restore its panel UI, resume persistence,
-                    // and re-request modeler resources.
-                    if (transition === "recreate" || transition === "fallback") {
-                        // A recreate already applied the carried snapshot; a
-                        // fallback applied none, so the persisted state restores.
-                        if (transition === "fallback") {
-                            stateManager.restoreViewport();
-                        }
-                        // After the import: the script-source watcher baselines
-                        // the locked scripts from the loaded model.
-                        if (isModelerHandle(surface)) {
-                            hostModelerState.restoreOpenScripts(surface);
-                        }
-                        stateManager.restorePanelUiState();
-                        stateManager.startPersisting();
-                        binder.requestSurfaceResources(surface);
-                    }
-                },
-                beforeDestroy: async () => {
-                    await session.flushPendingSync();
-                    session.cancelSync();
-                    binding?.dispose();
-                },
-                onError: (error) => {
-                    const cause = error instanceof Error ? error : new Error(String(error));
-                    host.postMessage(
-                        new LogErrorCommand(`Unable to switch mode\n${cause.message}`, cause.stack),
-                    );
-                },
-            });
-        } catch (error: any) {
-            if (error instanceof NoModelerError || error instanceof UnsupportedEngineError) {
-                host.postMessage(new LogErrorCommand(error.message));
-            } else {
-                const cause = error instanceof Error ? error : new Error(String(error));
-                host.postMessage(
-                    new LogErrorCommand(
-                        `Unable to create modeler surface\n${cause.message}`,
-                        cause.stack,
-                    ),
-                );
-            }
-            return;
-        }
-        surfaceMode = modeSession.getMode();
-        binder.requestSurfaceResources(surface);
-
-        // Always offer all three modes, greying out the ones the current
-        // engine can't reach (Implement on an untagged model) so the mode is
-        // discoverable — the strip ignores clicks on an aria-disabled entry. A
-        // click is also dropped until the initial surface is ready and while a
-        // switch or engine reload is in flight, and otherwise queues behind the
-        // other modeler operations so it never interleaves with an import.
-        strip = mountModeStrip({
-            host: chrome.panelHost,
-            stripEl: chrome.stripEl,
-            modes: SURFACE_MODES,
-            translate: (template, replacements) => i18n.translate(template, replacements),
-            onLabelChange: (apply) => i18n.onChange(apply),
-            onSelect: (mode) => {
-                session.requestMode(() => modeSession!.requestMode(mode));
-            },
-            onEscape: focusCanvas,
+                capabilities,
+                elementTemplatesReply: elementTemplatesResolver,
+            }),
+            container: chrome.canvas,
+            engine,
+            surfaces: createSurfaceFactories(host, {
+                propertiesPanelParent: chrome.panelMount,
+                capabilities,
+                extraModules: opts.extraModules ?? [],
+                clipboard: clipboard.options,
+                lintBridge,
+                hostModelerState,
+                reportElementTemplateErrors: surfaceRequests.reportElementTemplateErrors,
+                onModelerModeChanged: modeController.followModelerToggle,
+            }),
+            initialMode: savedMode ?? bpmnFileQuery?.defaultMode ?? null,
+            theme: resolveHostThemeKind(),
+            strip: { host: chrome.panelHost, stripEl: chrome.stripEl },
         });
-        strip.render({ mode: surfaceMode, engine, busy: true });
+        if (!started) return;
 
         if (!(await session.openInitialDocument(bpmnFileQuery))) return;
 
         const currentBpmnFileQuery = session.latestHostFile ?? bpmnFileQuery;
 
-        if (injectedCapabilities === undefined) {
+        if (opts.capabilities === undefined) {
             protocolCapabilities.requestFormReferenceStatus(currentBpmnFileQuery?.engine);
         }
 
         console.debug("[DEBUG] Modeler is initialized...");
 
-        binding = binder.bindSurface(surface);
+        const viewState = modeController.bindInitialSurface();
 
         // Lets the IntelliJ JCEF host drive undo/redo: it swallows Ctrl+Z/Ctrl+Y
         // at the IDE level before bpmn-js sees them. Installed once, over the
         // polymorphic surface; the readonly viewer has no editorActions service,
         // so the trigger is guarded.
         installHostEditorActions((action) => {
+            const surface = getSurface();
             if (isEditableHandle(surface)) {
                 surface
                     .getService<{ trigger(action: string): void }>("editorActions")
@@ -444,7 +304,7 @@ function startSession(
 
         // Phase 1: restore the persisted plane and viewport (canvas exists after
         // the initial import); the surface itself fits a fresh open.
-        binding.stateManager.restoreViewport();
+        viewState.restoreViewport();
 
         await session.drainPendingActions();
         if (session.isReloadingForEngine) return;
@@ -463,17 +323,14 @@ function startSession(
         if (chrome.savedPanelVisible === undefined) {
             const panelStateQuery = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
             if (session.isReloadingForEngine) return;
-            binding.stateManager.restorePanelVisibility(
-                chrome.panel,
-                panelStateQuery?.visible ?? true,
-            );
+            viewState.restorePanelVisibility(chrome.panel, panelStateQuery?.visible ?? true);
         }
 
         // Report user toggles: persist this editor's own state AND update the
         // host's global default so the latest preference seeds new editors.
         // Registered after restore so the restore itself can't echo back.
         chrome.panel.onVisibilityChanged((visible) => {
-            binding?.stateManager.persistPanelVisibility(visible);
+            modeController.getViewState()?.persistPanelVisibility(visible);
             host.postMessage(new SetPropertiesPanelStateCommand(visible));
         });
 
@@ -484,7 +341,7 @@ function startSession(
                 handle: chrome.panel,
                 focusCanvas,
                 isCanvasFocused: () =>
-                    surface.getService<{ isFocused(): boolean }>("canvas").isFocused(),
+                    getSurface().getService<{ isFocused(): boolean }>("canvas").isFocused(),
             },
             { getPanelRoot: () => chrome.panelMount },
         );
@@ -502,17 +359,13 @@ function startSession(
         if (session.isReloadingForEngine) return;
 
         // Phase 2: restore selection + panel-side UI state (side-effects done)
-        binding.stateManager.restoreSelection();
-        binding.stateManager.restorePanelUiState();
+        viewState.restoreSelection();
+        viewState.restorePanelUiState();
 
-        // The initial surface is live: drop the strip's busy state and persist the
-        // resolved mode so a first-ever open remembers where it landed.
-        session.markSurfaceReady();
-        strip.render({ mode: surfaceMode, engine, busy: false });
-        binding.stateManager.persistMode(surfaceMode);
+        modeController.markInitialSurfaceReady();
 
         // Phase 3: begin persisting changes
-        binding.stateManager.startPersisting();
+        viewState.startPersisting();
     }
 
     // Best-effort flush of the outbound sync debounce when the webview is hidden
@@ -524,7 +377,7 @@ function startSession(
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden" && !session.isReloadingForEngine) {
             session.flushSyncOnHide();
-            binding?.stateManager.flushViewport();
+            modeController.getViewState()?.flushViewport();
         }
     });
 
