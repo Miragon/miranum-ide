@@ -62,6 +62,14 @@ const TASK_OR_USER_TASK_TEMPLATE = {
     properties: [],
 };
 
+const ZEEBE_TASK_TEMPLATE = {
+    $schema: "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+    id: "zeebe-task",
+    name: "Zeebe task",
+    appliesTo: ["bpmn:Task"],
+    properties: [],
+};
+
 const handles: BpmnModeler[] = [];
 const mountedNodes: HTMLElement[] = [];
 
@@ -222,5 +230,27 @@ describe("append menu", () => {
             .poll(() => descriptionCard()?.textContent)
             .toContain("Calls another process as a reusable subprocess");
         await expect.element(descriptionCard()!).toBeVisible();
+    });
+
+    it("leaves the collapsed palette collapsed while the mouse rests on a description", async () => {
+        await openAppendMenu({
+            engine: "c8",
+            locale: "en",
+            elementTemplates: [ZEEBE_TASK_TEMPLATE],
+        });
+        await userEvent.type(
+            document.querySelector<HTMLInputElement>(".am-search-input")!,
+            "child process",
+        );
+        await expect
+            .poll(() => document.querySelector(".am-hover-card-name")?.textContent)
+            .toBe("Call activity");
+
+        await userEvent.hover(document.querySelector<HTMLElement>(".am-hover-card")!);
+        await afterPaint();
+
+        expect(document.querySelector(".am-palette-panel")).not.toHaveClass(
+            "am-palette-panel--expanded",
+        );
     });
 });

@@ -109,68 +109,78 @@ export function BpmnElementPalette({
     );
 
     return (
-        <div
-            class={`am-palette-panel ${expanded ? "am-palette-panel--expanded" : ""}`}
-            onMouseEnter={() => onPeekChange?.(true)}
-            onMouseLeave={() => onPeekChange?.(false)}
-        >
-            <div class="am-palette-header">
-                <h3 class="am-palette-title">{translate("BPMN")}</h3>
-                <button
-                    class="am-palette-toggle"
-                    onClick={onToggleExpand}
-                    title={expanded ? translate("Collapse") : translate("Expand")}
-                    type="button"
-                >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                        {expanded ? (
-                            <path d="M11.354 8.354a.5.5 0 0 0 0-.708l-4-4a.5.5 0 1 0-.708.708L10.293 8l-3.647 3.646a.5.5 0 0 0 .708.708l4-4z" />
-                        ) : (
-                            <path d="M4.646 7.646a.5.5 0 0 1 .708 0L8 10.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708zM4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z" />
-                        )}
-                    </svg>
-                </button>
-            </div>
-            <div class="am-palette-content" ref={contentRef}>
-                {/* Favourites section — pinned at the top */}
-                {favouriteEntries.length > 0 && (
-                    <div class="am-bpmn-group am-bpmn-group--favourites">
-                        {expanded && <h4 class="am-bpmn-group-title">{translate("Favourites")}</h4>}
-                        <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
-                            {favouriteEntries
-                                .filter((processed) => !processed.hidden)
-                                .map((processed) =>
-                                    renderButton(processed, favouriteNavKey(processed.id)),
-                                )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Regular groups */}
-                {groups.map((group) => {
-                    const visibleEntries = group.entries.filter((e) => !e.hidden);
-                    if (visibleEntries.length === 0) {
-                        return null;
-                    }
-                    return (
-                        <div key={group.id} class="am-bpmn-group">
-                            {/* Upstream group names arrive already translated; only the
-                                synthesized "Other" fallback needs the overlay. */}
+        <>
+            <div
+                class={`am-palette-panel ${expanded ? "am-palette-panel--expanded" : ""}`}
+                onMouseEnter={() => onPeekChange?.(true)}
+                onMouseLeave={() => onPeekChange?.(false)}
+            >
+                <div class="am-palette-header">
+                    <h3 class="am-palette-title">{translate("BPMN")}</h3>
+                    <button
+                        class="am-palette-toggle"
+                        onClick={onToggleExpand}
+                        title={expanded ? translate("Collapse") : translate("Expand")}
+                        type="button"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                            {expanded ? (
+                                <path d="M11.354 8.354a.5.5 0 0 0 0-.708l-4-4a.5.5 0 1 0-.708.708L10.293 8l-3.647 3.646a.5.5 0 0 0 .708.708l4-4z" />
+                            ) : (
+                                <path d="M4.646 7.646a.5.5 0 0 1 .708 0L8 10.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708zM4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z" />
+                            )}
+                        </svg>
+                    </button>
+                </div>
+                <div class="am-palette-content" ref={contentRef}>
+                    {/* Favourites section — pinned at the top */}
+                    {favouriteEntries.length > 0 && (
+                        <div class="am-bpmn-group am-bpmn-group--favourites">
                             {expanded && (
-                                <h4 class="am-bpmn-group-title">
-                                    {group.id === "other" ? translate(group.name) : group.name}
-                                </h4>
+                                <h4 class="am-bpmn-group-title">{translate("Favourites")}</h4>
                             )}
                             <div class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}>
-                                {visibleEntries.map((processed) =>
-                                    renderButton(processed, groupNavKey(group.id, processed.id)),
-                                )}
+                                {favouriteEntries
+                                    .filter((processed) => !processed.hidden)
+                                    .map((processed) =>
+                                        renderButton(processed, favouriteNavKey(processed.id)),
+                                    )}
                             </div>
                         </div>
-                    );
-                })}
+                    )}
+
+                    {/* Regular groups */}
+                    {groups.map((group) => {
+                        const visibleEntries = group.entries.filter((e) => !e.hidden);
+                        if (visibleEntries.length === 0) {
+                            return null;
+                        }
+                        return (
+                            <div key={group.id} class="am-bpmn-group">
+                                {/* Upstream group names arrive already translated; only the
+                                synthesized "Other" fallback needs the overlay. */}
+                                {expanded && (
+                                    <h4 class="am-bpmn-group-title">
+                                        {group.id === "other" ? translate(group.name) : group.name}
+                                    </h4>
+                                )}
+                                <div
+                                    class={`am-bpmn-grid ${expanded ? "" : "am-bpmn-grid--compact"}`}
+                                >
+                                    {visibleEntries.map((processed) =>
+                                        renderButton(
+                                            processed,
+                                            groupNavKey(group.id, processed.id),
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
+            {/* Outside the palette panel: resting on the card must not peek the palette open. */}
             {describedItem && descriptionPosition && (
                 <ElementDescriptionCard
                     id={descriptionCardId}
@@ -179,7 +189,7 @@ export function BpmnElementPalette({
                     onHoverChange={onPreviewHover}
                 />
             )}
-        </div>
+        </>
     );
 }
 
