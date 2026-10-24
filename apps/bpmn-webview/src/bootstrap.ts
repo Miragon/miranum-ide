@@ -21,21 +21,16 @@ import {
     ImplementationStatusQuery,
     LanguageQuery,
     CleanupDiagramQuery,
-    CleanupReportCommand,
     DiagramFormattedCommand,
     LogErrorCommand,
     LogWarningCommand,
-    OpenScriptEditorsCommand,
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
-    ShowInfoCommand,
-    SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
-    UpdateLintResultsCommand,
     UpdateOpenScriptEditorsQuery,
     UpdateScriptContentQuery,
     UpdateScriptFormatQuery,
@@ -72,7 +67,6 @@ import {
     type SurfaceFactories,
 } from "@miragon/bpmn-modeler/mode";
 import {
-    type HostThemeAdapter,
     applyPageThemeScope,
     createHostThemeAdapter,
     resolveHostThemeKind,
@@ -86,19 +80,21 @@ import type {
     ModelerMode,
 } from "@miragon/bpmn-modeler";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
-import type { CleanupOutcome, LintRunEvent } from "@miragon/bpmn-modeler-types";
+import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
 import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
+import { receiveErrorPrefix } from "./session/hostChannel";
+import { createLintBridge } from "./session/lintBridge";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
+import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
-    loadLintModule,
     loadModelerModule,
     loadViewerModule,
     prefetchSurfaceModules,
@@ -218,9 +214,19 @@ function startSession(
     let latestBpmnFileQuery: BpmnFileQuery | undefined;
     let refreshDiagramWhenReady = false;
     let modelerEngine: DetectedEngine;
-    // Host theme adapter (VS Code `<body>` class → page scope + instance theme).
-    // Created in run(); the settings handler switches its mode on `colorTheme`.
-    let themeAdapter: HostThemeAdapter | undefined;
+    // Theme is host policy: drive the page-level scope (host chrome + the
+    // viewer/diff branch, which has no modeler) and the modeler instance's
+    // own theme off the VS Code `<body>`-class signal.
+    const themeAdapter = createHostThemeAdapter((kind) => {
+        applyPageThemeScope("data-bpmn-theme", kind);
+        // Route through the session so its stored theme stays current — a
+        // later recreate then builds the next surface in the right theme.
+        if (modeSession) {
+            modeSession.setTheme(kind);
+        } else {
+            surface?.setTheme(kind);
+        }
+    });
     let engineReloadPending = false;
     let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
@@ -230,22 +236,15 @@ function startSession(
         host,
     });
     const hostModelerState = new HostModelerState();
+    const lintBridge = createLintBridge(
+        host,
+        { linting: injectedLinting, onLintResults: injectedOnLintResults },
+        () => surface,
+    );
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
     // editor and focuses in one tick); apply it once the modeler is ready.
     let pendingFocusId: string | undefined;
-
-    // The opaque config-version token from the host's last BpmnlintInPageQuery,
-    // echoed back on every UpdateLintResultsCommand so the host can pair a run
-    // with the config version it linted and drop a stale run. `undefined` for
-    // the payload-free default tier (and reset to it on config→no-config).
-    //
-    // Pairing is race-free without any per-run plumbing: BrowserLinter.run is a
-    // pure microtask chain (bpmnlint over the in-memory tree, no I/O), so it
-    // drains to its onLintResults synchronously-after-await, before the next host
-    // message can be delivered as a fresh macrotask and swap this closure. So the
-    // token read here always belongs to the config that drove this very run.
-    let currentLintConfigToken: string | undefined;
 
     const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
@@ -260,6 +259,12 @@ function startSession(
     // default. The webview uses this value only when its own webview state has
     // no panelVisible entry — see WebviewStateManager.restorePanelVisibility.
     const panelStateResolver = createResolver<PropertiesPanelStateQuery>();
+
+    const surfaceRequests = createSurfaceRequests(host, () => surface, {
+        hostModelerState,
+        theme: themeAdapter,
+        replies: { elementTemplates: elementTemplatesResolver, settings: settingsResolver },
+    });
 
     const importBoundQueries = new MessageGate<MessageEvent<Query | Command>>((message) => {
         void onReceiveMessage(message);
@@ -450,21 +455,8 @@ function startSession(
         // way. Idempotent — a later surface's extend is a no-op merge.
         i18n.extend(i18nExtras);
 
-        // Theme is host policy: drive the page-level scope (host chrome + the
-        // viewer/diff branch, which has no modeler) and the modeler instance's
-        // own theme off the VS Code `<body>`-class signal. The instance is also
-        // born correct via `theme: resolveHostThemeKind()` below, so this mainly
-        // covers the page chrome and later live theme switches.
-        themeAdapter = createHostThemeAdapter((kind) => {
-            applyPageThemeScope("data-bpmn-theme", kind);
-            // Route through the session so its stored theme stays current — a
-            // later recreate then builds the next surface in the right theme.
-            if (modeSession) {
-                modeSession.setTheme(kind);
-            } else {
-                surface?.setTheme(kind);
-            }
-        });
+        // The instance is also born correct via `theme: resolveHostThemeKind()`
+        // below, so this mainly covers the page chrome and later live theme switches.
         themeAdapter.setMode("automatic");
 
         // Viewer mode (one side of a diff view) skips the resizer + properties
@@ -565,46 +557,14 @@ function startSession(
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
 
-        // The shared lint options for both editable surfaces (Implement + Design):
-        // the injected tier or the external default a real host uses, plus the
-        // result/toggle sinks that feed the host's Problems panel + status bar.
-        // The designer resolves the engine-neutral Design config; the
-        // modeler re-resolves per mode on a live toggle. `/lint` is imported lazily
-        // and cached, so building this per (re)creation is free after the first.
-        async function lintingOptions(): Promise<{
-            linting: LintingOptions;
-            onLintResults: (event: LintRunEvent) => void;
-            onLintingToggled: (enabled: boolean) => void;
-        }> {
-            return {
-                linting: injectedLinting ?? {
-                    results: "external",
-                    module: await loadLintModule(),
-                },
-                onLintResults:
-                    injectedOnLintResults ??
-                    ((e: LintRunEvent) =>
-                        host.postMessage(
-                            new UpdateLintResultsCommand(
-                                e.results,
-                                [...e.unresolved],
-                                currentLintConfigToken,
-                            ),
-                        )),
-                onLintingToggled: (enabled: boolean) =>
-                    host.postMessage(new SetLintingEnabledCommand(enabled)),
-            };
-        }
-
         // The three surface factories the mode session switches between. View →
         // readonly viewer; Design on an untagged model → the engine-neutral
         // designer; Design/Implement on a tagged model → one createModeler whose
         // `mode` toggles live. Every surface is born in the IDE's forced theme so
         // the first frame paints correctly (the body class is the IDE signal, not
-        // "automatic"). Both editable surfaces share `lintingOptions()`: real
-        // hosts run the linter themselves and push results, so the default tier is
-        // external (the `/lint` subpath is imported lazily; the module cache makes
-        // repeat switches free).
+        // "automatic"). Both editable surfaces share the lint bridge's options;
+        // the designer resolves the engine-neutral Design config, the modeler
+        // re-resolves per mode on a live toggle.
         const surfaces: SurfaceFactories = {
             view: async ({ container, theme }) => {
                 const { createViewer } = await loadViewerModule();
@@ -618,7 +578,7 @@ function startSession(
             design: async ({ container, theme }) => {
                 const [{ createDesigner }, linting] = await Promise.all([
                     loadDesignerModule(),
-                    lintingOptions(),
+                    lintBridge.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const designer = await createDesigner(container, {
@@ -646,7 +606,7 @@ function startSession(
                 }
                 const [{ createModeler }, linting] = await Promise.all([
                     loadModelerModule(),
-                    lintingOptions(),
+                    lintBridge.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const modeler = await createModeler(container, {
@@ -661,25 +621,7 @@ function startSession(
                     ...linting,
                     onWarning: (warning: string) =>
                         host.postMessage(new LogWarningCommand(warning)),
-                    onElementTemplatesErrors: (errors: unknown[]) => {
-                        const messages = (errors ?? []).map((error) =>
-                            error instanceof Error ? error.message : String(error),
-                        );
-                        for (const message of messages) {
-                            host.postMessage(
-                                new LogWarningCommand(`Element template rejected: ${message}`),
-                            );
-                        }
-                        if (messages.length > 0) {
-                            host.postMessage(
-                                new ShowInfoCommand(
-                                    messages.length === 1
-                                        ? "An element template was rejected and is ignored. See the log for details."
-                                        : `${messages.length} element templates were rejected and are ignored. See the log for details.`,
-                                ),
-                            );
-                        }
-                    },
+                    onElementTemplatesErrors: surfaceRequests.reportElementTemplateErrors,
                     // The modeler's own toggle notification. The session also
                     // fires onModeChanged("toggle"); both write the same values, so
                     // keeping this (the session cannot inject into the options bag)
@@ -1101,7 +1043,7 @@ function startSession(
         if (IMPORT_BOUND_QUERY_TYPES.has(queryOrCommand.type) && importBoundQueries.hold(message)) {
             return;
         }
-        const errorPrefix = "Error receiving message: " + queryOrCommand.type + " — ";
+        const errorPrefix = receiveErrorPrefix(queryOrCommand.type);
 
         switch (true) {
             case queryOrCommand.type === "BpmnFileQuery": {
@@ -1142,27 +1084,18 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "ElementTemplatesQuery": {
-                const query = message.data as ElementTemplatesQuery;
                 try {
-                    console.debug("Received element templates: ", query.elementTemplates);
-                    if (isModelerHandle(surface)) {
-                        surface.setElementTemplates(query.elementTemplates);
-                    }
+                    surfaceRequests.handlers.ElementTemplatesQuery(
+                        message.data as ElementTemplatesQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                } finally {
-                    // Resolve even on a facade throw — otherwise the bootstrap
-                    // await starves and startPersisting never runs.
-                    elementTemplatesResolver.done(query);
                 }
                 break;
             }
             case queryOrCommand.type === "BpmnlintResultsQuery": {
                 try {
-                    const query = message.data as BpmnlintResultsQuery;
-                    if (isLintingHandle(surface)) {
-                        surface.applyLintResults(query.results);
-                    }
+                    lintBridge.handlers.BpmnlintResultsQuery(message.data as BpmnlintResultsQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1170,9 +1103,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnLintDisabledQuery": {
                 try {
-                    if (isLintingHandle(surface)) {
-                        surface.applyLintingDisabled();
-                    }
+                    lintBridge.handlers.BpmnLintDisabledQuery();
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1180,46 +1111,19 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnlintInPageQuery": {
                 try {
-                    const q = message.data as BpmnlintInPageQuery;
-                    // The token stays current for the onLintResults echo. Dedup of
-                    // a repeat covered instruction lives in LintConfigService,
-                    // where the tier state is known, so a stale token from an
-                    // intervening disabled push cannot drop a re-enable.
-                    currentLintConfigToken = q.configToken;
-                    // No workspace config → the surface's mode default (engine-aware
-                    // in Implement, engine-neutral in Design); a covered config →
-                    // lint it in-page. Either way onLintResults pushes the findings
-                    // back so the host feeds its Problems panel + status bar.
-                    if (isLintingHandle(surface)) {
-                        surface.startInPageLinting(q.config, q.configToken);
-                    }
+                    lintBridge.handlers.BpmnlintInPageQuery(message.data as BpmnlintInPageQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
                 break;
             }
             case queryOrCommand.type === "BpmnModelerSettingQuery": {
-                const query = message.data as BpmnModelerSettingQuery;
-                hostModelerState.rememberSettings(query.setting);
                 try {
-                    // Theme is host policy: the adapter drives the page scope +
-                    // instance theme off the VS Code `<body>`-class watcher here,
-                    // because the package's setSettings does not apply `colorTheme`.
-                    themeAdapter?.setMode(query.setting.colorTheme);
-                    // Theme always applies (page scope); of the rest, the designer
-                    // honours only the favourites and the viewer nothing.
-                    const favourites = query.setting.favouriteBpmnElements;
-                    if (isModelerHandle(surface)) {
-                        surface.setSettings(query.setting);
-                    } else if (isEditableHandle(surface) && favourites) {
-                        surface.setFavouriteBpmnElements(favourites);
-                    }
+                    surfaceRequests.handlers.BpmnModelerSettingQuery(
+                        message.data as BpmnModelerSettingQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                } finally {
-                    // Resolve even on a facade throw — otherwise the bootstrap
-                    // await starves and startPersisting never runs.
-                    settingsResolver.done(query);
                 }
                 break;
             }
@@ -1262,10 +1166,9 @@ function startSession(
             }
             case queryOrCommand.type === "GetDiagramAsSVGCommand": {
                 try {
-                    const command = message.data as GetDiagramAsSVGCommand;
-                    // Populate the SVG field and echo the command back to the host.
-                    command.svg = await surface.getDiagramSvg();
-                    host.postMessage(command);
+                    await surfaceRequests.handlers.GetDiagramAsSVGCommand(
+                        message.data as GetDiagramAsSVGCommand,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1273,84 +1176,25 @@ function startSession(
             }
             case queryOrCommand.type === "OpenAllScriptTasksQuery": {
                 try {
-                    // Reply as a single bulk command so the host opens the scripts
-                    // sequentially; the variable model is identical for every
-                    // script in the diagram, so it is extracted once and shared.
-                    // Script tasks are a modeler-only concern (no-op otherwise).
-                    if (isModelerHandle(surface)) {
-                        const scripts = surface.collectInlineScriptTasks();
-                        host.postMessage(
-                            new OpenScriptEditorsCommand(
-                                scripts,
-                                extractProcessVariables(surface.getDefinitions()),
-                            ),
-                        );
-                    }
+                    surfaceRequests.handlers.OpenAllScriptTasksQuery();
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
                 break;
             }
             case queryOrCommand.type === "FormatDiagramQuery": {
-                try {
-                    if (isFormattableHandle(surface)) {
-                        // The outcome is reported by the `layout.formatted`
-                        // subscription in `bindSurface`, so the keyboard
-                        // shortcut and this command report through one path.
-                        await surface.formatDiagram();
-                    } else {
-                        host.postMessage(
-                            new DiagramFormattedCommand("failed", [], "UNSUPPORTED_SURFACE"),
-                        );
-                    }
-                } catch (error: any) {
-                    host.postMessage(
-                        new DiagramFormattedCommand("failed", [], "ENGINE_FAILED", error.message),
-                    );
-                }
+                await surfaceRequests.handlers.FormatDiagramQuery();
                 break;
             }
             case queryOrCommand.type === "CleanupDiagramQuery": {
-                const apply = (message.data as CleanupDiagramQuery).apply;
-                try {
-                    // A surface without the capability is a failure to report,
-                    // not a clean diagram — an empty report would be shown as
-                    // "nothing to clean up".
-                    const outcome: CleanupOutcome = isFormattableHandle(surface)
-                        ? surface.cleanupDiagram({ apply })
-                        : {
-                              status: "failed",
-                              items: [],
-                              message: "this surface cannot be cleaned up",
-                          };
-                    if (outcome.status === "failed" && outcome.message) {
-                        host.postMessage(new LogErrorCommand(errorPrefix + outcome.message));
-                    }
-                    host.postMessage(new CleanupReportCommand(outcome, apply));
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                    // Always reply: the host holds a one-shot subscription that
-                    // would otherwise leak waiting for a report.
-                    host.postMessage(
-                        new CleanupReportCommand(
-                            { status: "failed", items: [], message: error.message },
-                            apply,
-                        ),
-                    );
-                }
+                surfaceRequests.handlers.CleanupDiagramQuery(message.data as CleanupDiagramQuery);
                 break;
             }
             case queryOrCommand.type === "UpdateScriptContentQuery": {
                 try {
-                    const query = message.data as UpdateScriptContentQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.updateScriptContent(
-                            query.elementId,
-                            query.kind,
-                            query.listenerIndex,
-                            query.content,
-                        );
-                    }
+                    surfaceRequests.handlers.UpdateScriptContentQuery(
+                        message.data as UpdateScriptContentQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1358,15 +1202,9 @@ function startSession(
             }
             case queryOrCommand.type === "UpdateScriptFormatQuery": {
                 try {
-                    const query = message.data as UpdateScriptFormatQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.updateScriptFormat(
-                            query.elementId,
-                            query.kind,
-                            query.listenerIndex,
-                            query.scriptFormat,
-                        );
-                    }
+                    surfaceRequests.handlers.UpdateScriptFormatQuery(
+                        message.data as UpdateScriptFormatQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1374,11 +1212,9 @@ function startSession(
             }
             case queryOrCommand.type === "UpdateOpenScriptEditorsQuery": {
                 try {
-                    const query = message.data as UpdateOpenScriptEditorsQuery;
-                    hostModelerState.rememberOpenScripts(query.openScripts);
-                    if (isModelerHandle(surface)) {
-                        surface.applyOpenScriptEditors(query.openScripts);
-                    }
+                    surfaceRequests.handlers.UpdateOpenScriptEditorsQuery(
+                        message.data as UpdateOpenScriptEditorsQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1386,10 +1222,9 @@ function startSession(
             }
             case queryOrCommand.type === "ImplementationStatusQuery": {
                 try {
-                    const query = message.data as ImplementationStatusQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.applyImplementationStatus(query.resolved);
-                    }
+                    surfaceRequests.handlers.ImplementationStatusQuery(
+                        message.data as ImplementationStatusQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
