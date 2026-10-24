@@ -19,15 +19,14 @@ import {
     SetPropertiesPanelStateCommand,
     UpdateScriptVariablesCommand,
     HOST_REPLY_TIMEOUT_MS,
+    type LanguageQuery,
     createInertLockGroup,
     createResolver,
-    exhaustiveMessageGuard,
     extractProcessVariables,
     initResizer,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
-    type MessageOfType,
     readSavedPanelVisibility,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
@@ -67,10 +66,9 @@ import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
-import { MessageGate } from "./messageGate";
 import { BpmnDocumentSession } from "./session/documentSession";
-import { receiveErrorPrefix } from "./session/hostChannel";
 import { createLintBridge } from "./session/lintBridge";
+import { createSessionMessageRouter, type HostMessage } from "./session/messageRouter";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
 import { createSurfaceRequests } from "./session/surfaceRequests";
@@ -89,52 +87,6 @@ import {
     type SurfaceHandle,
 } from "./surface";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
-
-type BpmnWebviewInboundMessage = MessageOfType<
-    | "BpmnFileQuery"
-    | "ElementTemplatesQuery"
-    | "BpmnlintResultsQuery"
-    | "BpmnLintDisabledQuery"
-    | "BpmnlintInPageQuery"
-    | "BpmnModelerSettingQuery"
-    | "PropertiesPanelStateQuery"
-    | "ClipboardQuery"
-    | "TextClipboardQuery"
-    | "LanguageQuery"
-    | "GetDiagramAsSVGCommand"
-    | "OpenAllScriptTasksQuery"
-    | "FormatDiagramQuery"
-    | "CleanupDiagramQuery"
-    | "UpdateScriptContentQuery"
-    | "UpdateScriptFormatQuery"
-    | "UpdateOpenScriptEditorsQuery"
-    | "ImplementationStatusQuery"
-    | "FormReferenceStatusQuery"
-    | "WorkspaceDefinitionsQuery"
-    | "FocusElementQuery"
-    | "TakeFocusQuery"
-    | "FlushDocumentQuery"
-    | "ReleaseDocumentFlushQuery"
->;
-
-/**
- * Host replies that act on the imported diagram. The webview requests their
- * sources before the import so the host round trip overlaps it, which means
- * they can arrive before the surface exists; they are held until the initial
- * import has completed.
- */
-const IMPORT_BOUND_QUERY_TYPES: ReadonlySet<string> = new Set<BpmnWebviewInboundMessage["type"]>([
-    "ElementTemplatesQuery",
-    "BpmnModelerSettingQuery",
-    "BpmnlintResultsQuery",
-    "BpmnLintDisabledQuery",
-    "BpmnlintInPageQuery",
-    "LanguageQuery",
-    "UpdateScriptContentQuery",
-    "UpdateScriptFormatQuery",
-    "UpdateOpenScriptEditorsQuery",
-    "ImplementationStatusQuery",
-]);
 
 /**
  * Starts the BPMN webview against the given host. The entry chooses the host,
@@ -250,10 +202,6 @@ function startSession(
         replies: { elementTemplates: elementTemplatesResolver, settings: settingsResolver },
     });
 
-    const importBoundQueries = new MessageGate<MessageEvent<Query | Command>>((message) => {
-        void onReceiveMessage(message);
-    });
-
     /**
      * State manager for persisting and restoring viewport/selection across tab
      * switches. Initialised after the modeler is created.
@@ -280,6 +228,25 @@ function startSession(
             reload: () => (injectedReload ?? (() => window.location.reload()))(),
         },
         createInertLockGroup(document.body),
+    );
+
+    const sessionMessages = createSessionMessageRouter(
+        host,
+        {
+            // Before the spreads, so tsc rejects a group that also handles one of these.
+            BpmnFileQuery: (query) => session.receiveHostFile(query),
+            PropertiesPanelStateQuery: (query) => panelStateResolver.done(query),
+            LanguageQuery: applyHostLanguage,
+            FocusElementQuery: (query) => session.focusElement(query.elementId),
+            TakeFocusQuery: () => takeFocus(focusCanvas),
+            FlushDocumentQuery: session.respondToFlush,
+            ReleaseDocumentFlushQuery: session.respondToFlush,
+            ...surfaceRequests.handlers,
+            ...lintBridge.handlers,
+            ...clipboard.handlers,
+            ...protocolCapabilities.handlers,
+        },
+        session,
     );
 
     /**
@@ -316,7 +283,9 @@ function startSession(
      * 2. The user switched away and back to the tab.
      */
     async function run(): Promise<void> {
-        window.addEventListener("message", onReceiveMessage);
+        window.addEventListener("message", (event: MessageEvent<HostMessage>) =>
+            sessionMessages.route(event.data),
+        );
 
         // Merge the modeler's local overlay (mode-strip labels, script-lock
         // badges, C7/dmn-js internals the shared package lacks) onto the shared
@@ -356,7 +325,7 @@ function startSession(
          */
         if (bpmnFileQuery?.viewerMode === "viewer") {
             // A diff pane has no surface to apply them to, but still follows later language changes.
-            importBoundQueries.discard();
+            sessionMessages.discardImportBound();
             document.body.classList.add("viewer-mode");
             const canvas = document.getElementById("js-canvas");
             const dropZone = document.getElementById("js-drop-zone");
@@ -723,7 +692,7 @@ function startSession(
         await session.drainPendingActions();
         if (session.isReloadingForEngine) return;
         session.markInitialized();
-        importBoundQueries.open();
+        sessionMessages.openImportBound();
         // A held LanguageQuery may have queued a refresh; it must land before
         // the selection restore below.
         await session.drainPendingActions();
@@ -812,196 +781,14 @@ function startSession(
         }
     }
 
-    /**
-     * Routes incoming messages from the host application to the appropriate
-     * handler.
-     *
-     * @param message The raw `MessageEvent` from `window.addEventListener("message", …)`.
-     */
-    async function onReceiveMessage(message: MessageEvent<Query | Command>): Promise<void> {
-        const queryOrCommand = message.data;
-        if (
-            session.isReloadingForEngine &&
-            !["FlushDocumentQuery", "ReleaseDocumentFlushQuery"].includes(queryOrCommand.type)
-        ) {
-            return;
-        }
-        if (IMPORT_BOUND_QUERY_TYPES.has(queryOrCommand.type) && importBoundQueries.hold(message)) {
-            return;
-        }
-        const errorPrefix = receiveErrorPrefix(queryOrCommand.type);
-
-        const inbound = message.data as BpmnWebviewInboundMessage;
-        switch (inbound.type) {
-            case "BpmnFileQuery": {
-                try {
-                    await session.receiveHostFile(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "ElementTemplatesQuery": {
-                try {
-                    surfaceRequests.handlers.ElementTemplatesQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "BpmnlintResultsQuery": {
-                try {
-                    lintBridge.handlers.BpmnlintResultsQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "BpmnLintDisabledQuery": {
-                try {
-                    lintBridge.handlers.BpmnLintDisabledQuery();
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "BpmnlintInPageQuery": {
-                try {
-                    lintBridge.handlers.BpmnlintInPageQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "BpmnModelerSettingQuery": {
-                try {
-                    surfaceRequests.handlers.BpmnModelerSettingQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "PropertiesPanelStateQuery": {
-                panelStateResolver.done(inbound);
-                break;
-            }
-            case "ClipboardQuery": {
-                clipboard.handlers.ClipboardQuery(inbound);
-                break;
-            }
-            case "TextClipboardQuery": {
-                clipboard.handlers.TextClipboardQuery(inbound);
-                break;
-            }
-            case "LanguageQuery": {
-                try {
-                    const query = inbound;
-                    // Switch the shared translator; the DI-bound service and all
-                    // onChange subscribers (resizer, diff legend, …) pick it up.
-                    // bpmn-js itself still needs a diagram re-import to re-invoke
-                    // translate() for already-rendered elements — skipped in
-                    // viewer mode where there is no editable modeler.
-                    // The host pushes the language on every (re)load, not only on
-                    // change. Compare resolved locales (setLanguage falls back to
-                    // "en" for unknown codes) and skip the destructive re-import
-                    // when nothing changed — a tab re-show must not re-import.
-                    const localeBefore = i18n.getLocale();
-                    i18n.setLanguage(query.locale as SupportedLocale);
-                    if (i18n.getLocale() !== localeBefore) {
-                        await session.requestDiagramRefresh();
-                    }
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "GetDiagramAsSVGCommand": {
-                try {
-                    await surfaceRequests.handlers.GetDiagramAsSVGCommand(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "OpenAllScriptTasksQuery": {
-                try {
-                    surfaceRequests.handlers.OpenAllScriptTasksQuery();
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "FormatDiagramQuery": {
-                await surfaceRequests.handlers.FormatDiagramQuery();
-                break;
-            }
-            case "CleanupDiagramQuery": {
-                surfaceRequests.handlers.CleanupDiagramQuery(inbound);
-                break;
-            }
-            case "UpdateScriptContentQuery": {
-                try {
-                    surfaceRequests.handlers.UpdateScriptContentQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "UpdateScriptFormatQuery": {
-                try {
-                    surfaceRequests.handlers.UpdateScriptFormatQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "UpdateOpenScriptEditorsQuery": {
-                try {
-                    surfaceRequests.handlers.UpdateOpenScriptEditorsQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "ImplementationStatusQuery": {
-                try {
-                    surfaceRequests.handlers.ImplementationStatusQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "FormReferenceStatusQuery": {
-                try {
-                    protocolCapabilities.handlers.FormReferenceStatusQuery(inbound);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "WorkspaceDefinitionsQuery": {
-                protocolCapabilities.handlers.WorkspaceDefinitionsQuery(inbound);
-                break;
-            }
-            case "FocusElementQuery": {
-                try {
-                    await session.focusElement(inbound.elementId);
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                }
-                break;
-            }
-            case "TakeFocusQuery": {
-                takeFocus(focusCanvas);
-                break;
-            }
-            case "FlushDocumentQuery":
-            case "ReleaseDocumentFlushQuery": {
-                await session.respondToFlush(inbound);
-                break;
-            }
-            default:
-                exhaustiveMessageGuard(inbound);
+    async function applyHostLanguage(query: LanguageQuery): Promise<void> {
+        // The host pushes the language on every (re)load, and setLanguage falls
+        // back to "en" for an unknown code, so only a changed resolved locale
+        // pays for the re-import bpmn-js needs to re-translate rendered elements.
+        const localeBefore = i18n.getLocale();
+        i18n.setLanguage(query.locale as SupportedLocale);
+        if (i18n.getLocale() !== localeBefore) {
+            await session.requestDiagramRefresh();
         }
     }
 

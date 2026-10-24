@@ -127,7 +127,7 @@ editorStore.subscribeToMessageEvent(editorId, (message, id) => router.dispatch(m
 ```
 Adding a webview command is "register one more handler" — no shared `switch` to edit. Multiple handlers can register for the same type and run in registration order.
 
-**Webview receives Queries** (in main.ts):
+**Webview receives Queries** (a switch, as in `apps/dmn-webview/src/hostMessageRouter.ts`; the BPMN webview looks the handler up in a type-keyed table instead, `apps/bpmn-webview/src/session/messageRouter.ts`):
 ```typescript
 window.addEventListener('message', (event) => {
   const message = event.data;
