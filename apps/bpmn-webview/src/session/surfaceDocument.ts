@@ -53,7 +53,7 @@ export function createSurfaceDocument(
 
     return {
         // The session calls this inside its debounced queue, so a burst of pushes captures once.
-        importHostDocument: (content) => reimportPreservingView(() => openDocument(content)),
+        importDocument: (content) => reimportPreservingView(() => openDocument(content)),
         exportDocument: () => getSurface().exportDiagram(),
         afterSync: () => {
             const surface = getSurface();

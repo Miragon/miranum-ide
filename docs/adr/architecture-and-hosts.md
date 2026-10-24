@@ -135,6 +135,12 @@ syncs, and a single, snapshot-checked initialization of an empty file that a
 webview reload or a host edit cannot race. Each modeler service adds only its
 document type (the empty content, BPMN's engine prompt, the query it posts),
 and one `DocumentRenderParticipant` re-renders any of them on a host change.
+On the webview side the BPMN and DMN webviews share `WebviewDocumentSync` in
+`libs/shared` (host revisions, the serialized import queue, debounced host
+import and outbound sync, the flush protocol); BPMN adds its engine reload and
+deferred actions on top. The Form webview shares the revisions, flush lock and
+serialized import, but keeps posting each change at once instead of
+debouncing: its JSON export is synchronous and cheap.
 
 The BPMN webview ships an `index.js` entry, one `index.css` and lazily loaded
 `chunks/**` that resolve relative to the entry (`base: "./"`), so every host

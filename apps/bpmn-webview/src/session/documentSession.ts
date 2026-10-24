@@ -1,26 +1,22 @@
 import {
     type BpmnFileQuery,
-    createFlushResponder,
     createResolver,
+    type DocumentSyncSurface,
     type FlushDocumentQuery,
-    type FlushSource,
     type FocusElementQuery,
-    HostDocumentRevisions,
     type InertLock,
     type InertLockGroup,
     type LanguageQuery,
     LogErrorCommand,
     type ReleaseDocumentFlushQuery,
-    SyncDocumentCommand,
+    WebviewDocumentSync,
 } from "@miragon/bpmn-modeler-shared";
-import { asyncDebounce, serializeAsync, type DetectedEngine } from "@miragon/bpmn-modeler-types";
+import type { DetectedEngine } from "@miragon/bpmn-modeler-types";
 
 import type { HostChannel } from "./hostChannel";
 
-/** The document I/O the session needs from whichever surface is live. */
-export interface BpmnDocumentSurface {
-    importHostDocument(content: string | undefined): Promise<void>;
-    exportDocument(): Promise<string>;
+/** The document I/O and view actions the session needs from whichever surface is live. */
+export interface BpmnDocumentSurface extends DocumentSyncSurface {
     afterSync(): void;
     refreshDiagram(): Promise<void>;
     centerOnElement(elementId: string): void;
@@ -55,12 +51,12 @@ interface DocumentSessionHandlers {
 }
 
 /**
- * The BPMN webview's document lifecycle: host revisions, the serialized
- * modeler-operation queue, the debounced outbound sync, the engine-reload latch,
- * and actions (language refresh, focus) deferred until the modeler is ready.
+ * The BPMN webview's document lifecycle on top of the shared
+ * {@link WebviewDocumentSync}: the engine-reload latch, and actions (language
+ * refresh, focus) deferred until the modeler is ready.
  */
-export class BpmnDocumentSession implements FlushSource {
-    private readonly revisions = new HostDocumentRevisions();
+export class BpmnDocumentSession {
+    readonly document: WebviewDocumentSync;
     private readonly initialHostFile = createResolver<BpmnFileQuery>();
     private latestFile: BpmnFileQuery | undefined;
     // The surface was built for the initial file's engine; any other engine reloads the page.
@@ -72,20 +68,6 @@ export class BpmnDocumentSession implements FlushSource {
     private pendingFocusId: string | undefined;
     private pendingActionDrain: Promise<void> | undefined;
 
-    private readonly serializedModelerOperation = serializeAsync(
-        async (operation: () => Promise<void>): Promise<void> => operation(),
-    );
-    private readonly debouncedHostUpdate = asyncDebounce(
-        (content: string | undefined, documentRevision: number) =>
-            this.serializedImport(content, documentRevision),
-        100,
-    );
-    // The host recovers the sub-300ms tail through the flush protocol.
-    private readonly debouncedSync = asyncDebounce(() => this.sendChanges(), 300, {
-        maxWait: 1000,
-    });
-
-    private readonly destructiveFlushLock: InertLock;
     // Never released: the page stays locked until the reload replaces it.
     private readonly engineReloadLock: InertLock;
 
@@ -93,16 +75,12 @@ export class BpmnDocumentSession implements FlushSource {
     private readonly page: BpmnPageLifecycle;
     private readonly translator: Translator;
 
-    private readonly respondToFlush = createFlushResponder(this, (reply) =>
-        this.host.postMessage(reply),
-    );
-
     readonly handlers: DocumentSessionHandlers = {
         BpmnFileQuery: (query) => this.receiveHostFile(query),
         LanguageQuery: (query) => this.applyLanguage(query.locale),
         FocusElementQuery: (query) => this.focusElement(query.elementId),
-        FlushDocumentQuery: (query) => this.respondToFlush(query),
-        ReleaseDocumentFlushQuery: (query) => this.respondToFlush(query),
+        FlushDocumentQuery: (query) => this.document.respondToFlush(query),
+        ReleaseDocumentFlushQuery: (query) => this.document.respondToFlush(query),
     };
 
     constructor(
@@ -112,7 +90,11 @@ export class BpmnDocumentSession implements FlushSource {
         this.surface = surface;
         this.page = page;
         this.translator = translator;
-        this.destructiveFlushLock = pageInertLocks.createLock();
+        this.document = new WebviewDocumentSync(host, {
+            surface,
+            flushLock: pageInertLocks.createLock(),
+            isReady: () => this.initialized,
+        });
         this.engineReloadLock = pageInertLocks.createLock();
     }
 
@@ -130,7 +112,7 @@ export class BpmnDocumentSession implements FlushSource {
 
     async receiveHostFile(query: BpmnFileQuery): Promise<void> {
         const documentRevision = query.documentRevision ?? 0;
-        const receipt = this.revisions.receive(documentRevision);
+        const receipt = this.document.receive(documentRevision);
         if (receipt === "stale") return;
         this.latestFile = query;
 
@@ -139,16 +121,13 @@ export class BpmnDocumentSession implements FlushSource {
             return;
         }
 
-        // A host push is authoritative; drop any pending outbound sync so a
-        // stale export can't clobber it after the re-import.
-        this.debouncedSync.cancel();
         if (!this.canImportHostUpdates) return;
         if (query.engine !== this.documentEngine) {
             await this.reloadForEngineChange();
             return;
         }
         try {
-            await this.debouncedHostUpdate(query.content, documentRevision);
+            await this.document.importDebounced(query.content, documentRevision);
         } finally {
             if (this.initialized) {
                 await this.drainPendingActions();
@@ -169,7 +148,7 @@ export class BpmnDocumentSession implements FlushSource {
                 return false;
             }
             try {
-                await this.serializedImport(importedFile.content, importedFile.documentRevision);
+                await this.document.importNow(importedFile.content, importedFile.documentRevision);
                 break;
             } catch (error) {
                 if (this.latestFile && this.latestFile !== importedFile) {
@@ -191,7 +170,7 @@ export class BpmnDocumentSession implements FlushSource {
                 return false;
             }
             try {
-                await this.debouncedHostUpdate(
+                await this.document.importDebounced(
                     this.latestFile.content,
                     this.latestFile.documentRevision,
                 );
@@ -228,26 +207,24 @@ export class BpmnDocumentSession implements FlushSource {
 
     /** Queues `operation` behind every import, refresh and the reload teardown ahead of it. */
     runExclusive(operation: () => Promise<void>): Promise<void> {
-        return this.serializedModelerOperation(operation);
+        return this.document.runExclusive(operation);
     }
 
     scheduleSync(): void {
-        void this.debouncedSync();
+        this.document.scheduleSync();
     }
 
     flushSyncOnHide(): void {
-        void this.debouncedSync.flush();
+        void this.document.flushSyncOnce();
     }
 
-    async flushPendingSync(): Promise<void> {
-        while (this.debouncedSync.pending()) {
-            await this.debouncedSync.flush();
-        }
+    flushPendingSync(): Promise<void> {
+        return this.document.flushPendingSync();
     }
 
     async flushBeforeSurfaceDestroy(): Promise<void> {
-        await this.flushPendingSync();
-        this.debouncedSync.cancel();
+        await this.document.flushPendingSync();
+        this.document.cancelPendingSync();
     }
 
     drainPendingActions(): Promise<void> {
@@ -264,18 +241,18 @@ export class BpmnDocumentSession implements FlushSource {
         this.engineReloadPending = true;
         this.initialized = false;
         this.canImportHostUpdates = false;
-        this.debouncedSync.cancel();
-        this.debouncedHostUpdate.cancel();
+        this.document.cancelPendingSync();
+        this.document.cancelPendingImports();
         this.page.cancelPendingSurfaceWork();
         this.refreshDiagramWhenReady = false;
         this.pendingFocusId = undefined;
         this.engineReloadLock.acquire();
 
-        await this.serializedModelerOperation(async () => {
+        await this.document.runExclusive(async () => {
             try {
-                this.debouncedSync.cancel();
-                this.debouncedHostUpdate.cancel();
-                await this.debouncedSync.flush();
+                this.document.cancelPendingSync();
+                this.document.cancelPendingImports();
+                await this.document.flushSyncOnce();
                 this.page.flushViewport();
             } finally {
                 try {
@@ -291,56 +268,8 @@ export class BpmnDocumentSession implements FlushSource {
         return this.initialized;
     }
 
-    hasPendingSync(): boolean {
-        return this.debouncedSync.pending();
-    }
-
-    hasPendingHostUpdate(): boolean {
-        return this.debouncedHostUpdate.pending();
-    }
-
-    hostUpdateVersion(): number {
-        return this.revisions.version;
-    }
-
-    documentRevision(): number {
-        return this.revisions.representedRevision;
-    }
-
-    beginDestructiveFlush(): void {
-        this.destructiveFlushLock.acquire();
-    }
-
-    endDestructiveFlush(): void {
-        this.destructiveFlushLock.release();
-    }
-
-    exportContent(): Promise<string> {
-        return this.surface.exportDocument();
-    }
-
-    private serializedImport(content: string | undefined, documentRevision: number): Promise<void> {
-        return this.serializedModelerOperation(() =>
-            this.loadHostDocument(content, documentRevision),
-        );
-    }
-
-    private async loadHostDocument(
-        content: string | undefined,
-        documentRevision: number,
-    ): Promise<void> {
-        await this.surface.importHostDocument(content);
-        this.revisions.markImported(documentRevision);
-    }
-
-    private async flushPendingHostUpdates(): Promise<void> {
-        while (this.debouncedHostUpdate.pending()) {
-            try {
-                await this.debouncedHostUpdate.flush();
-            } catch (error) {
-                this.reportHostImportError(error);
-            }
-        }
+    private flushPendingHostUpdates(): Promise<void> {
+        return this.document.flushPendingImports((error) => this.reportHostImportError(error));
     }
 
     private async runPendingActions(): Promise<void> {
@@ -351,7 +280,7 @@ export class BpmnDocumentSession implements FlushSource {
             if (this.refreshDiagramWhenReady) {
                 this.refreshDiagramWhenReady = false;
                 try {
-                    await this.serializedModelerOperation(() => this.surface.refreshDiagram());
+                    await this.document.runExclusive(() => this.surface.refreshDiagram());
                 } catch (error) {
                     const cause = error instanceof Error ? error : new Error(String(error));
                     this.host.postMessage(
@@ -365,7 +294,7 @@ export class BpmnDocumentSession implements FlushSource {
                 continue;
             }
 
-            if (this.debouncedHostUpdate.pending()) {
+            if (this.document.hasPendingHostUpdate()) {
                 continue;
             }
 
@@ -374,27 +303,6 @@ export class BpmnDocumentSession implements FlushSource {
                 this.pendingFocusId = undefined;
             }
             return;
-        }
-    }
-
-    private async sendChanges(): Promise<void> {
-        // diagram-js discards the returned promise, so an uncaught rejection
-        // would only reach the global hook as a context-free line.
-        try {
-            const versionAtExport = this.revisions.version;
-            const content = await this.surface.exportDocument();
-            if (!this.revisions.isCurrent(versionAtExport) || this.debouncedHostUpdate.pending()) {
-                return;
-            }
-            this.host.postMessage(
-                new SyncDocumentCommand(content, this.revisions.representedRevision),
-            );
-            this.surface.afterSync();
-        } catch (error) {
-            const e = error instanceof Error ? error : new Error(String(error));
-            this.host.postMessage(
-                new LogErrorCommand(`Failed to sync diagram changes: ${e.message}`, e.stack),
-            );
         }
     }
 

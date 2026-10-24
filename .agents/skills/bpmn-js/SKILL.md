@@ -63,7 +63,7 @@ Services are accessed via `modeler.get('serviceName')`. Key services used:
 
 | Event                      | Where                                                                    | Purpose                                                                                                          |
 |----------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `commandStack.changed`     | `apps/bpmn-webview/src/session/surfaceBinding.ts` (`bindSurface`)        | Triggered after any modeler command. `session/documentSession.ts` exports XML and sends a debounced `SyncDocumentCommand` to host. |
+| `commandStack.changed`     | `apps/bpmn-webview/src/session/surfaceBinding.ts` (`bindSurface`)        | Triggered after any modeler command. The session's shared `WebviewDocumentSync` exports XML and sends a debounced `SyncDocumentCommand` to host. |
 | `canvas.viewbox.changed`   | `packages/bpmn-modeler/src/viewport.ts`                                  | Triggered on scroll/zoom. Debounced (100ms); `WebviewStateManager` (`state.ts`) persists it via `host.setState()`. |
 | `copyPaste.elementsCopied` | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when elements are copied. Intercepted to write descriptor JSON to system clipboard via extension host. |
 | `copyPaste.pasteElements`  | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when paste occurs. Intercepted to read descriptor JSON from system clipboard via extension host.       |
@@ -187,7 +187,7 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 - **Public factory**: `packages/bpmn-modeler/src/createModeler.ts`
 - **Modeler wrapper** (builds the clipboard modules via `createClipboardModules`): `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
 - **Webview composition root and boot phases**: `apps/bpmn-webview/src/bootstrap.ts` (entry: `main.ts`)
-- **Document session** (host revisions, the serialized modeler-operation queue every import, refresh, mode switch and the engine-reload teardown runs on, debounced outbound sync, flush handshake, deferred language refresh and focus): `apps/bpmn-webview/src/session/documentSession.ts`
+- **Document session** (engine-reload latch, deferred language refresh and focus): `apps/bpmn-webview/src/session/documentSession.ts`, on top of the `WebviewDocumentSync` it shares with the DMN webview (host revisions, the serialized modeler-operation queue every import, refresh, mode switch and the engine-reload teardown runs on, debounced host import and outbound sync, flush handshake): `libs/shared/src/lib/webviewDocumentSync.ts`
 - **Surface document adapter** (view-preserving re-import, blank diagram, import warnings, align-to-origin after a sync): `apps/bpmn-webview/src/session/surfaceDocument.ts`
 - **Mode controller** (live surface and its binding, mode session callbacks, mode strip and its gating, mode-switch inert lock): `apps/bpmn-webview/src/session/modeController.ts`
 - **Clipboard option** (native, override or host protocol): `apps/bpmn-webview/src/session/protocolClipboard.ts`

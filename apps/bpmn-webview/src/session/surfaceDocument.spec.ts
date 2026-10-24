@@ -87,7 +87,7 @@ describe("createSurfaceDocument", () => {
             const surface = modelerSurface();
             const { surfaceDocument } = surfaceDocumentOn(surface);
 
-            await surfaceDocument.importHostDocument("<definitions />");
+            await surfaceDocument.importDocument("<definitions />");
 
             expect(surface.loadDiagram).toHaveBeenCalledExactlyOnceWith("<definitions />");
             expect(surface.newDiagram).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe("createSurfaceDocument", () => {
                 const surface = designerSurface();
                 const { surfaceDocument } = surfaceDocumentOn(surface);
 
-                await surfaceDocument.importHostDocument(content);
+                await surfaceDocument.importDocument(content);
 
                 expect(surface.newDiagram).toHaveBeenCalledOnce();
                 expect(surface.loadDiagram).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("createSurfaceDocument", () => {
             const surface = viewerSurface();
             const { surfaceDocument } = surfaceDocumentOn(surface);
 
-            await surfaceDocument.importHostDocument(undefined);
+            await surfaceDocument.importDocument(undefined);
 
             expect(surface.loadDiagram).toHaveBeenCalledExactlyOnceWith("");
         });
@@ -125,7 +125,7 @@ describe("createSurfaceDocument", () => {
             });
             const { surfaceDocument, posted } = surfaceDocumentOn(surface);
 
-            await surfaceDocument.importHostDocument("<definitions />");
+            await surfaceDocument.importDocument("<definitions />");
 
             expect(postedOfType(posted, "LogWarningCommand")).toEqual([
                 expect.objectContaining({
@@ -139,7 +139,7 @@ describe("createSurfaceDocument", () => {
         it("logs nothing for a clean import", async () => {
             const { surfaceDocument, posted } = surfaceDocumentOn(modelerSurface());
 
-            await surfaceDocument.importHostDocument("<definitions />");
+            await surfaceDocument.importDocument("<definitions />");
 
             expect(posted).toEqual([]);
         });
@@ -148,7 +148,7 @@ describe("createSurfaceDocument", () => {
             const surface = modelerSurface();
             const { surfaceDocument, viewState } = surfaceDocumentOn(surface);
 
-            await surfaceDocument.importHostDocument("<definitions />");
+            await surfaceDocument.importDocument("<definitions />");
 
             expect(viewState.applyViewState).toHaveBeenCalledExactlyOnceWith(viewSnapshot);
             expect(callOrder(viewState.captureViewState)).toBeLessThan(
@@ -164,9 +164,7 @@ describe("createSurfaceDocument", () => {
             surface.loadDiagram.mockRejectedValueOnce(new Error("not BPMN"));
             const { surfaceDocument, viewState } = surfaceDocumentOn(surface);
 
-            await expect(surfaceDocument.importHostDocument("<broken />")).rejects.toThrow(
-                "not BPMN",
-            );
+            await expect(surfaceDocument.importDocument("<broken />")).rejects.toThrow("not BPMN");
 
             expect(viewState.applyViewState).toHaveBeenCalledExactlyOnceWith(viewSnapshot);
         });
@@ -176,7 +174,7 @@ describe("createSurfaceDocument", () => {
             const { surfaceDocument, viewState, unbindViewState } = surfaceDocumentOn(surface);
             unbindViewState();
 
-            await surfaceDocument.importHostDocument("<definitions />");
+            await surfaceDocument.importDocument("<definitions />");
 
             expect(surface.loadDiagram).toHaveBeenCalledOnce();
             expect(viewState.captureViewState).not.toHaveBeenCalled();
