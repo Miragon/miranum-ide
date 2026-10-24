@@ -2509,6 +2509,31 @@ describe("bootstrap mode switching", () => {
             );
         });
 
+        it("syncs the edit an align-to-origin pass schedules before a mode switch destroys the modeler", async () => {
+            const { modeler, change } = makeEditableModeler();
+            modeler.alignElementsToOrigin.mockImplementationOnce(change);
+            mocks.createModeler.mockResolvedValue(modeler);
+            mocks.createViewer.mockResolvedValue(makeViewer());
+            const host = makeHost(tagged());
+            boot(host);
+            await drainAsyncWork();
+
+            change();
+            modeButtons()[0].click();
+            await drainAsyncWork();
+            await vi.advanceTimersByTimeAsync(1000);
+
+            const syncOrders = host.postMessage.mock.calls.flatMap(([message], call) =>
+                (message as { type: string }).type === "SyncDocumentCommand"
+                    ? [host.postMessage.mock.invocationCallOrder[call]]
+                    : [],
+            );
+            expect(syncOrders).toHaveLength(2);
+            for (const syncOrder of syncOrders) {
+                expect(syncOrder).toBeLessThan(modeler.destroy.mock.invocationCallOrder[0]);
+            }
+        });
+
         it("syncs a designer edit to the host", async () => {
             const designer = makeDesigner();
             mocks.createDesigner.mockResolvedValue(designer);
@@ -2755,6 +2780,35 @@ describe("bootstrap mode switching", () => {
             expect(modeler.destroy).toHaveBeenCalledOnce();
             expect(mocks.reload).toHaveBeenCalledOnce();
             expect(mocks.startPersisting).not.toHaveBeenCalled();
+        });
+
+        it("stops the boot when another engine arrives while a queued update waits to import", async () => {
+            let finishInitialImport!: () => void;
+            const modeler = makeModeler({
+                loadDiagram: vi
+                    .fn()
+                    .mockImplementationOnce(
+                        () =>
+                            new Promise((resolve) => {
+                                finishInitialImport = () => resolve({ warnings: [] });
+                            }),
+                    )
+                    .mockResolvedValue({ warnings: [] }),
+            });
+            mocks.createModeler.mockResolvedValue(modeler);
+            bootReloadable(makeHost(tagged("c7")));
+            await drainAsyncWork();
+
+            dispatch(new BpmnFileQuery("<queued />", "c7", "modeler", 2));
+            finishInitialImport();
+            await drainMicrotasks();
+            dispatch(new BpmnFileQuery("<c8 />", "c8", "modeler", 3));
+            await drainAsyncWork();
+
+            expect(modeler.loadDiagram).toHaveBeenCalledExactlyOnceWith("<tagged />");
+            expect(mocks.reload).toHaveBeenCalledOnce();
+            expect(mocks.stateManagerCreated).not.toHaveBeenCalled();
+            expect(installHostEditorActions).not.toHaveBeenCalled();
         });
 
         it("reloads when a later host push switches the engine", async () => {
