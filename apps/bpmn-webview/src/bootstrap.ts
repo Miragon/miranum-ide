@@ -98,15 +98,15 @@ export function bootstrap(
     // Never released: the page stays locked until the reload replaces it.
     const engineReloadLock = pageInertLocks.createLock();
 
-    const getSurface = (): SurfaceHandle => modes.getSurface();
-    const getViewState = () => modes.getViewState();
+    const getSurface = (): SurfaceHandle => modeController.getSurface();
+    const getViewState = () => modeController.getViewState();
 
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
     // own theme off the VS Code `<body>`-class signal.
     const themeAdapter = createHostThemeAdapter((kind) => {
         applyPageThemeScope("data-bpmn-theme", kind);
-        modes.setTheme(kind);
+        modeController.setTheme(kind);
     });
     const protocolCapabilities = createProtocolCapabilities(host, getSurface);
     const clipboard = resolveClipboard(opts.clipboard, {
@@ -151,11 +151,11 @@ export function bootstrap(
         documentSync,
         getViewState,
         reloadLock: engineReloadLock,
-        cancelPendingVariablePublish: () => modes.disposeSurfaceBinding(),
+        cancelPendingVariablePublish: () => modeController.disposeSurfaceBinding(),
         reloadPage: opts.reload ?? (() => window.location.reload()),
     });
 
-    const modes = createModeController(host, {
+    const modeController = createModeController(host, {
         documentSync,
         lifecycle: sessionActions,
         switchLock: modeSwitchLock,
@@ -172,7 +172,7 @@ export function bootstrap(
             BpmnFileQuery: (query) => documentSync.receiveHostFile(query),
             PropertiesPanelStateQuery: (query) => panelStateResolver.done(query),
             ...sessionActions.handlers,
-            TakeFocusQuery: () => takeFocus(modes.focusCanvas),
+            TakeFocusQuery: () => takeFocus(modeController.focusCanvas),
             FlushDocumentQuery: documentSync.respondToFlush,
             ReleaseDocumentFlushQuery: documentSync.respondToFlush,
         },
@@ -267,7 +267,7 @@ export function bootstrap(
         const engine = bpmnFileQuery?.engine;
         const capabilities = opts.capabilities ?? protocolCapabilities.capabilities;
 
-        const started = await modes.start({
+        const started = await modeController.start({
             container: chrome.canvas,
             engine,
             surfaces: createSurfaceFactories(host, {
@@ -278,7 +278,7 @@ export function bootstrap(
                 lintBridge,
                 hostModelerState,
                 reportElementTemplateErrors: surfaceRequests.reportElementTemplateErrors,
-                onModelerModeChanged: modes.followModelerToggle,
+                onModelerModeChanged: modeController.followModelerToggle,
             }),
             initialMode: savedMode ?? bpmnFileQuery?.defaultMode ?? null,
             theme: resolveHostThemeKind(),
@@ -305,7 +305,7 @@ export function bootstrap(
         console.debug("[DEBUG] Modeler is initialized...");
 
         // Mode switches stay closed until the boot finishes, so this binding stays live throughout run().
-        const viewState = modes.bindInitialSurface();
+        const viewState = modeController.bindInitialSurface();
 
         // Lets the IntelliJ JCEF host drive undo/redo: it swallows Ctrl+Z/Ctrl+Y
         // at the IDE level before bpmn-js sees them. Installed once, over the
@@ -357,13 +357,13 @@ export function bootstrap(
         installPanelShortcuts(
             {
                 handle: chrome.panel,
-                focusCanvas: modes.focusCanvas,
+                focusCanvas: modeController.focusCanvas,
                 isCanvasFocused: () =>
                     getSurface().getService<{ isFocused(): boolean }>("canvas").isFocused(),
             },
             { getPanelRoot: () => chrome.panelMount },
         );
-        installCanvasAutoFocus({ focusCanvas: modes.focusCanvas });
+        installCanvasAutoFocus({ focusCanvas: modeController.focusCanvas });
         host.postMessage(new RequestFocusCommand());
 
         // Selection + panel-side UI state must wait until element-template and
@@ -380,7 +380,7 @@ export function bootstrap(
         viewState.restoreSelection();
         viewState.restorePanelUiState();
 
-        modes.markInitialSurfaceReady();
+        modeController.markInitialSurfaceReady();
 
         // Phase 3: begin persisting changes
         viewState.startPersisting();
