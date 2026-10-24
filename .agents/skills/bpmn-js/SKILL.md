@@ -154,6 +154,8 @@ Element templates are JSON files that define custom property configurations for 
 1. Extension host sends `ElementTemplatesQuery` with template JSON to webview
 2. Webview calls `bpmnModeler.setElementTemplates(templates)` → `modeler.get('elementTemplatesLoader').setTemplates(templates)`
 
+The webview's handler, and the report of templates the modeler rejects, live in `apps/bpmn-webview/src/session/surfaceRequests.ts`.
+
 ## Modeler Settings
 
 Settings are sent from the extension host as `BpmnModelerSettingQuery`:
@@ -162,7 +164,7 @@ Settings are sent from the extension host as `BpmnModelerSettingQuery`:
 - `showTransactionBoundaries`: boolean — shows/hides transaction boundary overlays (C7 only)
 - `favouriteBpmnElements`: string[] — BPMN types pinned at the top of the append menu (max 6)
 
-Applied via `bpmnModeler.setSettings()`, which merges the partial settings and immediately applies transaction boundary visibility for C7 engines using `transactionBoundaries.show()` / `transactionBoundaries.hide()`. The engine-neutral designer (Design on an untagged model) has no `setSettings`: it honours only the favourites, through `setFavouriteBpmnElements()`.
+Applied by `apps/bpmn-webview/src/session/surfaceRequests.ts` via `bpmnModeler.setSettings()`, which merges the partial settings and immediately applies transaction boundary visibility for C7 engines using `transactionBoundaries.show()` / `transactionBoundaries.hide()`. The engine-neutral designer (Design on an untagged model) has no `setSettings`: it honours only the favourites, through `setFavouriteBpmnElements()`.
 
 The host sends settings (and `UpdateOpenScriptEditorsQuery`) only on load and on change, so the webview remembers the latest of each in `apps/bpmn-webview/src/hostModelerState.ts`: a modeler a mode switch rebuilds gets the settings through `createModeler({ settings })` and the open-script locks once its import has finished; a rebuilt designer gets the favourites through `createDesigner({ favouriteBpmnElements })`.
 
@@ -184,6 +186,8 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 - **Modeler wrapper** (builds the clipboard modules via `createClipboardModules`): `packages/bpmn-modeler/src/modeler.ts` (engine stacks in `packages/bpmn-modeler/src/engineStacks/`)
 - **Webview session**: `apps/bpmn-webview/src/bootstrap.ts` (entry: `main.ts`)
 - **Clipboard option** (native, override or host protocol): `apps/bpmn-webview/src/session/protocolClipboard.ts`
+- **Lint wiring** (lint options, host lint pushes, config token echo): `apps/bpmn-webview/src/session/lintBridge.ts`
+- **Host surface requests** (SVG, format, cleanup, scripts, element templates, settings): `apps/bpmn-webview/src/session/surfaceRequests.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`
