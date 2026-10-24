@@ -60,8 +60,10 @@ const hoverCardPlacement = () => {
     const style = container.querySelector<HTMLElement>(".am-hover-card")?.style;
     return style ? { left: style.left, top: style.top } : null;
 };
-const placeAt = (element: Element | null | undefined, rect: { left: number; top: number }) =>
-    vi.spyOn(element!, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
+const placeAt = (
+    element: Element | null | undefined,
+    rect: { left: number; top: number; right?: number },
+) => vi.spyOn(element!, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
 
 describe("TemplatePanel", () => {
     it("previews only the template at the preview index", () => {
@@ -126,6 +128,18 @@ describe("TemplatePanel", () => {
         });
 
         expect(hoverCardPlacement()).toEqual({ left: "192px", top: "240px" });
+    });
+
+    it("keeps the preview left of a panel against the left edge, within the mouse's reach", () => {
+        const props = renderPanel();
+        placeAt(container.querySelector(".am-template-panel"), { left: 150, right: 690, top: 0 });
+        placeAt(cards()[1], { left: 150, top: 240 });
+
+        act(() => {
+            render(<TemplatePanel {...props} previewIndex={1} />, container);
+        });
+
+        expect(hoverCardPlacement()).toEqual({ left: "8px", top: "240px" });
     });
 
     it("toggles the category filter from its chips", () => {

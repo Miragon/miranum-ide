@@ -86,8 +86,10 @@ const describedButtons = () =>
     [...container.querySelectorAll("[aria-describedby]")].map((element) =>
         element.getAttribute("data-nav-key"),
     );
-const placeAt = (element: Element | undefined, rect: { left: number; top: number }) =>
-    vi.spyOn(element!, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
+const placeAt = (
+    element: Element | undefined,
+    rect: { left: number; top: number; right?: number },
+) => vi.spyOn(element!, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
 
 describe("BpmnElementPalette", () => {
     it("renders exactly one button per navigable item, keyed like the keyboard order", () => {
@@ -199,5 +201,16 @@ describe("BpmnElementPalette", () => {
             container.querySelector(".am-palette-content")!.dispatchEvent(new Event("scroll"));
         });
         expect(previewCard()?.style.top).toBe("180px");
+    });
+
+    it("opens the card right of a menu too close to the left edge to fit it", () => {
+        placeAt(menu, { left: 150, right: 470, top: 0 });
+        const previewKey = "grp:subprocess:append-call-activity";
+        renderPalette([described]);
+        placeAt(button(previewKey)[0], { left: 160, top: 240 });
+
+        renderPalette([described], { previewKey });
+
+        expect(previewCard()?.style.left).toBe("478px");
     });
 });

@@ -41,10 +41,11 @@ describe("clampToCanvas", () => {
 });
 
 describe("hoverCardPosition", () => {
-    const viewportHeight = 900;
+    const viewport = { width: 1400, height: 900 };
+    const panel = { panelLeft: 600 };
 
     it("opens left of the panel, aligned with the hovered card", () => {
-        expect(hoverCardPosition({ panelLeft: 600, cardTop: 240 }, viewportHeight)).toEqual({
+        expect(hoverCardPosition({ ...panel, cardTop: 240 }, viewport)).toEqual({
             left: 292,
             top: 240,
             maxHeight: 652,
@@ -52,16 +53,31 @@ describe("hoverCardPosition", () => {
     });
 
     it("stays on-screen when the panel sits against the left edge", () => {
-        expect(hoverCardPosition({ panelLeft: 100, cardTop: 240 }, viewportHeight).left).toBe(8);
+        expect(hoverCardPosition({ panelLeft: 150, cardTop: 240 }, viewport).left).toBe(8);
+    });
+
+    it("opens right of a panel too close to the left edge when allowed to", () => {
+        expect(
+            hoverCardPosition({ panelLeft: 150, panelRight: 470, cardTop: 240 }, viewport).left,
+        ).toBe(478);
+    });
+
+    it("stays on-screen when neither side of the panel fits the card", () => {
+        expect(
+            hoverCardPosition(
+                { panelLeft: 100, panelRight: 640, cardTop: 240 },
+                { ...viewport, width: 900 },
+            ).left,
+        ).toBe(8);
     });
 
     it.each([
         ["above the viewport", -50, 8],
         ["near the viewport bottom", 850, 700],
     ])("clamps a card scrolled %s", (_case, cardTop, top) => {
-        expect(hoverCardPosition({ panelLeft: 600, cardTop }, viewportHeight)).toMatchObject({
+        expect(hoverCardPosition({ ...panel, cardTop }, viewport)).toMatchObject({
             top,
-            maxHeight: viewportHeight - top - 8,
+            maxHeight: viewport.height - top - 8,
         });
     });
 });

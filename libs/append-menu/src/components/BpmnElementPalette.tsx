@@ -91,8 +91,12 @@ export function BpmnElementPalette({
     }, [highlightedKey]);
 
     const describedItem = previewedItem?.entry.description ? previewedItem : null;
-    const descriptionPosition = useHoverCardPosition(previewAnchorRef, contentRef, (content) =>
-        describedItem ? content.querySelector(`[data-nav-key="${describedItem.key}"]`) : null,
+    const descriptionPosition = useHoverCardPosition(
+        previewAnchorRef,
+        contentRef,
+        (content) =>
+            describedItem ? content.querySelector(`[data-nav-key="${describedItem.key}"]`) : null,
+        { mayOpenRight: true },
     );
 
     const renderButton = (processed: ProcessedEntry, navKey: string) => (
