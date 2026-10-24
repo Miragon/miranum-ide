@@ -339,6 +339,20 @@ describe("createSurfaceRequests", () => {
         expect(surface.applyOpenScriptEditors).toHaveBeenCalledWith(openScripts);
     });
 
+    it("still remembers the open script editors when the modeler rejects them", () => {
+        const surface = modelerSurface();
+        surface.applyOpenScriptEditors.mockImplementation(() => {
+            throw new Error("Modeler is not initialized!");
+        });
+        const { hostModelerState, handlers } = surfaceRequestsOn(surface);
+        const openScripts = [openScriptTask];
+
+        expect(() =>
+            handlers.UpdateOpenScriptEditorsQuery(new UpdateOpenScriptEditorsQuery(openScripts)),
+        ).toThrow("Modeler is not initialized!");
+        expect(hostModelerState.rememberOpenScripts).toHaveBeenCalledWith(openScripts);
+    });
+
     it("leaves modeler-only requests unanswered on other surfaces but remembers host state", () => {
         const { host, hostModelerState, handlers } = surfaceRequestsOn(designerSurface());
         const openScripts = [openScriptTask];
@@ -424,17 +438,18 @@ describe("createSurfaceRequests", () => {
             expect(replies.settings.done).toHaveBeenCalledWith(query);
         });
 
-        it("answers the wait even when the modeler rejects the settings", () => {
+        it("still remembers the settings and answers the wait when the modeler rejects them", () => {
             const surface = modelerSurface();
             surface.setSettings.mockImplementation(() => {
                 throw new Error("Modeler is not initialized!");
             });
-            const { replies, handlers } = surfaceRequestsOn(surface);
+            const { hostModelerState, replies, handlers } = surfaceRequestsOn(surface);
             const query = new BpmnModelerSettingQuery(hostSettings);
 
             expect(() => handlers.BpmnModelerSettingQuery(query)).toThrow(
                 "Modeler is not initialized!",
             );
+            expect(hostModelerState.rememberSettings).toHaveBeenCalledWith(hostSettings);
             expect(replies.settings.done).toHaveBeenCalledWith(query);
         });
     });

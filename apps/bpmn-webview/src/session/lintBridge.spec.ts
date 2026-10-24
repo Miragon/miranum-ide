@@ -147,6 +147,24 @@ describe("createLintBridge", () => {
         ]);
     });
 
+    it("still tracks the config token when the surface rejects the in-page config", async () => {
+        const surface = lintingSurface();
+        surface.startInPageLinting.mockImplementation(() => {
+            throw new Error("Modeler is not initialized!");
+        });
+        const { host, bridge } = hostTierBridge(surface);
+        const { onLintResults } = await bridge.surfaceOptions();
+
+        expect(() =>
+            bridge.handlers.BpmnlintInPageQuery(new BpmnlintInPageQuery({ extends: [] }, "tok-1")),
+        ).toThrow("Modeler is not initialized!");
+        onLintResults(lintRun);
+
+        expect(host.sent).toEqual([
+            expect.objectContaining({ type: "UpdateLintResultsCommand", configToken: "tok-1" }),
+        ]);
+    });
+
     it("lets a surface that rejects a lint push throw to the caller", () => {
         const surface = lintingSurface();
         surface.applyLintResults.mockImplementation(() => {
