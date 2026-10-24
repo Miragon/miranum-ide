@@ -14,7 +14,7 @@
         "test": "vitest run --coverage"
     },
     "peerDependencies": {
-        "@bpmn-io/properties-panel": "3.57.0",
+        "@bpmn-io/properties-panel": "3.57.1",
         "bpmn-js": "18.31.0",
         "diagram-js": "15.28.1",
         "ids": "3.0.2",
@@ -22,7 +22,7 @@
         "min-dom": "5.3.0"
     },
     "devDependencies": {
-        "@bpmn-io/properties-panel": "3.57.0",
+        "@bpmn-io/properties-panel": "3.57.1",
         "@typescript/native": "npm:typescript@7.0.2",
         "@vitest/coverage-v8": "5.0.5",
         "bpmn-js": "18.31.0",
