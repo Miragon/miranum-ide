@@ -1,33 +1,30 @@
+import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
+import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
+import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
 import {
-    BpmnModelerSettingQuery,
-    Command,
-    ElementTemplatesQuery,
+    type BpmnModelerSettingQuery,
+    type Command,
+    type ElementTemplatesQuery,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
-    PropertiesPanelStateQuery,
-    Query,
+    HOST_REPLY_TIMEOUT_MS,
+    type HostApi,
+    type PropertiesPanelStateQuery,
+    type Query,
     RequestFocusCommand,
     SetPropertiesPanelStateCommand,
-    HOST_REPLY_TIMEOUT_MS,
+    applyPageThemeScope,
+    createHostThemeAdapter,
     createInertLockGroup,
     createResolver,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
+    resolveHostThemeKind,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
-import {
-    applyPageThemeScope,
-    createHostThemeAdapter,
-    resolveHostThemeKind,
-} from "@miragon/bpmn-modeler-shared";
-import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
-import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
-import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
-import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
-import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { BpmnDocumentSession, type Translator } from "./session/documentSession";
@@ -47,9 +44,35 @@ import { createSurfaceDocument } from "./session/surfaceDocument";
 import { createSurfaceFactories } from "./session/surfaceFactories";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode } from "./state";
-import { prefetchSurfaceModules } from "./surfaceModules";
 import { isEditableHandle } from "./surface";
+import { prefetchSurfaceModules } from "./surfaceModules";
+import type { WebviewState } from "./webviewState";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
+
+interface BootstrapOptions {
+    /** Host-specific extra bpmn-js DI modules. */
+    extraModules?: unknown[];
+    /**
+     * Explicit per-feature ports; `undefined` selects the full protocol adapter
+     * so every real host keeps all features.
+     */
+    capabilities?: ModelerCapabilities;
+    /** The bpmnlint tier; `undefined` selects the external (host-pushed) tier that real hosts use. */
+    linting?: LintingOptions;
+    /**
+     * The clipboard tier; `undefined` selects dev-build native, otherwise the
+     * protocol bridge. `"native"` forces the browser clipboard; `{ bridge }`
+     * routes through a caller-supplied override.
+     */
+    clipboard?: ClipboardOptions | "native";
+    /**
+     * In-page lint-run sink; only a consumer opting into in-page linting passes
+     * one. Real hosts run the linter themselves.
+     */
+    onLintResults?: (event: LintRunEvent) => void;
+    /** Restarts the containing webview after an engine change. */
+    reload?: () => void;
+}
 
 /**
  * Starts the BPMN webview against the given host. The entry chooses the host,
@@ -57,57 +80,16 @@ import "../../../packages/bpmn-modeler/src/styles/mode.css";
  * {@link ModelerCapabilities}. Omitting `capabilities` selects the
  * full protocol adapter, so every real host keeps all features; passing a
  * partial object turns off the features whose ports it omits.
- */
-export function bootstrap(
-    injectedHost: HostApi<WebviewState, Command | Query>,
-    opts: {
-        extraModules?: unknown[];
-        capabilities?: ModelerCapabilities;
-        linting?: LintingOptions;
-        clipboard?: ClipboardOptions | "native";
-        onLintResults?: (event: LintRunEvent) => void;
-        reload?: () => void;
-    } = {},
-): void {
-    startSession(
-        injectedHost,
-        opts.extraModules,
-        opts.capabilities,
-        opts.linting,
-        opts.clipboard,
-        opts.onLintResults,
-        opts.reload,
-    );
-}
-
-/**
- * One webview session. The modeler, resolvers, debounced syncs, flush
- * responder, and the "is initialized" latch are scoped to this closure so a
+ *
+ * Each call is one webview session. The modeler, resolvers, debounced syncs,
+ * flush responder, and the "is initialized" latch are scoped to it so a
  * session owns its own lifetime rather than a page-wide singleton — the
  * prerequisite for hosting more than one modeler on a page. Single-instance
- * hosts (VS Code, IntelliJ, Theia) call {@link bootstrap} exactly once.
- *
- * @param host The injected host adapter.
- * @param injectedModules Host-specific extra bpmn-js DI modules.
- * @param injectedCapabilities Explicit per-feature ports; `undefined` selects
- *   the full protocol adapter so every real host keeps all features.
- * @param injectedLinting The bpmnlint tier; `undefined` selects the external
- *   (host-pushed) tier that real hosts use.
- * @param injectedClipboard The clipboard tier; `undefined` selects dev-build
- *   native, otherwise the protocol bridge. `"native"` forces the browser
- *   clipboard; `{ bridge }` routes through a caller-supplied override.
- * @param injectedOnLintResults In-page lint-run sink; only a consumer opting into
- *   in-page linting passes one. Real hosts run the linter themselves.
- * @param injectedReload Restarts the containing webview after an engine change.
+ * hosts (VS Code, IntelliJ, Theia) call it exactly once.
  */
-function startSession(
+export function bootstrap(
     host: HostApi<WebviewState, Command | Query>,
-    injectedModules: unknown[] | undefined,
-    injectedCapabilities: ModelerCapabilities | undefined,
-    injectedLinting: LintingOptions | undefined,
-    injectedClipboard: ClipboardOptions | "native" | undefined,
-    injectedOnLintResults: ((event: LintRunEvent) => void) | undefined,
-    injectedReload: (() => void) | undefined,
+    opts: BootstrapOptions = {},
 ): void {
     const translator: Translator = {
         getLocale: () => i18n.getLocale(),
@@ -126,13 +108,13 @@ function startSession(
         modeController.setTheme(kind);
     });
     const protocolCapabilities = createProtocolCapabilities(host, getSurface);
-    const clipboard = resolveClipboard(injectedClipboard, {
+    const clipboard = resolveClipboard(opts.clipboard, {
         isDevelopment: process.env.NODE_ENV === "development",
         host,
     });
     const lintBridge = createLintBridge(
         host,
-        { linting: injectedLinting, onLintResults: injectedOnLintResults },
+        { linting: opts.linting, onLintResults: opts.onLintResults },
         getSurface,
     );
 
@@ -160,7 +142,7 @@ function startSession(
             cancelPendingSurfaceWork: modeController.disposeSurfaceBinding,
             flushViewport: () => modeController.getViewState()?.flushViewport(),
             destroySurface: () => getSurface().destroy(),
-            reloadPage: () => (injectedReload ?? (() => window.location.reload()))(),
+            reloadPage: () => (opts.reload ?? (() => window.location.reload()))(),
         },
         translator,
         pageInertLocks,
@@ -223,7 +205,7 @@ function startSession(
         host.postMessage(new GetPropertiesPanelStateCommand());
         const savedMode = readSavedMode(host);
         if (savedMode) {
-            prefetchSurfaceModules(savedMode, { linting: injectedLinting === undefined });
+            prefetchSurfaceModules(savedMode, { linting: opts.linting === undefined });
         }
 
         const bpmnFileQuery = await session.waitForInitialHostFile();
@@ -266,7 +248,7 @@ function startSession(
         // own default — the mode session vets it against availability.
         const engine = bpmnFileQuery?.engine;
 
-        const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
+        const capabilities = opts.capabilities ?? protocolCapabilities.capabilities;
 
         const started = await modeController.start({
             session,
@@ -282,7 +264,7 @@ function startSession(
             surfaces: createSurfaceFactories(host, {
                 propertiesPanelParent: chrome.panelMount,
                 capabilities,
-                extraModules: injectedModules ?? [],
+                extraModules: opts.extraModules ?? [],
                 clipboard: clipboard.options,
                 lintBridge,
                 hostModelerState,
@@ -299,7 +281,7 @@ function startSession(
 
         const currentBpmnFileQuery = session.latestHostFile ?? bpmnFileQuery;
 
-        if (injectedCapabilities === undefined) {
+        if (opts.capabilities === undefined) {
             protocolCapabilities.requestFormReferenceStatus(currentBpmnFileQuery?.engine);
         }
 
