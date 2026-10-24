@@ -134,4 +134,58 @@ describe("HostDocumentRevisions", () => {
             expect(revisions.representedRevision).toBe(7);
         });
     });
+    describe("host revision sequences", () => {
+        type Step = { receive: number } | { import: number } | "export";
+
+        const play = (steps: Step[]) => {
+            const revisions = new HostDocumentRevisions();
+            let exportSnapshot: number | undefined;
+            for (const step of steps) {
+                if (step === "export") exportSnapshot = revisions.version;
+                else if ("receive" in step) revisions.receive(step.receive);
+                else revisions.markImported(step.import);
+            }
+            return {
+                representedRevision: revisions.representedRevision,
+                version: revisions.version,
+                exportIsCurrent:
+                    exportSnapshot === undefined || revisions.isCurrent(exportSnapshot),
+            };
+        };
+
+        it.each<[string, Step[], ReturnType<typeof play>]>([
+            [
+                "out-of-order revisions keep the newest import",
+                [{ receive: 1 }, { import: 1 }, { receive: 3 }, { receive: 2 }, { import: 3 }],
+                { representedRevision: 3, version: 2, exportIsCurrent: true },
+            ],
+            [
+                "a late import of an overtaken revision does not regress",
+                [{ receive: 1 }, { receive: 2 }, { import: 2 }, { import: 1 }],
+                { representedRevision: 2, version: 2, exportIsCurrent: true },
+            ],
+            [
+                "an export racing a host push is dropped",
+                [{ receive: 1 }, { import: 1 }, "export", { receive: 2 }],
+                { representedRevision: 1, version: 2, exportIsCurrent: false },
+            ],
+            [
+                "an export racing only a stale push survives",
+                [{ receive: 5 }, { import: 5 }, "export", { receive: 4 }],
+                { representedRevision: 5, version: 1, exportIsCurrent: true },
+            ],
+            [
+                "a reseed at the same revision invalidates an in-flight export",
+                [{ receive: 4 }, { import: 4 }, "export", { receive: 4 }, { import: 4 }],
+                { representedRevision: 4, version: 2, exportIsCurrent: false },
+            ],
+            [
+                "an export after the last push is current",
+                [{ receive: 1 }, { receive: 2 }, { import: 2 }, "export"],
+                { representedRevision: 2, version: 2, exportIsCurrent: true },
+            ],
+        ])("%s", (_name, steps, expected) => {
+            expect(play(steps)).toEqual(expected);
+        });
+    });
 });

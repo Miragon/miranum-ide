@@ -4,20 +4,16 @@
  * `@miragon/dmn-modeler` boundary.
  */
 import {
+    asProtocolMessage,
     Command,
     DmnFileQuery,
     DmnModelerSettingQuery,
-    LogDebugCommand,
-    LogErrorCommand,
-    LogInfoCommand,
-    LogWarningCommand,
-    PropertiesPanelStateQuery,
-    Query,
-    SyncDocumentCommand,
-    TakeFocusQuery,
     HostApi,
     HostApiImpl,
     MockHostApi,
+    PropertiesPanelStateQuery,
+    Query,
+    TakeFocusQuery,
 } from "@miragon/bpmn-modeler-shared";
 import type { WebviewState } from "./webviewState";
 
@@ -60,58 +56,56 @@ const SAMPLE_DMN = `<?xml version="1.0" encoding="UTF-8"?>
 
 class MockHost extends MockHostApi<StateType, MessageType> {
     override postMessage(message: MessageType): void {
-        switch (true) {
-            case message.type === "GetDmnFileCommand": {
+        const command = asProtocolMessage(message);
+        switch (command.type) {
+            case "GetDmnFileCommand": {
                 dispatchEvent(new DmnFileQuery(SAMPLE_DMN));
                 break;
             }
-            case message.type === "GetPropertiesPanelStateCommand": {
+            case "GetPropertiesPanelStateCommand": {
                 dispatchEvent(new PropertiesPanelStateQuery(true));
                 break;
             }
-            case message.type === "GetDmnModelerSettingCommand": {
+            case "GetDmnModelerSettingCommand": {
                 // Follow the (mock) VS Code theme so the browser preview themes
                 // off the `vscode-dark`/`vscode-light` body class.
                 dispatchEvent(new DmnModelerSettingQuery({ colorTheme: "automatic" }));
                 break;
             }
-            case message.type === "SetPropertiesPanelStateCommand": {
+            case "SetPropertiesPanelStateCommand": {
                 // No host to persist to in standalone browser runs.
                 break;
             }
-            case message.type === "RequestFocusCommand": {
+            case "RequestFocusCommand": {
                 // The preview page is always the active editor.
                 dispatchEvent(new TakeFocusQuery());
                 break;
             }
-            case message.type === "SyncDocumentCommand": {
+            case "SyncDocumentCommand": {
                 // No document to persist in standalone browser runs.
-                console.debug(
-                    "[DEBUG] SyncDocumentCommand",
-                    (message as SyncDocumentCommand).content,
-                );
+                console.debug("[DEBUG] SyncDocumentCommand", command.content);
                 break;
             }
             // The webview forwards log entries to the host; in a standalone
             // browser run there's no host, so mirror them onto the dev console.
-            case message.type === "LogDebugCommand": {
-                console.debug((message as LogDebugCommand).message);
+            case "LogDebugCommand": {
+                console.debug(command.message);
                 break;
             }
-            case message.type === "LogInfoCommand": {
-                console.info((message as LogInfoCommand).message);
+            case "LogInfoCommand": {
+                console.info(command.message);
                 break;
             }
-            case message.type === "LogWarningCommand": {
-                console.warn((message as LogWarningCommand).message);
+            case "LogWarningCommand": {
+                console.warn(command.message);
                 break;
             }
-            case message.type === "LogErrorCommand": {
-                console.error((message as LogErrorCommand).message);
+            case "LogErrorCommand": {
+                console.error(command.message);
                 break;
             }
             default: {
-                throw new Error(`Unknown message type ${(message as MessageType).type}`);
+                throw new Error(`Unknown message type ${message.type}`);
             }
         }
 

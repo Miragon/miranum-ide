@@ -3,12 +3,6 @@ import {
     BpmnMigrationService,
     BpmnModelerService,
 } from "@miragon/bpmn-modeler-core";
-import {
-    CleanupReportCommand,
-    Command,
-    DiagramFormattedCommand,
-} from "@miragon/bpmn-modeler-shared";
-
 import { METHODS } from "../protocol/descriptor";
 import { EditorRefParams, MigrateAllParams } from "../protocol/types";
 import { BridgeSharedDeps } from "./sharedDeps";
@@ -50,11 +44,11 @@ export function register(
     // answer, and requests only run in that direction.
     const layoutSvc = new BpmnLayoutService(deps.store, deps.notifier, deps.picker);
     deps.router
-        .on("DiagramFormattedCommand", (message: Command) => {
-            layoutSvc.reportFormatted(message as DiagramFormattedCommand);
+        .on("DiagramFormattedCommand", (message) => {
+            layoutSvc.reportFormatted(message);
         })
-        .on("CleanupReportCommand", async (message: Command, editorId: string) => {
-            await layoutSvc.reportCleanup(message as CleanupReportCommand, editorId);
+        .on("CleanupReportCommand", async (message, editorId) => {
+            await layoutSvc.reportCleanup(message, editorId);
         });
 
     const withActiveEditor = async (action: (editorId: string) => Promise<void>): Promise<void> => {

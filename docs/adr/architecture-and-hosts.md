@@ -67,6 +67,18 @@ through ports. It sends private Query/Command messages through
 The protocol can change across all in-repo hosts in one change without becoming
 a public browser API commitment.
 
+Each message class fixes its `type` as a string literal (`Command<"X">`), and
+`libs/shared` derives the discriminated unions `ProtocolQuery`,
+`ProtocolCommand` and `MessageOfType<"X">` from those classes. The router's
+`on(type, handler)` hands each handler the narrowed message, and webview and
+host switches narrow on `type` instead of casting, so a misspelt type or a
+payload mismatch fails to compile. Inbound messages stay untrusted JSON: a
+switch narrows them once (`asProtocolMessage`) and ignores unknown types.
+Switches that own a closed set (the BPMN webview's inbound queries, the
+deployment dispatcher) end in `exhaustiveMessageGuard`. The classes remain the
+constructors and the wire format is unchanged: the same `type` strings and
+fields, which the IntelliJ host matches.
+
 Commands and Queries are not correlated by default: a request is a Command and
 the answer a later pushed Query. A webview port that answers a query while
 several requests can be in flight carries a request id that the host echoes,

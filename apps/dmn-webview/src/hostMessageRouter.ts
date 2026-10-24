@@ -1,13 +1,10 @@
 import {
+    asProtocolMessage,
     type Command,
-    type DmnFileQuery,
     type DmnModelerSettingQuery,
-    type FlushDocumentQuery,
     type HostThemeAdapter,
-    type LanguageQuery,
     type PropertiesPanelStateQuery,
     type Query,
-    type ReleaseDocumentFlushQuery,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
 
@@ -29,30 +26,31 @@ export async function routeDmnHostMessage(
     session: DmnMessageSession,
     replies: DmnHostReplies,
 ): Promise<void> {
-    switch (message.type) {
+    const inbound = asProtocolMessage(message);
+    switch (inbound.type) {
         case "DmnFileQuery":
-            await session.receiveHostFile(message as DmnFileQuery);
+            await session.receiveHostFile(inbound);
             break;
         case "PropertiesPanelStateQuery":
-            replies.panelState.done(message as PropertiesPanelStateQuery);
+            replies.panelState.done(inbound);
             break;
         case "DmnModelerSettingQuery": {
             // Applied live so a VS Code theme change in `"automatic"` mode
             // re-themes an already-open editor, not just on first load.
-            const settingQuery = message as DmnModelerSettingQuery;
+            const settingQuery = inbound;
             replies.theme.setMode(settingQuery.setting.colorTheme);
             replies.settings.done(settingQuery);
             break;
         }
         case "LanguageQuery":
-            await session.applyLanguage((message as LanguageQuery).locale);
+            await session.applyLanguage(inbound.locale);
             break;
         case "TakeFocusQuery":
             takeFocus(() => session.focusCanvas());
             break;
         case "FlushDocumentQuery":
         case "ReleaseDocumentFlushQuery":
-            await session.respondToFlush(message as FlushDocumentQuery | ReleaseDocumentFlushQuery);
+            await session.respondToFlush(inbound);
             break;
     }
 }

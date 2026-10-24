@@ -25,12 +25,14 @@ export * from "./shared/infrastructure/EditorSessionStore";
 export * from "./shared/infrastructure/WebviewMessageRouter";
 export * from "./shared/infrastructure/webviewLogHandlers";
 export * from "./shared/infrastructure/webviewNotificationHandlers";
+export * from "./shared/infrastructure/orderedDocumentDispatch";
 export * from "./shared/infrastructure/webviewFocusHandlers";
 export * from "./shared/infrastructure/helpers";
 
 // ── modeler ─────────────────────────────────────────────────────────────────
 export * from "./modeler/bpmn/domain/model";
 export * from "./modeler/bpmn/service/BpmnModelerService";
+export * from "./modeler/bpmn/infrastructure/bpmnDocumentHandlers";
 export * from "./modeler/bpmn/service/BpmnElementTemplatesService";
 export * from "./modeler/bpmn/service/BpmnLintConfigService";
 export * from "./modeler/bpmn/service/DefaultBpmnlintConfigService";

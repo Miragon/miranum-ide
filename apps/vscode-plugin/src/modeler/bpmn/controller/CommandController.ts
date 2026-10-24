@@ -8,7 +8,7 @@ import {
     workspace,
 } from "vscode";
 
-import { Command, GetDiagramAsSVGCommand } from "@miragon/bpmn-modeler-shared";
+import { Command, GetDiagramAsSVGCommand, isMessageOfType } from "@miragon/bpmn-modeler-shared";
 import { supportedModelerLanguages } from "@miragon/bpmn-modeler-i18n-extras";
 
 import { EditorSubscription } from "@miragon/bpmn-modeler-core";
@@ -342,8 +342,8 @@ export class CommandController {
 
         this.svgSubscription = this.editorStore.subscribeToActiveEditorMessage(
             (message: Command) => {
-                if (message.type === "GetDiagramAsSVGCommand") {
-                    const cmd = message as GetDiagramAsSVGCommand;
+                if (isMessageOfType(message, "GetDiagramAsSVGCommand")) {
+                    const cmd = message;
                     if (cmd.svg && cmd.svg.length > 0) {
                         Promise.resolve(onSvg(cmd.svg)).catch((error) => {
                             this.notifier.logError(

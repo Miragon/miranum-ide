@@ -1,4 +1,3 @@
-import { Command, NavigateToReferencedModelCommand } from "@miragon/bpmn-modeler-shared";
 import {
     FormReferenceStatusService,
     ModelNavigationService,
@@ -39,8 +38,7 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
     // through to "decision" by default — defence in depth against a
     // malformed webview message ever opening the wrong kind of file.
     deps.router
-        .on("NavigateToReferencedModelCommand", async (message: Command, editorId: string) => {
-            const cmd = message as NavigateToReferencedModelCommand;
+        .on("NavigateToReferencedModelCommand", async (cmd, editorId) => {
             if (
                 cmd.referenceKind !== "process" &&
                 cmd.referenceKind !== "decision" &&
@@ -56,7 +54,7 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
             const sourceFsPath = deps.store.requireHandle(editorId).documentFsPath();
             await modelNavigationService.navigate(cmd.referenceId, cmd.referenceKind, sourceFsPath);
         })
-        .on("GetFormReferenceStatusCommand", async (_message: Command, editorId: string) => {
+        .on("GetFormReferenceStatusCommand", async (_message, editorId) => {
             await formReferenceStatusService.requestStatus(editorId);
         });
 

@@ -1,12 +1,9 @@
 import { posix } from "path";
 
 import {
-    Command,
     OpenAllScriptTasksQuery,
     OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
-    UpdateScriptSourceCommand,
-    UpdateScriptVariablesCommand,
 } from "@miragon/bpmn-modeler-shared";
 import {
     materializeScriptBatch,
@@ -63,33 +60,30 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
     const manifestWatchers = new Map<string, { dispose(): void }>();
 
     deps.router
-        .on("OpenScriptEditorCommand", (message: Command, editorId: string) => {
-            void scriptEditor.open(message as OpenScriptEditorCommand, editorId);
+        .on("OpenScriptEditorCommand", (message, editorId) => {
+            void scriptEditor.open(message, editorId);
         })
         // Live process-variable model update → push to every open script tab of
         // this editor so completion stays current without reopening.
-        .on("UpdateScriptVariablesCommand", (message: Command, editorId: string) => {
-            scriptEditor.updateVariables(
-                editorId,
-                (message as UpdateScriptVariablesCommand).variables,
-            );
+        .on("UpdateScriptVariablesCommand", (message, editorId) => {
+            scriptEditor.updateVariables(editorId, message.variables);
         })
         // Reload handshake: the webview re-requests settings on (re)init, which is
         // also when it has dropped its properties-panel lock state — re-broadcast
         // the open-script set so locked fields stay locked across a reload.
-        .on("GetBpmnModelerSettingCommand", (_message: Command, editorId: string) => {
+        .on("GetBpmnModelerSettingCommand", (_message, editorId) => {
             scriptEditor.syncLockState(editorId);
         })
         // A script changed on the *model* side (canvas undo/redo, document
         // reload, element deletion) → overwrite or close the owning tab.
-        .on("UpdateScriptSourceCommand", (message: Command, editorId: string) => {
-            scriptEditor.applyModelChange(message as UpdateScriptSourceCommand, editorId);
+        .on("UpdateScriptSourceCommand", (message, editorId) => {
+            scriptEditor.applyModelChange(message, editorId);
         })
         // Bulk reply to OpenAllScriptTasksQuery: open every inline script task the
         // webview found, one at a time — a concurrent open would race the
         // per-script format quick-picks (see OpenScriptEditorsCommand).
-        .on("OpenScriptEditorsCommand", (message: Command, editorId: string) => {
-            return openAllScripts(message as OpenScriptEditorsCommand, editorId);
+        .on("OpenScriptEditorsCommand", (message, editorId) => {
+            return openAllScripts(message, editorId);
         });
 
     /**

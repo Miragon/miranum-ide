@@ -1,24 +1,13 @@
 import type BaseViewer from "bpmn-js/lib/BaseViewer";
-import type Canvas from "diagram-js/lib/core/Canvas";
-import {
-    type DisposableStore,
-    MutableDisposable,
-    NoModelerError,
-} from "@miragon/bpmn-modeler-types";
+import { type DisposableStore, NoModelerError } from "@miragon/bpmn-modeler-types";
 
 import { installSurfaceFocusFeatures, type SurfaceFocusOptions } from "./focusFeatures";
-import { armInitialViewportPolicy } from "./initialViewport";
 import type { ThemeMode } from "./publicApi";
-import { CanvasRootElementManager, type RootElementManager } from "./rootElement";
-import { ElementSelectionManager, type SelectionManager } from "./selection";
+import type { RootElementManager } from "./rootElement";
+import type { SelectionManager } from "./selection";
 import { ThemeController } from "./theme";
-import {
-    applyViewState as applyViewStateComposition,
-    captureViewState as captureViewStateComposition,
-    type ViewState,
-    type ViewStateManagers,
-} from "./viewState";
-import { CanvasViewportManager, type ViewportManager } from "./viewport";
+import { SurfaceView, type ViewState } from "./viewState";
+import type { ViewportManager } from "./viewport";
 
 type SurfaceInstance = Pick<BaseViewer, "get" | "destroy">;
 
@@ -36,12 +25,9 @@ export interface SurfaceServices {
 export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
     private liveInstance: T | undefined;
 
-    private managers: ViewStateManagers | undefined;
+    private view: SurfaceView | undefined;
 
     private themeController: ThemeController | undefined;
-
-    // Re-armed per import, so it can't be a plain store entry; replaced per allocation.
-    private initialViewportObserver = new MutableDisposable();
 
     /**
      * @param container The canvas host the bpmn-js instance attaches to.
@@ -61,21 +47,20 @@ export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
     }
 
     get viewport(): ViewportManager {
-        return this.liveManagers().viewport;
+        return this.liveView().viewport;
     }
 
     get selection(): SelectionManager {
-        return this.liveManagers().selection;
+        return this.liveView().selection;
     }
 
     get rootElement(): RootElementManager {
-        return this.liveManagers().rootElement;
+        return this.liveView().rootElement;
     }
 
     /**
      * Constructs the bpmn-js instance and registers, in this order, its
-     * destruction, the initial-viewport observer and the focus features on
-     * `store`.
+     * destruction, its view and the focus features on `store`.
      */
     allocate(store: DisposableStore, construct: () => T, focus: SurfaceFocusOptions): void {
         try {
@@ -90,23 +75,17 @@ export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
             this.liveInstance?.destroy();
             this.liveInstance = undefined;
         });
-        const initialViewportObserver = new MutableDisposable();
-        this.initialViewportObserver = initialViewportObserver;
-        store.add(() => initialViewportObserver.dispose());
-
         const accessor = <S>(name: string): S => this.service<S>(name);
-        this.managers = {
-            viewport: new CanvasViewportManager(accessor),
-            selection: new ElementSelectionManager(accessor),
-            rootElement: new CanvasRootElementManager(accessor),
-        };
+        const view = new SurfaceView(accessor);
+        this.view = view;
+        store.add(() => view.dispose());
 
         store.add(installSurfaceFocusFeatures(accessor, focus));
     }
 
     /** Drops the managers once the facade's store has torn the instance down. */
     releaseManagers(): void {
-        this.managers = undefined;
+        this.view = undefined;
     }
 
     service<S>(name: string): S {
@@ -118,18 +97,16 @@ export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
     }
 
     captureViewState(): ViewState {
-        return captureViewStateComposition(this.liveManagers());
+        return this.liveView().capture();
     }
 
     applyViewState(state: ViewState): void {
-        applyViewStateComposition(this.liveManagers(), state);
+        this.liveView().apply(state);
     }
 
     /** Arms the one-time initial fit for the diagram that was just imported. */
     armInitialViewport(): void {
-        this.initialViewportObserver.set(
-            armInitialViewportPolicy(this.service<Canvas>("canvas"), this.viewport),
-        );
+        this.liveView().diagramLoaded();
     }
 
     /** A no-op once `store` is disposed, so a destroyed surface keeps no theme residue. */
@@ -148,10 +125,10 @@ export class SurfaceCore<T extends SurfaceInstance> implements SurfaceServices {
         this.themeController.setMode(theme);
     }
 
-    private liveManagers(): ViewStateManagers {
-        if (!this.managers) {
+    private liveView(): SurfaceView {
+        if (!this.view) {
             throw new NoModelerError();
         }
-        return this.managers;
+        return this.view;
     }
 }

@@ -1,10 +1,13 @@
 import { basename } from "node:path";
 
-import { Command, Query, SyncDocumentCommand } from "@miragon/bpmn-modeler-shared";
+import { Query } from "@miragon/bpmn-modeler-shared";
 import {
     BpmnModelerService,
+    dispatchInDocumentOrder,
+    getBpmnFileHandler,
     registerWebviewLogHandlers,
     registerWebviewNotificationHandlers,
+    syncDocumentHandler,
 } from "@miragon/bpmn-modeler-core";
 
 import { RpcEditorHandle } from "../adapters";
@@ -55,20 +58,13 @@ export function register(
         entry !== undefined && (sessionId === undefined || entry.sessionId === sessionId);
 
     deps.router
-        .on("GetBpmnFileCommand", async (_message: Command, editorId: string) => {
-            if (await bpmnService.display(editorId)) {
-                deps.notifier.logDebug("BPMN modeler is ready");
-            }
-        })
-        .on("SyncDocumentCommand", async (message: Command, editorId: string) => {
-            const sync = message as SyncDocumentCommand;
-            await bpmnService.sync(editorId, sync.content, sync.documentRevision);
-        })
+        .on("GetBpmnFileCommand", getBpmnFileHandler(bpmnService, deps.notifier))
+        .on("SyncDocumentCommand", syncDocumentHandler(bpmnService))
         // The remaining handshake reply is a bridge-level stub because its real
         // service (properties panel) is not wired on this host path. It must still
         // answer, or the webview waits out its reply timeout before restoring the
         // panel.
-        .on("GetPropertiesPanelStateCommand", (_m: Command, editorId: string) => {
+        .on("GetPropertiesPanelStateCommand", (_m, editorId) => {
             deps.store.postMessage(editorId, query("PropertiesPanelStateQuery", { visible: true }));
         });
 
@@ -129,14 +125,19 @@ export function register(
         // session.
         deps.store.register(handle);
         deps.store.setHostDocumentRevision(params.editorId, params.documentRevision ?? 0);
-        // The bridge (unlike VS Code's ModelerEditorController) doesn't wrap the
-        // dispatch, so a rejected handler — now that commit 2 makes handlers return
-        // their service promise — would surface as a Node unhandled rejection.
-        deps.store.subscribeToMessageEvent(params.editorId, (message, editorId) =>
-            deps.router.dispatch(message, editorId).catch((error) => {
-                deps.notifier.logError(error instanceof Error ? error : new Error(String(error)));
-            }),
-        );
+        // A rejected handler would otherwise surface as a Node unhandled rejection.
+        deps.store.subscribeToMessageEvent(params.editorId, async (message, editorId) => {
+            const session = deps.store.captureEditorSession(editorId);
+            if (!session) return;
+            const dispatch = () => deps.router.dispatch(message, editorId);
+            await dispatchInDocumentOrder(deps.store, editorId, session, message, dispatch).catch(
+                (error) => {
+                    deps.notifier.logError(
+                        error instanceof Error ? error : new Error(String(error)),
+                    );
+                },
+            );
+        });
         bpmnService.registerSession(params.editorId);
 
         // Seed discovery with the host's authoritative root before the hooks run.

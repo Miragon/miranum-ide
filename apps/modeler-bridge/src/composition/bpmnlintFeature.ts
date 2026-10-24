@@ -1,4 +1,3 @@
-import { Command, UpdateLintResultsCommand } from "@miragon/bpmn-modeler-shared";
 import {
     BpmnLintConfigLocator,
     BpmnLintConfigService,
@@ -44,15 +43,14 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
     // The webview posts this once on load (fire-and-forget, not part of the
     // bootstrap handshake). A missing/malformed config degrades to linting-off
     // inside the service, so this never throws into the dispatcher.
-    deps.router.on("GetBpmnlintConfigCommand", async (_message: Command, editorId: string) => {
+    deps.router.on("GetBpmnlintConfigCommand", async (_message, editorId) => {
         await lintSvc.setBpmnlintConfig(editorId);
     });
 
     // The webview posts its own in-page default findings back after each run.
     // The service ignores it once a workspace-config takeover has flipped the
     // editor to the external path.
-    deps.router.on("UpdateLintResultsCommand", (message: Command, editorId: string) => {
-        const cmd = message as UpdateLintResultsCommand;
+    deps.router.on("UpdateLintResultsCommand", (cmd, editorId) => {
         lintSvc.applyWebviewLintResults(editorId, cmd.results, cmd.unresolved, cmd.configToken);
     });
 

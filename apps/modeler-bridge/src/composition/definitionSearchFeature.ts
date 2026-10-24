@@ -1,4 +1,3 @@
-import { Command, SearchWorkspaceDefinitionsCommand } from "@miragon/bpmn-modeler-shared";
 import { DefinitionSearchService, WorkspaceDefinitionIndex } from "@miragon/bpmn-modeler-core";
 
 import { BridgeSharedDeps } from "./sharedDeps";
@@ -20,15 +19,9 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         deps.notifier,
     );
 
-    deps.router.on(
-        "SearchWorkspaceDefinitionsCommand",
-        async (message: Command, editorId: string) => {
-            await definitionSearchService.search(
-                editorId,
-                message as SearchWorkspaceDefinitionsCommand,
-            );
-        },
-    );
+    deps.router.on("SearchWorkspaceDefinitionsCommand", async (message, editorId) => {
+        await definitionSearchService.search(editorId, message);
+    });
 
     return {
         sessionHooks: {

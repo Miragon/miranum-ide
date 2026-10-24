@@ -1,18 +1,10 @@
 import {
-    AdditionalFilesQuery,
+    asProtocolMessage,
     Command,
-    DeploymentResultQuery,
-    DeploymentTargetsQuery,
-    FormDefaultsQuery,
     HostApi,
     LogErrorCommand,
-    ProcessDefinitionKeyQuery,
     Query,
     RequestFormDefaultsCommand,
-    SelectedPayloadFileQuery,
-    StartInstanceResultQuery,
-    StoredCredentialsQuery,
-    TargetSavedQuery,
 } from "@miragon/bpmn-modeler-shared";
 
 import { DeploymentForm } from "./app/form";
@@ -110,39 +102,38 @@ export function routeHostMessage(
     form: DeploymentFormPort,
     startForm: StartInstanceFormPort,
 ): void {
-    switch (msg.type) {
+    const query = asProtocolMessage(msg);
+    switch (query.type) {
         case "FormDefaultsQuery":
-            form.populate((msg as FormDefaultsQuery).defaults);
+            form.populate(query.defaults);
             break;
         case "AdditionalFilesQuery":
-            form.setAdditionalFiles((msg as AdditionalFilesQuery).filePaths);
+            form.setAdditionalFiles(query.filePaths);
             break;
         case "StoredCredentialsQuery":
-            form.populateCredentials(msg as StoredCredentialsQuery);
+            form.populateCredentials(query);
             break;
         case "DeploymentTargetsQuery":
-            form.setTargets(msg as DeploymentTargetsQuery);
+            form.setTargets(query);
             break;
         case "TargetSavedQuery": {
-            const saved = msg as TargetSavedQuery;
+            const saved = query;
             form.showTargetResult(saved.success, saved.message);
             break;
         }
         case "DeploymentResultQuery":
-            form.showResult(msg as DeploymentResultQuery);
+            form.showResult(query);
             break;
         case "ProcessDefinitionKeyQuery":
-            startForm.setProcessDefinitionKey(
-                (msg as ProcessDefinitionKeyQuery).processDefinitionKey,
-            );
+            startForm.setProcessDefinitionKey(query.processDefinitionKey);
             break;
         case "SelectedPayloadFileQuery": {
-            const payload = msg as SelectedPayloadFileQuery;
+            const payload = query;
             startForm.setPayloadFile(payload.filePath, payload.label);
             break;
         }
         case "StartInstanceResultQuery":
-            startForm.showResult(msg as StartInstanceResultQuery);
+            startForm.showResult(query);
             break;
         default:
             console.debug("[DeploymentWebview] Unhandled message type:", msg.type);

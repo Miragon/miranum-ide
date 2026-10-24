@@ -1,15 +1,12 @@
 import { FormEditor } from "@bpmn-io/form-js-editor";
 import { Form } from "@bpmn-io/form-js-viewer";
 import {
+    asProtocolMessage,
     Command,
     createFlushResponder,
-    FlushDocumentQuery,
-    FormFileQuery,
-    FormInputValuesQuery,
     GetFormFileCommand,
     GetFormInputValuesCommand,
     Query,
-    ReleaseDocumentFlushQuery,
 } from "@miragon/bpmn-modeler-shared";
 
 import { FormEditorApp } from "./app/FormEditorApp";
@@ -49,16 +46,16 @@ export function bootstrap(host: FormHost): void {
     });
     window.addEventListener("message", (event: MessageEvent<Query | Command>) => {
         if (!shouldHandleHostMessage(event)) return;
-        if (event.data.type === "FormFileQuery") {
-            const query = event.data as FormFileQuery;
+        const query = asProtocolMessage(event.data);
+        if (query.type === "FormFileQuery") {
             void app.load(query.content, query.documentRevision);
-        } else if (event.data.type === "FormInputValuesQuery") {
-            void app.setInputValues((event.data as FormInputValuesQuery).content);
+        } else if (query.type === "FormInputValuesQuery") {
+            void app.setInputValues(query.content);
         } else if (
-            event.data.type === "FlushDocumentQuery" ||
-            event.data.type === "ReleaseDocumentFlushQuery"
+            query.type === "FlushDocumentQuery" ||
+            query.type === "ReleaseDocumentFlushQuery"
         ) {
-            void respondToFlush(event.data as FlushDocumentQuery | ReleaseDocumentFlushQuery);
+            void respondToFlush(query);
         }
     });
     host.postMessage(new GetFormFileCommand());
