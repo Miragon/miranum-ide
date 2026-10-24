@@ -1003,6 +1003,27 @@ describe("BpmnDocumentSession", () => {
             expect(context.surface.reload).toHaveBeenCalledOnce();
         });
 
+        it("drops a refresh and focus asked for after the reload landed mid-drain", async () => {
+            const pushImport = deferred();
+            const context = setup();
+            await importInitialFile(context);
+            context.surface.importHostDocument.mockImplementationOnce(() => pushImport.promise);
+            void context.session.receiveHostFile(hostFile("<pushed />", 2));
+            context.session.markInitialized();
+
+            const draining = context.session.drainPendingActions();
+            await vi.advanceTimersByTimeAsync(0);
+            const reloading = context.session.receiveHostFile(hostFile("<c8 />", 3, "c8"));
+            await context.session.requestDiagramRefresh();
+            await context.session.focusElement("Task_1");
+            pushImport.resolve();
+            await Promise.all([draining, reloading]);
+
+            expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
+            expect(context.surface.centerOnElement).not.toHaveBeenCalled();
+            expect(context.surface.reload).toHaveBeenCalledOnce();
+        });
+
         it("stops a drain when the reload lands during the refresh", async () => {
             const context = setup();
             await importInitialFile(context);
