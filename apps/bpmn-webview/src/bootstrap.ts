@@ -31,11 +31,9 @@ import {
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
     ShowInfoCommand,
-    SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
-    UpdateLintResultsCommand,
     UpdateOpenScriptEditorsQuery,
     UpdateScriptContentQuery,
     UpdateScriptFormatQuery,
@@ -93,12 +91,12 @@ import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
+import { createLintBridge } from "./session/lintBridge";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
-    loadLintModule,
     loadModelerModule,
     loadViewerModule,
     prefetchSurfaceModules,
@@ -230,22 +228,15 @@ function startSession(
         host,
     });
     const hostModelerState = new HostModelerState();
+    const lint = createLintBridge(
+        host,
+        { linting: injectedLinting, onLintResults: injectedOnLintResults },
+        () => surface,
+    );
 
     // A FocusElementQuery can arrive before the import finishes (host opens the
     // editor and focuses in one tick); apply it once the modeler is ready.
     let pendingFocusId: string | undefined;
-
-    // The opaque config-version token from the host's last BpmnlintInPageQuery,
-    // echoed back on every UpdateLintResultsCommand so the host can pair a run
-    // with the config version it linted and drop a stale run. `undefined` for
-    // the payload-free default tier (and reset to it on config→no-config).
-    //
-    // Pairing is race-free without any per-run plumbing: BrowserLinter.run is a
-    // pure microtask chain (bpmnlint over the in-memory tree, no I/O), so it
-    // drains to its onLintResults synchronously-after-await, before the next host
-    // message can be delivered as a fresh macrotask and swap this closure. So the
-    // token read here always belongs to the config that drove this very run.
-    let currentLintConfigToken: string | undefined;
 
     const bpmnFileResolver = createResolver<BpmnFileQuery>();
 
@@ -565,46 +556,14 @@ function startSession(
         const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
         const extraModules = (injectedModules as unknown[]) ?? [];
 
-        // The shared lint options for both editable surfaces (Implement + Design):
-        // the injected tier or the external default a real host uses, plus the
-        // result/toggle sinks that feed the host's Problems panel + status bar.
-        // The designer resolves the engine-neutral Design config; the
-        // modeler re-resolves per mode on a live toggle. `/lint` is imported lazily
-        // and cached, so building this per (re)creation is free after the first.
-        async function lintingOptions(): Promise<{
-            linting: LintingOptions;
-            onLintResults: (event: LintRunEvent) => void;
-            onLintingToggled: (enabled: boolean) => void;
-        }> {
-            return {
-                linting: injectedLinting ?? {
-                    results: "external",
-                    module: await loadLintModule(),
-                },
-                onLintResults:
-                    injectedOnLintResults ??
-                    ((e: LintRunEvent) =>
-                        host.postMessage(
-                            new UpdateLintResultsCommand(
-                                e.results,
-                                [...e.unresolved],
-                                currentLintConfigToken,
-                            ),
-                        )),
-                onLintingToggled: (enabled: boolean) =>
-                    host.postMessage(new SetLintingEnabledCommand(enabled)),
-            };
-        }
-
         // The three surface factories the mode session switches between. View →
         // readonly viewer; Design on an untagged model → the engine-neutral
         // designer; Design/Implement on a tagged model → one createModeler whose
         // `mode` toggles live. Every surface is born in the IDE's forced theme so
         // the first frame paints correctly (the body class is the IDE signal, not
-        // "automatic"). Both editable surfaces share `lintingOptions()`: real
-        // hosts run the linter themselves and push results, so the default tier is
-        // external (the `/lint` subpath is imported lazily; the module cache makes
-        // repeat switches free).
+        // "automatic"). Both editable surfaces share the lint bridge's options;
+        // the designer resolves the engine-neutral Design config, the modeler
+        // re-resolves per mode on a live toggle.
         const surfaces: SurfaceFactories = {
             view: async ({ container, theme }) => {
                 const { createViewer } = await loadViewerModule();
@@ -618,7 +577,7 @@ function startSession(
             design: async ({ container, theme }) => {
                 const [{ createDesigner }, linting] = await Promise.all([
                     loadDesignerModule(),
-                    lintingOptions(),
+                    lint.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const designer = await createDesigner(container, {
@@ -646,7 +605,7 @@ function startSession(
                 }
                 const [{ createModeler }, linting] = await Promise.all([
                     loadModelerModule(),
-                    lintingOptions(),
+                    lint.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const modeler = await createModeler(container, {
@@ -1159,10 +1118,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnlintResultsQuery": {
                 try {
-                    const query = message.data as BpmnlintResultsQuery;
-                    if (isLintingHandle(surface)) {
-                        surface.applyLintResults(query.results);
-                    }
+                    lint.handlers.BpmnlintResultsQuery(message.data as BpmnlintResultsQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1170,9 +1126,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnLintDisabledQuery": {
                 try {
-                    if (isLintingHandle(surface)) {
-                        surface.applyLintingDisabled();
-                    }
+                    lint.handlers.BpmnLintDisabledQuery();
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1180,19 +1134,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnlintInPageQuery": {
                 try {
-                    const q = message.data as BpmnlintInPageQuery;
-                    // The token stays current for the onLintResults echo. Dedup of
-                    // a repeat covered instruction lives in LintConfigService,
-                    // where the tier state is known, so a stale token from an
-                    // intervening disabled push cannot drop a re-enable.
-                    currentLintConfigToken = q.configToken;
-                    // No workspace config → the surface's mode default (engine-aware
-                    // in Implement, engine-neutral in Design); a covered config →
-                    // lint it in-page. Either way onLintResults pushes the findings
-                    // back so the host feeds its Problems panel + status bar.
-                    if (isLintingHandle(surface)) {
-                        surface.startInPageLinting(q.config, q.configToken);
-                    }
+                    lint.handlers.BpmnlintInPageQuery(message.data as BpmnlintInPageQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
