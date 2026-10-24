@@ -21,16 +21,13 @@ import {
     ImplementationStatusQuery,
     LanguageQuery,
     CleanupDiagramQuery,
-    CleanupReportCommand,
     DiagramFormattedCommand,
     LogErrorCommand,
     LogWarningCommand,
-    OpenScriptEditorsCommand,
     PropertiesPanelStateQuery,
     Query,
     ReleaseDocumentFlushQuery,
     RequestFocusCommand,
-    ShowInfoCommand,
     SetPropertiesPanelStateCommand,
     SyncDocumentCommand,
     TextClipboardQuery,
@@ -83,16 +80,18 @@ import type {
     ModelerMode,
 } from "@miragon/bpmn-modeler";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
-import type { CleanupOutcome, LintRunEvent } from "@miragon/bpmn-modeler-types";
+import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
 import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { MessageGate } from "./messageGate";
+import { receiveErrorPrefix } from "./session/hostChannel";
 import { createLintBridge } from "./session/lintBridge";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
+import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode, WebviewStateManager } from "./state";
 import {
     loadDesignerModule,
@@ -260,6 +259,12 @@ function startSession(
     // default. The webview uses this value only when its own webview state has
     // no panelVisible entry — see WebviewStateManager.restorePanelVisibility.
     const panelStateResolver = createResolver<PropertiesPanelStateQuery>();
+
+    const surfaceRequests = createSurfaceRequests(host, () => surface, {
+        hostModelerState,
+        theme: themeAdapter,
+        replies: { elementTemplates: elementTemplatesResolver, settings: settingsResolver },
+    });
 
     const importBoundQueries = new MessageGate<MessageEvent<Query | Command>>((message) => {
         void onReceiveMessage(message);
@@ -616,25 +621,7 @@ function startSession(
                     ...linting,
                     onWarning: (warning: string) =>
                         host.postMessage(new LogWarningCommand(warning)),
-                    onElementTemplatesErrors: (errors: unknown[]) => {
-                        const messages = (errors ?? []).map((error) =>
-                            error instanceof Error ? error.message : String(error),
-                        );
-                        for (const message of messages) {
-                            host.postMessage(
-                                new LogWarningCommand(`Element template rejected: ${message}`),
-                            );
-                        }
-                        if (messages.length > 0) {
-                            host.postMessage(
-                                new ShowInfoCommand(
-                                    messages.length === 1
-                                        ? "An element template was rejected and is ignored. See the log for details."
-                                        : `${messages.length} element templates were rejected and are ignored. See the log for details.`,
-                                ),
-                            );
-                        }
-                    },
+                    onElementTemplatesErrors: surfaceRequests.reportElementTemplateErrors,
                     // The modeler's own toggle notification. The session also
                     // fires onModeChanged("toggle"); both write the same values, so
                     // keeping this (the session cannot inject into the options bag)
@@ -1056,7 +1043,7 @@ function startSession(
         if (IMPORT_BOUND_QUERY_TYPES.has(queryOrCommand.type) && importBoundQueries.hold(message)) {
             return;
         }
-        const errorPrefix = "Error receiving message: " + queryOrCommand.type + " — ";
+        const errorPrefix = receiveErrorPrefix(queryOrCommand.type);
 
         switch (true) {
             case queryOrCommand.type === "BpmnFileQuery": {
@@ -1097,18 +1084,12 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "ElementTemplatesQuery": {
-                const query = message.data as ElementTemplatesQuery;
                 try {
-                    console.debug("Received element templates: ", query.elementTemplates);
-                    if (isModelerHandle(surface)) {
-                        surface.setElementTemplates(query.elementTemplates);
-                    }
+                    surfaceRequests.handlers.ElementTemplatesQuery(
+                        message.data as ElementTemplatesQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                } finally {
-                    // Resolve even on a facade throw — otherwise the bootstrap
-                    // await starves and startPersisting never runs.
-                    elementTemplatesResolver.done(query);
                 }
                 break;
             }
@@ -1137,27 +1118,12 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "BpmnModelerSettingQuery": {
-                const query = message.data as BpmnModelerSettingQuery;
-                hostModelerState.rememberSettings(query.setting);
                 try {
-                    // Theme is host policy: the adapter drives the page scope +
-                    // instance theme off the VS Code `<body>`-class watcher here,
-                    // because the package's setSettings does not apply `colorTheme`.
-                    themeAdapter.setMode(query.setting.colorTheme);
-                    // Theme always applies (page scope); of the rest, the designer
-                    // honours only the favourites and the viewer nothing.
-                    const favourites = query.setting.favouriteBpmnElements;
-                    if (isModelerHandle(surface)) {
-                        surface.setSettings(query.setting);
-                    } else if (isEditableHandle(surface) && favourites) {
-                        surface.setFavouriteBpmnElements(favourites);
-                    }
+                    surfaceRequests.handlers.BpmnModelerSettingQuery(
+                        message.data as BpmnModelerSettingQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                } finally {
-                    // Resolve even on a facade throw — otherwise the bootstrap
-                    // await starves and startPersisting never runs.
-                    settingsResolver.done(query);
                 }
                 break;
             }
@@ -1200,10 +1166,9 @@ function startSession(
             }
             case queryOrCommand.type === "GetDiagramAsSVGCommand": {
                 try {
-                    const command = message.data as GetDiagramAsSVGCommand;
-                    // Populate the SVG field and echo the command back to the host.
-                    command.svg = await surface.getDiagramSvg();
-                    host.postMessage(command);
+                    await surfaceRequests.handlers.GetDiagramAsSVGCommand(
+                        message.data as GetDiagramAsSVGCommand,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1211,84 +1176,25 @@ function startSession(
             }
             case queryOrCommand.type === "OpenAllScriptTasksQuery": {
                 try {
-                    // Reply as a single bulk command so the host opens the scripts
-                    // sequentially; the variable model is identical for every
-                    // script in the diagram, so it is extracted once and shared.
-                    // Script tasks are a modeler-only concern (no-op otherwise).
-                    if (isModelerHandle(surface)) {
-                        const scripts = surface.collectInlineScriptTasks();
-                        host.postMessage(
-                            new OpenScriptEditorsCommand(
-                                scripts,
-                                extractProcessVariables(surface.getDefinitions()),
-                            ),
-                        );
-                    }
+                    surfaceRequests.handlers.OpenAllScriptTasksQuery();
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
                 break;
             }
             case queryOrCommand.type === "FormatDiagramQuery": {
-                try {
-                    if (isFormattableHandle(surface)) {
-                        // The outcome is reported by the `layout.formatted`
-                        // subscription in `bindSurface`, so the keyboard
-                        // shortcut and this command report through one path.
-                        await surface.formatDiagram();
-                    } else {
-                        host.postMessage(
-                            new DiagramFormattedCommand("failed", [], "UNSUPPORTED_SURFACE"),
-                        );
-                    }
-                } catch (error: any) {
-                    host.postMessage(
-                        new DiagramFormattedCommand("failed", [], "ENGINE_FAILED", error.message),
-                    );
-                }
+                await surfaceRequests.handlers.FormatDiagramQuery();
                 break;
             }
             case queryOrCommand.type === "CleanupDiagramQuery": {
-                const apply = (message.data as CleanupDiagramQuery).apply;
-                try {
-                    // A surface without the capability is a failure to report,
-                    // not a clean diagram — an empty report would be shown as
-                    // "nothing to clean up".
-                    const outcome: CleanupOutcome = isFormattableHandle(surface)
-                        ? surface.cleanupDiagram({ apply })
-                        : {
-                              status: "failed",
-                              items: [],
-                              message: "this surface cannot be cleaned up",
-                          };
-                    if (outcome.status === "failed" && outcome.message) {
-                        host.postMessage(new LogErrorCommand(errorPrefix + outcome.message));
-                    }
-                    host.postMessage(new CleanupReportCommand(outcome, apply));
-                } catch (error: any) {
-                    host.postMessage(new LogErrorCommand(errorPrefix + error.message));
-                    // Always reply: the host holds a one-shot subscription that
-                    // would otherwise leak waiting for a report.
-                    host.postMessage(
-                        new CleanupReportCommand(
-                            { status: "failed", items: [], message: error.message },
-                            apply,
-                        ),
-                    );
-                }
+                surfaceRequests.handlers.CleanupDiagramQuery(message.data as CleanupDiagramQuery);
                 break;
             }
             case queryOrCommand.type === "UpdateScriptContentQuery": {
                 try {
-                    const query = message.data as UpdateScriptContentQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.updateScriptContent(
-                            query.elementId,
-                            query.kind,
-                            query.listenerIndex,
-                            query.content,
-                        );
-                    }
+                    surfaceRequests.handlers.UpdateScriptContentQuery(
+                        message.data as UpdateScriptContentQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1296,15 +1202,9 @@ function startSession(
             }
             case queryOrCommand.type === "UpdateScriptFormatQuery": {
                 try {
-                    const query = message.data as UpdateScriptFormatQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.updateScriptFormat(
-                            query.elementId,
-                            query.kind,
-                            query.listenerIndex,
-                            query.scriptFormat,
-                        );
-                    }
+                    surfaceRequests.handlers.UpdateScriptFormatQuery(
+                        message.data as UpdateScriptFormatQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1312,11 +1212,9 @@ function startSession(
             }
             case queryOrCommand.type === "UpdateOpenScriptEditorsQuery": {
                 try {
-                    const query = message.data as UpdateOpenScriptEditorsQuery;
-                    hostModelerState.rememberOpenScripts(query.openScripts);
-                    if (isModelerHandle(surface)) {
-                        surface.applyOpenScriptEditors(query.openScripts);
-                    }
+                    surfaceRequests.handlers.UpdateOpenScriptEditorsQuery(
+                        message.data as UpdateOpenScriptEditorsQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1324,10 +1222,9 @@ function startSession(
             }
             case queryOrCommand.type === "ImplementationStatusQuery": {
                 try {
-                    const query = message.data as ImplementationStatusQuery;
-                    if (isModelerHandle(surface)) {
-                        surface.applyImplementationStatus(query.resolved);
-                    }
+                    surfaceRequests.handlers.ImplementationStatusQuery(
+                        message.data as ImplementationStatusQuery,
+                    );
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
