@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
     BpmnFileQuery,
@@ -2904,6 +2904,21 @@ describe("bootstrap mode switching", () => {
 
             await deliverToSession(query());
 
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([]);
+        });
+
+        it("ignores session messages even when the diff view cannot start", async () => {
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+            onTestFinished(() => consoleError.mockRestore());
+            const host = makeHost(new BpmnFileQuery("<left />", "c7", "viewer", 1));
+            boot(host);
+            await drainAsyncWork();
+
+            await deliverToSession(new GetDiagramAsSVGCommand());
+
+            expect(consoleError).toHaveBeenCalledWith(
+                "Diff mode: missing #js-canvas or #js-drop-zone",
+            );
             expect(sentOfType(host, "LogErrorCommand")).toEqual([]);
         });
 
