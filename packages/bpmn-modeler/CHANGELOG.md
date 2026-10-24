@@ -1,5 +1,72 @@
 # Changelog
 
+## [1.4.0](https://github.com/Miragon/bpmn-modeler/compare/bpmn-modeler-v1.3.0...bpmn-modeler-v1.4.0) (2026-10-24)
+
+
+### 🎉 New Features
+
+* **append-menu:** show element descriptions and match search keywords ([#1761](https://github.com/Miragon/bpmn-modeler/issues/1761)) ([7c7a424](https://github.com/Miragon/bpmn-modeler/commit/7c7a424c39e4eebadd217734589b8deaff5a2725))
+* **bpmn-modeler:** update favourite elements on a live surface ([#1743](https://github.com/Miragon/bpmn-modeler/issues/1743)) ([f1103b1](https://github.com/Miragon/bpmn-modeler/commit/f1103b1d765d172ebd7ba54093518dfdfd4bfd39))
+
+
+### 🐞 Bug Fixes
+
+* **append-menu:** map palette entries to bpmn types through a catalog ([#1723](https://github.com/Miragon/bpmn-modeler/issues/1723)) ([2e0509f](https://github.com/Miragon/bpmn-modeler/commit/2e0509f30f070414037f31f7f0bfc2e10043c8a3))
+* **append-menu:** prefer the most specific type for a translated pick ([#1702](https://github.com/Miragon/bpmn-modeler/issues/1702)) ([2e0509f](https://github.com/Miragon/bpmn-modeler/commit/2e0509f30f070414037f31f7f0bfc2e10043c8a3))
+* **bpmn-clipboard:** keep text field copies from carrying stale elements ([#1696](https://github.com/Miragon/bpmn-modeler/issues/1696)) ([c5943c5](https://github.com/Miragon/bpmn-modeler/commit/c5943c540ed1d50c4b8b8305f1d22b850915ab5e))
+* **bpmn-diff:** step to boundary events next to their host activity ([#1749](https://github.com/Miragon/bpmn-modeler/issues/1749)) ([0003cbb](https://github.com/Miragon/bpmn-modeler/commit/0003cbbed4b7ddde14696b2b5c569095a977a3c1))
+* **bpmn-diff:** walk an embedded sub-process when the stepper reaches it ([#1748](https://github.com/Miragon/bpmn-modeler/issues/1748)) ([12c5e02](https://github.com/Miragon/bpmn-modeler/commit/12c5e026f72db97d8e49c52eef057629d2490474))
+* **bpmn-modeler:** arm the initial viewport fit on modeler imports ([#1741](https://github.com/Miragon/bpmn-modeler/issues/1741)) ([18ef8a6](https://github.com/Miragon/bpmn-modeler/commit/18ef8a6de5493bd87521176229e28df5b3b2de23))
+* **bpmn-modeler:** import plugin css at the pinned versions ([#1675](https://github.com/Miragon/bpmn-modeler/issues/1675)) ([b0c2e84](https://github.com/Miragon/bpmn-modeler/commit/b0c2e84c991e86100d9f81b3044f93dbc1cc380e))
+* **bpmn-modeler:** keep theme in step across destroy and mode switches ([#1734](https://github.com/Miragon/bpmn-modeler/issues/1734)) ([6fb3ba9](https://github.com/Miragon/bpmn-modeler/commit/6fb3ba91f490f0c7e065cdf63d585a2d7d7971bd))
+* **bpmn-modeler:** route ignored lint push warnings through onWarning ([#1735](https://github.com/Miragon/bpmn-modeler/issues/1735)) ([f315dab](https://github.com/Miragon/bpmn-modeler/commit/f315dabaab1e20b1928cd5e4e6255b44017ca54c))
+* **element-template-chooser:** show only the type field as task type ([#1701](https://github.com/Miragon/bpmn-modeler/issues/1701)) ([f4be0c6](https://github.com/Miragon/bpmn-modeler/commit/f4be0c6bbe3d72a82650bc08a9d7841337d40c45))
+* **inline-scripting:** close script tabs whose task changed while hidden ([#1737](https://github.com/Miragon/bpmn-modeler/issues/1737)) ([81f43e4](https://github.com/Miragon/bpmn-modeler/commit/81f43e47633ec19d18b9bb8ee98a7a0a77bbe581))
+* **inline-scripting:** skip script writes to morphed script tasks ([#1703](https://github.com/Miragon/bpmn-modeler/issues/1703)) ([781a2f6](https://github.com/Miragon/bpmn-modeler/commit/781a2f69a539029b20be5d5d2056a2443ecce135))
+* **modeler-core:** skip host script write-back to morphed script tasks ([#1726](https://github.com/Miragon/bpmn-modeler/issues/1726)) ([3c36f22](https://github.com/Miragon/bpmn-modeler/commit/3c36f22e384f9677daa7ecf56b8a096a4177d1fe))
+* **modeler-types:** log import warning messages instead of [object Object] ([#1697](https://github.com/Miragon/bpmn-modeler/issues/1697)) ([3929e10](https://github.com/Miragon/bpmn-modeler/commit/3929e10a354e1dd5fe0505562275015792962cf6))
+
+
+### 🔨 Refactoring
+
+* **bpmn-modeler:** compose c7/c8 modelers on bpmn-js/lib/Modeler ([#1676](https://github.com/Miragon/bpmn-modeler/issues/1676)) ([ab57dd9](https://github.com/Miragon/bpmn-modeler/commit/ab57dd9172f37fa20c349adbf06c87372d71df75))
+* **bpmn-modeler:** drop unreachable export and favourites branches ([#1738](https://github.com/Miragon/bpmn-modeler/issues/1738)) ([1983573](https://github.com/Miragon/bpmn-modeler/commit/1983573b33b7ea6b3b73c9f01072d912104d0fb8))
+* **bpmn-modeler:** share surface plumbing across the facades ([#1753](https://github.com/Miragon/bpmn-modeler/issues/1753)) ([f28c022](https://github.com/Miragon/bpmn-modeler/commit/f28c022d891d29e9ecfb291c87e4f03106f6daf0))
+* deepen webview session, document sync, protocol and view state ([#1764](https://github.com/Miragon/bpmn-modeler/issues/1764)) ([c6a8407](https://github.com/Miragon/bpmn-modeler/commit/c6a840742cc14b60724e064de8ef353202955c65))
+* **modeler-core:** add an in-memory host kit and move specs onto it ([#1773](https://github.com/Miragon/bpmn-modeler/issues/1773)) ([347c937](https://github.com/Miragon/bpmn-modeler/commit/347c9379c1bbea6bc36bf48c2f93d3aa62de6e0b))
+* **modeler-core:** share document sync and surface lifecycles ([#1776](https://github.com/Miragon/bpmn-modeler/issues/1776)) ([f4c099f](https://github.com/Miragon/bpmn-modeler/commit/f4c099fbeef9c8ab0bc09338ad959569bf55614f))
+
+
+### 📔 Documentation
+
+* **bpmn-modeler:** document post-destroy throws and lint no-throw scope ([#1736](https://github.com/Miragon/bpmn-modeler/issues/1736)) ([622cfd2](https://github.com/Miragon/bpmn-modeler/commit/622cfd2a070e206d2045553868677e588b1ddf94))
+* **readme:** replace the preview image with a demo gif ([#1756](https://github.com/Miragon/bpmn-modeler/issues/1756)) ([c9a0ba9](https://github.com/Miragon/bpmn-modeler/commit/c9a0ba9fad38144af0b6e7484deec3205eec8fcd))
+* rework the docs site into a compact, picture-led manual ([#1715](https://github.com/Miragon/bpmn-modeler/issues/1715)) ([22f4d0d](https://github.com/Miragon/bpmn-modeler/commit/22f4d0da7864e182f54de0013cfd8b2c524ca059))
+
+
+### 🛠️ Misc
+
+* **append-menu:** cover the append menu and element template chooser ([#1693](https://github.com/Miragon/bpmn-modeler/issues/1693)) ([e13eae7](https://github.com/Miragon/bpmn-modeler/commit/e13eae781de9c0759c0bd935fbe9d86091e78fd3))
+* **bpmn-modeler:** cover modeler and designer surfaces and the mode switch ([#1695](https://github.com/Miragon/bpmn-modeler/issues/1695)) ([3ccbfa7](https://github.com/Miragon/bpmn-modeler/commit/3ccbfa7d01ec64bb2bd58d1b3b14a548052b92be))
+* **bpmn-modeler:** pin the inline-scripting wiring in a real browser ([#1732](https://github.com/Miragon/bpmn-modeler/issues/1732)) ([e24c39d](https://github.com/Miragon/bpmn-modeler/commit/e24c39d1fa3347af9c3bf9212fdf63c8e8ccb767))
+* **ci:** accept non-closing issue references in the pr issue gate ([#1705](https://github.com/Miragon/bpmn-modeler/issues/1705)) ([9187a27](https://github.com/Miragon/bpmn-modeler/commit/9187a27f675d4dc92dc9b384c75974560fae0bbf))
+* **ci:** gate coverage reports on code changes and enforce thresholds ([#1682](https://github.com/Miragon/bpmn-modeler/issues/1682)) ([e2bf365](https://github.com/Miragon/bpmn-modeler/commit/e2bf3650949daf8d445466ace1eb769a89a87b4f))
+* **ci:** run every vitest workspace from one target registry ([#1687](https://github.com/Miragon/bpmn-modeler/issues/1687)) ([b0c1940](https://github.com/Miragon/bpmn-modeler/commit/b0c19402c84b2a1f496fa20728e97f9a254b8885))
+* **deps:** bump @bpmn-io/properties-panel from 3.56.1 to 3.57.0 in the bpmn-io group ([#1665](https://github.com/Miragon/bpmn-modeler/issues/1665)) ([00808c7](https://github.com/Miragon/bpmn-modeler/commit/00808c70f667d6eb6848e943ead9d7a2577105ca))
+* **deps:** bump @miragon/bpmnlint-plugin-rules from 0.12.0 to 0.12.1 in the bpmnlint group ([#1664](https://github.com/Miragon/bpmn-modeler/issues/1664)) ([7a7772b](https://github.com/Miragon/bpmn-modeler/commit/7a7772bc370d675cd70cd7f9b0812172bd1864e3))
+* **deps:** bump the npm-minor-patch group across 1 directory with 10 updates ([#1667](https://github.com/Miragon/bpmn-modeler/issues/1667)) ([4fb5db5](https://github.com/Miragon/bpmn-modeler/commit/4fb5db55c3e1f5891598189d720ed292691634ca))
+* **deps:** bump the npm-minor-patch group across 1 directory with 8 updates ([#1758](https://github.com/Miragon/bpmn-modeler/issues/1758)) ([c1a1cd3](https://github.com/Miragon/bpmn-modeler/commit/c1a1cd3279cbf9137b337422ed71f05d416c9347))
+* ignore vitest browser-mode failure artifacts ([#1762](https://github.com/Miragon/bpmn-modeler/issues/1762)) ([1038566](https://github.com/Miragon/bpmn-modeler/commit/1038566eab039a54c1ddabff3c273ee0878f5aa7))
+* **main:** release dmn-modeler 0.4.0 ([#1629](https://github.com/Miragon/bpmn-modeler/issues/1629)) ([e719185](https://github.com/Miragon/bpmn-modeler/commit/e71918526b2222ead2d8518d48ed0e459da568cd))
+* **main:** release intellij 1.11.0 ([#1632](https://github.com/Miragon/bpmn-modeler/issues/1632)) ([a54491b](https://github.com/Miragon/bpmn-modeler/commit/a54491bcb1574d2b02dd1d76ff2210ac14a172e6))
+* **main:** release vscode 1.16.0 ([#1633](https://github.com/Miragon/bpmn-modeler/issues/1633)) ([6e0898a](https://github.com/Miragon/bpmn-modeler/commit/6e0898ab2ae395e588e84b67fa8e30706bbfa53a))
+* **properties-panel:** cover the neutral property groups and script buttons ([#1694](https://github.com/Miragon/bpmn-modeler/issues/1694)) ([f5021a2](https://github.com/Miragon/bpmn-modeler/commit/f5021a2c8ea2beb34d20b1383a8b71d9e7eb0d05))
+* **properties-panel:** typecheck the workspace in ci ([#1729](https://github.com/Miragon/bpmn-modeler/issues/1729)) ([7cda886](https://github.com/Miragon/bpmn-modeler/commit/7cda886442773b8478f476748a98191ac35abdb8))
+* **release:** combine release-please prs into one ([#1680](https://github.com/Miragon/bpmn-modeler/issues/1680)) ([2c813cc](https://github.com/Miragon/bpmn-modeler/commit/2c813ccb7510f965992fa8ef516052149a79e661))
+* replace the browser demo with a real VS Code smoke test ([#1718](https://github.com/Miragon/bpmn-modeler/issues/1718)) ([92b2b6e](https://github.com/Miragon/bpmn-modeler/commit/92b2b6e8faa090c31b4b507b9018bb0344460dde))
+* **shared:** cover the panel resizer, protocol messages, flow order and clipboard ([#1691](https://github.com/Miragon/bpmn-modeler/issues/1691)) ([e9586f3](https://github.com/Miragon/bpmn-modeler/commit/e9586f3274792e01a8d033f5564b20caf0433f90))
+* **shared:** lint the shared library source ([#1747](https://github.com/Miragon/bpmn-modeler/issues/1747)) ([f16b03e](https://github.com/Miragon/bpmn-modeler/commit/f16b03e186ddad789a32ea90038753f845b0e57d))
+
 ## [1.3.0](https://github.com/Miragon/bpmn-modeler/compare/bpmn-modeler-v1.2.2...bpmn-modeler-v1.3.0) (2026-10-16)
 
 

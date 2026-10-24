@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.12.0](https://github.com/Miragon/bpmn-modeler/compare/intellij-v1.11.0...intellij-v1.12.0) (2026-10-24)
+
+
+### 🎉 New Features
+
+* **append-menu:** show element descriptions and match search keywords ([#1761](https://github.com/Miragon/bpmn-modeler/issues/1761)) [sync 7c7a424] ([d8357d8](https://github.com/Miragon/bpmn-modeler/commit/d8357d81aa31dd2ee520368d0e61fb903b9fe359))
+* **bpmn-modeler:** update favourite elements on a live surface ([#1743](https://github.com/Miragon/bpmn-modeler/issues/1743)) [sync f1103b1] ([c759d76](https://github.com/Miragon/bpmn-modeler/commit/c759d76c7f1d01e8d5f137480bbe1a39febb259a))
+* **deployment:** support ${env:VAR} references in target fields ([#1575](https://github.com/Miragon/bpmn-modeler/issues/1575)) ([d3f657b](https://github.com/Miragon/bpmn-modeler/commit/d3f657bc5a49a45f7b098495766af850b7e39bb5))
+
+
+### 🐞 Bug Fixes
+
+* **append-menu:** prefer the most specific type for a translated pick ([#1702](https://github.com/Miragon/bpmn-modeler/issues/1702)) [sync 2e0509f] ([6161050](https://github.com/Miragon/bpmn-modeler/commit/6161050a22953480db64fc5fc527f8aeadce653a))
+* **bpmn-clipboard:** keep text field copies from carrying stale elements ([#1696](https://github.com/Miragon/bpmn-modeler/issues/1696)) [sync c5943c5] ([ec958f7](https://github.com/Miragon/bpmn-modeler/commit/ec958f7af472d53d0a441f1a30c1495ca766836f))
+* **bpmn-diff:** step to boundary events next to their host activity ([#1749](https://github.com/Miragon/bpmn-modeler/issues/1749)) [sync 0003cbb] ([f4caf03](https://github.com/Miragon/bpmn-modeler/commit/f4caf03438148e94866ba5744f318bce8bd38a56))
+* **bpmn-diff:** walk an embedded sub-process when the stepper reaches it ([#1748](https://github.com/Miragon/bpmn-modeler/issues/1748)) [sync 12c5e02] ([3648d45](https://github.com/Miragon/bpmn-modeler/commit/3648d4580fdc95a551b9261fb4ce6053bb30a96a))
+* **bpmn-modeler:** arm the initial viewport fit on modeler imports ([#1741](https://github.com/Miragon/bpmn-modeler/issues/1741)) [sync 18ef8a6] ([367e1d6](https://github.com/Miragon/bpmn-modeler/commit/367e1d6e36c189d6d0dcd5529b486d9bab3d0158))
+* **bpmn-modeler:** import plugin css at the pinned versions ([#1675](https://github.com/Miragon/bpmn-modeler/issues/1675)) [sync b0c2e84] ([9115a99](https://github.com/Miragon/bpmn-modeler/commit/9115a997a62228547f77c6576b00d56e89e03cda))
+* **bpmn-modeler:** keep theme in step across destroy and mode switches ([#1734](https://github.com/Miragon/bpmn-modeler/issues/1734)) [sync 6fb3ba9] ([2a993a8](https://github.com/Miragon/bpmn-modeler/commit/2a993a866761ac52e2dd35fec0feedc76981be4b))
+* **bpmn-modeler:** route ignored lint push warnings through onWarning ([#1735](https://github.com/Miragon/bpmn-modeler/issues/1735)) [sync f315dab] ([cd49835](https://github.com/Miragon/bpmn-modeler/commit/cd4983564ec06ef3b774431cba263a354113af14))
+* **bpmn-webview:** give the diff pane a language-only message router ([#1769](https://github.com/Miragon/bpmn-modeler/issues/1769)) [sync b64e364] ([e89b6e4](https://github.com/Miragon/bpmn-modeler/commit/e89b6e4a16c3902d33d678e25bc6f20724990d96))
+* **bpmn-webview:** honour favourite elements in design mode ([#1744](https://github.com/Miragon/bpmn-modeler/issues/1744)) [sync 0ee9666] ([99dcccd](https://github.com/Miragon/bpmn-modeler/commit/99dcccd0fc553e0690811470702b6e3a6782ea10))
+* **bpmn-webview:** keep host settings and script locks on rebuilt modelers ([#1731](https://github.com/Miragon/bpmn-modeler/issues/1731)) [sync 0a4028b] ([ad637c3](https://github.com/Miragon/bpmn-modeler/commit/ad637c318ba938572592ab377d3087e139f2b13b))
+* **bpmn-webview:** time out unanswered clipboard and definition-search requests ([#1730](https://github.com/Miragon/bpmn-modeler/issues/1730)) [sync 39a43bd] ([a497553](https://github.com/Miragon/bpmn-modeler/commit/a49755366d8d9bc58b17c400297cee64b1a649f7))
+* **element-template-chooser:** show only the type field as task type ([#1701](https://github.com/Miragon/bpmn-modeler/issues/1701)) [sync f4be0c6] ([e2bec2d](https://github.com/Miragon/bpmn-modeler/commit/e2bec2df516d5c82944404c11999c5dad0c8110f))
+* **inline-scripting:** close script tabs whose task changed while hidden ([#1737](https://github.com/Miragon/bpmn-modeler/issues/1737)) [sync 81f43e4] ([362b9fe](https://github.com/Miragon/bpmn-modeler/commit/362b9fe1bde7bec58d2f04a9f92ee4188efa32c4))
+* **inline-scripting:** skip script writes to morphed script tasks ([#1703](https://github.com/Miragon/bpmn-modeler/issues/1703)) [sync 781a2f6] ([8c9633e](https://github.com/Miragon/bpmn-modeler/commit/8c9633ee9913541e7c44f383f36257f7fde17296))
+* **modeler-core:** generate webview csp nonces from a csprng ([#1750](https://github.com/Miragon/bpmn-modeler/issues/1750)) [sync 387900b] ([97cc04d](https://github.com/Miragon/bpmn-modeler/commit/97cc04d78a128a277e754cc3b048170fb043f988))
+* **modeler-core:** skip host script write-back to morphed script tasks ([#1726](https://github.com/Miragon/bpmn-modeler/issues/1726)) [sync 3c36f22] ([0d16462](https://github.com/Miragon/bpmn-modeler/commit/0d1646261baf94256095ee47f72379060016fcd8))
+* **shared:** hold a quickly narrowed properties panel at its minimum width ([#1698](https://github.com/Miragon/bpmn-modeler/issues/1698)) [sync f92e122] ([74417fa](https://github.com/Miragon/bpmn-modeler/commit/74417fac1d705768bac5a2fce16e30ca200f8e23))
+* **shared:** keep properties-panel groups collapsed after a rebuild ([#1728](https://github.com/Miragon/bpmn-modeler/issues/1728)) [sync 08610dc] ([59ff23e](https://github.com/Miragon/bpmn-modeler/commit/59ff23eff098235154ff150d97944488f2698fde))
+
 ## [1.11.0](https://github.com/Miragon/bpmn-modeler/compare/intellij-v1.10.2...intellij-v1.11.0) (2026-10-16)
 
 
