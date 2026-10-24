@@ -19,7 +19,7 @@ Append the next element from one panel that shows your element templates next to
 | Search bar | Filters both sides. Templates match on name, description, keywords, category and the BPMN types they apply to; elements match on label, description and keywords. |
 | Category chips | One chip per template `category`. Click to filter, click again or **All** to reset. |
 | Template list | Name, BPMN type icon, category badge and the template's own icon. Hover a card to see its implementation (Java class, delegate, topic, …), property count and documentation link. |
-| BPMN palette | Standard elements grouped as gateways, tasks, sub-processes, events and data. Icons only by default; the chevron next to **BPMN** shows labels. Hover an element, or move to it with the arrow keys, to see what it is for. |
+| BPMN palette | Standard elements grouped as gateways, tasks, sub-processes, events and data. Icons only by default; the chevron next to **BPMN** shows labels. On Camunda 7 and 8, hover an element, or move to it with the arrow keys, to see what it is for. |
 | Favourites | Pinned elements at the top of the palette (see below). |
 
 Searching for a type name such as "service task" also lists every template that applies to that type. On Camunda 8, element keywords work too: "child process" finds the call activity.
