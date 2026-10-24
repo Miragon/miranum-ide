@@ -38,6 +38,9 @@ export type SessionMessageType =
 
 export type SessionHostMessages = { [Type in SessionMessageType]: MessageOfType<Type> };
 
+/** DiffMode answers the diff queries on its own listener. */
+export type DiffPaneHostMessages = { LanguageQuery: MessageOfType<"LanguageQuery"> };
+
 // The router finds a handler by the message's `type`, so each key must be that type.
 type KeyedByType<Messages> = { readonly [Type in keyof Messages]: { readonly type: Type } };
 
