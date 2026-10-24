@@ -1,39 +1,34 @@
+import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
+import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
+import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
 import {
-    BpmnModelerSettingQuery,
-    Command,
-    ElementTemplatesQuery,
+    type BpmnModelerSettingQuery,
+    type Command,
+    type ElementTemplatesQuery,
     GetBpmnFileCommand,
     GetBpmnModelerSettingCommand,
     GetPropertiesPanelStateCommand,
-    LogErrorCommand,
-    PropertiesPanelStateQuery,
-    Query,
+    HOST_REPLY_TIMEOUT_MS,
+    type HostApi,
+    type PropertiesPanelStateQuery,
+    type Query,
     RequestFocusCommand,
     SetPropertiesPanelStateCommand,
-    HOST_REPLY_TIMEOUT_MS,
+    applyPageThemeScope,
+    createHostThemeAdapter,
     createInertLockGroup,
     createResolver,
-    initResizer,
     installCanvasAutoFocus,
     installGlobalErrorForwarding,
     installPanelShortcuts,
-    readSavedPanelVisibility,
+    resolveHostThemeKind,
     takeFocus,
 } from "@miragon/bpmn-modeler-shared";
-import {
-    applyPageThemeScope,
-    createHostThemeAdapter,
-    resolveHostThemeKind,
-} from "@miragon/bpmn-modeler-shared";
-import { i18n, type SupportedLocale } from "@miragon/bpmn-modeler-i18n";
-import { extras as i18nExtras } from "@miragon/bpmn-modeler-i18n-extras";
-import type { ClipboardOptions, LintingOptions, ModelerCapabilities } from "@miragon/bpmn-modeler";
-import type { HostApi } from "@miragon/bpmn-modeler-shared";
 import type { LintRunEvent } from "@miragon/bpmn-modeler-types";
-import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { BpmnDocumentSync } from "./session/documentSync";
+import { mountEditorChrome } from "./session/editorChrome";
 import { createLintBridge } from "./session/lintBridge";
 import {
     createHostMessageRouter,
@@ -50,9 +45,35 @@ import { createSurfaceBinder } from "./session/surfaceBinding";
 import { createSurfaceFactories } from "./session/surfaceFactories";
 import { createSurfaceRequests } from "./session/surfaceRequests";
 import { readSavedMode } from "./state";
-import { prefetchSurfaceModules } from "./surfaceModules";
 import { isEditableHandle, type SurfaceHandle } from "./surface";
+import { prefetchSurfaceModules } from "./surfaceModules";
+import type { WebviewState } from "./webviewState";
 import "../../../packages/bpmn-modeler/src/styles/mode.css";
+
+interface BootstrapOptions {
+    /** Host-specific extra bpmn-js DI modules. */
+    extraModules?: unknown[];
+    /**
+     * Explicit per-feature ports; `undefined` selects the full protocol adapter
+     * so every real host keeps all features.
+     */
+    capabilities?: ModelerCapabilities;
+    /** The bpmnlint tier; `undefined` selects the external (host-pushed) tier that real hosts use. */
+    linting?: LintingOptions;
+    /**
+     * The clipboard tier; `undefined` selects dev-build native, otherwise the
+     * protocol bridge. `"native"` forces the browser clipboard; `{ bridge }`
+     * routes through a caller-supplied override.
+     */
+    clipboard?: ClipboardOptions | "native";
+    /**
+     * In-page lint-run sink; only a consumer opting into in-page linting passes
+     * one. Real hosts run the linter themselves.
+     */
+    onLintResults?: (event: LintRunEvent) => void;
+    /** Restarts the containing webview after an engine change. */
+    reload?: () => void;
+}
 
 /**
  * Starts the BPMN webview against the given host. The entry chooses the host,
@@ -60,57 +81,16 @@ import "../../../packages/bpmn-modeler/src/styles/mode.css";
  * {@link ModelerCapabilities}. Omitting `capabilities` selects the
  * full protocol adapter, so every real host keeps all features; passing a
  * partial object turns off the features whose ports it omits.
- */
-export function bootstrap(
-    injectedHost: HostApi<WebviewState, Command | Query>,
-    opts: {
-        extraModules?: unknown[];
-        capabilities?: ModelerCapabilities;
-        linting?: LintingOptions;
-        clipboard?: ClipboardOptions | "native";
-        onLintResults?: (event: LintRunEvent) => void;
-        reload?: () => void;
-    } = {},
-): void {
-    startSession(
-        injectedHost,
-        opts.extraModules,
-        opts.capabilities,
-        opts.linting,
-        opts.clipboard,
-        opts.onLintResults,
-        opts.reload,
-    );
-}
-
-/**
- * One webview session. The modeler, resolvers, debounced syncs, flush
- * responder, and the "is initialized" latch are scoped to this closure so a
+ *
+ * Each call is one webview session. The modeler, resolvers, debounced syncs,
+ * flush responder, and the "is initialized" latch are scoped to it so a
  * session owns its own lifetime rather than a page-wide singleton — the
  * prerequisite for hosting more than one modeler on a page. Single-instance
- * hosts (VS Code, IntelliJ, Theia) call {@link bootstrap} exactly once.
- *
- * @param host The injected host adapter.
- * @param injectedModules Host-specific extra bpmn-js DI modules.
- * @param injectedCapabilities Explicit per-feature ports; `undefined` selects
- *   the full protocol adapter so every real host keeps all features.
- * @param injectedLinting The bpmnlint tier; `undefined` selects the external
- *   (host-pushed) tier that real hosts use.
- * @param injectedClipboard The clipboard tier; `undefined` selects dev-build
- *   native, otherwise the protocol bridge. `"native"` forces the browser
- *   clipboard; `{ bridge }` routes through a caller-supplied override.
- * @param injectedOnLintResults In-page lint-run sink; only a consumer opting into
- *   in-page linting passes one. Real hosts run the linter themselves.
- * @param injectedReload Restarts the containing webview after an engine change.
+ * hosts (VS Code, IntelliJ, Theia) call it exactly once.
  */
-function startSession(
+export function bootstrap(
     host: HostApi<WebviewState, Command | Query>,
-    injectedModules: unknown[] | undefined,
-    injectedCapabilities: ModelerCapabilities | undefined,
-    injectedLinting: LintingOptions | undefined,
-    injectedClipboard: ClipboardOptions | "native" | undefined,
-    injectedOnLintResults: ((event: LintRunEvent) => void) | undefined,
-    injectedReload: (() => void) | undefined,
+    opts: BootstrapOptions = {},
 ): void {
     const pageInertLocks = createInertLockGroup(document.body);
     const modeSwitchLock = pageInertLocks.createLock();
@@ -129,14 +109,14 @@ function startSession(
         modes.setTheme(kind);
     });
     const protocolCapabilities = createProtocolCapabilities(host, getSurface);
-    const clipboard = resolveClipboard(injectedClipboard, {
+    const clipboard = resolveClipboard(opts.clipboard, {
         isDevelopment: process.env.NODE_ENV === "development",
         host,
     });
     const hostModelerState = new HostModelerState();
     const lintBridge = createLintBridge(
         host,
-        { linting: injectedLinting, onLintResults: injectedOnLintResults },
+        { linting: opts.linting, onLintResults: opts.onLintResults },
         getSurface,
     );
 
@@ -172,7 +152,7 @@ function startSession(
         getViewState,
         reloadLock: engineReloadLock,
         cancelPendingVariablePublish: () => modes.disposeSurfaceBinding(),
-        reloadPage: injectedReload ?? (() => window.location.reload()),
+        reloadPage: opts.reload ?? (() => window.location.reload()),
     });
 
     const modes = createModeController(host, {
@@ -234,14 +214,14 @@ function startSession(
         // Viewer mode (one side of a diff view) skips the resizer + properties
         // panel + palette, so we don't call initResizer() here — the chrome is
         // hidden by .viewer-mode CSS once we confirm the mode below. For the
-        // modeler path, initResizer() is called after the branch check.
+        // modeler path, mountEditorChrome() calls it after the branch check.
 
         host.postMessage(new GetBpmnFileCommand());
         host.postMessage(new GetBpmnModelerSettingCommand());
         host.postMessage(new GetPropertiesPanelStateCommand());
         const savedMode = readSavedMode(host);
         if (savedMode) {
-            prefetchSurfaceModules(savedMode, { linting: injectedLinting === undefined });
+            prefetchSurfaceModules(savedMode, { linting: opts.linting === undefined });
         }
 
         const bpmnFileQuery = await documentSync.waitForInitialFile();
@@ -277,69 +257,23 @@ function startSession(
             return;
         }
 
-        // Host HTML keeps its `js-canvas` / `js-properties-panel` ids; the
-        // facade takes the resolved elements, not selectors, so a second modeler
-        // (in-page diff) can pass its own DOM hosts with no ids.
-        const canvasEl = document.getElementById("js-canvas");
-        const propertiesPanelParent = document.getElementById("js-properties-panel");
-        if (!canvasEl || !propertiesPanelParent) {
-            host.postMessage(
-                new LogErrorCommand("Missing #js-canvas or #js-properties-panel in host HTML"),
-            );
-            return;
-        }
-
-        // The mode strip + panel mount are created at runtime (all three shells
-        // ship only the empty `#js-canvas` / `#js-properties-panel`). The strip
-        // sits on the canvas; the panel mount — not the host — is
-        // the properties-panel parent and the panel-shortcut root. `initResizer`
-        // still binds to the host by its hard-coded id, so its collapse behaviour
-        // is unchanged.
-        propertiesPanelParent.classList.add("panel-host");
-        const stripEl = document.createElement("div");
-        stripEl.id = "js-mode-strip";
-        stripEl.className = "mode-strip";
-        const mountEl = document.createElement("div");
-        mountEl.id = "js-properties-panel-mount";
-        mountEl.className = "panel-mount";
-        canvasEl.prepend(stripEl);
-        propertiesPanelParent.append(mountEl);
-
-        const propertiesPanelHandle = initResizer({
-            getToggleLabel: (state) =>
-                i18n.translate(
-                    state === "collapsed" ? "Open properties panel" : "Close properties panel",
-                ) + " (Shift+P)",
-            onLabelChange: (apply) => i18n.onChange(apply),
-        });
-
-        // Early-apply this editor's own saved panel visibility (if any) before
-        // diagram import so the panel snaps straight to the correct per-editor
-        // state — no flash, no wait on the host round-trip, and it neutralizes
-        // the stale global-default hint baked into the pre-rendered HTML. When
-        // absent, the host global default is applied later (once its reply
-        // arrives). Applied via the handle so the resizer's DOM-seeded
-        // `isCollapsed` stays in sync.
-        const savedPanelVisible = readSavedPanelVisibility(host);
-        if (savedPanelVisible !== undefined) {
-            propertiesPanelHandle.setVisible(savedPanelVisible);
-        }
+        const chrome = mountEditorChrome(host);
+        if (!chrome) return;
 
         // The engine may be undefined here — an untagged (engine-neutral) model
         // is first-class now and opens in Design. The initial mode resolves from
         // this editor's saved mode, then the host's default, then the engine's
         // own default — the mode session vets it against availability.
         const engine = bpmnFileQuery?.engine;
-
-        const capabilities = injectedCapabilities ?? protocolCapabilities.capabilities;
+        const capabilities = opts.capabilities ?? protocolCapabilities.capabilities;
 
         const started = await modes.start({
-            container: canvasEl,
+            container: chrome.canvas,
             engine,
             surfaces: createSurfaceFactories(host, {
-                propertiesPanelParent: mountEl,
+                propertiesPanelParent: chrome.panelMount,
                 capabilities,
-                extraModules: injectedModules ?? [],
+                extraModules: opts.extraModules ?? [],
                 clipboard: clipboard.options,
                 lintBridge,
                 hostModelerState,
@@ -351,12 +285,12 @@ function startSession(
             binder: createSurfaceBinder(host, {
                 documentSync,
                 lifecycle: sessionActions,
-                panelRoot: mountEl,
+                panelRoot: chrome.panelMount,
                 engine,
                 capabilities,
                 elementTemplatesReply: elementTemplatesResolver,
             }),
-            strip: { host: propertiesPanelParent, stripEl },
+            strip: { host: chrome.panelHost, stripEl: chrome.stripEl },
         });
         if (!started) return;
 
@@ -364,7 +298,7 @@ function startSession(
         if (!opened || sessionActions.isReloading()) return;
 
         // Equals the latest host document's engine: any other would have reloaded the page.
-        if (injectedCapabilities === undefined) {
+        if (opts.capabilities === undefined) {
             protocolCapabilities.requestFormReferenceStatus(engine);
         }
 
@@ -399,24 +333,21 @@ function startSession(
         await sessionActions.drainPendingActions();
         if (sessionActions.isReloading()) return;
 
-        // Panel visibility: this editor's own saved entry (applied early above)
+        // Panel visibility: this editor's own saved entry (applied by mountEditorChrome)
         // wins. Only when absent do we fall back to the host's global default —
         // the seed for a first-ever open. This branch is deliberately *not*
         // gated on templates/settings, so a slow or dropped templates reply
         // cannot leave the panel stuck at the pre-rendered default.
-        if (savedPanelVisible === undefined) {
+        if (chrome.savedPanelVisible === undefined) {
             const panelStateQuery = await panelStateResolver.wait(HOST_REPLY_TIMEOUT_MS);
             if (sessionActions.isReloading()) return;
-            viewState.restorePanelVisibility(
-                propertiesPanelHandle,
-                panelStateQuery?.visible ?? true,
-            );
+            viewState.restorePanelVisibility(chrome.panel, panelStateQuery?.visible ?? true);
         }
 
         // Report user toggles: persist this editor's own state AND update the
         // host's global default so the latest preference seeds new editors.
         // Registered after restore so the restore itself can't echo back.
-        propertiesPanelHandle.onVisibilityChanged((visible) => {
+        chrome.panel.onVisibilityChanged((visible) => {
             getViewState()?.persistPanelVisibility(visible);
             host.postMessage(new SetPropertiesPanelStateCommand(visible));
         });
@@ -425,12 +356,12 @@ function startSession(
         // toggles panel visibility. Installed once, over the polymorphic surface.
         installPanelShortcuts(
             {
-                handle: propertiesPanelHandle,
+                handle: chrome.panel,
                 focusCanvas: modes.focusCanvas,
                 isCanvasFocused: () =>
                     getSurface().getService<{ isFocused(): boolean }>("canvas").isFocused(),
             },
-            { getPanelRoot: () => mountEl },
+            { getPanelRoot: () => chrome.panelMount },
         );
         installCanvasAutoFocus({ focusCanvas: modes.focusCanvas });
         host.postMessage(new RequestFocusCommand());
