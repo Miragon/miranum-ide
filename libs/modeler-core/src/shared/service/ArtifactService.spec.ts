@@ -9,46 +9,91 @@ function createService(options: TestHostOptions = {}) {
     return { service, workspace };
 }
 
-describe("ArtifactService.findConfigFile", () => {
-    it("does not skip an unreadable nearest file in favor of another destination", async () => {
-        const { service, workspace } = createService({
-            files: { "/root/.camunda/deployment-targets.json": "{}" },
-        });
-        const readFile = vi.spyOn(workspace, "readFile").mockRejectedValueOnce(new Error("EACCES"));
-        await expect(
-            service.findConfigFile("/root/nested", ".camunda", "deployment-targets.json", "/root"),
-        ).rejects.toThrow("EACCES");
-        expect(readFile).toHaveBeenCalledOnce();
-    });
-    it("returns the nearest existing config file, walking up from the document dir", async () => {
+describe("ArtifactService.findConfigBaseDir", () => {
+    it("returns the nearest directory whose config folder holds the file", async () => {
         const { service } = createService({
             files: {
-                "/root/nested/.camunda/deployment-targets.json": "{}",
                 "/root/.camunda/deployment-targets.json": "{}",
+                "/root/nested/.camunda/deployment-targets.json": "{}",
             },
         });
 
-        const found = await service.findConfigFile(
+        const baseDir = await service.findConfigBaseDir(
             "/root/nested/deep",
             ".camunda",
             "deployment-targets.json",
             "/root",
         );
 
-        expect(found).toBe("/root/nested/.camunda/deployment-targets.json");
+        expect(baseDir).toBe("/root/nested");
     });
 
-    it("returns undefined when no config file exists up to the root", async () => {
-        const { service } = createService();
+    it("walks up to the workspace root itself", async () => {
+        const { service, workspace } = createService({
+            files: { "/root/.camunda/deployment-targets.json": "{}" },
+        });
+        const readFile = vi.spyOn(workspace, "readFile");
 
-        const found = await service.findConfigFile(
+        const baseDir = await service.findConfigBaseDir(
+            "/root/nested/deep",
+            ".camunda",
+            "deployment-targets.json",
+            "/root",
+        );
+
+        expect(baseDir).toBe("/root");
+        expect(readFile.mock.calls.map(([path]) => path)).toEqual([
+            "/root/nested/deep/.camunda/deployment-targets.json",
+            "/root/nested/.camunda/deployment-targets.json",
+            "/root/.camunda/deployment-targets.json",
+        ]);
+    });
+
+    it("does not look above the workspace root", async () => {
+        const { service, workspace } = createService({
+            files: { "/.camunda/deployment-targets.json": "{}" },
+        });
+        const readFile = vi.spyOn(workspace, "readFile");
+
+        const baseDir = await service.findConfigBaseDir(
             "/root/nested",
             ".camunda",
             "deployment-targets.json",
             "/root",
         );
 
-        expect(found).toBeUndefined();
+        expect(baseDir).toBeUndefined();
+        expect(readFile).not.toHaveBeenCalledWith("/.camunda/deployment-targets.json");
+    });
+
+    it("returns undefined when no config folder up to the root holds the file", async () => {
+        const { service } = createService();
+
+        const baseDir = await service.findConfigBaseDir(
+            "/root/nested",
+            ".camunda",
+            "deployment-targets.json",
+            "/root",
+        );
+
+        expect(baseDir).toBeUndefined();
+    });
+
+    it("does not skip an unreadable nearest file in favor of another destination", async () => {
+        const { service, workspace } = createService({
+            files: { "/root/.camunda/deployment-targets.json": "{}" },
+        });
+        const readFile = vi.spyOn(workspace, "readFile").mockRejectedValueOnce(new Error("EACCES"));
+
+        await expect(
+            service.findConfigBaseDir(
+                "/root/nested",
+                ".camunda",
+                "deployment-targets.json",
+                "/root",
+            ),
+        ).rejects.toThrow("EACCES");
+        expect(readFile).toHaveBeenCalledOnce();
     });
 });
 

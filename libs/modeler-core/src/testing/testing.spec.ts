@@ -65,6 +65,15 @@ describe("InMemoryWorkspace", () => {
         await expect(ws.readFile("/missing.bpmn")).rejects.toThrow(FileNotFound);
     });
 
+    it("reports only registered paths as symbolic links, dangling ones included", async () => {
+        const ws = workspace();
+        ws.symbolicLinks.add("/work/.env");
+
+        await expect(ws.isSymbolicLink("/work/.env")).resolves.toBe(true);
+        await expect(ws.isSymbolicLink("/work/order.bpmn")).resolves.toBe(false);
+        await expect(ws.isSymbolicLink("/missing")).resolves.toBe(false);
+    });
+
     it("notifies matching watchers of creates, changes and deletes until disposed", async () => {
         const ws = workspace();
         const events: string[] = [];
@@ -183,6 +192,26 @@ describe("createTestHost", () => {
         await expect(host.tokenPrompt.promptForToken("gitlab.com", "401")).resolves.toBe("t");
     });
 
+    it("keeps approved destinations per slot and drops them with the slot's credentials", async () => {
+        const host = createTestHost();
+        const origins = ["https://engine.example"];
+
+        await host.secrets.saveApprovedDestinations("targets.json::dev", origins);
+        await host.secrets.saveApprovedDestinations("targets.json::prod", ["https://prod.example"]);
+        origins.push("https://later.example");
+        await host.secrets.delete("targets.json::prod");
+
+        await expect(host.secrets.getApprovedDestinations("targets.json::dev")).resolves.toEqual([
+            "https://engine.example",
+        ]);
+        await expect(host.secrets.getApprovedDestinations("targets.json::prod")).resolves.toEqual(
+            [],
+        );
+        await expect(host.secrets.getApprovedDestinations("targets.json::new")).resolves.toEqual(
+            [],
+        );
+    });
+
     it("records notifications the way the hosts surface them", async () => {
         const host = createTestHost();
 
@@ -192,5 +221,20 @@ describe("createTestHost", () => {
         expect(host.notifier.errors).toEqual(["Deployment failed\ntimeout"]);
         expect(host.notifier.logged("error")).toEqual(["timeout"]);
         expect(host.notifier.progressTitles).toEqual(["Deploying"]);
+    });
+
+    it("keeps logged errors whole, so the transcript includes their stack and cause", () => {
+        const host = createTestHost();
+        const failure = Object.assign(new Error("request failed"), {
+            cause: new Error("socket hang up"),
+        });
+
+        host.notifier.logError(failure);
+        host.notifier.logError("plain message");
+
+        expect(host.notifier.loggedErrors).toEqual([failure]);
+        expect(host.notifier.transcript()).toContain(failure.stack);
+        expect(host.notifier.transcript()).toContain("socket hang up");
+        expect(host.notifier.transcript()).toContain("plain message");
     });
 });

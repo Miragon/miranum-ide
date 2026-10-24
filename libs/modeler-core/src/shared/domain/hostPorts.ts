@@ -206,6 +206,8 @@ export interface WorkspacePort {
     getDocumentDirectory(document: string): string;
     readDirectory(path: string): Promise<[string, "file" | "directory"][]>;
     readFile(path: string): Promise<string>;
+    /** `false` when `path` is absent; a dangling link still counts as a link. */
+    isSymbolicLink(path: string): Promise<boolean>;
     writeFile(path: string, content: string): Promise<void>;
     /**
      * Recursively removes the directory at `path`. A missing path is a no-op,
@@ -328,7 +330,14 @@ export interface SecretStorePort {
     getBasicAuth(slot?: string): Promise<{ username: string; password: string } | undefined>;
     saveOAuth2(clientId: string, clientSecret: string, slot?: string): Promise<void>;
     getOAuth2(slot?: string): Promise<{ clientId: string; clientSecret: string } | undefined>;
-    /** Removes every credential kind stored under `slot` (target delete / rename). */
+    /**
+     * The origins the user approved `slot`'s credentials for; `[]` when none.
+     * Kept beside the credentials so they share a lifecycle and a resolved
+     * `.env` host is never persisted in cleartext.
+     */
+    getApprovedDestinations(slot: string): Promise<string[]>;
+    saveApprovedDestinations(slot: string, origins: string[]): Promise<void>;
+    /** Removes every credential kind and the approved destinations stored under `slot`. */
     delete(slot: string): Promise<void>;
 }
 

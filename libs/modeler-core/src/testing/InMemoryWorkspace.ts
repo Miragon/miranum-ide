@@ -30,6 +30,7 @@ export interface WorkspaceWatcher {
  */
 export class InMemoryWorkspace implements WorkspacePort {
     readonly files = new Map<string, string>();
+    readonly symbolicLinks = new Set<string>();
     readonly watchers: WorkspaceWatcher[] = [];
 
     constructor(
@@ -82,6 +83,10 @@ export class InMemoryWorkspace implements WorkspacePort {
             throw new FileNotFound(path);
         }
         return content;
+    }
+
+    async isSymbolicLink(path: string): Promise<boolean> {
+        return this.symbolicLinks.has(path);
     }
 
     async writeFile(path: string, content: string): Promise<void> {

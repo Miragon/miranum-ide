@@ -20,6 +20,7 @@ import { Camunda7RestClient } from "./infrastructure/camunda/Camunda7RestClient"
 import { Camunda8RestClient } from "./infrastructure/camunda/Camunda8RestClient";
 import { CamundaEngineRouter } from "./infrastructure/camunda/CamundaEngineRouter";
 import { FetchHttpClient } from "./infrastructure/FetchHttpClient";
+import { CredentialApprovalService } from "./service/CredentialApprovalService";
 import { DeployActiveDiagramService } from "./service/DeployActiveDiagramService";
 import { DeployFilesService } from "./service/DeployFilesService";
 import { DeploymentMessageDispatcher } from "./service/DeploymentMessageDispatcher";
@@ -27,6 +28,7 @@ import { DeploymentService } from "./service/DeploymentService";
 import { DeploymentStatusService } from "./service/DeploymentStatusService";
 import { DeploymentTargetService } from "./service/DeploymentTargetService";
 import { DeploymentVerificationService } from "./service/DeploymentVerificationService";
+import { EnvValueResolver } from "./service/EnvValueResolver";
 import { StartInstanceService } from "./service/StartInstanceService";
 import { DeploymentStatusParticipant } from "./session/DeploymentStatusParticipant";
 
@@ -79,14 +81,6 @@ export class DeploymentFeature {
             new Camunda8RestClient(http, auth, ports.settings.getC8ApiVersion()),
         );
 
-        const startInstance = new StartInstanceService(
-            ports.documents,
-            ports.workspace,
-            engines,
-            ports.notifier,
-            ports.picker,
-            ports.artifacts,
-        );
         this.targets = new DeploymentTargetService(
             ports.artifacts,
             ports.settings,
@@ -96,6 +90,22 @@ export class DeploymentFeature {
             ports.picker,
             ports.notifier,
         );
+        const envResolver = new EnvValueResolver(this.targets, ports.workspace);
+        const credentialApproval = new CredentialApprovalService(
+            this.targets,
+            ports.secrets,
+            ports.picker,
+        );
+        const startInstance = new StartInstanceService(
+            ports.documents,
+            ports.workspace,
+            engines,
+            ports.notifier,
+            ports.picker,
+            ports.artifacts,
+            envResolver,
+            credentialApproval,
+        );
         this.status = new DeploymentStatusService(
             ports.store,
             ports.documents,
@@ -104,6 +114,7 @@ export class DeploymentFeature {
             ports.statusBar,
             ports.picker,
             ports.notifier,
+            envResolver,
         );
         this.verification = new DeploymentVerificationService(
             ports.store,
@@ -112,6 +123,8 @@ export class DeploymentFeature {
             this.status,
             c7Client,
             ports.notifier,
+            envResolver,
+            credentialApproval,
         );
         const deployment = new DeploymentService(
             ports.documents,
@@ -122,6 +135,8 @@ export class DeploymentFeature {
             ports.picker,
             ports.secrets,
             this.status,
+            envResolver,
+            credentialApproval,
         );
         this.deployActiveDiagram = new DeployActiveDiagramService(
             ports.store,

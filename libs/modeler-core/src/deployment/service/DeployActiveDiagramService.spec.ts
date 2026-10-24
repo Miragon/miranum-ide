@@ -95,6 +95,7 @@ describe("DeployActiveDiagramService.deployActive", () => {
             [FILE_PATH],
             target,
             expect.any(NoAuth),
+            "/work",
         );
     });
 
@@ -120,6 +121,7 @@ describe("DeployActiveDiagramService.deployActive", () => {
             [FILE_PATH],
             target,
             expect.any(NoAuth),
+            "/work",
         );
     });
 
@@ -136,5 +138,37 @@ describe("DeployActiveDiagramService.deployActive", () => {
         expect(savesBeforeDeploy).toBe(1);
         expect(c.host.notifier.progressTitles).toEqual(['Deploying order-process.bpmn to "dev"']);
         expect(c.deploymentStatusService.refreshActive).toHaveBeenCalled();
+    });
+
+    it("hands deployFiles the directory the target was resolved from, so its .env matches", async () => {
+        const c = createService();
+
+        await c.service.deployActive("/ws/project");
+
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenCalledWith("/ws/project");
+        expect(c.deploymentTargetService.getCredentials).toHaveBeenCalledWith(
+            target,
+            "/ws/project",
+        );
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledExactlyOnceWith(
+            [FILE_PATH],
+            target,
+            expect.any(NoAuth),
+            "/ws/project",
+        );
+    });
+
+    it("resolves the target and deploys from the diagram's own directory when none is given", async () => {
+        const c = createService();
+
+        await c.service.deployActive();
+
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenCalledWith("/work");
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledExactlyOnceWith(
+            [FILE_PATH],
+            target,
+            expect.any(NoAuth),
+            "/work",
+        );
     });
 });

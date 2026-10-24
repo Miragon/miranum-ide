@@ -297,6 +297,17 @@ export interface SecretGetParams {
 export interface SecretDeleteParams {
     slot: string;
 }
+export interface SecretGetApprovedDestinationsParams {
+    slot: string;
+}
+/** `secretStore/getApprovedDestinations` result, or `null` when nothing is stored. */
+export interface SecretApprovedDestinations {
+    origins: string[];
+}
+export interface SecretSaveApprovedDestinationsParams {
+    slot: string;
+    origins: string[];
+}
 
 /**
  * `marketplaceState/save` — the host persists the added registration and fans the

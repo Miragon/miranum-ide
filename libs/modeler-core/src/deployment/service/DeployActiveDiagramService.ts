@@ -69,7 +69,7 @@ export class DeployActiveDiagramService {
         const name = posix.basename(filePath);
         const auth = await this.deploymentTargetService.getCredentials(target, dir);
         await this.notifier.withProgress(`Deploying ${name} to "${target.name}"`, () =>
-            this.deploymentService.deployFiles([filePath], target, auth),
+            this.deploymentService.deployFiles([filePath], target, auth, dir),
         );
         await this.deploymentStatusService.refreshActive();
     }

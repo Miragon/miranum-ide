@@ -25,9 +25,16 @@ import {
     type StartInstanceCommand,
 } from "@miragon/bpmn-modeler-shared";
 
+import { CredentialRefs } from "../domain/credentialRefs";
 import { DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
-import { BasicAuth, DeploymentResult, NoAuth, OAuth2Auth } from "../domain/deployment";
+import {
+    type AuthConfig,
+    BasicAuth,
+    DeploymentResult,
+    NoAuth,
+    OAuth2Auth,
+} from "../domain/deployment";
 import { StartInstanceResult } from "../domain/startInstance";
 import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
 import { createTestHost } from "../../testing";
@@ -36,6 +43,8 @@ import { DeploymentMessageDispatcher } from "./DeploymentMessageDispatcher";
 // Deliberately distinct from the payload's `mainFilePath` so a regression
 // that trusts the webview payload instead of the document path is caught.
 const TRUSTED_PATH = "/work/trusted/order-process.bpmn";
+
+const noEnv = () => undefined;
 
 function createDispatcher({ openDiagram = true } = {}) {
     const host = createTestHost();
@@ -67,6 +76,9 @@ function createDispatcher({ openDiagram = true } = {}) {
         refreshActive: vi.fn().mockResolvedValue(undefined),
         recordDeployment: vi.fn().mockResolvedValue(undefined),
         pruneTarget: vi.fn().mockResolvedValue(undefined),
+        targetIdentity: vi.fn(async (target: DeploymentTarget) =>
+            DeploymentTargetIdentity.fromTarget(target, noEnv),
+        ),
     };
 
     const post = vi.fn();
@@ -244,15 +256,16 @@ describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
         return c.host.notifier.logs.map((entry) => entry.message).join("\n");
     }
 
-    it("logs a start breadcrumb with the trusted basename, engine, and endpoint host", async () => {
+    it("leaves the start breadcrumbs to the services, which log the resolved host", async () => {
         const c = createDispatcher();
         c.deploymentService.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
 
         await deploy(c, { authType: "none" });
+        await startInstance(c, { authType: "none" });
 
-        expect(c.host.notifier.logged("info")).toContain(
-            "Deployment started: order-process.bpmn -> c7 @ localhost:8080",
-        );
+        expect(allLoggedText(c)).not.toContain("Deployment started");
+        expect(allLoggedText(c)).not.toContain("Instance start requested");
     });
 
     it("logs a warning breadcrumb when the deployment fails", async () => {
@@ -325,6 +338,51 @@ describe("DeploymentMessageDispatcher start-instance auth construction", () => {
         await startInstance(c, { authType: "none" });
 
         expect(c.startInstanceService.startInstance.mock.calls[0][3]).toBeInstanceOf(NoAuth);
+    });
+
+    it("threads the active document directory so env refs resolve against its .env", async () => {
+        const c = createDispatcher();
+        c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
+
+        await startInstance(c, { authType: "none" });
+
+        expect(c.startInstanceService.startInstance.mock.calls[0][6]).toBe("/work/trusted");
+    });
+
+    const savedTarget = new DeploymentTarget(
+        "dev",
+        "c7",
+        "http://localhost:8080/engine-rest",
+        "",
+        "none",
+        "",
+        "",
+    );
+
+    it.each([
+        { mode: "a named target", targetName: "dev", target: savedTarget },
+        { mode: "an ad-hoc request", targetName: "", target: undefined },
+    ])("passes the validated target for $mode", async ({ targetName, target }) => {
+        const c = createDispatcher();
+        c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
+        c.deploymentTargetService.getTarget.mockResolvedValue(savedTarget);
+
+        await c.dispatcher.handle({
+            type: "StartInstanceCommand",
+            config: { ...startPayload({ authType: "none" }), targetName },
+        } as StartInstanceCommand);
+
+        expect(c.startInstanceService.startInstance).toHaveBeenCalledExactlyOnceWith(
+            "order-process",
+            "http://localhost:8080/engine-rest",
+            "c7",
+            new NoAuth(),
+            "",
+            undefined,
+            "/work/trusted",
+            target,
+        );
+        expect(postedQuery(c.post, StartInstanceResultQuery).success).toBe(true);
     });
 });
 
@@ -662,23 +720,24 @@ describe("DeploymentMessageDispatcher target commands", () => {
         expect(postedQuery(c.post, StartInstanceResultQuery).success).toBe(false);
     });
 
-    it("records the submitted target and captures the document context before asynchronous lookup", async () => {
+    it("deploys against the submitted target and captures the document context before asynchronous lookup", async () => {
         const c = createDispatcher();
         c.deploymentService.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(
             new DeploymentTarget("other", "c7", "https://other", "", "none", "", ""),
         );
+        const submittedTarget = new DeploymentTarget(
+            "dev",
+            "c7",
+            "http://localhost:8080/engine-rest",
+            "",
+            "none",
+            "",
+            "",
+        );
         c.deploymentTargetService.getTarget.mockImplementation(async () => {
             c.host.openEditor("/another/diagram.bpmn");
-            return new DeploymentTarget(
-                "dev",
-                "c7",
-                "http://localhost:8080/engine-rest",
-                "",
-                "none",
-                "",
-                "",
-            );
+            return submittedTarget;
         });
         await c.dispatcher.handle({
             type: "DeployCommand",
@@ -686,9 +745,49 @@ describe("DeploymentMessageDispatcher target commands", () => {
         } as DeployCommand);
         expect(c.deploymentTargetService.getTarget).toHaveBeenCalledWith("dev", "/work/trusted");
         expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledWith("dev", "/work/trusted");
-        const [config, , identity] = c.deploymentService.deploy.mock.calls[0];
+        const [config, , target] = c.deploymentService.deploy.mock.calls[0];
         expect(config.mainFilePath).toBe(TRUSTED_PATH);
-        expect(identity.key()).toBe("target:dev@localhost:8080");
+        expect(target).toBe(submittedTarget);
+    });
+
+    it("leaves the ledger identity of a named deploy to the deployment service", async () => {
+        const c = createDispatcher();
+        c.deploymentService.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+        c.deploymentTargetService.getTarget.mockResolvedValue(
+            new DeploymentTarget(
+                "dev",
+                "c7",
+                "http://localhost:8080/engine-rest",
+                "",
+                "none",
+                "",
+                "",
+            ),
+        );
+
+        await c.dispatcher.handle({
+            type: "DeployCommand",
+            config: { ...deployPayload({ authType: "none" }), targetName: "dev" },
+        } as DeployCommand);
+
+        expect(c.deploymentService.deploy).toHaveBeenCalledOnce();
+        expect(c.deploymentStatusService.targetIdentity).not.toHaveBeenCalled();
+    });
+
+    it("deploys ad-hoc without a target, slot, or dispatcher-computed identity", async () => {
+        const c = createDispatcher();
+        c.deploymentService.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+
+        await deploy(c, { authType: "none" });
+
+        expect(c.deploymentService.deploy).toHaveBeenCalledWith(
+            expect.anything(),
+            undefined,
+            undefined,
+        );
+        expect(c.deploymentTargetService.getTarget).not.toHaveBeenCalled();
+        expect(c.deploymentTargetService.resolveSlot).not.toHaveBeenCalled();
+        expect(c.deploymentStatusService.targetIdentity).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -880,8 +979,12 @@ describe("DeploymentMessageDispatcher target commands", () => {
 
         await c.dispatcher.handle(new DeleteTargetCommand("dev"));
 
+        expect(c.deploymentStatusService.targetIdentity).toHaveBeenCalledWith(
+            target,
+            "/work/trusted",
+        );
         expect(c.deploymentStatusService.pruneTarget).toHaveBeenCalledWith(
-            DeploymentTargetIdentity.fromTarget(target),
+            DeploymentTargetIdentity.fromTarget(target, noEnv),
         );
     });
 
@@ -906,8 +1009,12 @@ describe("DeploymentMessageDispatcher target commands", () => {
             "staging",
             expect.anything(),
         );
+        expect(c.deploymentStatusService.targetIdentity).toHaveBeenCalledWith(
+            oldTarget,
+            "/work/trusted",
+        );
         expect(c.deploymentStatusService.pruneTarget).toHaveBeenCalledWith(
-            DeploymentTargetIdentity.fromTarget(oldTarget),
+            DeploymentTargetIdentity.fromTarget(oldTarget, noEnv),
         );
     });
 
@@ -947,6 +1054,259 @@ describe("DeploymentMessageDispatcher target commands", () => {
             expect.anything(),
         );
         expect(c.deploymentService.deploy.mock.calls[0][1]).toBe("/ws/targets.json::dev");
+    });
+});
+
+type Dispatcher = ReturnType<typeof createDispatcher>;
+
+const USERNAME_REF = "${env:MIRAGON_USER}";
+const PASSWORD_REF = "${env:MIRAGON_PW}";
+const CLIENT_ID_REF = "${env:MIRAGON_CLIENT_ID}";
+const CLIENT_SECRET_REF = "${env:MIRAGON_CLIENT_SECRET}";
+const CREDENTIAL_REFS_CHANGED_MESSAGE =
+    "Credential environment references differ from the saved target. Save or reload the target before continuing.";
+
+const basicTargetWith = (credentialRefs: CredentialRefs) =>
+    new DeploymentTarget(
+        "dev",
+        "c7",
+        "http://localhost:8080/engine-rest",
+        "",
+        "basic",
+        "",
+        "",
+        undefined,
+        undefined,
+        credentialRefs,
+    );
+
+const oauth2TargetWith = (credentialRefs: CredentialRefs) =>
+    new DeploymentTarget(
+        "dev",
+        "c7",
+        "http://localhost:8080/engine-rest",
+        "",
+        "oauth2",
+        "https://idp/token",
+        "zeebe-api",
+        undefined,
+        undefined,
+        credentialRefs,
+    );
+
+const basicAuth = (username: string, password: string): AuthConfigPayload => ({
+    authType: "basic",
+    username,
+    password,
+});
+
+const oauth2Auth = (clientId: string, clientSecret: string): AuthConfigPayload => ({
+    authType: "oauth2",
+    clientId,
+    clientSecret,
+    tokenEndpoint: "https://idp/token",
+    audience: "zeebe-api",
+});
+
+interface NamedTargetRequest {
+    action: string;
+    submit: (c: Dispatcher, auth: AuthConfigPayload) => Promise<void>;
+    runner: (c: Dispatcher) => ReturnType<typeof vi.fn>;
+    handedAuth: (c: Dispatcher) => AuthConfig;
+    result: (c: Dispatcher) => { success: boolean; message: string };
+}
+
+const namedTargetRequests: NamedTargetRequest[] = [
+    {
+        action: "deploy",
+        submit: (c, auth) =>
+            c.dispatcher.handle({
+                type: "DeployCommand",
+                config: { ...deployPayload(auth), targetName: "dev" },
+            } as DeployCommand),
+        runner: (c) => c.deploymentService.deploy,
+        handedAuth: (c) => c.deploymentService.deploy.mock.calls[0][0].auth,
+        result: (c) => postedQuery(c.post, DeploymentResultQuery),
+    },
+    {
+        action: "start-instance",
+        submit: (c, auth) =>
+            c.dispatcher.handle({
+                type: "StartInstanceCommand",
+                config: { ...startPayload(auth), targetName: "dev" },
+            } as StartInstanceCommand),
+        runner: (c) => c.startInstanceService.startInstance,
+        handedAuth: (c) => c.startInstanceService.startInstance.mock.calls[0][3],
+        result: (c) => postedQuery(c.post, StartInstanceResultQuery),
+    },
+];
+
+function createDispatcherAgainst(target: DeploymentTarget): Dispatcher {
+    const c = createDispatcher();
+    c.deploymentService.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
+    c.startInstanceService.startInstance.mockResolvedValue(new StartInstanceResult(true, "ok"));
+    c.deploymentTargetService.getTarget.mockResolvedValue(target);
+    return c;
+}
+
+describe.each(namedTargetRequests)(
+    "DeploymentMessageDispatcher $action credential-ref admission",
+    ({ submit, runner, handedAuth, result }) => {
+        function expectRejectedForChangedCredentialRefs(c: Dispatcher): void {
+            expect(runner(c)).not.toHaveBeenCalled();
+            expect(c.deploymentTargetService.resolveSlot).not.toHaveBeenCalled();
+            expect(c.deploymentTargetService.saveTarget).not.toHaveBeenCalled();
+            expect(c.deploymentTargetService.createTarget).not.toHaveBeenCalled();
+            expect(c.host.notifier.errors).toEqual([CREDENTIAL_REFS_CHANGED_MESSAGE]);
+            expect(result(c)).toMatchObject({
+                success: false,
+                message: CREDENTIAL_REFS_CHANGED_MESSAGE,
+            });
+        }
+
+        it.each<[string, DeploymentTarget, AuthConfigPayload]>([
+            [
+                "basic username",
+                basicTargetWith(CredentialRefs.none()),
+                basicAuth(USERNAME_REF, "s3cret"),
+            ],
+            [
+                "basic password",
+                basicTargetWith(CredentialRefs.none()),
+                basicAuth("admin", PASSWORD_REF),
+            ],
+            [
+                "oauth2 client id",
+                oauth2TargetWith(CredentialRefs.none()),
+                oauth2Auth(CLIENT_ID_REF, "csecret"),
+            ],
+            [
+                "oauth2 client secret",
+                oauth2TargetWith(CredentialRefs.none()),
+                oauth2Auth("cid", CLIENT_SECRET_REF),
+            ],
+        ])(
+            "rejects a %s typed as a ref the targets file does not store",
+            async (_field, target, auth) => {
+                const c = createDispatcherAgainst(target);
+
+                await submit(c, auth);
+
+                expectRejectedForChangedCredentialRefs(c);
+            },
+        );
+
+        it.each([
+            ["the stored ref", PASSWORD_REF],
+            ["the stored ref padded with whitespace", `  ${PASSWORD_REF} `],
+        ])("proceeds when the request carries %s", async (_case, password) => {
+            const target = basicTargetWith(CredentialRefs.basic(undefined, PASSWORD_REF));
+            const c = createDispatcherAgainst(target);
+
+            await submit(c, basicAuth("admin", password));
+
+            expect(runner(c)).toHaveBeenCalledOnce();
+            expect(result(c).success).toBe(true);
+            expect(CredentialRefs.of(handedAuth(c))).toEqual(target.credentialRefs);
+        });
+
+        it.each([
+            ["a literal", "s3cret"],
+            ["a different ref", "${env:MIRAGON_OTHER_PW}"],
+            ["an empty value", ""],
+        ])("rejects a stored ref the request replaced with %s", async (_case, password) => {
+            const c = createDispatcherAgainst(
+                basicTargetWith(CredentialRefs.basic(undefined, PASSWORD_REF)),
+            );
+
+            await submit(c, basicAuth("admin", password));
+
+            expectRejectedForChangedCredentialRefs(c);
+        });
+
+        it("proceeds with oauth2 client refs that match the targets file", async () => {
+            const target = oauth2TargetWith(
+                CredentialRefs.oauth2(CLIENT_ID_REF, CLIENT_SECRET_REF),
+            );
+            const c = createDispatcherAgainst(target);
+
+            await submit(c, oauth2Auth(CLIENT_ID_REF, CLIENT_SECRET_REF));
+
+            expect(runner(c)).toHaveBeenCalledOnce();
+            expect(CredentialRefs.of(handedAuth(c))).toEqual(target.credentialRefs);
+        });
+
+        it("rejects an oauth2 client ref the request replaced with a literal", async () => {
+            const c = createDispatcherAgainst(
+                oauth2TargetWith(CredentialRefs.oauth2(CLIENT_ID_REF, CLIENT_SECRET_REF)),
+            );
+
+            await submit(c, oauth2Auth("cid", CLIENT_SECRET_REF));
+
+            expectRejectedForChangedCredentialRefs(c);
+        });
+
+        it("proceeds when only store-backed literals differ from the saved target", async () => {
+            const c = createDispatcherAgainst(
+                basicTargetWith(CredentialRefs.basic(undefined, PASSWORD_REF)),
+            );
+
+            await submit(c, basicAuth("ops", PASSWORD_REF));
+
+            expect(runner(c)).toHaveBeenCalledOnce();
+            expect(c.host.notifier.errors).toEqual([]);
+        });
+
+        it("proceeds with literal credentials against a target without refs", async () => {
+            const c = createDispatcherAgainst(basicTargetWith(CredentialRefs.none()));
+
+            await submit(c, basicAuth("admin", "s3cret"));
+
+            expect(runner(c)).toHaveBeenCalledOnce();
+            expect(result(c).success).toBe(true);
+        });
+
+        it("reports a changed connection before comparing credential refs", async () => {
+            const c = createDispatcherAgainst(
+                new DeploymentTarget(
+                    "dev",
+                    "c7",
+                    "https://elsewhere/engine-rest",
+                    "",
+                    "basic",
+                    "",
+                    "",
+                ),
+            );
+
+            await submit(c, basicAuth("admin", PASSWORD_REF));
+
+            expect(runner(c)).not.toHaveBeenCalled();
+            expect(result(c)).toMatchObject({
+                success: false,
+                message:
+                    "The deployment target changed. Save or reload the target before continuing.",
+            });
+        });
+    },
+);
+
+describe("DeploymentMessageDispatcher deploy literal credentials on a named target", () => {
+    it("hands literal credentials and the target's secret slot to the deployment for persisting", async () => {
+        const target = basicTargetWith(CredentialRefs.basic(undefined, PASSWORD_REF));
+        const c = createDispatcherAgainst(target);
+        c.deploymentTargetService.resolveSlot.mockResolvedValue("/ws/targets.json::dev");
+
+        await c.dispatcher.handle({
+            type: "DeployCommand",
+            config: { ...deployPayload(basicAuth("ops", PASSWORD_REF)), targetName: "dev" },
+        } as DeployCommand);
+
+        const [config, secretSlot, deployedTarget] = c.deploymentService.deploy.mock.calls[0];
+        expect(config.auth).toBeInstanceOf(BasicAuth);
+        expect(config.auth.username).toBe("ops");
+        expect(secretSlot).toBe("/ws/targets.json::dev");
+        expect(deployedTarget).toBe(target);
     });
 });
 

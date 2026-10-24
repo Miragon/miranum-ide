@@ -69,6 +69,7 @@ describe("DeployFilesService.deployFiles", () => {
 
         await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
 
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenCalledWith(DOCUMENT_DIR);
         expect(c.host.picker.prompts).toEqual([
             {
                 method: "pickWorkspaceFiles",
@@ -90,6 +91,7 @@ describe("DeployFilesService.deployFiles", () => {
             PICKED_FILES,
             devTarget,
             c.credentials,
+            DOCUMENT_DIR,
         );
         expect(c.calls).toEqual(["pickFiles", "deploy", "refreshStatus"]);
     });
@@ -103,6 +105,7 @@ describe("DeployFilesService.deployFiles", () => {
         await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
 
         expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(DOCUMENT_DIR);
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenNthCalledWith(2, DOCUMENT_DIR);
         expect(c.calls).toEqual([
             "switchTarget",
             "refreshStatus",
@@ -115,6 +118,7 @@ describe("DeployFilesService.deployFiles", () => {
             PICKED_FILES,
             devTarget,
             c.credentials,
+            DOCUMENT_DIR,
         );
     });
 
@@ -157,6 +161,28 @@ describe("DeployFilesService.deployFiles", () => {
         await c.service.deployFiles(undefined);
 
         expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(undefined);
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenNthCalledWith(2, undefined);
         expect(c.deploymentService.deployFiles).toHaveBeenCalledOnce();
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledWith(
+            PICKED_FILES,
+            devTarget,
+            c.credentials,
+            undefined,
+        );
+    });
+
+    it("resolves the active target and deploys without a directory when no document is focused", async () => {
+        const c = createService();
+
+        await c.service.deployFiles(undefined);
+
+        expect(c.deploymentTargetService.getActiveTarget).toHaveBeenCalledWith(undefined);
+        expect(c.deploymentTargetService.getCredentials).toHaveBeenCalledWith(devTarget, undefined);
+        expect(c.deploymentService.deployFiles).toHaveBeenCalledWith(
+            PICKED_FILES,
+            devTarget,
+            c.credentials,
+            undefined,
+        );
     });
 });
