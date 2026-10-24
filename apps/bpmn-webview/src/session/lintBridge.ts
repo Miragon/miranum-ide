@@ -11,7 +11,6 @@ import { isLintingHandle, type SurfaceHandle } from "../surface";
 import { loadLintModule } from "../surfaceModules";
 import type { HostChannel } from "./hostChannel";
 
-/** The lint options both editable surfaces (Implement and Design) are built with. */
 interface SurfaceLintOptions {
     linting: LintingOptions;
     onLintResults: (event: LintRunEvent) => void;
@@ -30,11 +29,7 @@ export interface LintBridge {
     readonly handlers: LintReplyHandlers;
 }
 
-/**
- * Feeds the host's Problems panel and status bar from the live surface's
- * linter, and hands the host's lint pushes to that surface. Without an
- * injected tier the surfaces lint in the external tier a real host uses.
- */
+/** Real hosts run the linter themselves and push results, so the default tier is external. */
 export function createLintBridge(
     host: HostChannel,
     injected: {

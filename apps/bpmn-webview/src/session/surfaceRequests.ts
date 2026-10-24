@@ -83,9 +83,8 @@ function rejectionNotice(rejectedCount: number): string | undefined {
 }
 
 /**
- * Answers the host's requests against the live surface. A request the surface
- * kind cannot serve is a no-op unless the host awaits an answer; a handler that
- * fails without a dedicated failure reply throws to the caller.
+ * A request the surface kind cannot serve is a no-op unless the host awaits an
+ * answer; a handler that fails without a dedicated failure reply throws.
  */
 export function createSurfaceRequests(
     host: HostChannel,

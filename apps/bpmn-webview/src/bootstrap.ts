@@ -236,7 +236,7 @@ function startSession(
         host,
     });
     const hostModelerState = new HostModelerState();
-    const lint = createLintBridge(
+    const lintBridge = createLintBridge(
         host,
         { linting: injectedLinting, onLintResults: injectedOnLintResults },
         () => surface,
@@ -578,7 +578,7 @@ function startSession(
             design: async ({ container, theme }) => {
                 const [{ createDesigner }, linting] = await Promise.all([
                     loadDesignerModule(),
-                    lint.surfaceOptions(),
+                    lintBridge.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const designer = await createDesigner(container, {
@@ -606,7 +606,7 @@ function startSession(
                 }
                 const [{ createModeler }, linting] = await Promise.all([
                     loadModelerModule(),
-                    lint.surfaceOptions(),
+                    lintBridge.surfaceOptions(),
                 ]);
                 const settingsAtCreation = hostModelerState.settings;
                 const modeler = await createModeler(container, {
@@ -1095,7 +1095,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnlintResultsQuery": {
                 try {
-                    lint.handlers.BpmnlintResultsQuery(message.data as BpmnlintResultsQuery);
+                    lintBridge.handlers.BpmnlintResultsQuery(message.data as BpmnlintResultsQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1103,7 +1103,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnLintDisabledQuery": {
                 try {
-                    lint.handlers.BpmnLintDisabledQuery();
+                    lintBridge.handlers.BpmnLintDisabledQuery();
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
@@ -1111,7 +1111,7 @@ function startSession(
             }
             case queryOrCommand.type === "BpmnlintInPageQuery": {
                 try {
-                    lint.handlers.BpmnlintInPageQuery(message.data as BpmnlintInPageQuery);
+                    lintBridge.handlers.BpmnlintInPageQuery(message.data as BpmnlintInPageQuery);
                 } catch (error: any) {
                     host.postMessage(new LogErrorCommand(errorPrefix + error.message));
                 }
