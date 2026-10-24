@@ -7,9 +7,10 @@
  *
  * The overlay owns all filter *inputs* (search, category, template selection)
  * and derives both columns' navigable order once (see {@link ../filtering}),
- * driving a single keyboard highlight (see {@link ../navigation}). The panels
- * are thin renderers. Keyboard: the search input keeps focus permanently while
- * ↑/↓ move a highlight in the active column, ←/→ switch columns, Enter selects.
+ * driving a single keyboard highlight (see {@link ../navigation}) and a single
+ * previewed item. The panels are thin renderers. Keyboard: the search input
+ * keeps focus permanently while ↑/↓ move a highlight in the active column,
+ * ←/→ switch columns, Enter selects.
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from "preact/hooks";
 import type {
@@ -28,6 +29,7 @@ import {
     resolveSelectedType,
 } from "../filtering";
 import {
+    indexInColumn,
     initialHighlight,
     moveVertical,
     moveHorizontal,
@@ -38,6 +40,7 @@ import { clampToCanvas, type CanvasBounds } from "../positioning";
 import { offersTypePick } from "../templateTypeAction";
 import { TemplatePanel } from "./TemplatePanel";
 import { BpmnElementPalette } from "./BpmnElementPalette";
+import { useHoverPreview } from "./useHoverPreview";
 
 interface AppendMenuOverlayProps {
     templateEntries: EnrichedTemplateEntry[];
@@ -91,6 +94,7 @@ export function AppendMenuOverlay({
     // never a palette the user pinned via chevron/keyboard/template selection.
     const [palettePeek, setPalettePeek] = useState(false);
     const [highlight, setHighlight] = useState<Highlight | null>(null);
+    const hoverPreview = useHoverPreview<Highlight>();
     const searchRef = useRef<HTMLInputElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [panelStyle, setPanelStyle] = useState<{ left: number; top: number } | null>(null);
@@ -170,6 +174,9 @@ export function AppendMenuOverlay({
         // Re-run on membership change only; navColumns is read via ref.
         setHighlight(initialHighlight(navColumnsRef.current));
     }, [listsSignature]);
+
+    // A hovered index would point at a different item once the lists change.
+    useEffect(hoverPreview.clear, [listsSignature, hoverPreview.clear]);
 
     /**
      * Selecting a multi-type template always leads to picking the concrete
@@ -327,9 +334,21 @@ export function AppendMenuOverlay({
     // Pinned expansion OR a transient hover-peek both render the palette expanded.
     const paletteExpandedVisual = paletteExpanded || palettePeek;
 
-    const highlightedTemplateIndex = highlight?.column === "templates" ? highlight.index : -1;
-    const highlightedPaletteKey =
-        highlight?.column === "palette" ? (paletteNav[highlight.index]?.key ?? null) : null;
+    const handlePaletteHover = useCallback(
+        (navKey: string, hovered: boolean) => {
+            const index = paletteNav.findIndex((item) => item.key === navKey);
+            hoverPreview.hoverItem({ column: "palette", index }, hovered);
+        },
+        [paletteNav, hoverPreview.hoverItem],
+    );
+
+    const highlightedTemplateIndex = indexInColumn(highlight, "templates");
+    const highlightedPaletteKey = paletteNav[indexInColumn(highlight, "palette")]?.key ?? null;
+
+    // Mouse hover takes priority; the keyboard highlight is the fallback.
+    const previewed = hoverPreview.hovered ?? highlight;
+    const previewedTemplateIndex = indexInColumn(previewed, "templates");
+    const previewedPaletteItem = paletteNav[indexInColumn(previewed, "palette")] ?? null;
 
     return (
         <div class="am-click-away" onClick={onCancel}>
@@ -389,8 +408,13 @@ export function AppendMenuOverlay({
                             activeCategory={activeCategory}
                             selectedTemplateId={selectedTemplate?.id ?? null}
                             highlightedIndex={highlightedTemplateIndex}
+                            previewIndex={previewedTemplateIndex}
                             onCategoryChange={setActiveCategory}
                             onTemplateClick={handleTemplateClick}
+                            onCardHover={(index, hovered) =>
+                                hoverPreview.hoverItem({ column: "templates", index }, hovered)
+                            }
+                            onPreviewHover={hoverPreview.hoverCard}
                         />
                     )}
                     <BpmnElementPalette
@@ -399,8 +423,12 @@ export function AppendMenuOverlay({
                         translate={translate}
                         expanded={paletteExpandedVisual}
                         highlightedKey={highlightedPaletteKey}
+                        previewedItem={previewedPaletteItem}
+                        previewAnchorRef={panelRef}
                         onToggleExpand={() => setPaletteExpanded((prev) => !prev)}
                         onPeekChange={setPalettePeek}
+                        onEntryHover={handlePaletteHover}
+                        onPreviewHover={hoverPreview.hoverCard}
                         onSelect={handleBpmnSelect}
                     />
                 </div>

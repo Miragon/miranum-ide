@@ -9,6 +9,7 @@ import {
     TASK,
 } from "bpmn-js-create-append-anything";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { PLAIN_ENTRY_ACTION_BY_BPMN_TYPE } from "@miragon/bpmn-modeler-append-menu";
 
@@ -61,6 +62,14 @@ const TASK_OR_USER_TASK_TEMPLATE = {
     properties: [],
 };
 
+const ZEEBE_TASK_TEMPLATE = {
+    $schema: "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+    id: "zeebe-task",
+    name: "Zeebe task",
+    appliesTo: ["bpmn:Task"],
+    properties: [],
+};
+
 const handles: BpmnModeler[] = [];
 const mountedNodes: HTMLElement[] = [];
 
@@ -86,7 +95,7 @@ async function openModeler(options: ModelerOptions): Promise<BpmnModeler> {
     return handle;
 }
 
-async function openAppendMenu(options: Omit<ModelerOptions, "engine">): Promise<BpmnModeler> {
+async function openAppendMenu(options: Partial<ModelerOptions>): Promise<BpmnModeler> {
     const handle = await openModeler({ engine: "c7", ...options });
     const task = handle.getService<{ get(id: string): Shape }>("elementRegistry").get("Task_1");
     handle.getService<PopupMenuService>("popupMenu").open(task, "bpmn-append", { x: 320, y: 200 });
@@ -192,5 +201,73 @@ describe("append menu", () => {
         expect(created[0].businessObject.get("camunda:modelerTemplate")).toBe(
             TASK_OR_USER_TASK_TEMPLATE.id,
         );
+    });
+
+    it("finds a C8 element by its keyword and previews the description the arrow keys reach", async () => {
+        await openAppendMenu({
+            engine: "c8",
+            locale: "en",
+            settings: { favouriteBpmnElements: ["bpmn:CallActivity"] },
+        });
+
+        await userEvent.type(
+            document.querySelector<HTMLInputElement>(".am-search-input")!,
+            "child process",
+        );
+        await expect
+            .poll(() => navKeys(".am-panel"))
+            .toEqual(["fav:append-call-activity", "grp:subprocess:append-call-activity"]);
+
+        await userEvent.keyboard("{ArrowDown}");
+
+        const callActivity = document.querySelector<HTMLElement>(
+            '[data-nav-key="grp:subprocess:append-call-activity"]',
+        )!;
+        await expect.element(callActivity).toHaveClass("am-bpmn-button--focused");
+        const descriptionCard = () =>
+            document.getElementById(callActivity.getAttribute("aria-describedby") ?? "");
+        await expect
+            .poll(() => descriptionCard()?.textContent)
+            .toContain("Calls another process as a reusable subprocess");
+        await expect.element(descriptionCard()!).toBeVisible();
+    });
+
+    it("leaves the collapsed palette collapsed while the mouse rests on a description", async () => {
+        await openAppendMenu({
+            engine: "c8",
+            locale: "en",
+            elementTemplates: [ZEEBE_TASK_TEMPLATE],
+        });
+        await userEvent.type(
+            document.querySelector<HTMLInputElement>(".am-search-input")!,
+            "child process",
+        );
+        await expect
+            .poll(() => document.querySelector(".am-hover-card-name")?.textContent)
+            .toBe("Call activity");
+
+        await userEvent.hover(document.querySelector<HTMLElement>(".am-hover-card")!);
+        await afterPaint();
+
+        expect(document.querySelector(".am-palette-panel")).not.toHaveClass(
+            "am-palette-panel--expanded",
+        );
+    });
+
+    it("places the description card beside the menu while the menu is still appearing", async () => {
+        await openAppendMenu({ engine: "c8", locale: "en" });
+        document
+            .querySelector(".am-panel")!
+            .getAnimations()
+            .forEach((animation) => {
+                animation.pause();
+                animation.currentTime = 60;
+            });
+
+        await expect.poll(() => document.querySelector(".am-hover-card")).not.toBeNull();
+
+        expect(
+            document.querySelector(".am-hover-card")!.getBoundingClientRect().right,
+        ).toBeLessThanOrEqual(document.querySelector(".am-panel")!.getBoundingClientRect().left);
     });
 });

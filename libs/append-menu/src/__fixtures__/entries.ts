@@ -5,7 +5,7 @@ import type { BpmnElementGroup, EnrichedTemplateEntry, PopupMenuEntry } from "..
 interface TemplateEntryOptions {
     appliesTo?: string[];
     category?: { id: string; name: string };
-    search?: string[];
+    search?: PopupMenuEntry["search"];
     description?: string;
     template?: Partial<ElementTemplate>;
     presetId?: string;

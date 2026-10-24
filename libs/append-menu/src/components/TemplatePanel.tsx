@@ -1,21 +1,18 @@
 /**
  * Left panel of the append menu overlay.
  *
- * A thin renderer of the already-filtered template list. Filtering and
- * keyboard-highlight state live in the parent overlay (see
- * {@link ../filtering} and {@link ../navigation}) so both columns share one
- * source of truth; this panel only renders cards and the floating
+ * A thin renderer of the already-filtered template list. Filtering, the
+ * keyboard highlight and the previewed template live in the parent overlay
+ * (see {@link ../filtering} and {@link ../navigation}) so both columns share
+ * one source of truth; this panel only renders cards and the floating
  * {@link TemplateHoverCard}.
  */
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import type { EnrichedTemplateEntry, Translate } from "../types";
 import type { TemplateCategory } from "../filtering";
-import { hoverCardPosition, type HoverCardPosition } from "../positioning";
 import { ExpandableTemplateCard } from "./ExpandableTemplateCard";
 import { TemplateHoverCard } from "./TemplateHoverCard";
-
-// Delay in ms before the hover card hides after mouse leave.
-const HOVER_HIDE_DELAY = 150;
+import { useHoverCardPosition } from "./useHoverCardPosition";
 
 interface TemplatePanelProps {
     entries: EnrichedTemplateEntry[];
@@ -27,16 +24,20 @@ interface TemplatePanelProps {
     selectedTemplateId: string | null;
     /** Index of the keyboard-highlighted card, or -1 when in the other column. */
     highlightedIndex: number;
+    /** Index of the card whose hover card shows, or -1. */
+    previewIndex: number;
     onCategoryChange: (cat: string | null) => void;
     onTemplateClick: (enriched: EnrichedTemplateEntry, event: Event) => void;
+    onCardHover: (index: number, hovered: boolean) => void;
+    onPreviewHover: (hovered: boolean) => void;
 }
 
 /**
  * Renders the template list panel with category chips and cards.
  *
- * The keyboard highlight (owned by the overlay) drives the focused card, the
- * scroll-into-view, and — as a fallback when the mouse isn't hovering — the
- * floating hover card, so arrow-key navigation always previews the detail card.
+ * The keyboard highlight drives the focused card and the scroll-into-view;
+ * the preview index (mouse hover, else the highlight) drives the floating
+ * hover card.
  *
  * @param props.entries Already-filtered template entries to display.
  * @param props.categories All categories (from the unfiltered list) for chips.
@@ -44,8 +45,11 @@ interface TemplatePanelProps {
  * @param props.activeCategory Currently selected category filter, or null.
  * @param props.selectedTemplateId ID of the selected multi-type template, or null.
  * @param props.highlightedIndex Keyboard-highlighted card index, or -1.
+ * @param props.previewIndex Index of the card to preview, or -1.
  * @param props.onCategoryChange Callback when a category chip is toggled.
  * @param props.onTemplateClick Callback when a template card is clicked.
+ * @param props.onCardHover Callback when the mouse enters or leaves a card.
+ * @param props.onPreviewHover Callback when the mouse enters or leaves the hover card.
  */
 export function TemplatePanel({
     entries,
@@ -55,26 +59,14 @@ export function TemplatePanel({
     activeCategory,
     selectedTemplateId,
     highlightedIndex,
+    previewIndex,
     onCategoryChange,
     onTemplateClick,
+    onCardHover,
+    onPreviewHover,
 }: TemplatePanelProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
-    const [hoveredIndex, setHoveredIndex] = useState(-1);
-    const hideTimeoutRef = useRef<number>(0);
-
-    /**
-     * The index whose hover card is currently displayed.
-     * Mouse hover takes priority; the keyboard highlight is the fallback.
-     */
-    const activePreviewIndex = hoveredIndex >= 0 ? hoveredIndex : highlightedIndex;
-
-    /**
-     * Drop stale mouse-hover state when the filtered list changes.
-     */
-    useEffect(() => {
-        setHoveredIndex(-1);
-    }, [entries.length]);
 
     /**
      * Scroll the keyboard-highlighted item into view.
@@ -86,58 +78,14 @@ export function TemplatePanel({
         }
     }, [highlightedIndex]);
 
-    // Short delay before hiding so the mouse can travel from the card to the
-    // hover card without flickering.
-    const handleCardHover = useCallback((index: number, hovered: boolean) => {
-        window.clearTimeout(hideTimeoutRef.current);
-        if (hovered) {
-            setHoveredIndex(index);
-        } else {
-            hideTimeoutRef.current = window.setTimeout(() => setHoveredIndex(-1), HOVER_HIDE_DELAY);
-        }
-    }, []);
+    // The panel's left edge is the menu's, so the card covers neither column.
+    const previewPosition = useHoverCardPosition(
+        panelRef,
+        listRef,
+        (list) => list.querySelectorAll(".am-template-card")[previewIndex],
+    );
 
-    // Keeps the hover card visible while the mouse is over it.
-    const handleHoverCardEnter = useCallback(() => {
-        window.clearTimeout(hideTimeoutRef.current);
-    }, []);
-
-    // Starts the hide delay when the mouse leaves the hover card.
-    const handleHoverCardLeave = useCallback(() => {
-        hideTimeoutRef.current = window.setTimeout(() => setHoveredIndex(-1), HOVER_HIDE_DELAY);
-    }, []);
-
-    const [hoverCardStyle, setHoverCardStyle] = useState<HoverCardPosition | null>(null);
-
-    const measureHoverCard = useCallback(() => {
-        const card =
-            activePreviewIndex >= 0
-                ? listRef.current?.querySelectorAll(".am-template-card")[activePreviewIndex]
-                : undefined;
-        const measured =
-            card && panelRef.current
-                ? hoverCardPosition(
-                      {
-                          panelLeft: panelRef.current.getBoundingClientRect().left,
-                          cardTop: card.getBoundingClientRect().top,
-                      },
-                      window.innerHeight,
-                  )
-                : null;
-        setHoverCardStyle((current) => (isSamePosition(current, measured) ? current : measured));
-    }, [activePreviewIndex]);
-
-    // Measured after every commit because the overlay moves the whole panel when it clamps
-    // it to the canvas, which this panel cannot observe through its own props.
-    useLayoutEffect(measureHoverCard);
-
-    useEffect(() => {
-        const list = listRef.current;
-        list?.addEventListener("scroll", measureHoverCard);
-        return () => list?.removeEventListener("scroll", measureHoverCard);
-    }, [measureHoverCard]);
-
-    const activeEntry = activePreviewIndex >= 0 ? entries[activePreviewIndex] : null;
+    const previewedEntry = previewIndex >= 0 ? entries[previewIndex] : undefined;
 
     return (
         <div class="am-template-panel" ref={panelRef}>
@@ -183,26 +131,21 @@ export function TemplatePanel({
                             focused={highlightedIndex === idx}
                             selected={selectedTemplateId === enriched.id}
                             onClick={(event) => onTemplateClick(enriched, event)}
-                            onHoverChange={(hovered) => handleCardHover(idx, hovered)}
+                            onHoverChange={(hovered) => onCardHover(idx, hovered)}
                         />
                     ))
                 )}
             </div>
 
             {/* Floating hover card */}
-            {activeEntry && hoverCardStyle && (
+            {previewedEntry && previewPosition && (
                 <TemplateHoverCard
-                    enrichedEntry={activeEntry}
+                    enrichedEntry={previewedEntry}
                     translate={translate}
-                    style={hoverCardStyle}
-                    onMouseEnter={handleHoverCardEnter}
-                    onMouseLeave={handleHoverCardLeave}
+                    position={previewPosition}
+                    onHoverChange={onPreviewHover}
                 />
             )}
         </div>
     );
-}
-
-function isSamePosition(a: HoverCardPosition | null, b: HoverCardPosition | null): boolean {
-    return a?.top === b?.top && a?.left === b?.left && a?.maxHeight === b?.maxHeight;
 }

@@ -34,6 +34,14 @@ describe("filterTemplates", () => {
         expect(filterTemplates(entries, "rest", null).map((e) => e.template?.id)).toEqual(["http"]);
     });
 
+    it("matches a keyword given as a single string", () => {
+        const withStringKeyword = [
+            templateEntry("soap", "SOAP Worker", { search: "legacy webservice" }),
+        ];
+
+        expect(filterTemplates(withStringKeyword, "legacy webservice", null)).toHaveLength(1);
+    });
+
     it("filters by active category", () => {
         expect(filterTemplates(entries, "", "human").map((e) => e.template?.id)).toEqual(["user"]);
     });
@@ -85,6 +93,18 @@ describe("processPaletteGroups", () => {
         expect(gateway.hidden).toBe(false);
         expect(service.hidden).toBe(true);
         expect(service.disabled).toBe(false);
+    });
+
+    it("matches entries by their description", () => {
+        const described = [
+            group("tasks", "Tasks", [
+                ["create-user-task", "User Task", { description: "Work done by a person" }],
+                ["create-service-task", "Service Task"],
+            ]),
+        ];
+
+        const p = processPaletteGroups(described, [], "person", null);
+        expect(p.groups[0].entries.map((e) => e.hidden)).toEqual([false, true]);
     });
 
     it("resolves favourites in the given order", () => {
@@ -208,5 +228,51 @@ describe("with upstream create-append-anything entries", () => {
                 ["bpmn:IntermediateThrowEvent", "bpmn:SubProcess"],
             ),
         ).toEqual(["append-none-intermediate-throwing", "append-expanded-subprocess"]);
+    });
+});
+
+// Shaped like the C8 entries: camunda-bpmn-js annotates the upstream entries with
+// translated descriptions and its search keywords, as one string or a list.
+describe("with C8-annotated create-append-anything entries", () => {
+    const c8Groups = [
+        group("tasks", "Tasks", [
+            [
+                "append-user-task",
+                "User task",
+                { description: "Work that needs to be done by a person", search: "form human" },
+            ],
+            ["append-service-task", "Service task", { search: ["job worker", "job worker"] }],
+        ]),
+        group("subprocess", "Sub-processes", [
+            [
+                "append-call-activity",
+                "Call activity",
+                {
+                    description: "Calls another process as a reusable subprocess",
+                    search: "child process",
+                },
+            ],
+            ["append-transaction", "Transaction"],
+        ]),
+    ];
+
+    const matchingIds = (search: string) =>
+        processPaletteGroups(c8Groups, [], search, null)
+            .groups.flatMap((g) => g.entries)
+            .filter((e) => !e.hidden)
+            .map((e) => e.id);
+
+    it("finds the call activity by its child process keyword", () => {
+        expect(matchingIds("child process")).toEqual(["append-call-activity"]);
+    });
+
+    it.each([
+        ["a keyword string", "human", ["append-user-task"]],
+        ["a keyword list", "job", ["append-service-task"]],
+        ["keywords regardless of case", "Child Process", ["append-call-activity"]],
+        ["the label as before", "transaction", ["append-transaction"]],
+        ["the description as before", "reusable", ["append-call-activity"]],
+    ])("matches %s", (_case, search, expected) => {
+        expect(matchingIds(search)).toEqual(expected);
     });
 });

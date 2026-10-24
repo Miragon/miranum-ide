@@ -48,21 +48,39 @@ function clampToCanvasAxis(
     return max < min ? Math.max(EDGE_GAP, max) : Math.min(Math.max(anchor, min), max);
 }
 
+interface HoverCardAnchor {
+    panelLeft: number;
+    cardTop: number;
+    /** When given, the card opens right of the panel if the left side has no room for it. */
+    panelRight?: number;
+}
+
 /**
  * Opens the hover card to the left of the panel so it clears both the template
- * list and the BPMN palette. When the panel sits hard against the left edge the
- * card is clamped on-screen and may then touch the panel.
+ * list and the BPMN palette. Without room there it opens right of the panel if
+ * the anchor allows it, else it is clamped on-screen and may then cover the panel.
  */
 export function hoverCardPosition(
-    anchor: { panelLeft: number; cardTop: number },
-    viewportHeight: number,
+    anchor: HoverCardAnchor,
+    viewport: { width: number; height: number },
 ): HoverCardPosition {
-    const left = Math.max(EDGE_GAP, anchor.panelLeft - HOVER_CARD_WIDTH - EDGE_GAP);
+    const left = hoverCardLeft(anchor, viewport.width);
     const top = Math.max(
         EDGE_GAP,
-        Math.min(anchor.cardTop, viewportHeight - HOVER_CARD_MIN_HEIGHT),
+        Math.min(anchor.cardTop, viewport.height - HOVER_CARD_MIN_HEIGHT),
     );
-    const maxHeight = viewportHeight - top - EDGE_GAP;
+    const maxHeight = viewport.height - top - EDGE_GAP;
 
     return { top, left, maxHeight };
+}
+
+function hoverCardLeft({ panelLeft, panelRight }: HoverCardAnchor, viewportWidth: number): number {
+    const leftOfPanel = panelLeft - HOVER_CARD_WIDTH - EDGE_GAP;
+    if (leftOfPanel >= EDGE_GAP) {
+        return leftOfPanel;
+    }
+    if (panelRight !== undefined && panelRight + HOVER_CARD_WIDTH + 2 * EDGE_GAP <= viewportWidth) {
+        return panelRight + EDGE_GAP;
+    }
+    return EDGE_GAP;
 }
