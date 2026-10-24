@@ -63,7 +63,7 @@ Services are accessed via `modeler.get('serviceName')`. Key services used:
 
 | Event                      | Where                                                                    | Purpose                                                                                                          |
 |----------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `commandStack.changed`     | `apps/bpmn-webview/src/bootstrap.ts` (`bindSurface`)                     | Triggered after any modeler command. Exports XML and sends a debounced `SyncDocumentCommand` to host.            |
+| `commandStack.changed`     | `apps/bpmn-webview/src/bootstrap.ts` (`bindSurface`)                     | Triggered after any modeler command. `session/documentSync.ts` exports XML and sends a debounced `SyncDocumentCommand` to host. |
 | `canvas.viewbox.changed`   | `packages/bpmn-modeler/src/viewport.ts`                                  | Triggered on scroll/zoom. Debounced (100ms); `WebviewStateManager` (`state.ts`) persists it via `host.setState()`. |
 | `copyPaste.elementsCopied` | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when elements are copied. Intercepted to write descriptor JSON to system clipboard via extension host. |
 | `copyPaste.pasteElements`  | `libs/bpmn-clipboard/src/BridgedClipboardModule.ts`                      | Triggered when paste occurs. Intercepted to read descriptor JSON from system clipboard via extension host.       |
@@ -189,6 +189,8 @@ through `@miragon/dmn-modeler` with a `data-dmn-theme` attribute — [DMN modele
 - **Lint wiring** (lint options, host lint pushes, config token echo): `apps/bpmn-webview/src/session/lintBridge.ts`
 - **Host surface requests** (SVG, format, cleanup, scripts, element templates, settings): `apps/bpmn-webview/src/session/surfaceRequests.ts`
 - **Host message routing** (type-keyed handler table, engine-reload allow-list, held import-bound replies, diff-pane router): `apps/bpmn-webview/src/session/messageRouter.ts`
+- **Document sync** (host pushes, debounced outbound sync, flush handshake, host revisions, modeler operation queue): `apps/bpmn-webview/src/session/documentSync.ts`
+- **Deferred session actions** (pending focus, language re-import, drain loop, engine reload kill switch): `apps/bpmn-webview/src/session/sessionActions.ts`
 - **Element clipboard module** (priority 2051, `createReviver`): `libs/bpmn-clipboard/src/BridgedClipboardModule.ts` (built via `createClipboardModules`)
 - **Label overlay clipboard module**: `libs/bpmn-clipboard/src/LabelClipboardModule.ts`
 - **FEEL editor + Ctrl+A polyfill** (per-instance root registry + disposer): `packages/bpmn-modeler/src/propertiesPanelClipboard.ts`

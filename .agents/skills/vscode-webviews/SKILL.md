@@ -127,20 +127,14 @@ editorStore.subscribeToMessageEvent(editorId, (message, id) => router.dispatch(m
 ```
 Adding a webview command is "register one more handler" — no shared `switch` to edit. Multiple handlers can register for the same type and run in registration order.
 
-**Webview receives Queries** (in main.ts):
+**Webview receives Queries** (BPMN: `apps/bpmn-webview/src/bootstrap.ts`, routed by `session/messageRouter.ts`):
 ```typescript
-window.addEventListener('message', (event) => {
-  const message = event.data;
-  switch (message.type) {
-    case 'BpmnFileQuery':
-      openXml(message.content);
-      break;
-    case 'ClipboardQuery':
-      clipboardResolver.done(message.data as ClipboardQuery);
-      break;
-    // ...
-  }
-});
+const sessionMessages = createSessionMessageRouter(host, {
+  BpmnFileQuery: (query) => documentSync.receiveHostFile(query),
+  ...clipboard.handlers, // ClipboardQuery, TextClipboardQuery
+  // ... one handler per Query type
+}, sessionActions);
+window.addEventListener('message', (event) => sessionMessages.route(event.data));
 ```
 
 ### Request-Response Pattern
@@ -164,7 +158,7 @@ const requestClipboard = async (): Promise<string> => {
 
 The extension host handles `GetClipboardCommand` by reading the system clipboard via `vscode.env.clipboard.readText()`, then posts a `ClipboardQuery` back to the webview with the text — with empty text when the read fails, so every request is answered.
 
-Bound every awaited host reply, because a reply can still be lost (e.g. IntelliJ drops best-effort frames while the bridge respawns): `wait(HOST_REPLY_TIMEOUT_MS)` for a single-slot reply, or `createReplyRegistry` (both in `libs/shared/src/lib/utils.ts`) when several requests are in flight and each reply carries a `requestId` (workspace definition search). An unanswered request then settles as `undefined`. The initial file requests (`bpmnFileResolver` / `dmnFileResolver`) deliberately wait indefinitely, since a cold first open can take longer than any backstop.
+Bound every awaited host reply, because a reply can still be lost (e.g. IntelliJ drops best-effort frames while the bridge respawns): `wait(HOST_REPLY_TIMEOUT_MS)` for a single-slot reply, or `createReplyRegistry` (both in `libs/shared/src/lib/utils.ts`) when several requests are in flight and each reply carries a `requestId` (workspace definition search). An unanswered request then settles as `undefined`. The initial file requests (`BpmnDocumentSync.waitForInitialFile` / `DmnDocumentSession.openInitialDocument`) deliberately wait indefinitely, since a cold first open can take longer than any backstop.
 
 ## State Persistence
 

@@ -7,7 +7,7 @@ import { DocumentFlushedCommand, FlushDocumentQuery, ReleaseDocumentFlushQuery }
  * unit-testable from the `shared` vitest project independently of either webview.
  */
 export interface FlushSource {
-    /** Whether the modeler has finished bootstrapping (`modelerIsInitialized`). */
+    /** Whether the modeler has finished bootstrapping. */
     isReady(): boolean;
     /** Whether a debounced sync is scheduled or in flight (`debouncedSend.pending()`). */
     hasPendingSync(): boolean;

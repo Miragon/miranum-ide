@@ -681,7 +681,7 @@ function startSession(
         });
 
         // Phase 1: restore the persisted plane and viewport (canvas exists after
-        // openXml); the surface itself fits a fresh open.
+        // the initial import); the surface itself fits a fresh open.
         stateManager.restoreViewport();
 
         await sessionActions.drainPendingActions();
