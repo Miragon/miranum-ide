@@ -70,7 +70,6 @@ import {
     type SurfaceFactories,
 } from "@miragon/bpmn-modeler/mode";
 import {
-    type HostThemeAdapter,
     applyPageThemeScope,
     createHostThemeAdapter,
     resolveHostThemeKind,
@@ -216,9 +215,19 @@ function startSession(
     let latestBpmnFileQuery: BpmnFileQuery | undefined;
     let refreshDiagramWhenReady = false;
     let modelerEngine: DetectedEngine;
-    // Host theme adapter (VS Code `<body>` class → page scope + instance theme).
-    // Created in run(); the settings handler switches its mode on `colorTheme`.
-    let themeAdapter: HostThemeAdapter | undefined;
+    // Theme is host policy: drive the page-level scope (host chrome + the
+    // viewer/diff branch, which has no modeler) and the modeler instance's
+    // own theme off the VS Code `<body>`-class signal.
+    const themeAdapter = createHostThemeAdapter((kind) => {
+        applyPageThemeScope("data-bpmn-theme", kind);
+        // Route through the session so its stored theme stays current — a
+        // later recreate then builds the next surface in the right theme.
+        if (modeSession) {
+            modeSession.setTheme(kind);
+        } else {
+            surface?.setTheme(kind);
+        }
+    });
     let engineReloadPending = false;
     let pendingSessionActionDrain: Promise<void> | undefined;
     let cancelPendingVariablePublish: (() => void) | undefined;
@@ -441,21 +450,8 @@ function startSession(
         // way. Idempotent — a later surface's extend is a no-op merge.
         i18n.extend(i18nExtras);
 
-        // Theme is host policy: drive the page-level scope (host chrome + the
-        // viewer/diff branch, which has no modeler) and the modeler instance's
-        // own theme off the VS Code `<body>`-class signal. The instance is also
-        // born correct via `theme: resolveHostThemeKind()` below, so this mainly
-        // covers the page chrome and later live theme switches.
-        themeAdapter = createHostThemeAdapter((kind) => {
-            applyPageThemeScope("data-bpmn-theme", kind);
-            // Route through the session so its stored theme stays current — a
-            // later recreate then builds the next surface in the right theme.
-            if (modeSession) {
-                modeSession.setTheme(kind);
-            } else {
-                surface?.setTheme(kind);
-            }
-        });
+        // The instance is also born correct via `theme: resolveHostThemeKind()`
+        // below, so this mainly covers the page chrome and later live theme switches.
         themeAdapter.setMode("automatic");
 
         // Viewer mode (one side of a diff view) skips the resizer + properties
@@ -1147,7 +1143,7 @@ function startSession(
                     // Theme is host policy: the adapter drives the page scope +
                     // instance theme off the VS Code `<body>`-class watcher here,
                     // because the package's setSettings does not apply `colorTheme`.
-                    themeAdapter?.setMode(query.setting.colorTheme);
+                    themeAdapter.setMode(query.setting.colorTheme);
                     // Theme always applies (page scope); of the rest, the designer
                     // honours only the favourites and the viewer nothing.
                     const favourites = query.setting.favouriteBpmnElements;
