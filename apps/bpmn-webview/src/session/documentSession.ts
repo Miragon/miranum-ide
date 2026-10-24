@@ -36,7 +36,6 @@ export class BpmnDocumentSession implements FlushSource {
     private readonly revisions = new HostDocumentRevisions();
     private readonly initialHostFile = createResolver<BpmnFileQuery>();
     private latestFile: BpmnFileQuery | undefined;
-    private initialViewerMode = false;
     private initialized = false;
     private canImportHostUpdates = false;
     private engineReloadPending = false;
@@ -99,11 +98,9 @@ export class BpmnDocumentSession implements FlushSource {
         this.latestFile = query;
 
         if (receipt === "initial") {
-            this.initialViewerMode = query.viewerMode === "viewer";
             this.initialHostFile.done(query);
             return;
         }
-        if (this.initialViewerMode) return;
 
         // A host push is authoritative; drop any pending outbound sync so a
         // stale export can't clobber it after the re-import.
@@ -174,7 +171,7 @@ export class BpmnDocumentSession implements FlushSource {
     }
 
     async requestDiagramRefresh(): Promise<void> {
-        this.refreshDiagramWhenReady = !this.initialViewerMode;
+        this.refreshDiagramWhenReady = true;
         if (this.initialized) {
             await this.drainPendingActions();
         }
