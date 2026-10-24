@@ -1228,11 +1228,11 @@ function startSession(
                 break;
             }
             case queryOrCommand.type === "ClipboardQuery": {
-                clipboard.handlers.ClipboardQuery?.(message.data as ClipboardQuery);
+                clipboard.handlers.ClipboardQuery(message.data as ClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "TextClipboardQuery": {
-                clipboard.handlers.TextClipboardQuery?.(message.data as TextClipboardQuery);
+                clipboard.handlers.TextClipboardQuery(message.data as TextClipboardQuery);
                 break;
             }
             case queryOrCommand.type === "LanguageQuery": {

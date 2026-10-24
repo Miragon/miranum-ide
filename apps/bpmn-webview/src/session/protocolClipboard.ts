@@ -14,7 +14,7 @@ import {
 
 import type { HostChannel } from "./hostChannel";
 
-export interface ClipboardReplyHandlers {
+interface ClipboardReplyHandlers {
     ClipboardQuery(reply: ClipboardQuery): void;
     TextClipboardQuery(reply: TextClipboardQuery): void;
 }
@@ -22,8 +22,14 @@ export interface ClipboardReplyHandlers {
 export interface ResolvedClipboard {
     /** `undefined` leaves copy/paste to the browser clipboard. */
     readonly options: ClipboardOptions | undefined;
-    readonly handlers: Partial<ClipboardReplyHandlers>;
+    readonly handlers: ClipboardReplyHandlers;
 }
+
+// Only the protocol tier asks the host, so any other tier has no paste awaiting a reply.
+const ignoreClipboardReplies: ClipboardReplyHandlers = {
+    ClipboardQuery: () => {},
+    TextClipboardQuery: () => {},
+};
 
 /**
  * Picks the clipboard the editable surfaces build their copy/paste modules and
@@ -38,13 +44,13 @@ export function resolveClipboard(
     { isDevelopment, host }: { isDevelopment: boolean; host: HostChannel },
 ): ResolvedClipboard {
     if (injected === "native") {
-        return { options: undefined, handlers: {} };
+        return { options: undefined, handlers: ignoreClipboardReplies };
     }
     if (injected) {
-        return { options: injected, handlers: {} };
+        return { options: injected, handlers: ignoreClipboardReplies };
     }
     if (isDevelopment) {
-        return { options: undefined, handlers: {} };
+        return { options: undefined, handlers: ignoreClipboardReplies };
     }
     return createProtocolClipboard(host);
 }

@@ -40,8 +40,10 @@ describe("resolveClipboard", () => {
         const host = createHost();
 
         const clipboard = resolveClipboard(injected, { isDevelopment, host });
+        clipboard.handlers.ClipboardQuery(new ClipboardQuery("<bpmn-elements />"));
+        clipboard.handlers.TextClipboardQuery(new TextClipboardQuery("label text"));
 
-        expect(clipboard).toEqual({ options: undefined, handlers: {} });
+        expect(clipboard.options).toBeUndefined();
         expect(host.postMessage).not.toHaveBeenCalled();
     });
 
@@ -53,20 +55,22 @@ describe("resolveClipboard", () => {
 
         for (const isDevelopment of [false, true]) {
             const clipboard = resolveClipboard(injected, { isDevelopment, host });
+            clipboard.handlers.ClipboardQuery(new ClipboardQuery("<bpmn-elements />"));
 
             expect(clipboard.options).toBe(injected);
-            expect(clipboard.handlers).toEqual({});
         }
+        expect(injected.bridge.requestClipboard).not.toHaveBeenCalled();
+        expect(host.postMessage).not.toHaveBeenCalled();
     });
 
     it("pastes element and text replies through separate host channels", async () => {
         const { host, bridge, text, handlers } = protocolClipboard();
 
         const elementPaste = bridge.requestClipboard();
-        handlers.TextClipboardQuery!(new TextClipboardQuery("label text"));
-        handlers.ClipboardQuery!(new ClipboardQuery("<bpmn-elements />"));
+        handlers.TextClipboardQuery(new TextClipboardQuery("label text"));
+        handlers.ClipboardQuery(new ClipboardQuery("<bpmn-elements />"));
         const textPaste = text.requestClipboard();
-        handlers.TextClipboardQuery!(new TextClipboardQuery("label text"));
+        handlers.TextClipboardQuery(new TextClipboardQuery("label text"));
 
         await expect(elementPaste).resolves.toBe("<bpmn-elements />");
         await expect(textPaste).resolves.toBe("label text");
@@ -89,7 +93,7 @@ describe("resolveClipboard", () => {
         const { text, handlers } = protocolClipboard();
 
         const paste = text.requestClipboard();
-        handlers.TextClipboardQuery!(new TextClipboardQuery(undefined as unknown as string));
+        handlers.TextClipboardQuery(new TextClipboardQuery(undefined as unknown as string));
 
         await expect(paste).resolves.toBe("");
     });
