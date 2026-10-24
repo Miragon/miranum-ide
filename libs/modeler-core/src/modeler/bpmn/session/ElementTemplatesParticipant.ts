@@ -1,22 +1,22 @@
-import { ArtifactService } from "@miragon/bpmn-modeler-core";
-import { BpmnElementTemplatesService } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
 import {
     EditorSessionContext,
     EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+} from "../../../shared/domain/EditorSessionParticipant";
+import { NotifierPort } from "../../../shared/domain/hostPorts";
+import { ArtifactService } from "../../../shared/service/ArtifactService";
+import { BpmnElementTemplatesService } from "../service/BpmnElementTemplatesService";
 
 /**
  * Keeps element templates in sync for a BPMN session: starts the filesystem
  * watcher over the artifact directories, re-arms it and reloads on
- * `configFolder` setting changes, and releases the session's cached templates
- * when it closes. Setup errors surface to the user.
+ * `configFolder` setting changes and on a re-seed, and releases the session's
+ * cached templates when it closes. Setup errors surface to the user.
  */
 export class ElementTemplatesParticipant implements EditorSessionParticipant {
     constructor(
         private readonly templatesSvc: BpmnElementTemplatesService,
         private readonly artifactSvc: ArtifactService,
-        private readonly notifier: VsCodeNotifier,
+        private readonly notifier: NotifierPort,
     ) {}
 
     async onResolve(session: EditorSessionContext): Promise<void> {
@@ -58,6 +58,11 @@ export class ElementTemplatesParticipant implements EditorSessionParticipant {
                 armTemplateWatchers().catch((error) => this.notifier.logError(error as Error));
                 this.templatesSvc.refreshElementTemplates(editorId);
             }
+        });
+
+        session.onReseed(async () => {
+            await armTemplateWatchers();
+            await this.templatesSvc.setElementTemplates(session.editorId);
         });
 
         await armTemplateWatchers();

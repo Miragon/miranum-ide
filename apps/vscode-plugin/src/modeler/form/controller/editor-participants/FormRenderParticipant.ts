@@ -1,15 +1,12 @@
 import { FormModelerService } from "@miragon/bpmn-modeler-core";
+import { NotifierPort } from "@miragon/bpmn-modeler-core";
 
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
-import {
-    EditorSessionContext,
-    EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+import { EditorSessionContext, EditorSessionParticipant } from "@miragon/bpmn-modeler-core";
 
 export class FormRenderParticipant implements EditorSessionParticipant {
     constructor(
         private readonly formService: FormModelerService,
-        private readonly notifier: VsCodeNotifier,
+        private readonly notifier: NotifierPort,
     ) {}
 
     onResolve(session: EditorSessionContext): void {

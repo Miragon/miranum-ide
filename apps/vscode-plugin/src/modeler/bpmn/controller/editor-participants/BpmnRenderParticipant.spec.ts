@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { BpmnModelerService } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
+import { RecordingNotifier } from "@miragon/bpmn-modeler-core/testing";
 import {
     createSessionContext,
     documentChangeEvent,
@@ -18,7 +18,7 @@ function createService() {
     } as unknown as BpmnModelerService;
 }
 
-const notifier = { logDebug: vi.fn() } as unknown as VsCodeNotifier;
+const notifier = new RecordingNotifier();
 
 describe("BpmnRenderParticipant", () => {
     it("registers the modeler session on resolve", () => {

@@ -1,7 +1,12 @@
-import { DefinitionSearchService, WorkspaceDefinitionIndex } from "@miragon/bpmn-modeler-core";
+import {
+    DefinitionSearchParticipant,
+    DefinitionSearchService,
+    EditorSessionParticipant,
+    searchWorkspaceDefinitionsHandler,
+    WorkspaceDefinitionIndex,
+} from "@miragon/bpmn-modeler-core";
 
 import { BridgeSharedDeps } from "./sharedDeps";
-import { SessionHooks } from "./sessionHooks";
 
 /**
  * The definition-search feature owns the {@link WorkspaceDefinitionIndex} and
@@ -10,7 +15,7 @@ import { SessionHooks } from "./sessionHooks";
  *
  * Webview messages: SearchWorkspaceDefinitionsCommand.
  */
-export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks } {
+export function register(deps: BridgeSharedDeps): { participants: EditorSessionParticipant[] } {
     const definitionSearchService = new DefinitionSearchService(
         deps.store,
         deps.documentPort,
@@ -19,13 +24,10 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         deps.notifier,
     );
 
-    deps.router.on("SearchWorkspaceDefinitionsCommand", async (message, editorId) => {
-        await definitionSearchService.search(editorId, message);
-    });
+    deps.router.on(
+        "SearchWorkspaceDefinitionsCommand",
+        searchWorkspaceDefinitionsHandler(definitionSearchService),
+    );
 
-    return {
-        sessionHooks: {
-            onSessionDisposed: (editorId) => definitionSearchService.releaseEditor(editorId),
-        },
-    };
+    return { participants: [new DefinitionSearchParticipant(definitionSearchService)] };
 }

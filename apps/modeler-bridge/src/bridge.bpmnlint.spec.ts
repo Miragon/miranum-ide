@@ -313,4 +313,49 @@ describe("bridge bpmnlint (real core + locator over a fake transport)", () => {
             fromIndex: baseline,
         });
     });
+    async function setupHostLinted() {
+        const session = await setup();
+        await fs.writeFile(
+            join(session.root, ".bpmnlintrc"),
+            JSON.stringify({
+                extends: "bpmnlint:recommended",
+                moddleExtensions: { acme: "./acme.json" },
+            }),
+            "utf8",
+        );
+        await requestConfig(session.rpc, session.editorId);
+        await waitForFrame(session.frames, isLintResultsFrame);
+        return session;
+    }
+
+    it("re-lints a host-linted diagram after an external edit", async () => {
+        const { rpc, frames, editorId } = await setupHostLinted();
+        const baseline = frames.length;
+
+        await rpc.handleLine(
+            JSON.stringify({
+                method: "document/didChange",
+                params: { editorId, content: BPMN_XML_OVERSIZED },
+            }),
+        );
+
+        const frame = await waitForFrame(frames, isLintResultsFrame, { fromIndex: baseline });
+        expect(Object.keys(frame.params.message.results)).toContain("start-event-required");
+    });
+
+    it("re-lints when the host moves the config folder", async () => {
+        const { rpc, frames } = await setupHostLinted();
+        const baseline = frames.length;
+
+        await rpc.handleLine(
+            JSON.stringify({
+                method: "settings/didChange",
+                params: { settings: { configFolder: ".bpmn" } },
+            }),
+        );
+
+        await expect(
+            waitForFrame(frames, isLintResultsFrame, { fromIndex: baseline }),
+        ).resolves.toBeDefined();
+    });
 });

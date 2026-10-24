@@ -87,11 +87,13 @@ feature-barrel boundaries.
 
 ## Editor communication and lifecycle
 
-Each IDE editor has a browser surface and a host-managed session. VS Code's
-generic `ModelerEditorController` serves BPMN, DMN, and Forms; participants add
-per-editor concerns such as rendering, settings, and cleanup. The core's
-`EditorSessionStore` tracks editor handles, and `WebviewMessageRouter` dispatches
-incoming messages to registered handlers. BPMN diff uses coordinated viewer panes.
+Each IDE editor has a browser surface and a host-managed session. The core's
+`EditorSessionLifecycle` runs each session the same way on VS Code and in the
+IntelliJ bridge; participants add per-editor concerns such as rendering,
+settings, linting, and cleanup. VS Code's generic `ModelerEditorController`
+serves BPMN, DMN, and Forms through it. The core's `EditorSessionStore` tracks
+editor handles, and `WebviewMessageRouter` dispatches incoming messages to
+registered handlers. BPMN diff uses coordinated viewer panes.
 
 The private protocol lives in `libs/shared/src/lib/`: `messages.ts` defines
 base and cross-cutting messages, while feature files define their payloads.

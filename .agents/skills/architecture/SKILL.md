@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: High-level architecture and code-placement guide for the publishable BPMN/DMN modeler packages, reusable libraries, webview adapters, and VS Code, IntelliJ, and Theia/Electron hosts. Use when implementing, debugging, reviewing, or refactoring package boundaries, public APIs, host/core features, capability ports, feature wiring, editor sessions, deployment, webview protocols, or architecture tests.
+description: Architecture and code-placement guide for the modeler packages, libraries, webviews and the VS Code, IntelliJ and Theia hosts. Use when deciding where code belongs or changing package boundaries, ports, editor sessions, host features or architecture tests.
 ---
 
 # Modeler architecture
@@ -65,9 +65,10 @@ changes, trace the webview bootstrap, core modeling service, host document
 adapter, and shared flush protocol together. Preserve document authority,
 revision checks, own-write echo suppression, and save/close flushing.
 `EditorSessionStore` owns editor registration; `WebviewMessageRouter` dispatches
-commands. VS Code's generic `ModelerEditorController` serves all three editor
-formats; add lifecycle concerns through participants and release their resources
-on disposal. Diff panes have separate coordination.
+commands. The core `EditorSessionLifecycle` runs every editor session on both
+hosts (VS Code's generic `ModelerEditorController` serves all three editor
+formats through it); add lifecycle concerns through participants and release
+their resources on disposal. Diff panes have separate coordination.
 
 ## Go deeper and validate
 

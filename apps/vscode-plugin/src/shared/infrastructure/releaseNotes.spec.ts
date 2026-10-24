@@ -11,10 +11,12 @@ vi.mock("vscode", () => ({
     Uri: { parse: (value: string) => ({ toString: () => value }) },
 }));
 
+import { RecordingNotifier } from "@miragon/bpmn-modeler-core/testing";
+
 import { InMemoryMemento } from "../../__fixtures__/vscodeStorage";
 import { notifyIfNewRelease } from "./releaseNotes";
 
-const logger = { logDebug: vi.fn(), logInfo: vi.fn(), logWarning: vi.fn(), logError: vi.fn() };
+let logger: RecordingNotifier;
 
 async function stateAfterNotifying(version: string): Promise<InMemoryMemento> {
     const globalState = new InMemoryMemento();
@@ -24,6 +26,7 @@ async function stateAfterNotifying(version: string): Promise<InMemoryMemento> {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    logger = new RecordingNotifier();
     showInformationMessageMock.mockResolvedValue(undefined);
     openExternalMock.mockResolvedValue(true);
 });
@@ -84,7 +87,7 @@ describe("notifyIfNewRelease", () => {
 
         await notifyIfNewRelease("1.2.3", globalState, logger);
 
-        expect(logger.logError).toHaveBeenCalledWith(new Error("storage full"));
+        expect(logger.logged("error")).toEqual(["storage full"]);
         expect(showInformationMessageMock).toHaveBeenCalledOnce();
     });
 
@@ -94,6 +97,6 @@ describe("notifyIfNewRelease", () => {
 
         await stateAfterNotifying("1.2.3");
 
-        expect(logger.logError).toHaveBeenCalledWith(new Error("no browser"));
+        expect(logger.logged("error")).toEqual(["no browser"]);
     });
 });

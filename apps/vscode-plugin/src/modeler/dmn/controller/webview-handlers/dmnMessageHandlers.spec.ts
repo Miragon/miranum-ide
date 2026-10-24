@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Importing the handler module pulls in `VsCodeNotifier`/`WebviewMessageRouter`,
-// which reference vscode; a bare stub is enough since the handlers under test
-// only ever touch their injected service doubles.
-vi.mock("vscode", () => ({}));
-
 import { Command, SyncDocumentCommand } from "@miragon/bpmn-modeler-shared";
+import { RecordingNotifier } from "@miragon/bpmn-modeler-core/testing";
 
 import {
     getDmnFileHandler,
@@ -24,21 +20,21 @@ beforeEach(() => {
 describe("getDmnFileHandler", () => {
     it("logs readiness only when the diagram actually rendered", async () => {
         const dmnService = { display: vi.fn().mockResolvedValue(true) };
-        const notifier = { logDebug: vi.fn() };
+        const notifier = new RecordingNotifier();
 
-        await getDmnFileHandler(dmnService as never, notifier as never)(ANY, EDITOR);
+        await getDmnFileHandler(dmnService as never, notifier)(ANY, EDITOR);
 
         expect(dmnService.display).toHaveBeenCalledWith(EDITOR);
-        expect(notifier.logDebug).toHaveBeenCalledOnce();
+        expect(notifier.logged("debug")).toEqual(["Dmn modeler is ready"]);
     });
 
     it("does not log when rendering was skipped", async () => {
         const dmnService = { display: vi.fn().mockResolvedValue(false) };
-        const notifier = { logDebug: vi.fn() };
+        const notifier = new RecordingNotifier();
 
-        await getDmnFileHandler(dmnService as never, notifier as never)(ANY, EDITOR);
+        await getDmnFileHandler(dmnService as never, notifier)(ANY, EDITOR);
 
-        expect(notifier.logDebug).not.toHaveBeenCalled();
+        expect(notifier.logs).toEqual([]);
     });
 });
 

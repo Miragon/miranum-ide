@@ -5,12 +5,12 @@ import {
 } from "@miragon/bpmn-modeler-shared";
 
 import { FormModelerService, MessageHandler } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
+import { NotifierPort } from "@miragon/bpmn-modeler-core";
 import { FormValuesController } from "../FormValuesController";
 
 export function getFormFileHandler(
     formService: FormModelerService,
-    notifier: VsCodeNotifier,
+    notifier: NotifierPort,
 ): MessageHandler {
     return async (_message: Command, editorId: string) => {
         if (await formService.display(editorId)) {

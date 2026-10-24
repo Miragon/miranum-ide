@@ -1,7 +1,7 @@
 # Architecture and hosts
 
 - Status: accepted
-- Last reviewed: 2026-10-23
+- Last reviewed: 2026-10-24
 
 ## Context
 
@@ -109,6 +109,25 @@ Theia/Electron and adds shell behavior through `libs/standalone-extension`.
 IntelliJ runs the same core out-of-process and renders its BPMN editor in JCEF.
 Its host also integrates diff, deployment and scripting; its visual editor does
 not currently provide DMN or Forms parity.
+
+A feature both hosts offer is built once in the core from ports, not wired per
+host. `EditorSessionLifecycle` runs every editor session: it routes webview
+messages in document order, tracks focus, and runs each
+`EditorSessionParticipant` in isolation, so one failing participant cannot skip
+the others or their teardown. Participants see focus, document, setting,
+re-seed and dispose events, never a host panel. The host-free participants
+(element templates, bpmnlint, settings, engine version, deployment status,
+code-link, form-reference status, definition search) and the webview message
+handlers live in the core. `DeploymentFeature` and `MarketplaceCommands` own
+the deployment and marketplace flows. A host supplies adapters and maps its
+own surface (VS Code commands and views, bridge RPC) onto these modules. It
+keeps only what is genuinely host-specific: VS Code's input UI, settings
+writes and reload hint; the bridge's workspace-root registration, acknowledged
+marketplace persistence and rendering on `document/didChange`, because the host
+owns the document revision there. Host classes depend on the core ports, not
+on concrete adapters, so the in-memory test kit fits every one of them; the VS
+Code architecture test lets only the composition root and infrastructure
+import a class that implements a port.
 
 The BPMN webview ships an `index.js` entry, one `index.css` and lazily loaded
 `chunks/**` that resolve relative to the entry (`base: "./"`), so every host
@@ -266,6 +285,11 @@ a cached result must equal an uncached run.
 
 - Leaving the core or its registries inside the VS Code plugin would couple
   other hosts to plugin internals or force them to duplicate session logic.
+- Wiring each feature per host kept the hosts simple to read but let the copies
+  drift: the bridge stopped re-linting on edits and setting changes, and did not
+  isolate failing session hooks. Feature modules in the core cost a little
+  indirection — a host reads its surface mapping, not the flow — in exchange for
+  one place per fix.
 - A WebSocket relay would add a second reconnect lifecycle and a server to the
   bridge. Stdio uses the browser the JVM already owns and gives one recovery
   boundary. A browser-only host may need a different transport.

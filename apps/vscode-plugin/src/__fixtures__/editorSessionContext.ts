@@ -2,7 +2,7 @@ import { vi } from "vitest";
 
 import type { DocumentChangeEvent } from "@miragon/bpmn-modeler-core";
 
-import type { EditorSessionContext } from "../modeler/editor-session/EditorSessionParticipant";
+import type { EditorSessionContext } from "@miragon/bpmn-modeler-core";
 
 export function createSessionContext(editorId: string) {
     const captured: {
@@ -11,10 +11,12 @@ export function createSessionContext(editorId: string) {
     } = {};
     const context: EditorSessionContext = {
         editorId,
-        panel: {} as never,
         isCurrent: () => true,
+        isFocused: () => true,
+        onFocusChange: vi.fn(),
         onDocumentChange: (callback) => void (captured.documentChange = callback),
         onSettingChange: vi.fn(),
+        onReseed: vi.fn(),
         onDispose: (callback) => void (captured.dispose = callback),
         addDisposable: vi.fn(),
     };

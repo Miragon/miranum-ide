@@ -5,6 +5,7 @@ import {
     SyncDocumentCommand,
     UpdateFormOutputValuesCommand,
 } from "@miragon/bpmn-modeler-shared";
+import { RecordingNotifier } from "@miragon/bpmn-modeler-core/testing";
 
 import {
     getFormFileHandler,
@@ -21,14 +22,14 @@ describe("getFormFileHandler", () => {
         const formService = {
             display: vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false),
         };
-        const notifier = { logDebug: vi.fn() };
-        const handle = getFormFileHandler(formService as never, notifier as never);
+        const notifier = new RecordingNotifier();
+        const handle = getFormFileHandler(formService as never, notifier);
 
         await handle(ANY_COMMAND, EDITOR_ID);
         await handle(ANY_COMMAND, EDITOR_ID);
 
         expect(formService.display).toHaveBeenCalledWith(EDITOR_ID);
-        expect(notifier.logDebug).toHaveBeenCalledOnce();
+        expect(notifier.logged("debug")).toEqual(["Form editor is ready"]);
     });
 });
 

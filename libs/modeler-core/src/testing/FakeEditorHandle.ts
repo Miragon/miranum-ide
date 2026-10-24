@@ -22,7 +22,7 @@ class Listeners<T> {
 
 /**
  * An open editor whose document and webview live in memory. `posted` records
- * what reached the webview; the `receive`/`change*`/`becomeActive` methods play
+ * what reached the webview; the `receive`/`change*`/`becomeActive`/`loseFocus` methods play
  * the host events a session subscribes to.
  */
 export class FakeEditorHandle implements EditorHandle {
@@ -40,7 +40,7 @@ export class FakeEditorHandle implements EditorHandle {
     private readonly subscriptions: EditorSubscription[] = [];
     private readonly messages = new Listeners<Command>();
     private readonly disposals = new Listeners<void>();
-    private readonly activations = new Listeners<void>();
+    private readonly activations = new Listeners<boolean>();
     private readonly documentChanges = new Listeners<DocumentChangeEvent>();
     private readonly settingChanges = new Listeners<SettingChange>();
 
@@ -123,7 +123,7 @@ export class FakeEditorHandle implements EditorHandle {
         return this.disposals.add(callback);
     }
 
-    onDidBecomeActive(callback: () => void): EditorSubscription {
+    onDidChangeActive(callback: (active: boolean) => void): EditorSubscription {
         return this.activations.add(callback);
     }
 
@@ -141,7 +141,12 @@ export class FakeEditorHandle implements EditorHandle {
 
     becomeActive(): void {
         this.active = true;
-        this.activations.emit();
+        this.activations.emit(true);
+    }
+
+    loseFocus(): void {
+        this.active = false;
+        this.activations.emit(false);
     }
 
     /** Plays an external edit: replaces the content and fires the document change. */

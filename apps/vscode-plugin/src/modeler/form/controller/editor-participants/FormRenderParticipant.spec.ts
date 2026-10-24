@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { RecordingNotifier } from "@miragon/bpmn-modeler-core/testing";
 import {
     createSessionContext,
     documentChangeEvent,
@@ -20,7 +21,7 @@ function createFormService() {
 function resolveParticipant() {
     const formService = createFormService();
     const session = createSessionContext(EDITOR_ID);
-    new FormRenderParticipant(formService as never, { logDebug: vi.fn() } as never).onResolve(
+    new FormRenderParticipant(formService as never, new RecordingNotifier()).onResolve(
         session.context,
     );
     return { formService, ...session };

@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The controller is now thin host glue: it builds a real
-// `DeploymentMessageDispatcher` (whose behaviour is covered exhaustively by its
-// own spec in `@miragon/bpmn-modeler-core`) and wires it to the VS Code
-// `WebviewView`. These tests assert only that wiring — message forwarding,
-// visibility / active-editor refresh, and registration. A minimal `vscode` mock
-// plus stubbed HTML/context modules keep `resolveWebviewView` runnable headless.
 vi.mock("vscode", () => ({
     Uri: { joinPath: vi.fn(() => ({})) },
     window: { registerWebviewViewProvider: vi.fn(() => ({ dispose: vi.fn() })) },
@@ -19,14 +13,8 @@ vi.mock("../../shared/infrastructure/extensionContext", () => ({
 }));
 
 import { commands, window } from "vscode";
-import { DeploymentResult } from "@miragon/bpmn-modeler-core";
-import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
-import {
-    DeploymentResultQuery,
-    DeploymentTargetsQuery,
-    type Command,
-    type DeployCommand,
-} from "@miragon/bpmn-modeler-shared";
+import { DeploymentFeature } from "@miragon/bpmn-modeler-core";
+import { type Command, type Query } from "@miragon/bpmn-modeler-shared";
 import {
     DeploymentController,
     DEPLOY_CMD,
@@ -37,118 +25,45 @@ import {
 } from "./DeploymentController";
 
 function createWebviewView() {
-    const postMessage = vi.fn();
-    const onDidReceiveMessage = vi.fn();
     return {
         visible: true,
-        webview: { options: {}, html: "", postMessage, onDidReceiveMessage },
-        postMessage,
-        onDidReceiveMessage,
+        webview: { options: {}, html: "", postMessage: vi.fn(), onDidReceiveMessage: vi.fn() },
         onDidChangeVisibility: vi.fn(),
         onDidDispose: vi.fn(),
     };
 }
 
-/**
- * Assembles the controller over an in-memory host with the trusted diagram open
- * and active, plus structural service doubles and a fake `WebviewView` that
- * captures the message listener, the visibility listener, and posted queries.
- */
 function createController() {
-    const host = createTestHost();
-    const editor = host.openEditor("/work/trusted/order-process.bpmn");
-    const deploymentService = {
-        deploy: vi.fn().mockResolvedValue(new DeploymentResult(true, "ok")),
-        getFormDefaults: vi.fn().mockReturnValue({
-            deploymentName: "order-process",
-            tenantId: "",
-            endpoint: "https://c/api",
-            engine: "c7",
-            authType: "none",
-        }),
-        getStoredCredentials: vi.fn(),
-        selectAdditionalFiles: vi.fn(),
+    const panel = {
+        handle: vi.fn().mockResolvedValue(undefined),
+        setVisible: vi.fn(),
+        dispose: vi.fn(),
     };
-    const startInstanceService = {
-        startInstance: vi.fn(),
-        getProcessDefinitionKey: vi.fn().mockReturnValue("proc-key"),
-        selectPayloadFile: vi.fn(),
+    const feature = {
+        deployActive: vi.fn(),
+        switchTarget: vi.fn(),
+        deployFiles: vi.fn(),
+        verify: vi.fn(),
+        statusMenu: vi.fn(),
+        attachPanel: vi.fn<(post: (message: Query) => void, visible: boolean) => typeof panel>(
+            () => panel,
+        ),
     };
-    const deploymentTargetService = {
-        listTargets: vi.fn().mockResolvedValue([]),
-        getActiveTarget: vi.fn().mockResolvedValue(undefined),
-        resolveSlot: vi.fn().mockResolvedValue(undefined),
-        switchActiveTarget: vi.fn().mockResolvedValue(undefined),
-        getCredentials: vi.fn(),
-    };
-    const deploymentStatusService = {
-        refresh: vi.fn().mockResolvedValue(undefined),
-        refreshActive: vi.fn().mockResolvedValue(undefined),
-        hide: vi.fn(),
-        pickStatusBarAction: vi.fn().mockResolvedValue(undefined),
-    };
-    const verificationService = {
-        verifyActive: vi.fn().mockResolvedValue(undefined),
-    };
-    const deployActiveDiagramService = {
-        deployActive: vi.fn().mockResolvedValue(undefined),
-    };
-    const deployFilesService = {
-        deployFiles: vi.fn().mockResolvedValue(undefined),
-    };
-    const notifier = {
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-        notifyError: vi.fn(),
-        logDebug: vi.fn(),
-        logInfo: vi.fn(),
-        logWarning: vi.fn(),
-        logError: vi.fn(),
-        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
-    };
-
-    const webviewView = createWebviewView();
-    const { postMessage, onDidReceiveMessage, onDidChangeVisibility, onDidDispose } = webviewView;
-
-    const controller = new DeploymentController(
-        host.store,
-        host.documents,
-        deploymentService as never,
-        startInstanceService as never,
-        deploymentTargetService as never,
-        deploymentStatusService as never,
-        verificationService as never,
-        deployActiveDiagramService as never,
-        deployFilesService as never,
-        notifier as never,
-    );
-
-    return {
-        controller,
-        host,
-        editor,
-        deploymentService,
-        startInstanceService,
-        deploymentTargetService,
-        deploymentStatusService,
-        verificationService,
-        deployActiveDiagramService,
-        deployFilesService,
-        notifier,
-        webviewView,
-        postMessage,
-        onDidReceiveMessage,
-        onDidChangeVisibility,
-        onDidDispose,
-    };
+    const controller = new DeploymentController(feature as unknown as DeploymentFeature);
+    return { controller, feature, panel };
 }
 
-/** Resolves the view and returns the registered inbound message handler. */
-function resolveAndGetReceiver(
-    c: ReturnType<typeof createController>,
-): (m: Command) => Promise<void> {
-    c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
-    return c.onDidReceiveMessage.mock.calls[0][0];
+function resolveView(controller: DeploymentController, visible = true) {
+    const view = createWebviewView();
+    view.visible = visible;
+    controller.resolveWebviewView(view as never, {} as never, {} as never);
+    return view;
+}
+
+function registeredHandler(commandId: string): () => unknown {
+    const call = vi.mocked(commands.registerCommand).mock.calls.find(([id]) => id === commandId);
+    if (!call) throw new Error(`No handler registered for ${commandId}`);
+    return call[1] as () => unknown;
 }
 
 beforeEach(() => {
@@ -156,237 +71,90 @@ beforeEach(() => {
 });
 
 describe("DeploymentController.register", () => {
-    it("registers the webview view provider and the deploy command", () => {
-        const c = createController();
+    it("registers the webview view provider and the five deployment commands", () => {
+        const { controller } = createController();
         const context = { subscriptions: [] as unknown[] };
 
-        c.controller.register(context as never);
+        controller.register(context as never);
 
         expect(window.registerWebviewViewProvider).toHaveBeenCalledWith(
             "bpmn-modeler.deploymentView",
-            c.controller,
+            controller,
             { webviewOptions: { retainContextWhenHidden: true } },
         );
-        expect(commands.registerCommand).toHaveBeenCalledWith(DEPLOY_CMD, expect.any(Function));
-        // View provider + deploy + switch-target + deploy-files + verify +
-        // status-menu commands.
         expect(context.subscriptions).toHaveLength(6);
     });
-});
 
-function registeredHandler(
-    c: ReturnType<typeof createController>,
-    commandId: string,
-): () => Promise<void> {
-    c.controller.register({ subscriptions: [] } as never);
-    const call = vi.mocked(commands.registerCommand).mock.calls.find(([id]) => id === commandId);
-    if (!call) throw new Error(`No handler registered for ${commandId}`);
-    return call[1] as () => Promise<void>;
-}
+    it.each([
+        [DEPLOY_CMD, "deployActive"],
+        [SWITCH_TARGET_CMD, "switchTarget"],
+        [DEPLOY_FILES_CMD, "deployFiles"],
+        [VERIFY_DEPLOYMENT_CMD, "verify"],
+        [DEPLOYMENT_STATUS_MENU_CMD, "statusMenu"],
+    ] as const)("maps %s onto the feature's %s", (commandId, method) => {
+        const { controller, feature } = createController();
+        controller.register({ subscriptions: [] } as never);
 
-function postedTargetLists(postMessage: ReturnType<typeof vi.fn>): DeploymentTargetsQuery[] {
-    return postMessage.mock.calls
-        .map(([query]) => query)
-        .filter((query) => query instanceof DeploymentTargetsQuery);
-}
+        registeredHandler(commandId)();
 
-describe("DeploymentController deployment verification commands", () => {
-    it("deploys the active diagram against the active document's directory", async () => {
-        const c = createController();
-
-        await registeredHandler(c, DEPLOY_CMD)();
-
-        expect(c.deployActiveDiagramService.deployActive).toHaveBeenCalledWith("/work/trusted");
-    });
-
-    it("verifies against the active document's directory", async () => {
-        const c = createController();
-
-        await registeredHandler(c, VERIFY_DEPLOYMENT_CMD)();
-
-        expect(c.verificationService.verifyActive).toHaveBeenCalledWith("/work/trusted");
-    });
-
-    it("routes the status menu's switch action to the target switch", async () => {
-        const c = createController();
-        c.deploymentStatusService.pickStatusBarAction.mockResolvedValue("switch");
-
-        await registeredHandler(c, DEPLOYMENT_STATUS_MENU_CMD)();
-
-        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith("/work/trusted");
-        expect(c.verificationService.verifyActive).not.toHaveBeenCalled();
-    });
-
-    it("routes the status menu's verify action to the verification service", async () => {
-        const c = createController();
-        c.deploymentStatusService.pickStatusBarAction.mockResolvedValue("verify");
-
-        await registeredHandler(c, DEPLOYMENT_STATUS_MENU_CMD)();
-
-        expect(c.verificationService.verifyActive).toHaveBeenCalledWith("/work/trusted");
-        expect(c.deploymentTargetService.switchActiveTarget).not.toHaveBeenCalled();
-    });
-
-    it("does nothing when the status menu is dismissed", async () => {
-        const c = createController();
-
-        await registeredHandler(c, DEPLOYMENT_STATUS_MENU_CMD)();
-
-        expect(c.verificationService.verifyActive).not.toHaveBeenCalled();
-        expect(c.deploymentTargetService.switchActiveTarget).not.toHaveBeenCalled();
-    });
-});
-
-describe("DeploymentController target commands", () => {
-    it("switches the target, refreshes the status bar and re-pushes targets into the sidebar", async () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
-        c.postMessage.mockClear();
-
-        await registeredHandler(c, SWITCH_TARGET_CMD)();
-
-        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith("/work/trusted");
-        expect(c.deploymentStatusService.refreshActive).toHaveBeenCalledOnce();
-        expect(postedTargetLists(c.postMessage)).toHaveLength(1);
-    });
-
-    it("switches the target before the sidebar was ever opened", async () => {
-        const c = createController();
-
-        await registeredHandler(c, SWITCH_TARGET_CMD)();
-
-        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith("/work/trusted");
-    });
-
-    it("switches against no document directory when no editor is focused", async () => {
-        const c = createController();
-        c.host.store.unregister(c.editor.id, c.editor);
-
-        await registeredHandler(c, SWITCH_TARGET_CMD)();
-
-        expect(c.deploymentTargetService.switchActiveTarget).toHaveBeenCalledWith(undefined);
-    });
-
-    it("keeps refreshing the newest sidebar when an older one is disposed", async () => {
-        const c = createController();
-        const olderView = createWebviewView();
-        const newerView = createWebviewView();
-        c.controller.resolveWebviewView(olderView as never, {} as never, {} as never);
-        c.controller.resolveWebviewView(newerView as never, {} as never, {} as never);
-        olderView.onDidDispose.mock.calls[0][0]();
-        newerView.postMessage.mockClear();
-
-        await registeredHandler(c, SWITCH_TARGET_CMD)();
-
-        expect(postedTargetLists(newerView.postMessage)).toHaveLength(1);
-    });
-
-    it("stops pushing targets once the current sidebar is disposed", async () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
-        c.onDidDispose.mock.calls[0][0]();
-        c.postMessage.mockClear();
-
-        await registeredHandler(c, SWITCH_TARGET_CMD)();
-
-        expect(c.postMessage).not.toHaveBeenCalled();
-    });
-
-    it("deploys files against the active document's directory", async () => {
-        const c = createController();
-
-        await registeredHandler(c, DEPLOY_FILES_CMD)();
-
-        expect(c.deployFilesService.deployFiles).toHaveBeenCalledWith(
-            "/work/trusted",
-            expect.any(Function),
-        );
-    });
-
-    it("mirrors a target picked during deploy-files into the open sidebar", async () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
-        c.deployFilesService.deployFiles.mockImplementation(
-            async (_dir: string, afterTargetPicker: () => Promise<void>) => {
-                c.postMessage.mockClear();
-                await afterTargetPicker();
-            },
-        );
-
-        await registeredHandler(c, DEPLOY_FILES_CMD)();
-
-        expect(postedTargetLists(c.postMessage)).toHaveLength(1);
+        expect(feature[method]).toHaveBeenCalledOnce();
+        expect(feature[method]).toHaveBeenCalledWith();
     });
 });
 
 describe("DeploymentController.resolveWebviewView", () => {
-    it("forwards inbound webview messages to the dispatcher", async () => {
-        const c = createController();
-        const receive = resolveAndGetReceiver(c);
+    it.each([true, false])("attaches the panel with the view's visibility (%s)", (visible) => {
+        const { controller, feature } = createController();
 
-        const deployPayload: DeployCommand["config"] = {
-            deploymentName: "order-process",
-            tenantId: "",
-            endpoint: "http://localhost:8080/engine-rest",
-            engine: "c7",
-            mainFilePath: "/work/order-process.bpmn",
-            additionalFilePaths: [],
-            auth: { authType: "none" },
-            targetName: "",
-        };
+        resolveView(controller, visible);
 
-        await receive({ type: "DeployCommand", config: deployPayload } as DeployCommand);
-
-        // Delegation reached the real dispatcher → service was invoked with the
-        // trusted document path (not the payload's mainFilePath) and the result
-        // was posted back to this view.
-        expect(c.deploymentService.deploy).toHaveBeenCalledOnce();
-        expect(c.deploymentService.deploy.mock.calls[0][0].mainFilePath).toBe(
-            "/work/trusted/order-process.bpmn",
-        );
-        const posted = c.postMessage.mock.calls
-            .map((call) => call[0])
-            .find((q) => q instanceof DeploymentResultQuery);
-        expect(posted?.success).toBe(true);
+        expect(feature.attachPanel).toHaveBeenCalledWith(expect.any(Function), visible);
     });
 
-    it("re-sends form defaults when the panel becomes visible", () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+    it("posts the panel's queries to the webview", () => {
+        const { controller, feature } = createController();
+        const view = resolveView(controller);
+        const [post] = feature.attachPanel.mock.calls[0];
+        const query = { type: "FormDefaultsQuery" } as Query;
 
-        const onVisibility = c.onDidChangeVisibility.mock.calls[0][0];
-        onVisibility();
+        post(query);
 
-        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith(c.editor.id);
+        expect(view.webview.postMessage).toHaveBeenCalledWith(query);
     });
 
-    it("re-sends form defaults when the active editor changes while visible", () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+    it("forwards received messages to the panel and returns its promise", () => {
+        const { controller, panel } = createController();
+        const handled = Promise.resolve();
+        panel.handle.mockReturnValue(handled);
+        const view = resolveView(controller);
+        const receive = view.webview.onDidReceiveMessage.mock.calls[0][0];
+        const message = { type: "GetFormDefaultsCommand" } as unknown as Command;
 
-        const invoice = c.host.openEditor("/work/trusted/invoice.bpmn");
+        const result = receive(message);
 
-        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith(invoice.id);
+        expect(panel.handle).toHaveBeenCalledWith(message);
+        expect(result).toBe(handled);
     });
 
-    it("does not refresh defaults when the panel is hidden", () => {
-        const c = createController();
-        c.webviewView.visible = false;
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+    it("maps visibility changes onto the panel", () => {
+        const { controller, panel } = createController();
+        const view = resolveView(controller);
+        const onVisibilityChange = view.onDidChangeVisibility.mock.calls[0][0];
 
-        c.onDidChangeVisibility.mock.calls[0][0]();
-        c.host.openEditor("/work/trusted/invoice.bpmn");
+        view.visible = false;
+        onVisibilityChange();
+        view.visible = true;
+        onVisibilityChange();
 
-        expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
+        expect(panel.setVisible.mock.calls).toEqual([[false], [true]]);
     });
 
-    it("stops following the active editor once the view is disposed", () => {
-        const c = createController();
-        c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
+    it("disposes the panel when the view is disposed", () => {
+        const { controller, panel } = createController();
+        const view = resolveView(controller);
 
-        c.onDidDispose.mock.calls[0][0]();
-        c.host.openEditor("/work/trusted/invoice.bpmn");
+        view.onDidDispose.mock.calls[0][0]();
 
-        expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
+        expect(panel.dispose).toHaveBeenCalledOnce();
     });
 });

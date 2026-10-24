@@ -1,6 +1,6 @@
 ---
 name: bpmn-js
-description: bpmn-js modeler internals — EventBus, services, copy-paste architecture, clipboard polyfill, modeler lifecycle. Use when working on bpmn-webview, diagram interactions, copy-paste, clipboard, or element templates.
+description: bpmn-js internals — EventBus, services, modeler lifecycle, copy-paste and the clipboard polyfill. Use when working on bpmn-webview diagram interactions, copy-paste or element templates.
 ---
 
 # bpmn-js Modeler Internals

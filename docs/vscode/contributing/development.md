@@ -507,7 +507,7 @@ apps/vscode-plugin/src/
   shared/          # Cross-feature substrate: domain/ service/ infrastructure/
                    #   (EditorSessionStore, VsCode* adapters, WebviewMessageRouter, …)
   modeler/
-    editor-session/  # Generic ModelerEditorController + EditorSessionParticipant
+    editor-session/  # Generic ModelerEditorController (runs the core EditorSessionLifecycle)
     bpmn/ dmn/       # domain/ service/ controller/ infrastructure/  index.ts
   diff/ deployment/ scriptTask/ navigation/ migration/   # same per-feature layout
 ```

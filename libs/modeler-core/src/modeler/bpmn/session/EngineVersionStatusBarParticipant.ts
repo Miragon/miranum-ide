@@ -1,10 +1,9 @@
-import { BpmnDocument } from "@miragon/bpmn-modeler-core";
-import { EditorSessionDocuments } from "@miragon/bpmn-modeler-core";
-import { VsCodeStatusBar } from "../../../../shared/infrastructure/VsCodeStatusBar";
+import { BpmnDocument } from "../../../shared/domain/BpmnDocument";
 import {
     EditorSessionContext,
     EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+} from "../../../shared/domain/EditorSessionParticipant";
+import { DocumentPort, StatusBarPort } from "../../../shared/domain/hostPorts";
 
 /**
  * Shows the engine-version status bar item while a BPMN editor is focused and
@@ -13,20 +12,18 @@ import {
  */
 export class EngineVersionStatusBarParticipant implements EditorSessionParticipant {
     constructor(
-        private readonly statusBar: VsCodeStatusBar,
-        private readonly vsDocument: EditorSessionDocuments,
+        private readonly statusBar: StatusBarPort,
+        private readonly documents: DocumentPort,
     ) {}
 
     onResolve(session: EditorSessionContext): void {
-        const subscription = session.panel.onDidChangeViewState(() => {
-            if (session.panel.active) {
+        session.onFocusChange((focused) => {
+            if (focused) {
                 this.updateEngineVersionStatusBar(session.editorId);
             } else {
                 this.statusBar.hideEngineVersion();
             }
         });
-        // Join the listener to the session bag so it dies with the session.
-        session.addDisposable(subscription);
 
         session.onDispose(() => this.statusBar.hideEngineVersion());
     }
@@ -37,7 +34,7 @@ export class EngineVersionStatusBarParticipant implements EditorSessionParticipa
      */
     private updateEngineVersionStatusBar(editorId: string): void {
         try {
-            const doc = new BpmnDocument(this.vsDocument.getContent(editorId));
+            const doc = new BpmnDocument(this.documents.getContent(editorId));
             if (doc.isEmpty()) {
                 return;
             }
