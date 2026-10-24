@@ -56,10 +56,7 @@ export class VsCodeSecretStore implements SecretStorePort {
     }
 
     async saveApprovedDestinations(slot: string, origins: string[]): Promise<void> {
-        await this.secrets.store(
-            this.key("approvedDestinations", slot),
-            JSON.stringify(origins),
-        );
+        await this.secrets.store(this.key("approvedDestinations", slot), JSON.stringify(origins));
     }
 
     async delete(slot: string): Promise<void> {
