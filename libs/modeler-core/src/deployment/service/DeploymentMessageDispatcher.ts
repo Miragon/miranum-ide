@@ -2,17 +2,16 @@ import {
     AdditionalFilesQuery,
     Command,
     CreateTargetCommand,
-    DeleteTargetCommand,
     DeployCommand,
     DeploymentResultQuery,
     DeploymentTargetsQuery,
+    exhaustiveMessageGuard,
     FormDefaultsQuery,
+    MessageOfType,
     ProcessDefinitionKeyQuery,
     Query,
-    RequestStoredCredentialsCommand,
     SaveTargetCommand,
     SelectedPayloadFileQuery,
-    SelectTargetCommand,
     StartInstanceCommand,
     StartInstanceResultQuery,
     StoredCredentialsQuery,
@@ -35,6 +34,21 @@ import { DeploymentService } from "./DeploymentService";
 import { DeploymentStatusService } from "./DeploymentStatusService";
 import { DeploymentTargetService, toTargetPayload } from "./DeploymentTargetService";
 import { StartInstanceService } from "./StartInstanceService";
+
+type DeploymentWebviewCommand = MessageOfType<
+    | "RequestFormDefaultsCommand"
+    | "RequestStoredCredentialsCommand"
+    | "SelectTargetCommand"
+    | "CreateTargetCommand"
+    | "SaveTargetCommand"
+    | "DeleteTargetCommand"
+    | "OpenTargetsFileCommand"
+    | "RequestAdditionalFilesCommand"
+    | "DeployCommand"
+    | "RequestProcessDefinitionKeyCommand"
+    | "RequestPayloadFilesCommand"
+    | "StartInstanceCommand"
+>;
 
 /**
  * Host-agnostic dispatch core for the deployment webview's message protocol.
@@ -83,27 +97,28 @@ export class DeploymentMessageDispatcher {
             return;
         }
         this.notifier.logDebug(`Deployment message received -> ${message.type}`);
-        switch (message.type) {
+        const command = message as DeploymentWebviewCommand;
+        switch (command.type) {
             case "RequestFormDefaultsCommand":
                 this.sendFormDefaults();
                 break;
             case "RequestStoredCredentialsCommand":
                 await this.handleStoredCredentialsRequest(
-                    (message as RequestStoredCredentialsCommand).targetName ?? "",
-                    (message as RequestStoredCredentialsCommand).requestId ?? 0,
+                    command.targetName ?? "",
+                    command.requestId ?? 0,
                 );
                 break;
             case "SelectTargetCommand":
-                await this.handleSelectTarget((message as SelectTargetCommand).name);
+                await this.handleSelectTarget(command.name);
                 break;
             case "CreateTargetCommand":
-                await this.handleCreateTarget(message as CreateTargetCommand);
+                await this.handleCreateTarget(command);
                 break;
             case "SaveTargetCommand":
-                await this.handleSaveTarget(message as SaveTargetCommand);
+                await this.handleSaveTarget(command);
                 break;
             case "DeleteTargetCommand":
-                await this.handleDeleteTarget((message as DeleteTargetCommand).name);
+                await this.handleDeleteTarget(command.name);
                 break;
             case "OpenTargetsFileCommand":
                 await this.handleOpenTargetsFile();
@@ -112,7 +127,7 @@ export class DeploymentMessageDispatcher {
                 await this.handleAdditionalFilesRequest();
                 break;
             case "DeployCommand":
-                await this.handleDeploy((message as DeployCommand).config);
+                await this.handleDeploy(command.config);
                 break;
             case "RequestProcessDefinitionKeyCommand":
                 this.handleProcessDefinitionKeyRequest();
@@ -121,8 +136,10 @@ export class DeploymentMessageDispatcher {
                 await this.handlePayloadFilesRequest();
                 break;
             case "StartInstanceCommand":
-                await this.handleStartInstance((message as StartInstanceCommand).config);
+                await this.handleStartInstance(command.config);
                 break;
+            default:
+                exhaustiveMessageGuard(command);
         }
     }
 

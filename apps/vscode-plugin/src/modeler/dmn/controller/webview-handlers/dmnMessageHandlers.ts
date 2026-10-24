@@ -24,9 +24,10 @@ export function getDmnFileHandler(
 }
 
 /** `SyncDocumentCommand` → persist the current DMN XML. */
-export function syncDmnDocumentHandler(dmnService: DmnModelerService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const sync = message as SyncDocumentCommand;
+export function syncDmnDocumentHandler(
+    dmnService: DmnModelerService,
+): MessageHandler<SyncDocumentCommand> {
+    return async (sync, editorId) => {
         await dmnService.sync(editorId, sync.content, sync.documentRevision);
     };
 }

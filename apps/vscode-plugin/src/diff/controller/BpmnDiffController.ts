@@ -9,11 +9,7 @@ import {
     workspace,
 } from "vscode";
 
-import {
-    Command,
-    CursorChangedCommand,
-    ViewportChangedCommand,
-} from "@miragon/bpmn-modeler-shared";
+import { asProtocolMessage, Command } from "@miragon/bpmn-modeler-shared";
 
 import {
     DiffPaneHandle,
@@ -271,7 +267,9 @@ export class BpmnDiffController {
         if (routeWebviewLogCommand(this.notifier, message, basenameOfUriString(handle.uri))) {
             return;
         }
-        switch (message.type) {
+
+        const command = asProtocolMessage(message);
+        switch (command.type) {
             case "GetBpmnFileCommand":
                 await this.diffService.sendViewerFile(handle);
                 break;
@@ -279,16 +277,10 @@ export class BpmnDiffController {
                 await this.diffService.markReady(handle);
                 break;
             case "ViewportChangedCommand":
-                await this.diffService.forwardViewport(
-                    handle,
-                    (message as ViewportChangedCommand).viewport,
-                );
+                await this.diffService.forwardViewport(handle, command.viewport);
                 break;
             case "CursorChangedCommand":
-                await this.diffService.forwardCursor(
-                    handle,
-                    (message as CursorChangedCommand).index,
-                );
+                await this.diffService.forwardCursor(handle, command.index);
                 break;
             case "SwapCompareSidesCommand":
                 await this.swapCompareFilesSides(handle);

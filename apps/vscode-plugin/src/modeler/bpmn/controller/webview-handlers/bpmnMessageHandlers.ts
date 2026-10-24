@@ -2,17 +2,16 @@ import {
     CleanupReportCommand,
     Command,
     DiagramFormattedCommand,
+    NavigateToImplementationCommand,
+    NavigateToReferencedModelCommand,
     OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
-    NavigateToImplementationCommand,
     SearchWorkspaceDefinitionsCommand,
-    NavigateToReferencedModelCommand,
     SetClipboardCommand,
     SetLintingEnabledCommand,
     SetPropertiesPanelStateCommand,
     SetTextClipboardCommand,
     SyncActivitiesCommand,
-    SyncDocumentCommand,
     UpdateLintResultsCommand,
     UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
@@ -33,7 +32,6 @@ import {
 } from "@miragon/bpmn-modeler-core";
 import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
 import { MessageHandler } from "@miragon/bpmn-modeler-core";
-import { BpmnModelerService } from "@miragon/bpmn-modeler-core";
 import { BpmnClipboardMediator } from "@miragon/bpmn-modeler-core";
 import { BpmnElementTemplatesService } from "@miragon/bpmn-modeler-core";
 import { BpmnLayoutService } from "@miragon/bpmn-modeler-core";
@@ -54,17 +52,7 @@ import { ScriptTaskService } from "../../../../scriptTask/index";
  * Grouped by feature so they move together when features become folders.
  */
 
-/** `GetBpmnFileCommand` → render the diagram, logging readiness on success. */
-export function getBpmnFileHandler(
-    bpmnService: BpmnModelerService,
-    notifier: VsCodeNotifier,
-): MessageHandler {
-    return async (_message: Command, editorId: string) => {
-        if (await bpmnService.display(editorId)) {
-            notifier.logDebug("Bpmn modeler is ready");
-        }
-    };
-}
+export { getBpmnFileHandler, syncDocumentHandler } from "@miragon/bpmn-modeler-core";
 
 /** `GetElementTemplatesCommand` → push the configured element templates. */
 export function getElementTemplatesHandler(
@@ -134,9 +122,10 @@ export function getPropertiesPanelStateHandler(
  * service ignores the push when the editor is no longer on the in-page path (a
  * workspace-config takeover) or when linting is disabled.
  */
-export function updateLintResultsHandler(lintSvc: BpmnLintConfigService): MessageHandler {
-    return (message: Command, editorId: string) => {
-        const cmd = message as UpdateLintResultsCommand;
+export function updateLintResultsHandler(
+    lintSvc: BpmnLintConfigService,
+): MessageHandler<UpdateLintResultsCommand> {
+    return (cmd, editorId) => {
         lintSvc.applyWebviewLintResults(editorId, cmd.results, cmd.unresolved, cmd.configToken);
     };
 }
@@ -150,24 +139,20 @@ export function updateLintResultsHandler(lintSvc: BpmnLintConfigService): Messag
  * lint (via {@link BpmnlintParticipant}'s change listener), which pushes the new
  * state back to the webview; the webview never flips its own overlays.
  */
-export function setLintingEnabledHandler(): MessageHandler {
-    return async (message: Command) => {
+export function setLintingEnabledHandler(): MessageHandler<SetLintingEnabledCommand> {
+    return async (message) => {
         await workspace
             .getConfiguration("miragon.bpmnModeler")
-            .update(
-                "linting.enabled",
-                (message as SetLintingEnabledCommand).enabled,
-                ConfigurationTarget.Global,
-            );
+            .update("linting.enabled", message.enabled, ConfigurationTarget.Global);
     };
 }
 
 /** `SetPropertiesPanelStateCommand` → persist the panel visibility. */
 export function setPropertiesPanelStateHandler(
     panelSvc: BpmnPropertiesPanelService,
-): MessageHandler {
-    return (message: Command) => {
-        panelSvc.setPropertiesPanelVisibility((message as SetPropertiesPanelStateCommand).visible);
+): MessageHandler<SetPropertiesPanelStateCommand> {
+    return (message) => {
+        panelSvc.setPropertiesPanelVisibility(message.visible);
     };
 }
 
@@ -179,9 +164,11 @@ export function getClipboardHandler(clipboardMediator: BpmnClipboardMediator): M
 }
 
 /** `SetClipboardCommand` → write the structured clipboard payload. */
-export function setClipboardHandler(clipboardMediator: BpmnClipboardMediator): MessageHandler {
-    return (message: Command) => {
-        clipboardMediator.writeClipboard((message as SetClipboardCommand).text);
+export function setClipboardHandler(
+    clipboardMediator: BpmnClipboardMediator,
+): MessageHandler<SetClipboardCommand> {
+    return (message) => {
+        clipboardMediator.writeClipboard(message.text);
     };
 }
 
@@ -193,31 +180,29 @@ export function getTextClipboardHandler(clipboardMediator: BpmnClipboardMediator
 }
 
 /** `SetTextClipboardCommand` → write the OS text clipboard. */
-export function setTextClipboardHandler(clipboardMediator: BpmnClipboardMediator): MessageHandler {
-    return (message: Command) => {
-        clipboardMediator.writeClipboard((message as SetTextClipboardCommand).text);
+export function setTextClipboardHandler(
+    clipboardMediator: BpmnClipboardMediator,
+): MessageHandler<SetTextClipboardCommand> {
+    return (message) => {
+        clipboardMediator.writeClipboard(message.text);
     };
 }
 
-/** `SyncDocumentCommand` → persist the current XML; session guard lives in the service. */
 /** `DiagramFormattedCommand` → surface the outcome of a format attempt. */
-export function diagramFormattedHandler(layoutSvc: BpmnLayoutService): MessageHandler {
-    return (message: Command) => {
-        layoutSvc.reportFormatted(message as DiagramFormattedCommand);
+export function diagramFormattedHandler(
+    layoutSvc: BpmnLayoutService,
+): MessageHandler<DiagramFormattedCommand> {
+    return (message) => {
+        layoutSvc.reportFormatted(message);
     };
 }
 
 /** `CleanupReportCommand` → confirm the findings, then ask for them to be applied. */
-export function cleanupReportHandler(layoutSvc: BpmnLayoutService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        await layoutSvc.reportCleanup(message as CleanupReportCommand, editorId);
-    };
-}
-
-export function syncDocumentHandler(bpmnService: BpmnModelerService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const sync = message as SyncDocumentCommand;
-        await bpmnService.sync(editorId, sync.content, sync.documentRevision);
+export function cleanupReportHandler(
+    layoutSvc: BpmnLayoutService,
+): MessageHandler<CleanupReportCommand> {
+    return async (message, editorId) => {
+        await layoutSvc.reportCleanup(message, editorId);
     };
 }
 
@@ -231,9 +216,8 @@ export function syncDocumentHandler(bpmnService: BpmnModelerService): MessageHan
 export function openScriptEditorHandler(
     scriptTaskSvc: ScriptTaskService,
     variableStore: ScriptVariableStore,
-): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const cmd = message as OpenScriptEditorCommand;
+): MessageHandler<OpenScriptEditorCommand> {
+    return async (cmd, editorId) => {
         variableStore.setExtracted(editorId, cmd.variables ?? []);
         await scriptTaskSvc.openScriptEditor(
             editorId,
@@ -263,9 +247,8 @@ export function openScriptEditorsHandler(
     variableStore: ScriptVariableStore,
     settings: SettingsPort,
     notifier: VsCodeNotifier,
-): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const cmd = message as OpenScriptEditorsCommand;
+): MessageHandler<OpenScriptEditorsCommand> {
+    return async (cmd, editorId) => {
         if (cmd.scripts.length === 0) {
             notifier.showInfo(NO_INLINE_SCRIPTS_MESSAGE);
             return;
@@ -290,9 +273,11 @@ export function openScriptEditorsHandler(
 }
 
 /** `UpdateScriptVariablesCommand` → replace the editor's variable model for live completion. */
-export function updateScriptVariablesHandler(variableStore: ScriptVariableStore): MessageHandler {
-    return (message: Command, editorId: string) => {
-        variableStore.setExtracted(editorId, (message as UpdateScriptVariablesCommand).variables);
+export function updateScriptVariablesHandler(
+    variableStore: ScriptVariableStore,
+): MessageHandler<UpdateScriptVariablesCommand> {
+    return (message, editorId) => {
+        variableStore.setExtracted(editorId, message.variables);
     };
 }
 
@@ -300,9 +285,10 @@ export function updateScriptVariablesHandler(variableStore: ScriptVariableStore)
  * `UpdateScriptSourceCommand` → apply a model-side script change (canvas
  * undo/redo, external reload, element deletion) to the open script tab.
  */
-export function updateScriptSourceHandler(scriptTaskSvc: ScriptTaskService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const cmd = message as UpdateScriptSourceCommand;
+export function updateScriptSourceHandler(
+    scriptTaskSvc: ScriptTaskService,
+): MessageHandler<UpdateScriptSourceCommand> {
+    return async (cmd, editorId) => {
         await scriptTaskSvc.applyModelChange(
             editorId,
             cmd.elementId,
@@ -324,9 +310,8 @@ export function navigateToReferencedModelHandler(
     editorStore: EditorSessionStore,
     modelNavigationService: ModelNavigationService,
     notifier: VsCodeNotifier,
-): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const cmd = message as NavigateToReferencedModelCommand;
+): MessageHandler<NavigateToReferencedModelCommand> {
+    return async (cmd, editorId) => {
         if (
             cmd.referenceKind !== "process" &&
             cmd.referenceKind !== "decision" &&
@@ -356,9 +341,9 @@ export function getFormReferenceStatusHandler(
 /** `SearchWorkspaceDefinitionsCommand` → answer with matching definitions of other models. */
 export function searchWorkspaceDefinitionsHandler(
     searchService: DefinitionSearchService,
-): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        await searchService.search(editorId, message as SearchWorkspaceDefinitionsCommand);
+): MessageHandler<SearchWorkspaceDefinitionsCommand> {
+    return async (message, editorId) => {
+        await searchService.search(editorId, message);
     };
 }
 
@@ -383,9 +368,8 @@ export function navigateToImplementationHandler(
     editorStore: EditorSessionStore,
     implementationNavigationService: ImplementationNavigationService,
     notifier: VsCodeNotifier,
-): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const cmd = message as NavigateToImplementationCommand;
+): MessageHandler<NavigateToImplementationCommand> {
+    return async (cmd, editorId) => {
         if (!KNOWN_IMPLEMENTATION_KINDS.has(cmd.kind)) {
             notifier.logWarning(
                 `Ignoring NavigateToImplementationCommand with unknown kind: ${String(cmd.kind)}`,
@@ -405,8 +389,10 @@ export function navigateToImplementationHandler(
  * webview for context-pad visibility. Invalid entries are filtered inside the
  * service, so the handler stays a thin pass-through.
  */
-export function syncActivitiesHandler(mapService: CodeLinkMapService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        await mapService.syncActivities(editorId, (message as SyncActivitiesCommand).entries);
+export function syncActivitiesHandler(
+    mapService: CodeLinkMapService,
+): MessageHandler<SyncActivitiesCommand> {
+    return async (message, editorId) => {
+        await mapService.syncActivities(editorId, message.entries);
     };
 }

@@ -1,8 +1,4 @@
-import {
-    Command,
-    NavigateToImplementationCommand,
-    SyncActivitiesCommand,
-} from "@miragon/bpmn-modeler-shared";
+import {} from "@miragon/bpmn-modeler-shared";
 import { ImplementationKind } from "@miragon/bpmn-modeler-types";
 import {
     CodeLinkMapService,
@@ -60,8 +56,7 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         // Mirrors `navigateToImplementationHandler` on the VS Code host: the same
         // defence-in-depth guard rejects an unknown/empty `kind` so a malformed
         // message can't be resolved as an arbitrary kind.
-        .on("NavigateToImplementationCommand", async (message: Command, editorId: string) => {
-            const cmd = message as NavigateToImplementationCommand;
+        .on("NavigateToImplementationCommand", async (cmd, editorId) => {
             if (!KNOWN_IMPLEMENTATION_KINDS.has(cmd.kind)) {
                 deps.notifier.logWarning(
                     `Ignoring NavigateToImplementationCommand with unknown kind: ${String(
@@ -75,11 +70,8 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         })
         // Always-on activity→code reconciliation; the map service filters invalid
         // entries internally, so this stays a thin pass-through.
-        .on("SyncActivitiesCommand", async (message: Command, editorId: string) => {
-            await codeLinkMapService.syncActivities(
-                editorId,
-                (message as SyncActivitiesCommand).entries,
-            );
+        .on("SyncActivitiesCommand", async (message, editorId) => {
+            await codeLinkMapService.syncActivities(editorId, message.entries);
         });
 
     return {

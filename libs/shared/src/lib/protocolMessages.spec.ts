@@ -5,6 +5,7 @@ import {
     Command,
     DocumentFlushedCommand,
     LogErrorCommand,
+    LogMessageCommand,
     Query,
     SyncDocumentCommand,
 } from "./messages";
@@ -12,9 +13,14 @@ import * as modelerMessages from "./modeler";
 
 type MessageClass = new (...args: never[]) => { type: string };
 
-const concreteMessageClasses = Object.entries({ ...baseMessages, ...modelerMessages }).filter(
+const abstractMessageClasses: unknown[] = [Query, Command, LogMessageCommand];
+
+const concreteMessageClasses = Object.entries<unknown>({
+    ...baseMessages,
+    ...modelerMessages,
+}).filter(
     (entry): entry is [string, MessageClass] =>
-        typeof entry[1] === "function" && entry[1] !== Query && entry[1] !== Command,
+        typeof entry[1] === "function" && !abstractMessageClasses.includes(entry[1]),
 );
 
 /**

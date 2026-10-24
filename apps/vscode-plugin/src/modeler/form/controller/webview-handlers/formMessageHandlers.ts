@@ -19,9 +19,10 @@ export function getFormFileHandler(
     };
 }
 
-export function syncFormDocumentHandler(formService: FormModelerService): MessageHandler {
-    return async (message: Command, editorId: string) => {
-        const sync = message as SyncDocumentCommand;
+export function syncFormDocumentHandler(
+    formService: FormModelerService,
+): MessageHandler<SyncDocumentCommand> {
+    return async (sync, editorId) => {
         await formService.sync(editorId, sync.content, sync.documentRevision);
     };
 }
@@ -30,8 +31,10 @@ export function getFormInputValuesHandler(formValues: FormValuesController): Mes
     return async (_message: Command, editorId: string) => formValues.sendInputValues(editorId);
 }
 
-export function updateFormOutputValuesHandler(formValues: FormValuesController): MessageHandler {
-    return (message: Command, editorId: string) => {
-        formValues.updateOutputValues(editorId, (message as UpdateFormOutputValuesCommand).content);
+export function updateFormOutputValuesHandler(
+    formValues: FormValuesController,
+): MessageHandler<UpdateFormOutputValuesCommand> {
+    return (message, editorId) => {
+        formValues.updateOutputValues(editorId, message.content);
     };
 }

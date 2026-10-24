@@ -57,7 +57,7 @@ import { loadEngineStack } from "./engineStacks";
 import { initialDiagram } from "./initialDiagram";
 import { applyMode, normalizeMode, MODE_ATTRIBUTE, type ModePorts, type ModelerMode } from "./mode";
 import { ModeUiModule } from "./modeModules";
-import { DrilldownFitModule } from "./drilldownFit";
+import { DrilldownFitModule } from "./viewState";
 import type { CreateModelerOptions } from "./createModeler";
 import type { CoreModelerServices, ThemeMode } from "./publicApi";
 import type { LintConfigService } from "./bpmnlint/LintConfigService";

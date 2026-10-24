@@ -1,4 +1,5 @@
 import {
+    HostDocumentRevisions,
     LogErrorCommand,
     LogWarningCommand,
     SyncDocumentCommand,
@@ -39,9 +40,7 @@ export class FormEditorApp {
     private activeHostUpdates = 0;
     private hostImportQueue: Promise<void> = Promise.resolve();
     private previewImportQueue: Promise<void> = Promise.resolve();
-    private hostDocumentRevision = 0;
-    private latestHostDocumentRevision = 0;
-    private loadVersion = 0;
+    private readonly revisions = new HostDocumentRevisions();
     private previewRefreshVersion = 0;
     private sourceContent = "";
     private baseline = "";
@@ -78,9 +77,8 @@ export class FormEditorApp {
     }
 
     async load(content: string, documentRevision = 0): Promise<void> {
-        if (documentRevision < this.latestHostDocumentRevision) return;
-        this.latestHostDocumentRevision = documentRevision;
-        const version = ++this.loadVersion;
+        if (this.revisions.receive(documentRevision) === "stale") return;
+        const version = this.revisions.version;
         this.cancelPendingSync();
         this.invalidatePreview(this.baseline !== "");
 
@@ -103,9 +101,9 @@ export class FormEditorApp {
                 () => undefined,
             );
             const result = await importing;
-            if (version !== this.loadVersion) return;
+            if (!this.revisions.isCurrent(version)) return;
 
-            this.hostDocumentRevision = documentRevision;
+            this.revisions.markImported(documentRevision);
             this.logWarnings("Form editor", result.warnings);
             this.sourceContent = content;
             this.baseline = this.serialize(this.formEditor.saveSchema());
@@ -114,7 +112,7 @@ export class FormEditorApp {
             this.showCurrentSurface();
             if (this.mode === "preview") await this.refreshPreview();
         } catch (error) {
-            if (version === this.loadVersion) {
+            if (this.revisions.isCurrent(version)) {
                 this.showError(
                     "The form schema could not be loaded. Open the raw JSON editor to fix it.",
                     error,
@@ -134,11 +132,11 @@ export class FormEditorApp {
     }
 
     hostUpdateVersion(): number {
-        return this.loadVersion;
+        return this.revisions.version;
     }
 
     documentRevision(): number {
-        return this.hostDocumentRevision;
+        return this.revisions.representedRevision;
     }
 
     cancelPendingSync(): void {
@@ -217,7 +215,7 @@ export class FormEditorApp {
         const content = this.currentContent();
         if (!force && content === this.lastPostedContent) return false;
         this.lastPostedContent = content;
-        this.host.postMessage(new SyncDocumentCommand(content, this.hostDocumentRevision));
+        this.host.postMessage(new SyncDocumentCommand(content, this.revisions.representedRevision));
         return true;
     }
 

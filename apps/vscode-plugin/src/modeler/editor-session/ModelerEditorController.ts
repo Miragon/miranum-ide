@@ -7,16 +7,18 @@ import {
     window,
 } from "vscode";
 
-import { Command, SyncDocumentCommand } from "@miragon/bpmn-modeler-shared";
+import { Command } from "@miragon/bpmn-modeler-shared";
 
 import { DocumentChangeEvent, EditorSubscription, SettingChange } from "@miragon/bpmn-modeler-core";
-import { basenameOfUriString, EditorSessionStore } from "@miragon/bpmn-modeler-core";
+import {
+    basenameOfUriString,
+    dispatchInDocumentOrder,
+    EditorSessionStore,
+} from "@miragon/bpmn-modeler-core";
 import { VsCodeEditorHandle } from "../../shared/infrastructure/VsCodeEditorHandle";
 import { VsCodeNotifier } from "../../shared/infrastructure/VsCodeNotifier";
 import { WebviewMessageRouter } from "@miragon/bpmn-modeler-core";
 import { EditorSessionContext, EditorSessionParticipant } from "./EditorSessionParticipant";
-
-const ORDERED_DOCUMENT_MESSAGES = new Set(["SyncDocumentCommand"]);
 
 /**
  * Per-`viewType` configuration for {@link ModelerEditorController}. Everything
@@ -187,20 +189,7 @@ export class ModelerEditorController implements CustomTextEditorProvider {
                 }
             };
 
-            if (ORDERED_DOCUMENT_MESSAGES.has(message.type)) {
-                const sync = message as SyncDocumentCommand;
-                if (!this.editorStore.isHostDocumentRevisionCurrent(id, sync.documentRevision)) {
-                    return;
-                }
-                await this.editorStore.runInEditorQueue(id, async () => {
-                    await dispatch();
-                    if (this.editorStore.isHostDocumentRevisionCurrent(id, sync.documentRevision)) {
-                        this.editorStore.recordDocumentSync(id, session, sync.content);
-                    }
-                });
-            } else {
-                await dispatch();
-            }
+            await dispatchInDocumentOrder(this.editorStore, id, session, message, dispatch);
         });
     }
 }

@@ -56,12 +56,11 @@ export function createFlushResponder(
         source.endDestructiveFlush();
     };
 
-    return async (query: FlushDocumentQuery | ReleaseDocumentFlushQuery): Promise<void> => {
-        if (query.type === "ReleaseDocumentFlushQuery") {
-            release(query.token);
+    return async (flush: FlushDocumentQuery | ReleaseDocumentFlushQuery): Promise<void> => {
+        if (flush.type === "ReleaseDocumentFlushQuery") {
+            release(flush.token);
             return;
         }
-        const flush = query as FlushDocumentQuery;
         if (!source.isReady()) {
             post(new DocumentFlushedCommand(flush.token, undefined, "unavailable"));
             return;

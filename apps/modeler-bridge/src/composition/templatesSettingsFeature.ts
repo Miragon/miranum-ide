@@ -1,4 +1,3 @@
-import { Command } from "@miragon/bpmn-modeler-shared";
 import {
     BpmnElementTemplatesService,
     BpmnSettingsBroadcaster,
@@ -66,12 +65,12 @@ export function register(
     deps.router
         // Inlined rather than importing the VS Code element-templates handler,
         // whose module pulls in `VsCodeNotifier` → `vscode`, which we must avoid.
-        .on("GetElementTemplatesCommand", (_m: Command, editorId: string) => {
+        .on("GetElementTemplatesCommand", (_m, editorId) => {
             void templatesSvc.setElementTemplates(editorId);
         })
         // The webview re-requests settings on every (re)load; push the live snapshot
         // and language, mirroring the VS Code `getBpmnModelerSettingHandler`.
-        .on("GetBpmnModelerSettingCommand", (_m: Command, editorId: string) => {
+        .on("GetBpmnModelerSettingCommand", (_m, editorId) => {
             void settingsBroadcaster.setSettings(editorId);
             settingsBroadcaster.setLanguage(editorId);
         });
