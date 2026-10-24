@@ -69,7 +69,6 @@ import {
     UnsupportedEngineError,
     asyncDebounce,
     formatErrors,
-    observeCanvasSize,
     serializeAsync,
     type DetectedEngine,
     type SurfaceMode,
@@ -97,7 +96,7 @@ import type {
     ModelerMode,
 } from "@miragon/bpmn-modeler";
 import type { HostApi } from "@miragon/bpmn-modeler-shared";
-import type { CleanupOutcome, LintRunEvent, ResizableCanvas } from "@miragon/bpmn-modeler-types";
+import type { CleanupOutcome, LintRunEvent } from "@miragon/bpmn-modeler-types";
 import { LAYOUT_FORMATTED_EVENT } from "@miragon/bpmn-modeler-layout";
 import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
@@ -209,8 +208,7 @@ function startSession(
     // The mode the live surface renders, and the mode strip that drives
     // it. `switchPending` blocks re-entrant switches while a recreate is in
     // flight; `initialSurfaceReady` blocks switches until the boot restore,
-    // which drives the live surface's state manager, has finished;
-    // `disposeCanvasObserver` tears down the per-surface size observer.
+    // which drives the live surface's state manager, has finished.
     let surfaceMode!: SurfaceMode;
     let strip!: ModeStrip;
     let modeSession: ModeSession | undefined;
@@ -220,7 +218,6 @@ function startSession(
     // Saved `document.body.inert` from the start of a recreate switch, restored
     // when it lands (unless a concurrent engine reload has taken ownership).
     let inertBeforeSwitch: boolean | undefined;
-    let disposeCanvasObserver: (() => void) | undefined;
 
     let modelerIsInitialized = false;
     let modelerCanImportHostUpdates = false;
@@ -868,9 +865,9 @@ function startSession(
         };
 
         // Rebinds the per-surface subscriptions on every (re)creation: outbound
-        // sync, the C7 variable publisher, the state manager, and the canvas-size
-        // observer. All of these live on the instance and die with it, so a mode
-        // switch that forgot to rebind would silently stop syncing/persisting.
+        // sync, the C7 variable publisher, and the state manager. All of these
+        // live on the instance and die with it, so a mode switch that forgot to
+        // rebind would silently stop syncing/persisting.
         function bindSurface(handle: SurfaceHandle): void {
             // Outbound sync: the modeler exposes onCommandStackChanged; the
             // designer emits via the shared eventBus; the readonly viewer never
@@ -930,13 +927,6 @@ function startSession(
             }
 
             stateManager = new WebviewStateManager(host, handle, mountEl);
-
-            const canvas = handle.getService<ResizableCanvas & { getContainer(): Element }>(
-                "canvas",
-            );
-            disposeCanvasObserver = observeCanvasSize(canvas, canvas.getContainer(), {
-                applyInitialViewport: () => stateManager.restoreViewport(),
-            });
         }
 
         // Element templates are modeler-only; a viewer/designer never receives
@@ -996,12 +986,10 @@ function startSession(
                     // host's script locks, restore its panel UI, resume persistence,
                     // and re-request modeler resources.
                     if (transition === "recreate" || transition === "fallback") {
-                        // A recreate already applied the carried snapshot via the
-                        // handle, bypassing this fresh state manager — latch so the
-                        // canvas-size observer won't fit stale saved state over it.
-                        // A fallback applied no snapshot, so its restore must run.
-                        if (transition === "recreate") {
-                            stateManager.markViewportRestored();
+                        // A recreate already applied the carried snapshot; a
+                        // fallback applied none, so the persisted state restores.
+                        if (transition === "fallback") {
+                            stateManager.restoreViewport();
                         }
                         // After the import: the script-source watcher baselines
                         // the locked scripts from the loaded model.
@@ -1017,7 +1005,6 @@ function startSession(
                     await flushPendingXmlChanges();
                     debouncedSendXmlChanges.cancel();
                     cancelPendingVariablePublish?.();
-                    disposeCanvasObserver?.();
                 },
                 onError: (error) => {
                     const cause = error instanceof Error ? error : new Error(String(error));
@@ -1128,8 +1115,8 @@ function startSession(
             }
         });
 
-        // Phase 1: restore viewport (canvas exists after openXml). Retried from
-        // the observer because hosts mount the webview before laying it out.
+        // Phase 1: restore the persisted plane and viewport (canvas exists after
+        // openXml); the surface itself fits a fresh open.
         stateManager.restoreViewport();
 
         await drainPendingSessionActions();

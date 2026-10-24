@@ -54,9 +54,6 @@ export function readSavedMode(
  * restore the drill-down plane, viewbox, and selection.
  */
 export class WebviewStateManager {
-    /** Latches once {@link restoreViewport} has applied a viewbox. */
-    private viewportRestored = false;
-
     private readonly stateStore: WebviewStateStore<WebviewState>;
 
     private readonly panelUiState: PropertiesPanelUiStateAdapter;
@@ -84,23 +81,11 @@ export class WebviewStateManager {
      * Must be called after importXML — the canvas does not exist before that.
      *
      * A saved viewbox only exists after a tab-switch rebuild (VS Code retains
-     * `getState()`); a fresh open/reopen starts with empty state. So the
-     * absence of a saved viewport discriminates a genuine fresh open, where we
-     * fit the diagram — bpmn-js leaves the canvas at the origin on importXML,
-     * which renders a diagram moved far from the origin off-screen.
-     *
-     * Safe to call repeatedly: nothing happens until the host has laid the
-     * canvas out, and then it applies exactly once — re-fitting on every later
-     * resize would discard the zoom the user chose.
-     *
-     * @returns `true` once a viewbox has been applied, `false` while the
-     *   caller should keep retrying.
+     * `getState()`); a fresh open/reopen starts with empty state and keeps the
+     * fit the surface armed on import. A restore while the host has not laid
+     * the canvas out yet is held by the surface and applied once it has a size.
      */
-    restoreViewport(): boolean {
-        if (this.viewportRestored) {
-            return true;
-        }
-
+    restoreViewport(): void {
         const saved = this.stateStore.read();
 
         // Restore the drill-down plane before the viewbox — viewbox
@@ -113,10 +98,9 @@ export class WebviewStateManager {
             this.modeler.rootElement.setRootElementById(saved.rootElementId);
         }
 
-        this.viewportRestored = saved?.viewport
-            ? this.modeler.viewport.setViewport(saved.viewport)
-            : this.modeler.viewport.fitViewport();
-        return this.viewportRestored;
+        if (saved?.viewport) {
+            this.modeler.viewport.setViewport(saved.viewport);
+        }
     }
 
     /**
@@ -200,18 +184,5 @@ export class WebviewStateManager {
      */
     applyViewState(snapshot: CanvasViewState): void {
         this.modeler.applyViewState(snapshot);
-        // An explicit snapshot re-apply settles the initial-restore question, so
-        // the canvas-size observer stops re-applying possibly stale saved state.
-        this.viewportRestored = true;
-    }
-
-    /**
-     * Latches the initial-viewport restore without applying one. Called when the
-     * viewport was already restored out-of-band (a mode-session recreate applies
-     * the carried snapshot directly via the handle, bypassing this manager), so
-     * the canvas-size observer does not re-apply stale saved state over it.
-     */
-    markViewportRestored(): void {
-        this.viewportRestored = true;
     }
 }
