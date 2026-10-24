@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { createTestHost, PickerAnswers } from "../../testing";
 import { BasicAuth } from "../domain/deployment";
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import { DeployFilesService } from "./DeployFilesService";
@@ -17,7 +18,8 @@ const devTarget = new DeploymentTarget(
     "",
 );
 
-function createService() {
+function createService(answers: PickerAnswers = { workspaceFiles: PICKED_FILES }) {
+    const host = createTestHost({ answers });
     const calls: string[] = [];
     const credentials = new BasicAuth("demo", "demo");
     const deploymentTargetService = {
@@ -34,39 +36,32 @@ function createService() {
     const deploymentStatusService = {
         refreshActive: vi.fn(async () => void calls.push("refreshStatus")),
     };
-    const picker = {
-        pickWorkspaceFiles: vi.fn(async () => {
-            calls.push("pickFiles");
-            return PICKED_FILES;
-        }),
-    };
-    const notifier = {
-        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
-    };
+    const pickWorkspaceFiles = host.picker.pickWorkspaceFiles.bind(host.picker);
+    vi.spyOn(host.picker, "pickWorkspaceFiles").mockImplementation((options) => {
+        calls.push("pickFiles");
+        return pickWorkspaceFiles(options);
+    });
     const afterTargetPicker = vi.fn(async () => void calls.push("afterTargetPicker"));
 
     const service = new DeployFilesService(
         deploymentTargetService as never,
         deploymentService as never,
         deploymentStatusService as never,
-        picker as never,
-        notifier as never,
+        host.picker,
+        host.notifier,
     );
 
     return {
         service,
+        host,
         calls,
         credentials,
         deploymentTargetService,
         deploymentService,
         deploymentStatusService,
-        picker,
-        notifier,
         afterTargetPicker,
     };
 }
-
-beforeEach(() => vi.clearAllMocks());
 
 describe("DeployFilesService.deployFiles", () => {
     it("deploys the picked BPMN/DMN files to the active target, then refreshes the status", async () => {
@@ -74,19 +69,23 @@ describe("DeployFilesService.deployFiles", () => {
 
         await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
 
-        expect(c.picker.pickWorkspaceFiles).toHaveBeenCalledWith({
-            glob: "**/*.{bpmn,dmn}",
-            exclude: "**/node_modules/**",
-            placeholder: 'Select files to deploy to "dev"',
-        });
+        expect(c.host.picker.prompts).toEqual([
+            {
+                method: "pickWorkspaceFiles",
+                args: [
+                    {
+                        glob: "**/*.{bpmn,dmn}",
+                        exclude: "**/node_modules/**",
+                        placeholder: 'Select files to deploy to "dev"',
+                    },
+                ],
+            },
+        ]);
         expect(c.deploymentTargetService.getCredentials).toHaveBeenCalledWith(
             devTarget,
             DOCUMENT_DIR,
         );
-        expect(c.notifier.withProgress).toHaveBeenCalledWith(
-            'Deploying 2 file(s) to "dev"',
-            expect.any(Function),
-        );
+        expect(c.host.notifier.progressTitles).toEqual(['Deploying 2 file(s) to "dev"']);
         expect(c.deploymentService.deployFiles).toHaveBeenCalledWith(
             PICKED_FILES,
             devTarget,
@@ -126,7 +125,7 @@ describe("DeployFilesService.deployFiles", () => {
         await c.service.deployFiles(DOCUMENT_DIR, c.afterTargetPicker);
 
         expect(c.calls).toEqual(["switchTarget", "refreshStatus", "afterTargetPicker"]);
-        expect(c.picker.pickWorkspaceFiles).not.toHaveBeenCalled();
+        expect(c.host.picker.prompts).toEqual([]);
         expect(c.deploymentService.deployFiles).not.toHaveBeenCalled();
     });
 
@@ -140,8 +139,7 @@ describe("DeployFilesService.deployFiles", () => {
     });
 
     it("deploys nothing when the file picker is dismissed", async () => {
-        const c = createService();
-        c.picker.pickWorkspaceFiles.mockResolvedValue([]);
+        const c = createService({});
 
         await c.service.deployFiles(DOCUMENT_DIR);
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DocumentChangeEvent, SettingChange } from "@miragon/bpmn-modeler-core";
 import { BpmnLintConfigLocator, WatcherResult } from "@miragon/bpmn-modeler-core";
 import { BpmnLintConfigService } from "@miragon/bpmn-modeler-core";
+import { RecordingStatusBar } from "@miragon/bpmn-modeler-core/testing";
 import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
 import { VsCodeStatusBar } from "../../../../shared/infrastructure/VsCodeStatusBar";
 import { EditorSessionContext } from "../../../editor-session/EditorSessionParticipant";
@@ -67,25 +68,30 @@ function createServices(watcher: WatcherResult) {
     const locator = {
         createWatcher: vi.fn().mockResolvedValue(watcher),
     } as Pick<BpmnLintConfigLocator, "createWatcher"> as BpmnLintConfigLocator;
-    const statusBar = {
-        hideBpmnlintStatus: vi.fn(),
-    } as Pick<VsCodeStatusBar, "hideBpmnlintStatus"> as VsCodeStatusBar;
+    const statusBar = new RecordingStatusBar();
+    statusBar.showBpmnlintActive("/work/.bpmnlintrc");
     const notifier = {
         showError: vi.fn(),
         logError: vi.fn(),
     } as Pick<VsCodeNotifier, "showError" | "logError"> as VsCodeNotifier;
-    return { lintSvc, locator, statusBar, notifier };
+    const participant = new BpmnlintParticipant(
+        lintSvc,
+        locator,
+        statusBar as unknown as VsCodeStatusBar,
+        notifier,
+    );
+    return { participant, lintSvc, locator, statusBar, notifier };
 }
 
 describe("BpmnlintParticipant", () => {
     it("re-lints when the configFolder or linting.enabled setting changes, but not on others", async () => {
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, lintSvc } = createServices({
             disposables: [],
             errors: [],
         });
         const { context, captured } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
 
         captured.settingChange?.(settingChange("miragon.bpmnModeler.language"), EDITOR_ID);
         expect(lintSvc.setBpmnlintConfig).not.toHaveBeenCalled();
@@ -99,13 +105,13 @@ describe("BpmnlintParticipant", () => {
 
     it("joins watcher disposables to the session bag", async () => {
         const disposable = { dispose: vi.fn() };
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, locator } = createServices({
             disposables: [disposable],
             errors: [],
         });
         const { context, addDisposable } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
 
         expect(locator.createWatcher).toHaveBeenCalledWith(
             EDITOR_ID,
@@ -115,13 +121,13 @@ describe("BpmnlintParticipant", () => {
     });
 
     it("gates the watcher's status-bar reflection on editor focus", async () => {
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, lintSvc, locator } = createServices({
             disposables: [],
             errors: [],
         });
         const { context, panel } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
 
         const watcherTarget = (locator.createWatcher as ReturnType<typeof vi.fn>).mock
             .calls[0][1] as { setBpmnlintConfig: (id: string) => unknown };
@@ -137,30 +143,30 @@ describe("BpmnlintParticipant", () => {
 
     it("surfaces watcher setup errors to the user", async () => {
         const error = new Error("no workspace");
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, notifier } = createServices({
             disposables: [],
             errors: [error],
         });
         const { context } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
 
         expect(notifier.showError).toHaveBeenCalledWith("no workspace");
         expect(notifier.logError).toHaveBeenCalledWith(error);
     });
 
     it("clears the status item and the diagnostics when the session is disposed", async () => {
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, lintSvc, statusBar } = createServices({
             disposables: [],
             errors: [],
         });
         const { context, captured } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
 
-        expect(statusBar.hideBpmnlintStatus).not.toHaveBeenCalled();
+        expect(statusBar.bpmnlint.state).toBe("active");
         captured.dispose?.();
-        expect(statusBar.hideBpmnlintStatus).toHaveBeenCalledOnce();
+        expect(statusBar.bpmnlint).toEqual({ state: "hidden" });
         expect(lintSvc.clearDiagnostics).toHaveBeenCalledWith(EDITOR_ID);
     });
 
@@ -173,14 +179,14 @@ describe("BpmnlintParticipant", () => {
         });
 
         it("re-lints after the debounce when the editor is on the external path", async () => {
-            const { lintSvc, locator, statusBar, notifier } = createServices({
+            const { participant, lintSvc } = createServices({
                 disposables: [],
                 errors: [],
             });
             (lintSvc.getLintMode as ReturnType<typeof vi.fn>).mockReturnValue("external");
             const { context, captured } = createContext();
 
-            await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+            await participant.onResolve(context);
             captured.documentChange?.(bpmnChange());
 
             // Debounced: nothing fires immediately.
@@ -190,7 +196,7 @@ describe("BpmnlintParticipant", () => {
         });
 
         it("does not re-lint on document change when the editor is in-page", async () => {
-            const { lintSvc, locator, statusBar, notifier } = createServices({
+            const { participant, lintSvc } = createServices({
                 disposables: [],
                 errors: [],
             });
@@ -198,7 +204,7 @@ describe("BpmnlintParticipant", () => {
             (lintSvc.getLintMode as ReturnType<typeof vi.fn>).mockReturnValue("in-page");
             const { context, captured } = createContext();
 
-            await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+            await participant.onResolve(context);
             captured.documentChange?.(bpmnChange());
             vi.advanceTimersByTime(400);
 
@@ -207,23 +213,23 @@ describe("BpmnlintParticipant", () => {
     });
 
     it("tracks editor focus: re-discovers on activate, hides on blur", async () => {
-        const { lintSvc, locator, statusBar, notifier } = createServices({
+        const { participant, lintSvc, statusBar } = createServices({
             disposables: [],
             errors: [],
         });
         const { context, captured, panel, addDisposable, viewStateSubscription } = createContext();
 
-        await new BpmnlintParticipant(lintSvc, locator, statusBar, notifier).onResolve(context);
+        await participant.onResolve(context);
         // The view-state subscription must die with the session.
         expect(addDisposable).toHaveBeenCalledWith(viewStateSubscription);
 
         panel.active = true;
         captured.viewState?.();
         expect(lintSvc.setBpmnlintConfig).toHaveBeenCalledWith(EDITOR_ID);
-        expect(statusBar.hideBpmnlintStatus).not.toHaveBeenCalled();
+        expect(statusBar.bpmnlint.state).toBe("active");
 
         panel.active = false;
         captured.viewState?.();
-        expect(statusBar.hideBpmnlintStatus).toHaveBeenCalledOnce();
+        expect(statusBar.bpmnlint).toEqual({ state: "hidden" });
     });
 });

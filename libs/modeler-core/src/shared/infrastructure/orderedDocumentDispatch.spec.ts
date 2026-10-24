@@ -2,16 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { Command, SyncDocumentCommand } from "@miragon/bpmn-modeler-shared";
 
-import type { EditorHandle } from "../domain/EditorSession";
-import { EditorSessionStore } from "./EditorSessionStore";
+import { createTestHost } from "../../testing";
 import { dispatchInDocumentOrder } from "./orderedDocumentDispatch";
 
 const EDITOR = "file:///w/a.bpmn";
 
 function setup() {
-    const handle = { id: EDITOR, content: "", getContent: () => handle.content };
-    const store = new EditorSessionStore(() => {});
-    store.register(handle as unknown as EditorHandle);
+    const { store, openEditor } = createTestHost();
+    const handle = openEditor("/w/a.bpmn");
     const written: string[] = [];
     const fire = (message: Command, beforeWrite: Promise<void> = Promise.resolve()) =>
         dispatchInDocumentOrder(store, EDITOR, handle, message, async () => {

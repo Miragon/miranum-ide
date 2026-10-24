@@ -20,6 +20,7 @@ vi.mock("../../shared/infrastructure/extensionContext", () => ({
 
 import { commands, window } from "vscode";
 import { DeploymentResult } from "@miragon/bpmn-modeler-core";
+import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
 import {
     DeploymentResultQuery,
     DeploymentTargetsQuery,
@@ -49,22 +50,13 @@ function createWebviewView() {
 }
 
 /**
- * Assembles the controller with structural port doubles and a fake `WebviewView`
- * that captures the message listener, the visibility listener, and posted queries.
+ * Assembles the controller over an in-memory host with the trusted diagram open
+ * and active, plus structural service doubles and a fake `WebviewView` that
+ * captures the message listener, the visibility listener, and posted queries.
  */
 function createController() {
-    const activeEditorListeners = new Set<() => void>();
-    const editorStore = {
-        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-        onDidChangeActiveEditor: vi.fn((listener: () => void) => {
-            activeEditorListeners.add(listener);
-            return { dispose: () => activeEditorListeners.delete(listener) };
-        }),
-    };
-    const changeActiveEditor = () => activeEditorListeners.forEach((listener) => listener());
-    const vsDocument = {
-        getFilePath: vi.fn().mockReturnValue("/work/trusted/order-process.bpmn"),
-    };
+    const host = createTestHost();
+    const editor = host.openEditor("/work/trusted/order-process.bpmn");
     const deploymentService = {
         deploy: vi.fn().mockResolvedValue(new DeploymentResult(true, "ok")),
         getFormDefaults: vi.fn().mockReturnValue({
@@ -119,8 +111,8 @@ function createController() {
     const { postMessage, onDidReceiveMessage, onDidChangeVisibility, onDidDispose } = webviewView;
 
     const controller = new DeploymentController(
-        editorStore as never,
-        vsDocument as never,
+        host.store,
+        host.documents,
         deploymentService as never,
         startInstanceService as never,
         deploymentTargetService as never,
@@ -133,9 +125,8 @@ function createController() {
 
     return {
         controller,
-        editorStore,
-        changeActiveEditor,
-        vsDocument,
+        host,
+        editor,
         deploymentService,
         startInstanceService,
         deploymentTargetService,
@@ -269,9 +260,7 @@ describe("DeploymentController target commands", () => {
 
     it("switches against no document directory when no editor is focused", async () => {
         const c = createController();
-        c.editorStore.getActiveEditorId.mockImplementation(() => {
-            throw new Error("no active editor");
-        });
+        c.host.store.unregister(c.editor.id, c.editor);
 
         await registeredHandler(c, SWITCH_TARGET_CMD)();
 
@@ -368,16 +357,16 @@ describe("DeploymentController.resolveWebviewView", () => {
         const onVisibility = c.onDidChangeVisibility.mock.calls[0][0];
         onVisibility();
 
-        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith("editor-1");
+        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith(c.editor.id);
     });
 
     it("re-sends form defaults when the active editor changes while visible", () => {
         const c = createController();
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
-        c.changeActiveEditor();
+        const invoice = c.host.openEditor("/work/trusted/invoice.bpmn");
 
-        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith("editor-1");
+        expect(c.deploymentService.getFormDefaults).toHaveBeenCalledWith(invoice.id);
     });
 
     it("does not refresh defaults when the panel is hidden", () => {
@@ -386,7 +375,7 @@ describe("DeploymentController.resolveWebviewView", () => {
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
         c.onDidChangeVisibility.mock.calls[0][0]();
-        c.changeActiveEditor();
+        c.host.openEditor("/work/trusted/invoice.bpmn");
 
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
     });
@@ -396,7 +385,7 @@ describe("DeploymentController.resolveWebviewView", () => {
         c.controller.resolveWebviewView(c.webviewView as never, {} as never, {} as never);
 
         c.onDidDispose.mock.calls[0][0]();
-        c.changeActiveEditor();
+        c.host.openEditor("/work/trusted/invoice.bpmn");
 
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
     });

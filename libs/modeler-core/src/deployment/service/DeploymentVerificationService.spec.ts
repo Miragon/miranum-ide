@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { EngineInspectionFailedError } from "../../shared/domain/errors";
+import { createTestHost } from "../../testing";
 import { NoAuth } from "../domain/deployment";
 import { contentFingerprint, DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget } from "../domain/deploymentTarget";
@@ -31,14 +32,9 @@ const snapshot = (overrides: Partial<EngineDeploymentSnapshot> = {}): EngineDepl
     ...overrides,
 });
 
-function createService() {
-    const editorStore = {
-        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-    };
-    const documentPort = {
-        getFilePath: vi.fn().mockReturnValue(FILE_PATH),
-        getContent: vi.fn().mockReturnValue(XML),
-    };
+function createService(content = XML) {
+    const host = createTestHost();
+    const editor = host.openEditor(FILE_PATH, content);
     const deploymentTargetService = {
         getActiveTarget: vi.fn().mockResolvedValue(c7Target),
         getCredentials: vi.fn().mockResolvedValue(new NoAuth()),
@@ -52,47 +48,34 @@ function createService() {
     const inspection = {
         fetchLatestDefinition: vi.fn().mockResolvedValue(snapshot()),
     };
-    const notifier = {
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-        notifyError: vi.fn(),
-        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
-    };
 
     const service = new DeploymentVerificationService(
-        editorStore as never,
-        documentPort as never,
+        host.store,
+        host.documents,
         deploymentTargetService as never,
         deploymentStatusService as never,
         inspection as never,
-        notifier as never,
+        host.notifier,
     );
 
     return {
         service,
-        editorStore,
-        documentPort,
+        host,
+        editor,
         deploymentTargetService,
         deploymentStatusService,
         inspection,
-        notifier,
     };
 }
-
-beforeEach(() => vi.clearAllMocks());
 
 describe("DeploymentVerificationService.verifyActive", () => {
     it("reports when no diagram is focused", async () => {
         const c = createService();
-        c.editorStore.getActiveEditorId.mockImplementation(() => {
-            throw new Error("no active editor");
-        });
+        c.host.store.unregister(c.editor.id, c.editor);
 
         await c.service.verifyActive();
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
-            "Open a BPMN diagram to verify its deployment.",
-        );
+        expect(c.host.notifier.infos).toEqual(["Open a BPMN diagram to verify its deployment."]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -102,9 +85,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "Select a named Camunda 7 target to verify against.",
-        );
+        ]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -114,19 +97,18 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "Verification is not available for Camunda 8 targets.",
-        );
+        ]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
     it("shows an error when the diagram has no process id", async () => {
-        const c = createService();
-        c.documentPort.getContent.mockReturnValue("<bpmn:definitions/>");
+        const c = createService("<bpmn:definitions/>");
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledOnce();
+        expect(c.host.notifier.errors).toHaveLength(1);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -154,9 +136,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             expect.objectContaining({ ...recorded, verifiedAt: expect.any(String) }),
         );
         expect(c.deploymentStatusService.refreshActive).toHaveBeenCalled();
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             expect.stringContaining("dev runs your last deployment"),
-        );
+        ]);
     });
 
     it("adopts an engine revision matching this diagram", async () => {
@@ -169,9 +151,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             identity,
             expect.objectContaining({ origin: "engine", deploymentId: "dep-9" }),
         );
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             expect.stringContaining("dev runs exactly this diagram"),
-        );
+        ]);
     });
 
     it("reports a differing engine deployment as information", async () => {
@@ -189,10 +171,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
             hour: "2-digit",
             minute: "2-digit",
         });
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             `The version deployed on dev (deployed ${deployedTime}) differs from your diagram.`,
-        );
-        expect(c.notifier.showError).not.toHaveBeenCalled();
+        ]);
+        expect(c.host.notifier.errors).toEqual([]);
     });
 
     it("omits the deployment time when it is unavailable", async () => {
@@ -203,10 +185,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "The version deployed on dev differs from your diagram.",
-        );
-        expect(c.notifier.showError).not.toHaveBeenCalled();
+        ]);
+        expect(c.host.notifier.errors).toEqual([]);
     });
 
     it("forgets the row when the process is not deployed", async () => {
@@ -217,7 +199,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         expect(c.deploymentStatusService.forgetRevision).toHaveBeenCalledWith(FILE_PATH, identity);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
-        expect(c.notifier.showInfo).toHaveBeenCalledWith("Process 'order' is not deployed on dev.");
+        expect(c.host.notifier.infos).toEqual(["Process 'order' is not deployed on dev."]);
     });
 
     it("points at the target credentials on an auth failure, leaving the ledger untouched", async () => {
@@ -228,9 +210,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledWith(
+        expect(c.host.notifier.errors).toEqual([
             'Could not verify deployment on "dev" — check the target credentials.',
-        );
+        ]);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -241,10 +223,8 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.notifyError).toHaveBeenCalledWith(
-            "Could not verify deployment",
-            expect.any(Error),
-        );
+        expect(c.host.notifier.errors).toEqual(["Could not verify deployment\nconnection refused"]);
+        expect(c.host.notifier.logged("error")).toEqual(["connection refused"]);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -254,9 +234,6 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.withProgress).toHaveBeenCalledWith(
-            'Verifying on "dev"…',
-            expect.any(Function),
-        );
+        expect(c.host.notifier.progressTitles).toEqual(['Verifying on "dev"…']);
     });
 });

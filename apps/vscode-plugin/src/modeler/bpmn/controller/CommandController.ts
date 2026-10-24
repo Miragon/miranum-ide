@@ -13,6 +13,7 @@ import { supportedModelerLanguages } from "@miragon/bpmn-modeler-i18n-extras";
 
 import { EditorSubscription } from "@miragon/bpmn-modeler-core";
 import { EditorSessionStore } from "@miragon/bpmn-modeler-core";
+import { EditorSessionDocuments } from "@miragon/bpmn-modeler-core";
 import {
     BPMN_VIEW_TYPE,
     BpmnDocument,
@@ -22,7 +23,6 @@ import {
     FORM_VIEW_TYPE,
     UserCancelledError,
 } from "@miragon/bpmn-modeler-core";
-import { VsCodeDocument } from "../../../shared/infrastructure/VsCodeDocument";
 import { VsCodeNotifier } from "../../../shared/infrastructure/VsCodeNotifier";
 import { VsCodeTextEditor } from "../../../shared/infrastructure/VsCodeTextEditor";
 import { VsCodePicker } from "../../../shared/infrastructure/VsCodePicker";
@@ -61,7 +61,7 @@ export class CommandController {
 
     constructor(
         private readonly editorStore: EditorSessionStore,
-        private readonly vsDocument: VsCodeDocument,
+        private readonly vsDocument: EditorSessionDocuments,
         private readonly notifier: VsCodeNotifier,
         private readonly textEditor: VsCodeTextEditor,
         private readonly bpmnService: BpmnModelerService,

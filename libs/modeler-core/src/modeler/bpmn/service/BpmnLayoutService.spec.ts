@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
     CleanupDiagramQuery,
@@ -8,24 +8,16 @@ import {
 } from "@miragon/bpmn-modeler-shared";
 import type { CleanupItem, CleanupStatus, LayoutErrorCode } from "@miragon/bpmn-modeler-types";
 
+import { createTestHost } from "../../../testing";
 import { BpmnLayoutService } from "./BpmnLayoutService";
 
-const EDITOR = "file:///work/diagram.bpmn";
 const NOTHING_TO_CLEAN = "Nothing to clean up — the diagram carries no leftovers.";
 
 function createService({ userConfirms = false } = {}) {
-    const editorStore = { postMessage: vi.fn().mockResolvedValue(true) };
-    const notifier = {
-        logInfo: vi.fn(),
-        logError: vi.fn(),
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-    };
-    const picker = { confirmDestructive: vi.fn().mockResolvedValue(userConfirms) };
-
-    const service = new BpmnLayoutService(editorStore as never, notifier as never, picker as never);
-
-    return { service, editorStore, notifier, picker };
+    const host = createTestHost({ answers: { confirmDestructive: userConfirms } });
+    const editor = host.openEditor("/work/diagram.bpmn");
+    const service = new BpmnLayoutService(host.store, host.notifier, host.picker);
+    return { service, editor, notifier: host.notifier, picker: host.picker };
 }
 
 function failedFormat(code?: LayoutErrorCode, detail?: string): DiagramFormattedCommand {
@@ -47,14 +39,12 @@ const leftovers: CleanupItem[] = [
 
 describe("BpmnLayoutService.format", () => {
     it("asks the given editor to format its diagram", async () => {
-        const { service, editorStore } = createService();
+        const { service, editor } = createService();
 
-        await service.format(EDITOR);
+        await service.format(editor.id);
 
-        expect(editorStore.postMessage).toHaveBeenCalledOnce();
-        const [editorId, query] = editorStore.postMessage.mock.calls[0];
-        expect(editorId).toBe(EDITOR);
-        expect(query).toBeInstanceOf(FormatDiagramQuery);
+        expect(editor.posted).toHaveLength(1);
+        expect(editor.posted[0]).toBeInstanceOf(FormatDiagramQuery);
     });
 });
 
@@ -69,12 +59,12 @@ describe("BpmnLayoutService.reportFormatted", () => {
             ]),
         );
 
-        expect(notifier.logInfo.mock.calls).toEqual([
-            ["Format: label overlaps (Task_1)"],
-            ["Format: lane resized"],
+        expect(notifier.logged("info")).toEqual([
+            "Format: label overlaps (Task_1)",
+            "Format: lane resized",
         ]);
-        expect(notifier.showInfo).not.toHaveBeenCalled();
-        expect(notifier.showError).not.toHaveBeenCalled();
+        expect(notifier.infos).toEqual([]);
+        expect(notifier.errors).toEqual([]);
     });
 
     it("tells the user when the diagram was already formatted", () => {
@@ -82,8 +72,8 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(new DiagramFormattedCommand("unchanged", []));
 
-        expect(notifier.showInfo).toHaveBeenCalledWith("The diagram is already formatted.");
-        expect(notifier.showError).not.toHaveBeenCalled();
+        expect(notifier.infos).toEqual(["The diagram is already formatted."]);
+        expect(notifier.errors).toEqual([]);
     });
 
     it.each<[LayoutErrorCode, string]>([
@@ -97,8 +87,8 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(failedFormat(code));
 
-        expect(notifier.showError).toHaveBeenCalledWith(explanation);
-        expect(notifier.logError).not.toHaveBeenCalled();
+        expect(notifier.errors).toEqual([explanation]);
+        expect(notifier.logged("error")).toEqual([]);
     });
 
     it("logs an engine failure and appends its detail to the error", () => {
@@ -106,8 +96,8 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(failedFormat("ENGINE_FAILED", "boom"));
 
-        expect(notifier.logError).toHaveBeenCalledWith("Format failed: boom");
-        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted. boom");
+        expect(notifier.logged("error")).toEqual(["Format failed: boom"]);
+        expect(notifier.errors).toEqual(["The diagram could not be formatted. boom"]);
     });
 
     it("logs the detail of any other refusal but keeps it out of the error", () => {
@@ -115,10 +105,10 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(failedFormat("APPLY_FAILED", "modeling threw"));
 
-        expect(notifier.logError).toHaveBeenCalledWith("Format failed: modeling threw");
-        expect(notifier.showError).toHaveBeenCalledWith(
+        expect(notifier.logged("error")).toEqual(["Format failed: modeling threw"]);
+        expect(notifier.errors).toEqual([
             "The new layout could not be applied, so the diagram is unchanged.",
-        );
+        ]);
     });
 
     it.each([
@@ -129,8 +119,8 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(failedFormat(code, "boom"));
 
-        expect(notifier.logError).toHaveBeenCalledWith("Format failed: boom");
-        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted. boom");
+        expect(notifier.logged("error")).toEqual(["Format failed: boom"]);
+        expect(notifier.errors).toEqual(["The diagram could not be formatted. boom"]);
     });
 
     it("does not treat inherited object keys as refusal codes", () => {
@@ -138,19 +128,18 @@ describe("BpmnLayoutService.reportFormatted", () => {
 
         service.reportFormatted(failedFormat("toString" as never));
 
-        expect(notifier.showError).toHaveBeenCalledWith("The diagram could not be formatted.");
+        expect(notifier.errors).toEqual(["The diagram could not be formatted."]);
     });
 });
 
 describe("BpmnLayoutService.inspectCleanup", () => {
     it("asks the given editor for a cleanup report without applying anything", async () => {
-        const { service, editorStore } = createService();
+        const { service, editor } = createService();
 
-        await service.inspectCleanup(EDITOR);
+        await service.inspectCleanup(editor.id);
 
-        expect(editorStore.postMessage).toHaveBeenCalledOnce();
-        const [editorId, query] = editorStore.postMessage.mock.calls[0];
-        expect(editorId).toBe(EDITOR);
+        expect(editor.posted).toHaveLength(1);
+        const [query] = editor.posted;
         expect(query).toBeInstanceOf(CleanupDiagramQuery);
         expect((query as CleanupDiagramQuery).apply).toBe(false);
     });
@@ -161,79 +150,85 @@ describe("BpmnLayoutService.reportCleanup", () => {
         [false, "The diagram could not be checked for leftovers."],
         [true, "The leftovers could not be removed, so the diagram is unchanged."],
     ])("reports a failure (applied=%s) without asking to clean up", async (applied, error) => {
-        const { service, notifier, picker, editorStore } = createService();
+        const { service, notifier, picker, editor } = createService();
 
-        await service.reportCleanup(cleanupReport("failed", { applied, detail: "x" }), EDITOR);
+        await service.reportCleanup(cleanupReport("failed", { applied, detail: "x" }), editor.id);
 
-        expect(notifier.logError).toHaveBeenCalledWith("Cleanup failed: x");
-        expect(notifier.showError).toHaveBeenCalledWith(error);
-        expect(notifier.showInfo).not.toHaveBeenCalled();
-        expect(picker.confirmDestructive).not.toHaveBeenCalled();
-        expect(editorStore.postMessage).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual(["Cleanup failed: x"]);
+        expect(notifier.errors).toEqual([error]);
+        expect(notifier.infos).toEqual([]);
+        expect(picker.prompts).toEqual([]);
+        expect(editor.posted).toEqual([]);
     });
 
     it("logs nothing for a failure that carries no detail", async () => {
-        const { service, notifier } = createService();
+        const { service, notifier, editor } = createService();
 
-        await service.reportCleanup(cleanupReport("failed"), EDITOR);
+        await service.reportCleanup(cleanupReport("failed"), editor.id);
 
-        expect(notifier.logError).not.toHaveBeenCalled();
-        expect(notifier.showError).toHaveBeenCalledOnce();
+        expect(notifier.logged("error")).toEqual([]);
+        expect(notifier.errors).toHaveLength(1);
     });
 
     it("confirms how many items an applied cleanup removed", async () => {
-        const { service, notifier } = createService();
+        const { service, notifier, editor } = createService();
 
         await service.reportCleanup(
             cleanupReport("applied", { items: leftovers, applied: true }),
-            EDITOR,
+            editor.id,
         );
 
-        expect(notifier.showInfo).toHaveBeenCalledWith("Cleaned up 2 item(s).");
+        expect(notifier.infos).toEqual(["Cleaned up 2 item(s)."]);
     });
 
     it("says there was nothing to clean up when an applied cleanup removed nothing", async () => {
-        const { service, notifier } = createService();
+        const { service, notifier, editor } = createService();
 
-        await service.reportCleanup(cleanupReport("applied", { applied: true }), EDITOR);
+        await service.reportCleanup(cleanupReport("applied", { applied: true }), editor.id);
 
-        expect(notifier.showInfo).toHaveBeenCalledWith(NOTHING_TO_CLEAN);
+        expect(notifier.infos).toEqual([NOTHING_TO_CLEAN]);
     });
 
     it("does not ask for confirmation when the report is empty", async () => {
-        const { service, notifier, picker, editorStore } = createService();
+        const { service, notifier, picker, editor } = createService();
 
-        await service.reportCleanup(cleanupReport("reported"), EDITOR);
+        await service.reportCleanup(cleanupReport("reported"), editor.id);
 
-        expect(notifier.showInfo).toHaveBeenCalledWith(NOTHING_TO_CLEAN);
-        expect(picker.confirmDestructive).not.toHaveBeenCalled();
-        expect(editorStore.postMessage).not.toHaveBeenCalled();
+        expect(notifier.infos).toEqual([NOTHING_TO_CLEAN]);
+        expect(picker.prompts).toEqual([]);
+        expect(editor.posted).toEqual([]);
     });
 
     it("applies the cleanup only after the user confirms the listed leftovers", async () => {
-        const { service, picker, editorStore } = createService({ userConfirms: true });
+        const { service, picker, editor } = createService({ userConfirms: true });
 
-        await service.reportCleanup(cleanupReport("reported", { items: leftovers }), EDITOR);
+        await service.reportCleanup(cleanupReport("reported", { items: leftovers }), editor.id);
 
-        expect(picker.confirmDestructive).toHaveBeenCalledWith({
-            title: "Remove 2 leftover item(s) from this diagram?",
-            confirmLabel: "Clean Up",
-            details: ["Shape_1", "Label of Task_1"],
-        });
-        expect(editorStore.postMessage).toHaveBeenCalledOnce();
-        const [editorId, query] = editorStore.postMessage.mock.calls[0];
-        expect(editorId).toBe(EDITOR);
+        expect(picker.prompts).toEqual([
+            {
+                method: "confirmDestructive",
+                args: [
+                    {
+                        title: "Remove 2 leftover item(s) from this diagram?",
+                        confirmLabel: "Clean Up",
+                        details: ["Shape_1", "Label of Task_1"],
+                    },
+                ],
+            },
+        ]);
+        expect(editor.posted).toHaveLength(1);
+        const [query] = editor.posted;
         expect(query).toBeInstanceOf(CleanupDiagramQuery);
         expect((query as CleanupDiagramQuery).apply).toBe(true);
     });
 
     it("removes nothing when the user declines", async () => {
-        const { service, notifier, picker, editorStore } = createService({ userConfirms: false });
+        const { service, notifier, picker, editor } = createService({ userConfirms: false });
 
-        await service.reportCleanup(cleanupReport("reported", { items: leftovers }), EDITOR);
+        await service.reportCleanup(cleanupReport("reported", { items: leftovers }), editor.id);
 
-        expect(picker.confirmDestructive).toHaveBeenCalledOnce();
-        expect(editorStore.postMessage).not.toHaveBeenCalled();
-        expect(notifier.showInfo).not.toHaveBeenCalled();
+        expect(picker.prompts).toHaveLength(1);
+        expect(editor.posted).toEqual([]);
+        expect(notifier.infos).toEqual([]);
     });
 });

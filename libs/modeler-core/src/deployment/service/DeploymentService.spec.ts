@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     BasicAuth,
@@ -11,83 +11,34 @@ import {
 import { DeploymentTarget } from "../domain/deploymentTarget";
 import { DeploymentService } from "./DeploymentService";
 import { BpmnDocument } from "../../shared/domain/BpmnDocument";
+import { createTestHost, TestHostOptions } from "../../testing";
 
 // A real, valid C8 document so `detectEngine` exercises the production
 // `BpmnDocument.detectPlatform` path instead of a stub.
 const C8_XML = BpmnDocument.empty("c8", "8.8.0").xml;
 
-/**
- * Builds the service with fully mocked ports. Each port is a bare `vi.fn()`
- * record cast to the interface — the service only ever calls these methods, so
- * a structural double keeps the test free of any `vscode` surface.
- */
-function createService() {
-    const vsDocument = {
-        getFilePath: vi.fn(),
-        getContent: vi.fn(),
-        write: vi.fn(),
-        save: vi.fn(),
-    };
-    const vsWorkspace = {
-        readFile: vi.fn(),
-    };
-    const deploymentState = {
-        getEndpoint: vi.fn().mockReturnValue(""),
-        getTenantId: vi.fn().mockReturnValue(""),
-        getAuthType: vi.fn().mockReturnValue("none"),
-        getTokenEndpoint: vi.fn().mockReturnValue(""),
-        getAudience: vi.fn().mockReturnValue(""),
-        save: vi.fn().mockResolvedValue(undefined),
-        saveAuthType: vi.fn().mockResolvedValue(undefined),
-        saveOAuth2Config: vi.fn().mockResolvedValue(undefined),
-    };
+function createService(options: TestHostOptions = {}) {
+    const host = createTestHost(options);
     const restClient = {
         deploy: vi.fn(),
         startInstance: vi.fn(),
-    };
-    const notifier = {
-        logError: vi.fn(),
-        logInfo: vi.fn(),
-        logWarning: vi.fn(),
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-        notifyError: vi.fn(),
-    };
-    const picker = {
-        pickWorkspaceFiles: vi.fn(),
-    };
-    const secretStore = {
-        getBasicAuth: vi.fn(),
-        saveBasicAuth: vi.fn().mockResolvedValue(undefined),
-        getOAuth2: vi.fn(),
-        saveOAuth2: vi.fn().mockResolvedValue(undefined),
     };
     const deploymentStatus = {
         recordDeployment: vi.fn().mockResolvedValue(undefined),
     };
 
     const service = new DeploymentService(
-        vsDocument as never,
-        vsWorkspace as never,
-        deploymentState as never,
+        host.documents,
+        host.workspace,
+        host.deploymentState,
         restClient as never,
-        notifier as never,
-        picker as never,
-        secretStore as never,
+        host.notifier,
+        host.picker,
+        host.secrets,
         deploymentStatus as never,
     );
 
-    return {
-        service,
-        vsDocument,
-        vsWorkspace,
-        deploymentState,
-        restClient,
-        notifier,
-        picker,
-        secretStore,
-        deploymentStatus,
-    };
+    return { service, host, restClient, deploymentStatus };
 }
 
 /** A minimal valid config; callers override only the fields a test cares about. */
@@ -110,19 +61,14 @@ function buildConfig(
         .build();
 }
 
-beforeEach(() => {
-    vi.clearAllMocks();
-});
-
 describe("DeploymentService.getFormDefaults", () => {
     it("derives the deployment name from the filename and auto-detects the engine", () => {
-        const { service, vsDocument, deploymentState } = createService();
-        vsDocument.getFilePath.mockReturnValue("/work/order-process.bpmn");
-        vsDocument.getContent.mockReturnValue(C8_XML);
-        deploymentState.getEndpoint.mockReturnValue("https://camunda.example/api");
-        deploymentState.getTenantId.mockReturnValue("acme");
+        const { service, host } = createService();
+        const editor = host.openEditor("/work/order-process.bpmn", C8_XML);
+        host.deploymentState.endpoint = "https://camunda.example/api";
+        host.deploymentState.tenantId = "acme";
 
-        const defaults = service.getFormDefaults("editor-1");
+        const defaults = service.getFormDefaults(editor.id);
 
         expect(defaults.deploymentName).toBe("order-process");
         expect(defaults.engine).toBe("c8");
@@ -131,12 +77,11 @@ describe("DeploymentService.getFormDefaults", () => {
     });
 
     it("falls back to the c7 engine when platform detection fails", () => {
-        const { service, vsDocument } = createService();
-        vsDocument.getFilePath.mockReturnValue("/work/order-process.bpmn");
+        const { service, host } = createService();
         // No platform markers → detectPlatform throws, caught internally.
-        vsDocument.getContent.mockReturnValue("<bpmn:definitions/>");
+        const editor = host.openEditor("/work/order-process.bpmn", "<bpmn:definitions/>");
 
-        const defaults = service.getFormDefaults("editor-1");
+        const defaults = service.getFormDefaults(editor.id);
 
         // The name is still derived because it is computed before detection.
         expect(defaults.deploymentName).toBe("order-process");
@@ -144,10 +89,7 @@ describe("DeploymentService.getFormDefaults", () => {
     });
 
     it("uses empty defaults when there is no active editor", () => {
-        const { service, vsDocument } = createService();
-        vsDocument.getFilePath.mockImplementation(() => {
-            throw new Error("no active editor");
-        });
+        const { service } = createService();
 
         const defaults = service.getFormDefaults("editor-1");
 
@@ -156,11 +98,10 @@ describe("DeploymentService.getFormDefaults", () => {
     });
 
     it("defaults the endpoint to the local engine-rest URL when none is stored", () => {
-        const { service, vsDocument } = createService();
-        vsDocument.getFilePath.mockReturnValue("/work/p.bpmn");
-        vsDocument.getContent.mockReturnValue(C8_XML);
+        const { service, host } = createService();
+        const editor = host.openEditor("/work/p.bpmn", C8_XML);
 
-        const defaults = service.getFormDefaults("editor-1");
+        const defaults = service.getFormDefaults(editor.id);
 
         expect(defaults.endpoint).toBe("http://localhost:8080/engine-rest");
     });
@@ -168,9 +109,9 @@ describe("DeploymentService.getFormDefaults", () => {
 
 describe("DeploymentService.getStoredCredentials", () => {
     it("returns basic credentials when basic auth is stored", async () => {
-        const { service, deploymentState, secretStore } = createService();
-        deploymentState.getAuthType.mockReturnValue("basic");
-        secretStore.getBasicAuth.mockResolvedValue({ username: "admin", password: "secret" });
+        const { service, host } = createService();
+        host.deploymentState.authType = "basic";
+        await host.secrets.saveBasicAuth("admin", "secret");
 
         await expect(service.getStoredCredentials()).resolves.toEqual({
             authType: "basic",
@@ -180,11 +121,11 @@ describe("DeploymentService.getStoredCredentials", () => {
     });
 
     it("returns oauth2 credentials plus the stored token endpoint and audience", async () => {
-        const { service, deploymentState, secretStore } = createService();
-        deploymentState.getAuthType.mockReturnValue("oauth2");
-        deploymentState.getTokenEndpoint.mockReturnValue("https://idp/token");
-        deploymentState.getAudience.mockReturnValue("zeebe-api");
-        secretStore.getOAuth2.mockResolvedValue({ clientId: "cid", clientSecret: "csecret" });
+        const { service, host } = createService();
+        host.deploymentState.authType = "oauth2";
+        host.deploymentState.tokenEndpoint = "https://idp/token";
+        host.deploymentState.audience = "zeebe-api";
+        await host.secrets.saveOAuth2("cid", "csecret");
 
         await expect(service.getStoredCredentials()).resolves.toEqual({
             authType: "oauth2",
@@ -196,9 +137,8 @@ describe("DeploymentService.getStoredCredentials", () => {
     });
 
     it("returns a none payload when the auth type is basic but no secret exists", async () => {
-        const { service, deploymentState, secretStore } = createService();
-        deploymentState.getAuthType.mockReturnValue("basic");
-        secretStore.getBasicAuth.mockResolvedValue(undefined);
+        const { service, host } = createService();
+        host.deploymentState.authType = "basic";
 
         await expect(service.getStoredCredentials()).resolves.toEqual({ authType: "none" });
     });
@@ -212,25 +152,36 @@ describe("DeploymentService.getStoredCredentials", () => {
 
 describe("DeploymentService.selectAdditionalFiles", () => {
     it("forwards the deployment-resource glob to the picker", async () => {
-        const { service, picker } = createService();
-        picker.pickWorkspaceFiles.mockResolvedValue(["/work/a.form"]);
+        const { service, host } = createService({ answers: { workspaceFiles: ["/work/a.form"] } });
 
         const result = await service.selectAdditionalFiles();
 
         expect(result).toEqual(["/work/a.form"]);
-        expect(picker.pickWorkspaceFiles).toHaveBeenCalledWith({
-            glob: "**/*.{form,json,dmn}",
-            exclude: "**/element-templates/**",
-            placeholder: expect.any(String),
-            limit: 20,
-        });
+        expect(host.picker.prompts).toEqual([
+            {
+                method: "pickWorkspaceFiles",
+                args: [
+                    {
+                        glob: "**/*.{form,json,dmn}",
+                        exclude: "**/element-templates/**",
+                        placeholder: expect.any(String),
+                        limit: 20,
+                    },
+                ],
+            },
+        ]);
     });
 });
 
 describe("DeploymentService.deploy", () => {
+    const MAIN_FILE = { "/work/order-process.bpmn": "<xml/>" };
+
     it("reads the main and additional files keyed by basename before deploying", async () => {
-        const { service, vsWorkspace, restClient } = createService();
-        vsWorkspace.readFile.mockImplementation((p: string) => Promise.resolve(`content:${p}`));
+        const { service, restClient } = createService({
+            files: Object.fromEntries(
+                ["/work/main.bpmn", "/work/a.form", "/work/b.dmn"].map((p) => [p, `content:${p}`]),
+            ),
+        });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok", "dep-1"));
 
         await service.deploy(
@@ -246,30 +197,32 @@ describe("DeploymentService.deploy", () => {
     });
 
     it("persists the endpoint, tenant and auth type on success", async () => {
-        const { service, vsWorkspace, restClient, deploymentState } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
+        host.deploymentState.authType = "basic";
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok", "dep-1"));
 
         await service.deploy(buildConfig({ endpoint: "https://c/api", tenantId: "acme" }));
 
-        expect(deploymentState.save).toHaveBeenCalledWith("https://c/api", "acme");
-        expect(deploymentState.saveAuthType).toHaveBeenCalledWith("none");
+        expect(host.deploymentState.endpoint).toBe("https://c/api");
+        expect(host.deploymentState.tenantId).toBe("acme");
+        expect(host.deploymentState.authType).toBe("none");
     });
 
     it("stores basic-auth credentials on success", async () => {
-        const { service, vsWorkspace, restClient, secretStore, deploymentState } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         await service.deploy(buildConfig({ auth: new BasicAuth("admin", "secret") }));
 
-        expect(deploymentState.saveAuthType).toHaveBeenCalledWith("basic");
-        expect(secretStore.saveBasicAuth).toHaveBeenCalledWith("admin", "secret", undefined);
+        expect(host.deploymentState.authType).toBe("basic");
+        await expect(host.secrets.getBasicAuth()).resolves.toEqual({
+            username: "admin",
+            password: "secret",
+        });
     });
 
     it("stores oauth2 credentials and config on success", async () => {
-        const { service, vsWorkspace, restClient, secretStore, deploymentState } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         await service.deploy(
@@ -278,16 +231,16 @@ describe("DeploymentService.deploy", () => {
             }),
         );
 
-        expect(secretStore.saveOAuth2).toHaveBeenCalledWith("cid", "csecret", undefined);
-        expect(deploymentState.saveOAuth2Config).toHaveBeenCalledWith(
-            "https://idp/token",
-            "zeebe-api",
-        );
+        await expect(host.secrets.getOAuth2()).resolves.toEqual({
+            clientId: "cid",
+            clientSecret: "csecret",
+        });
+        expect(host.deploymentState.tokenEndpoint).toBe("https://idp/token");
+        expect(host.deploymentState.audience).toBe("zeebe-api");
     });
 
     it("persists only credentials under the slot (not legacy state) in target mode", async () => {
-        const { service, vsWorkspace, restClient, secretStore, deploymentState } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         await service.deploy(
@@ -295,41 +248,39 @@ describe("DeploymentService.deploy", () => {
             "/ws/.camunda/deployment-targets.json::dev",
         );
 
-        expect(secretStore.saveBasicAuth).toHaveBeenCalledWith(
-            "admin",
-            "secret",
-            "/ws/.camunda/deployment-targets.json::dev",
-        );
-        expect(deploymentState.save).not.toHaveBeenCalled();
-        expect(deploymentState.saveAuthType).not.toHaveBeenCalled();
+        await expect(
+            host.secrets.getBasicAuth("/ws/.camunda/deployment-targets.json::dev"),
+        ).resolves.toEqual({ username: "admin", password: "secret" });
+        await expect(host.secrets.getBasicAuth()).resolves.toBeUndefined();
+        expect(host.deploymentState.endpoint).toBe("");
+        expect(host.deploymentState.tenantId).toBe("");
+        expect(host.deploymentState.authType).toBe("none");
     });
 
     it("passes a failed result through without persisting any state", async () => {
-        const { service, vsWorkspace, restClient, deploymentState } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
         restClient.deploy.mockResolvedValue(new DeploymentResult(false, "rejected by server"));
 
         const result = await service.deploy(buildConfig());
 
         expect(result.success).toBe(false);
-        expect(deploymentState.save).not.toHaveBeenCalled();
+        expect(host.deploymentState.endpoint).toBe("");
     });
 
     it("never throws: a rejected REST call becomes a failed result and is logged", async () => {
-        const { service, vsWorkspace, restClient, notifier } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({ files: MAIN_FILE });
         restClient.deploy.mockRejectedValue(new Error("network down"));
 
         const result = await service.deploy(buildConfig());
 
         expect(result.success).toBe(false);
         expect(result.message).toBe("network down");
-        expect(notifier.logError).toHaveBeenCalledOnce();
+        expect(host.notifier.logged("error")).toEqual(["network down"]);
     });
 
     it("never throws: a failed file read becomes a failed result", async () => {
-        const { service, vsWorkspace, restClient } = createService();
-        vsWorkspace.readFile.mockRejectedValue(new Error("ENOENT"));
+        const { service, host, restClient } = createService();
+        vi.spyOn(host.workspace, "readFile").mockRejectedValue(new Error("ENOENT"));
 
         const result = await service.deploy(buildConfig());
 
@@ -352,8 +303,9 @@ describe("DeploymentService.deployFiles", () => {
     );
 
     it("deploys each file named by basename and reports a full-success summary", async () => {
-        const { service, vsWorkspace, restClient, notifier } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({
+            files: { "/work/a.bpmn": "<xml/>", "/work/b.dmn": "<xml/>" },
+        });
         restClient.deploy.mockResolvedValue(new DeploymentResult(true, "ok"));
 
         const results = await service.deployFiles(
@@ -368,12 +320,13 @@ describe("DeploymentService.deployFiles", () => {
         expect(firstConfig.deploymentName).toBe("a");
         expect(firstConfig.endpoint).toBe("https://c/api");
         expect(firstConfig.deployUrl).toBe("https://gw/deploy");
-        expect(notifier.showInfo).toHaveBeenCalledWith('Deployed 2/2 file(s) to "dev".');
+        expect(host.notifier.infos).toEqual(['Deployed 2/2 file(s) to "dev".']);
     });
 
     it("continues after a per-file failure and reports a partial summary", async () => {
-        const { service, vsWorkspace, restClient, notifier } = createService();
-        vsWorkspace.readFile.mockResolvedValue("<xml/>");
+        const { service, host, restClient } = createService({
+            files: { "/work/a.bpmn": "<xml/>", "/work/b.bpmn": "<xml/>" },
+        });
         restClient.deploy
             .mockResolvedValueOnce(new DeploymentResult(true, "ok"))
             .mockRejectedValueOnce(new Error("boom"));
@@ -387,6 +340,6 @@ describe("DeploymentService.deployFiles", () => {
         expect(results[0].success).toBe(true);
         expect(results[1].success).toBe(false);
         expect(results[1].message).toContain("boom");
-        expect(notifier.showError).toHaveBeenCalledWith('Deployed 1/2 file(s) to "dev".');
+        expect(host.notifier.errors).toEqual(['Deployed 1/2 file(s) to "dev".']);
     });
 });

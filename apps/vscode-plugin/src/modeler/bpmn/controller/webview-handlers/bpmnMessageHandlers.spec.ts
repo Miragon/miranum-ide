@@ -19,6 +19,7 @@ import {
     UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
 } from "@miragon/bpmn-modeler-shared";
+import { InMemorySettings } from "@miragon/bpmn-modeler-core/testing";
 
 import {
     getBpmnFileHandler,
@@ -225,14 +226,14 @@ describe("openScriptEditorsHandler", () => {
             .mockResolvedValue({ path: "B", written: true });
         const scriptTaskSvc = { materializeScript };
         const variableStore = { setExtracted: vi.fn() };
-        const settings = { getConfigFolder: () => CONFIG_FOLDER };
+        const settings = new InMemorySettings({ configFolder: CONFIG_FOLDER });
         const notifier = { showInfo: vi.fn() };
         const variables = [{ name: "amount", origin: "form field", confidence: "declared" }];
 
         const done = openScriptEditorsHandler(
             scriptTaskSvc as never,
             variableStore as never,
-            settings as never,
+            settings,
             notifier as never,
         )(
             new OpenScriptEditorsCommand(
@@ -281,13 +282,13 @@ describe("openScriptEditorsHandler", () => {
     it("shows an info message and materializes nothing for an empty batch", async () => {
         const scriptTaskSvc = { materializeScript: vi.fn() };
         const variableStore = { setExtracted: vi.fn() };
-        const settings = { getConfigFolder: () => CONFIG_FOLDER };
+        const settings = new InMemorySettings({ configFolder: CONFIG_FOLDER });
         const notifier = { showInfo: vi.fn() };
 
         await openScriptEditorsHandler(
             scriptTaskSvc as never,
             variableStore as never,
-            settings as never,
+            settings,
             notifier as never,
         )(new OpenScriptEditorsCommand([], []), EDITOR);
 
@@ -309,13 +310,13 @@ describe("openScriptEditorsHandler", () => {
             .mockResolvedValueOnce({ path: "B", written: false });
         const scriptTaskSvc = { materializeScript };
         const variableStore = { setExtracted: vi.fn() };
-        const settings = { getConfigFolder: () => CONFIG_FOLDER };
+        const settings = new InMemorySettings({ configFolder: CONFIG_FOLDER });
         const notifier = { showInfo: vi.fn() };
 
         await openScriptEditorsHandler(
             scriptTaskSvc as never,
             variableStore as never,
-            settings as never,
+            settings,
             notifier as never,
         )(
             new OpenScriptEditorsCommand(
@@ -339,13 +340,13 @@ describe("openScriptEditorsHandler", () => {
             .mockResolvedValueOnce({ path: "B", written: true });
         const scriptTaskSvc = { materializeScript };
         const variableStore = { setExtracted: vi.fn() };
-        const settings = { getConfigFolder: () => CONFIG_FOLDER };
+        const settings = new InMemorySettings({ configFolder: CONFIG_FOLDER });
         const notifier = { showInfo: vi.fn() };
 
         await openScriptEditorsHandler(
             scriptTaskSvc as never,
             variableStore as never,
-            settings as never,
+            settings,
             notifier as never,
         )(
             new OpenScriptEditorsCommand(

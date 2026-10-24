@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FormInputValuesQuery } from "@miragon/bpmn-modeler-shared";
+import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
 
 const vscodeMocks = vi.hoisted(() => {
     class TestUri {
@@ -157,19 +158,18 @@ import {
     TOGGLE_FORM_OUTPUT_VALUES_CMD,
 } from "./FormValuesController";
 
-const EDITOR_ID = "file:///workspace/order.form";
+const EDITOR_PATH = "/workspace/order.form";
+const EDITOR_ID = `file://${EDITOR_PATH}`;
 
 function setup() {
-    const editorStore = {
-        getActiveEditorId: vi.fn(() => EDITOR_ID),
-        postMessage: vi.fn().mockResolvedValue(true),
-    };
+    const host = createTestHost();
+    const editor = host.openEditor(EDITOR_PATH);
     const notifier = { logError: vi.fn() };
-    const controller = new FormValuesController(editorStore as never, notifier as never);
+    const controller = new FormValuesController(host.store, notifier as never);
     const context = { subscriptions: [] as { dispose(): unknown }[] };
     controller.register(context as never);
     controller.registerSession(EDITOR_ID);
-    return { controller, editorStore, notifier, context };
+    return { controller, host, editor, notifier, context };
 }
 
 function registeredProvider(call: number): {
@@ -268,7 +268,7 @@ describe("FormValuesController", () => {
     });
 
     it("applies each valid input object to the active form and saves only in memory", async () => {
-        const { controller, editorStore } = setup();
+        const { controller, editor } = setup();
         vscodeMocks.openTextDocument.mockImplementation(async (uri: TestUri) => ({ uri }));
         await controller.toggleInputValues();
         const uri = vscodeMocks.openTextDocument.mock.calls[0][0] as TestUri;
@@ -282,15 +282,14 @@ describe("FormValuesController", () => {
         vscodeMocks.documentChangeListener?.({ document, contentChanges: [{}] });
         await vi.runAllTimersAsync();
 
-        expect(editorStore.postMessage).toHaveBeenCalledWith(
-            EDITOR_ID,
+        expect(editor.posted).toEqual([
             new FormInputValuesQuery(JSON.stringify({ customer: { name: "Ada" } }, null, 2)),
-        );
+        ]);
         expect(save).toHaveBeenCalledOnce();
     });
 
     it("keeps the last valid input while incomplete JSON is being edited", async () => {
-        const { controller, editorStore } = setup();
+        const { controller, editor } = setup();
         vscodeMocks.openTextDocument.mockImplementation(async (uri: TestUri) => ({ uri }));
         await controller.toggleInputValues();
         const uri = vscodeMocks.openTextDocument.mock.calls[0][0] as TestUri;
@@ -302,12 +301,12 @@ describe("FormValuesController", () => {
         });
         await vi.runAllTimersAsync();
 
-        expect(editorStore.postMessage).not.toHaveBeenCalled();
+        expect(editor.posted).toEqual([]);
         expect(save).toHaveBeenCalledOnce();
     });
 
     it("debounces in-memory saves without delaying valid input updates", async () => {
-        const { controller, editorStore } = setup();
+        const { controller, editor } = setup();
         vscodeMocks.openTextDocument.mockImplementation(async (uri: TestUri) => ({ uri }));
         await controller.toggleInputValues();
         const uri = vscodeMocks.openTextDocument.mock.calls[0][0] as TestUri;
@@ -319,7 +318,7 @@ describe("FormValuesController", () => {
         content = '{ "step": 2 }';
         vscodeMocks.documentChangeListener?.({ document, contentChanges: [{}] });
 
-        expect(editorStore.postMessage).toHaveBeenCalledTimes(2);
+        expect(editor.posted).toHaveLength(2);
         expect(save).not.toHaveBeenCalled();
         await vi.runAllTimersAsync();
         expect(save).toHaveBeenCalledOnce();
@@ -375,15 +374,15 @@ describe("FormValuesController", () => {
     });
 
     it("does not target another form from a retained values tab", async () => {
-        const { controller, editorStore } = setup();
+        const { controller, host } = setup();
         vscodeMocks.openTextDocument.mockImplementation(async (uri: TestUri) => ({ uri }));
         await controller.toggleInputValues();
         const retainedUri = vscodeMocks.openTextDocument.mock.calls[0][0] as TestUri;
         vscodeMocks.openTabGroups = [{ tabs: [{ input: new TabInputText(retainedUri as never) }] }];
         vscodeMocks.closeTab.mockResolvedValueOnce(false);
         await controller.disposeSession(EDITOR_ID);
-        controller.registerSession("file:///workspace/other.form");
-        editorStore.getActiveEditorId.mockReturnValue("file:///workspace/other.form");
+        const other = host.openEditor("/workspace/other.form");
+        controller.registerSession(other.id);
         vscodeMocks.activeTextEditor = { document: { uri: retainedUri } };
 
         await expect(controller.toggleOutputValues()).resolves.toBe(false);
@@ -399,10 +398,9 @@ describe("FormValuesController", () => {
         });
         const tab = { input: new TabInputText(uri as never) };
         vscodeMocks.openTabGroups = [{ tabs: [tab] }];
-        const controller = new FormValuesController(
-            { getActiveEditorId: vi.fn(), postMessage: vi.fn() } as never,
-            { logError: vi.fn() } as never,
-        );
+        const controller = new FormValuesController(createTestHost().store, {
+            logError: vi.fn(),
+        } as never);
 
         controller.register({ subscriptions: [] } as never);
         await Promise.resolve();

@@ -8,6 +8,7 @@ import {
     GetFormReferenceStatusCommand,
     NavigateToReferencedModelCommand,
 } from "@miragon/bpmn-modeler-shared";
+import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
 
 import {
     getFormReferenceStatusHandler,
@@ -15,16 +16,18 @@ import {
 } from "./bpmnMessageHandlers";
 
 function createHandler() {
-    const editorStore = { requireHandle: vi.fn() };
+    const host = createTestHost();
+    const editor = host.openEditor("/src/a.bpmn");
+    host.openEditor("/src/b.bpmn");
     const modelNavigationService = { navigate: vi.fn().mockResolvedValue(undefined) };
     const notifier = { logWarning: vi.fn() };
 
     const handler = navigateToReferencedModelHandler(
-        editorStore as never,
+        host.store,
         modelNavigationService as never,
         notifier as never,
     );
-    return { handler, editorStore, modelNavigationService, notifier };
+    return { handler, editor, modelNavigationService, notifier };
 }
 
 beforeEach(() => {
@@ -33,15 +36,10 @@ beforeEach(() => {
 
 describe("navigateToReferencedModelHandler", () => {
     it("forwards a process-kind command to the service with the editor's document URI", async () => {
-        const { handler, editorStore, modelNavigationService } = createHandler();
-        editorStore.requireHandle.mockReturnValue({ documentFsPath: () => "/src/a.bpmn" });
+        const { handler, editor, modelNavigationService } = createHandler();
 
-        await handler(
-            new NavigateToReferencedModelCommand("ProcessB", "process"),
-            "file:///src/a.bpmn",
-        );
+        await handler(new NavigateToReferencedModelCommand("ProcessB", "process"), editor.id);
 
-        expect(editorStore.requireHandle).toHaveBeenCalledWith("file:///src/a.bpmn");
         expect(modelNavigationService.navigate).toHaveBeenCalledWith(
             "ProcessB",
             "process",
@@ -50,13 +48,9 @@ describe("navigateToReferencedModelHandler", () => {
     });
 
     it("forwards a decision-kind command unchanged", async () => {
-        const { handler, editorStore, modelNavigationService } = createHandler();
-        editorStore.requireHandle.mockReturnValue({ documentFsPath: () => "/src/a.bpmn" });
+        const { handler, editor, modelNavigationService } = createHandler();
 
-        await handler(
-            new NavigateToReferencedModelCommand("Decision_1", "decision"),
-            "file:///src/a.bpmn",
-        );
+        await handler(new NavigateToReferencedModelCommand("Decision_1", "decision"), editor.id);
 
         expect(modelNavigationService.navigate).toHaveBeenCalledWith(
             "Decision_1",
@@ -66,13 +60,9 @@ describe("navigateToReferencedModelHandler", () => {
     });
 
     it("forwards a form-kind command unchanged", async () => {
-        const { handler, editorStore, modelNavigationService } = createHandler();
-        editorStore.requireHandle.mockReturnValue({ documentFsPath: () => "/src/a.bpmn" });
+        const { handler, editor, modelNavigationService } = createHandler();
 
-        await handler(
-            new NavigateToReferencedModelCommand("Form_Request", "form"),
-            "file:///src/a.bpmn",
-        );
+        await handler(new NavigateToReferencedModelCommand("Form_Request", "form"), editor.id);
 
         expect(modelNavigationService.navigate).toHaveBeenCalledWith(
             "Form_Request",
@@ -82,7 +72,7 @@ describe("navigateToReferencedModelHandler", () => {
     });
 
     it("rejects unknown referenceKind values with a logWarning and no service call", async () => {
-        const { handler, notifier, modelNavigationService } = createHandler();
+        const { handler, editor, notifier, modelNavigationService } = createHandler();
         // Simulate protocol drift / a hostile webview sending an unexpected
         // discriminant by bypassing the command's compile-time type.
         const malformed = {
@@ -91,7 +81,7 @@ describe("navigateToReferencedModelHandler", () => {
             referenceKind: "anything",
         };
 
-        await handler(malformed as never, "file:///src/a.bpmn");
+        await handler(malformed as never, editor.id);
 
         expect(notifier.logWarning).toHaveBeenCalledWith(
             expect.stringContaining("unknown kind: anything"),
