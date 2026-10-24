@@ -68,7 +68,12 @@ import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
 import { BpmnDocumentSession } from "./session/documentSession";
 import { createLintBridge } from "./session/lintBridge";
-import { createSessionMessageRouter, type HostMessage } from "./session/messageRouter";
+import {
+    createHostMessageRouter,
+    createSessionMessageRouter,
+    type DiffPaneHostMessages,
+    type HostMessage,
+} from "./session/messageRouter";
 import { createProtocolCapabilities } from "./session/protocolCapabilities";
 import { resolveClipboard } from "./session/protocolClipboard";
 import { createSurfaceRequests } from "./session/surfaceRequests";
@@ -283,8 +288,10 @@ function startSession(
      * 2. The user switched away and back to the tab.
      */
     async function run(): Promise<void> {
+        // The diff branch below swaps in its own router once the host names the pane.
+        let routeHostMessage = sessionMessages.route;
         window.addEventListener("message", (event: MessageEvent<HostMessage>) =>
-            sessionMessages.route(event.data),
+            routeHostMessage(event.data),
         );
 
         // Merge the modeler's local overlay (mode-strip labels, script-lock
@@ -324,8 +331,14 @@ function startSession(
          * the readonly DiffMode and skip the editable modeler entirely.
          */
         if (bpmnFileQuery?.viewerMode === "viewer") {
-            // A diff pane has no surface to apply them to, but still follows later language changes.
+            // A diff pane has no surface for the held replies or any later session
+            // message; it only follows language changes.
             sessionMessages.discardImportBound();
+            routeHostMessage = createHostMessageRouter<DiffPaneHostMessages>(host, {
+                LanguageQuery: (query) => {
+                    i18n.setLanguage(query.locale as SupportedLocale);
+                },
+            });
             document.body.classList.add("viewer-mode");
             const canvas = document.getElementById("js-canvas");
             const dropZone = document.getElementById("js-drop-zone");

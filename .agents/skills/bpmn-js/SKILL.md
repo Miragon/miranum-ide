@@ -25,7 +25,7 @@ Both variants share the `commonModules` array in `BpmnModeler.init()` — e.g. `
 ### Lifecycle
 
 1. `apps/bpmn-webview/src/main.ts` calls `bootstrap(getHostApi(), { extraModules })`; `bootstrap.ts` starts `run()` once the window has loaded
-2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` here)
+2. `run()` registers the message listener, starts the host theme adapter, resolves the `clipboard` option (see Copy-Paste below), sends `GetBpmnFileCommand` / `GetBpmnModelerSettingCommand` / `GetPropertiesPanelStateCommand`, and awaits the `BpmnFileQuery` (a diff pane branches off to `DiffMode` here and swaps in a router that only follows `LanguageQuery`)
 3. `createModeSession` builds the initial surface: View → `createViewer`, Design on an untagged model → `createDesigner`, otherwise `createModeler` (each lazily imported via `surfaceModules.ts`)
 4. `createModeler` constructs `BpmnModeler` and awaits `init()` — load the engine stack, build the module list, install the FEEL/contenteditable clipboard polyfill when `clipboard` is set, then construct `bpmn-js/lib/Modeler` — and afterwards applies the `elementTemplates`, `settings`, `theme`, and `locale` options
 5. The webview requests element templates (modeler only) and the lint config (designer/modeler only), then imports the XML via `loadDiagram(xml)` (`newDiagram()` for an empty file)

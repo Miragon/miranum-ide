@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
     BpmnFileQuery,
@@ -2883,8 +2883,7 @@ describe("bootstrap mode switching", () => {
                     ),
             );
 
-        // Fails until the diff pane stops routing to the surface it never creates.
-        it.fails.each([
+        it.each([
             [
                 "BpmnModelerSettingQuery",
                 () =>
@@ -2906,6 +2905,40 @@ describe("bootstrap mode switching", () => {
             await deliverToSession(query());
 
             expect(sentOfType(host, "LogErrorCommand")).toEqual([]);
+        });
+
+        it("ignores session messages even when the diff view cannot start", async () => {
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+            onTestFinished(() => consoleError.mockRestore());
+            const host = makeHost(new BpmnFileQuery("<left />", "c7", "viewer", 1));
+            boot(host);
+            await drainAsyncWork();
+
+            await deliverToSession(new GetDiagramAsSVGCommand());
+
+            expect(consoleError).toHaveBeenCalledWith(
+                "Diff mode: missing #js-canvas or #js-drop-zone",
+            );
+            expect(sentOfType(host, "LogErrorCommand")).toEqual([]);
+        });
+
+        it("switches the translator on a later language change and touches no surface", async () => {
+            document.body.insertAdjacentHTML("beforeend", `<div id="js-drop-zone"></div>`);
+            const host = makeHost(new BpmnFileQuery("<left />", "c7", "viewer", 1));
+            boot(host);
+            await drainAsyncWork();
+            host.postMessage.mockClear();
+
+            await deliverToSession(new LanguageQuery("de"));
+            await drainAsyncWork();
+
+            expect(i18n.setLanguage).toHaveBeenLastCalledWith("de");
+            expect(i18n.getLocale()).toBe("de");
+            expect(host.postMessage).not.toHaveBeenCalled();
+            expect(mocks.createViewer).not.toHaveBeenCalled();
+            expect(mocks.createDesigner).not.toHaveBeenCalled();
+            expect(mocks.createModeler).not.toHaveBeenCalled();
+            expect(mocks.stateManagerCreated).not.toHaveBeenCalled();
         });
     });
 });

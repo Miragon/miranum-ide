@@ -826,16 +826,6 @@ describe("BpmnDocumentSession", () => {
 
             expect(context.surface.centerOnElement).toHaveBeenCalledOnce();
         });
-
-        it("never refreshes a diff viewer pane", async () => {
-            const context = setup();
-            void context.session.receiveHostFile(new BpmnFileQuery("<x />", "c7", "viewer", 1));
-            context.session.markInitialized();
-
-            await context.session.requestDiagramRefresh();
-
-            expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
-        });
     });
 
     describe("engine reload", () => {

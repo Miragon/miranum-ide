@@ -15,6 +15,7 @@ import {
     admitSessionMessage,
     createHostMessageRouter,
     createSessionMessageRouter,
+    type DiffPaneHostMessages,
     type HostMessage,
     type HostMessageHandlers,
     type SessionHostMessages,
@@ -172,6 +173,25 @@ describe("createHostMessageRouter", () => {
         await expect(route(new LanguageQuery("de"))).resolves.toBeUndefined();
 
         expect(host.loggedErrors()).toEqual([`Error receiving message: LanguageQuery — ${detail}`]);
+    });
+});
+
+describe("diff pane router", () => {
+    it("follows language changes and ignores every other session message", async () => {
+        const host = createHost();
+        const followLanguage = vi.fn();
+        const route = createHostMessageRouter<DiffPaneHostMessages>(host, {
+            LanguageQuery: followLanguage,
+        });
+        const languageChange = new LanguageQuery("de");
+
+        for (const type of sessionMessageTypes.filter((type) => type !== "LanguageQuery")) {
+            await route({ type } as HostMessage);
+        }
+        await route(languageChange);
+
+        expect(followLanguage).toHaveBeenCalledExactlyOnceWith(languageChange);
+        expect(host.sent).toEqual([]);
     });
 });
 
