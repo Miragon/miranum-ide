@@ -2764,8 +2764,7 @@ describe("bootstrap mode switching", () => {
                     ),
             );
 
-        // Fails until the diff pane stops routing to the surface it never creates.
-        it.fails.each([
+        it.each([
             [
                 "BpmnModelerSettingQuery",
                 () =>

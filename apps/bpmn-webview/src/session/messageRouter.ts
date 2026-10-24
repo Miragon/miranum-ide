@@ -61,6 +61,11 @@ export interface SessionHostMessages {
     ReleaseDocumentFlushQuery: ReleaseDocumentFlushQuery;
 }
 
+/** DiffMode answers the diff queries on its own listener. */
+export interface DiffPaneHostMessages {
+    LanguageQuery: LanguageQuery;
+}
+
 export type HostMessageHandlers<Messages> = {
     readonly [Type in keyof Messages]: (message: Messages[Type]) => void | Promise<void>;
 };
