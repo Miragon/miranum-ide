@@ -1,42 +1,33 @@
-import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
     CredentialDestinationNotApprovedError,
     DisallowedEnvReferenceError,
     EngineInspectionFailedError,
     EnvReferenceError,
-    FileNotFound,
     HttpTransportError,
     InvalidCredentialDestinationError,
     UnreadableDotEnvError,
     UnresolvedEnvVariableError,
 } from "../../shared/domain/errors";
+import { createTestHost, RecordingNotifier } from "../../testing";
 import { AuthConfig, BasicAuth, NoAuth } from "../domain/deployment";
 import { contentFingerprint, DeploymentTargetIdentity } from "../domain/deploymentLedger";
 import { DeploymentTarget, parseDeploymentTargetsFile } from "../domain/deploymentTarget";
 import { EngineDeploymentSnapshot } from "../domain/deploymentVerification";
-import { EnvLookup } from "../domain/envRef";
+import { EnvLookup, NO_ENV_VARIABLES } from "../domain/envRef";
 import { EngineInspectionPort } from "../domain/ports";
 import { FetchHttpClient } from "../infrastructure/FetchHttpClient";
 import { AuthHeaderResolver } from "../infrastructure/camunda/AuthHeaderResolver";
 import { Camunda7RestClient } from "../infrastructure/camunda/Camunda7RestClient";
+import { CredentialApprovalService } from "./CredentialApprovalService";
 import { DeploymentVerificationService } from "./DeploymentVerificationService";
 import { EnvValueResolver } from "./EnvValueResolver";
 
-function createDotEnvWorkspace(dotEnv: Record<string, string>) {
-    return {
-        findWorkspaceFolderForDocument: vi.fn().mockReturnValue("/work"),
-        isSymbolicLink: vi.fn().mockResolvedValue(false),
-        readFile: vi.fn().mockImplementation(async (path: string) => {
-            if (path.endsWith(".env")) {
-                return Object.entries(dotEnv)
-                    .map(([key, value]) => `${key}=${value}`)
-                    .join("\n");
-            }
-            throw new FileNotFound(path);
-        }),
-    };
-}
+const FILE_PATH = "/work/order-process.bpmn";
+const XML = '<bpmn:process id="order"/>';
+const DOT_ENV_PATH = "/work/.env";
+const TARGET_SLOT = "/work/.camunda/deployment-targets.json::dev";
 
 const lookupOf =
     (dotEnv: Record<string, string>): EnvLookup =>
@@ -50,14 +41,29 @@ interface EnvFailureCase {
     failure: string;
     target?: DeploymentTarget;
     credentials?: AuthConfig;
-    breakDotEnv?: (workspace: ReturnType<typeof createDotEnvWorkspace>) => void;
+    breakDotEnv?: (c: ServiceContext) => void;
     error: EnvReferenceError;
 }
 
+const NOTIFIER_METHODS = [
+    "logDebug",
+    "logInfo",
+    "logWarning",
+    "logError",
+    "showInfo",
+    "showError",
+    "notifyError",
+] as const;
+
+/** Spies recording every argument a notifier method receives, Error objects included. */
+function spyOnNotifications(notifier: RecordingNotifier) {
+    return NOTIFIER_METHODS.map((method) => vi.spyOn(notifier, method));
+}
+
 /** Every argument any notifier method received; errors contribute message, stack and cause. */
-function everythingNotified(notifier: Record<string, Mock>): string {
-    return Object.values(notifier)
-        .flatMap((notify) => notify.mock.calls.flat())
+function everythingNotified(spies: ReturnType<typeof spyOnNotifications>): string {
+    return spies
+        .flatMap((spy) => spy.mock.calls.flat())
         .map(describeNotified)
         .join("\n");
 }
@@ -94,9 +100,6 @@ function failQuotingRequest() {
     });
 }
 
-const FILE_PATH = "/work/order-process.bpmn";
-const XML = '<bpmn:process id="order"/>';
-
 const c7Target = new DeploymentTarget(
     "dev",
     "c7",
@@ -107,7 +110,7 @@ const c7Target = new DeploymentTarget(
     "",
 );
 const c8Target = new DeploymentTarget("cloud", "c8", "https://c8.example.com", "", "none", "", "");
-const identity = DeploymentTargetIdentity.fromTarget(c7Target, () => undefined);
+const identity = DeploymentTargetIdentity.fromTarget(c7Target, NO_ENV_VARIABLES);
 
 const snapshot = (overrides: Partial<EngineDeploymentSnapshot> = {}): EngineDeploymentSnapshot => ({
     processDefinitionId: "order:3:def-1",
@@ -118,18 +121,28 @@ const snapshot = (overrides: Partial<EngineDeploymentSnapshot> = {}): EngineDepl
     ...overrides,
 });
 
-function createService(
-    dotEnv: Record<string, string> = {},
-    inspectionClient?: EngineInspectionPort,
-) {
-    const workspace = createDotEnvWorkspace(dotEnv);
-    const editorStore = {
-        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-    };
-    const documentPort = {
-        getFilePath: vi.fn().mockReturnValue(FILE_PATH),
-        getContent: vi.fn().mockReturnValue(XML),
-    };
+interface ServiceOptions {
+    content?: string;
+    dotEnv?: Record<string, string>;
+    inspectionClient?: EngineInspectionPort;
+    approveCredentialDestinations?: boolean;
+}
+
+function createService({
+    content = XML,
+    dotEnv = {},
+    inspectionClient,
+    approveCredentialDestinations = true,
+}: ServiceOptions = {}) {
+    const dotEnvContent = Object.entries(dotEnv)
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n");
+    const host = createTestHost({
+        folders: ["/work"],
+        files: { [DOT_ENV_PATH]: dotEnvContent },
+        answers: { confirmDestructive: approveCredentialDestinations },
+    });
+    const editor = host.openEditor(FILE_PATH, content);
     const deploymentTargetService = {
         getActiveTarget: vi.fn().mockResolvedValue(c7Target),
         getCredentials: vi.fn().mockResolvedValue(new NoAuth()),
@@ -138,6 +151,11 @@ function createService(
             exists: true,
             projectDir: "/work",
         }),
+        resolveSlot: vi.fn().mockResolvedValue(TARGET_SLOT),
+    };
+    const dotEnvIo = {
+        isSymbolicLink: vi.spyOn(host.workspace, "isSymbolicLink"),
+        readFile: vi.spyOn(host.workspace, "readFile"),
     };
     const deploymentStatusService = {
         getRevision: vi.fn().mockReturnValue(undefined),
@@ -148,41 +166,44 @@ function createService(
     const inspection = {
         fetchLatestDefinition: vi.fn().mockResolvedValue(snapshot()),
     };
-    const notifier = {
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-        notifyError: vi.fn(),
-        withProgress: vi.fn((_title: string, task: () => Promise<unknown>) => task()),
-    };
-    const credentialApproval = {
-        ensureApproved: vi.fn().mockResolvedValue(undefined),
-    };
 
     const service = new DeploymentVerificationService(
-        editorStore as never,
-        documentPort as never,
+        host.store,
+        host.documents,
         deploymentTargetService as never,
         deploymentStatusService as never,
-        (inspectionClient ?? inspection) as never,
-        notifier as never,
-        new EnvValueResolver(deploymentTargetService as never, workspace as never),
-        credentialApproval as never,
+        inspectionClient ?? (inspection as never),
+        host.notifier,
+        new EnvValueResolver(deploymentTargetService as never, host.workspace),
+        new CredentialApprovalService(deploymentTargetService as never, host.secrets, host.picker),
     );
 
     return {
         service,
-        credentialApproval,
-        editorStore,
-        documentPort,
+        host,
+        editor,
         deploymentTargetService,
         deploymentStatusService,
         inspection,
-        notifier,
-        workspace,
+        dotEnvIo,
     };
 }
 
-beforeEach(() => vi.clearAllMocks());
+type ServiceContext = ReturnType<typeof createService>;
+
+function approvedOrigins(c: ServiceContext): Promise<string[]> {
+    return c.host.secrets.getApprovedDestinations(TARGET_SLOT);
+}
+
+function credentialApprovalPrompts(c: ServiceContext) {
+    return c.host.picker.prompts.filter((prompt) => prompt.method === "confirmDestructive");
+}
+
+function expectNoDotEnvIo(c: ServiceContext): void {
+    expect(c.deploymentTargetService.locateTargetsFile).not.toHaveBeenCalled();
+    expect(c.dotEnvIo.isSymbolicLink).not.toHaveBeenCalled();
+    expect(c.dotEnvIo.readFile).not.toHaveBeenCalled();
+}
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -191,15 +212,11 @@ afterEach(() => {
 describe("DeploymentVerificationService.verifyActive", () => {
     it("reports when no diagram is focused", async () => {
         const c = createService();
-        c.editorStore.getActiveEditorId.mockImplementation(() => {
-            throw new Error("no active editor");
-        });
+        c.host.store.unregister(c.editor.id, c.editor);
 
         await c.service.verifyActive();
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
-            "Open a BPMN diagram to verify its deployment.",
-        );
+        expect(c.host.notifier.infos).toEqual(["Open a BPMN diagram to verify its deployment."]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -209,9 +226,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "Select a named Camunda 7 target to verify against.",
-        );
+        ]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -221,19 +238,18 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "Verification is not available for Camunda 8 targets.",
-        );
+        ]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
     it("shows an error when the diagram has no process id", async () => {
-        const c = createService();
-        c.documentPort.getContent.mockReturnValue("<bpmn:definitions/>");
+        const c = createService({ content: "<bpmn:definitions/>" });
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledOnce();
+        expect(c.host.notifier.errors).toHaveLength(1);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
     });
 
@@ -262,9 +278,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             expect.objectContaining({ ...recorded, verifiedAt: expect.any(String) }),
         );
         expect(c.deploymentStatusService.refreshActive).toHaveBeenCalled();
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             expect.stringContaining("dev runs your last deployment"),
-        );
+        ]);
     });
 
     it("adopts an engine revision matching this diagram", async () => {
@@ -277,9 +293,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
             identity,
             expect.objectContaining({ origin: "engine", deploymentId: "dep-9" }),
         );
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             expect.stringContaining("dev runs exactly this diagram"),
-        );
+        ]);
     });
 
     it("reports a differing engine deployment as information", async () => {
@@ -297,10 +313,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
             hour: "2-digit",
             minute: "2-digit",
         });
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             `The version deployed on dev (deployed ${deployedTime}) differs from your diagram.`,
-        );
-        expect(c.notifier.showError).not.toHaveBeenCalled();
+        ]);
+        expect(c.host.notifier.errors).toEqual([]);
     });
 
     it("omits the deployment time when it is unavailable", async () => {
@@ -311,10 +327,10 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith(
+        expect(c.host.notifier.infos).toEqual([
             "The version deployed on dev differs from your diagram.",
-        );
-        expect(c.notifier.showError).not.toHaveBeenCalled();
+        ]);
+        expect(c.host.notifier.errors).toEqual([]);
     });
 
     it("forgets the row when the process is not deployed", async () => {
@@ -325,7 +341,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         expect(c.deploymentStatusService.forgetRevision).toHaveBeenCalledWith(FILE_PATH, identity);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
-        expect(c.notifier.showInfo).toHaveBeenCalledWith("Process 'order' is not deployed on dev.");
+        expect(c.host.notifier.infos).toEqual(["Process 'order' is not deployed on dev."]);
     });
 
     it("points at the target credentials on an auth failure, leaving the ledger untouched", async () => {
@@ -336,9 +352,9 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledWith(
+        expect(c.host.notifier.errors).toEqual([
             'Could not verify deployment on "dev" — check the target credentials.',
-        );
+        ]);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -349,10 +365,8 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.notifyError).toHaveBeenCalledWith(
-            "Could not verify deployment",
-            expect.any(Error),
-        );
+        expect(c.host.notifier.errors).toEqual(["Could not verify deployment\nconnection refused"]);
+        expect(c.host.notifier.logged("error")).toEqual(["connection refused"]);
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -362,32 +376,26 @@ describe("DeploymentVerificationService.verifyActive", () => {
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.withProgress).toHaveBeenCalledWith(
-            'Verifying on "dev"…',
-            expect.any(Function),
-        );
+        expect(c.host.notifier.progressTitles).toEqual(['Verifying on "dev"…']);
     });
 
     it("reports a transport failure through notifyError without the request URL", async () => {
         const resolvedUrl = "https://camunda.prod/engine-rest";
-        const c = createService({ MIRAGON_URL: resolvedUrl });
+        const transportFailure = new HttpTransportError("camunda.prod", "ECONNREFUSED");
+        const c = createService({ dotEnv: { MIRAGON_URL: resolvedUrl } });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(
             c7TargetWith("${env:MIRAGON_URL}"),
         );
-        c.inspection.fetchLatestDefinition.mockRejectedValue(
-            new HttpTransportError("camunda.prod", "ECONNREFUSED"),
-        );
+        c.inspection.fetchLatestDefinition.mockRejectedValue(transportFailure);
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).not.toHaveBeenCalled();
-        expect(c.notifier.notifyError).toHaveBeenCalledExactlyOnceWith(
-            "Could not verify deployment",
-            expect.any(HttpTransportError),
-        );
-        const [title, error] = c.notifier.notifyError.mock.calls[0] as [string, Error];
-        expect(`${title} ${error.message}`).not.toContain(resolvedUrl);
-        expect(`${title} ${error.message}`).not.toContain("/engine-rest");
+        expect(c.host.notifier.errors).toEqual([
+            `Could not verify deployment\n${transportFailure.message}`,
+        ]);
+        expect(c.host.notifier.logged("error")).toEqual([transportFailure.message]);
+        expect(c.host.notifier.errors[0]).not.toContain(resolvedUrl);
+        expect(c.host.notifier.errors[0]).not.toContain("/engine-rest");
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
     });
@@ -395,18 +403,16 @@ describe("DeploymentVerificationService.verifyActive", () => {
     it("verifies a literal target with literal credentials without touching .env, even a broken one", async () => {
         const c = createService();
         c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
-        c.workspace.isSymbolicLink.mockResolvedValue(true);
-        c.workspace.readFile.mockRejectedValue(
+        c.host.workspace.symbolicLinks.add(DOT_ENV_PATH);
+        c.dotEnvIo.readFile.mockRejectedValue(
             new Error("EISDIR: illegal operation on a directory"),
         );
 
         await c.service.verifyActive("/work");
 
         expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledOnce();
-        expect(c.notifier.showError).not.toHaveBeenCalled();
-        expect(c.deploymentTargetService.locateTargetsFile).not.toHaveBeenCalled();
-        expect(c.workspace.isSymbolicLink).not.toHaveBeenCalled();
-        expect(c.workspace.readFile).not.toHaveBeenCalled();
+        expect(c.host.notifier.errors).toEqual([]);
+        expectNoDotEnvIo(c);
     });
 
     it.each<[string, DeploymentTarget]>([
@@ -461,7 +467,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
             c.deploymentTargetService.getCredentials.mockResolvedValue(
                 new BasicAuth("admin", "pw"),
             );
-            c.workspace.readFile.mockRejectedValue(
+            c.dotEnvIo.readFile.mockRejectedValue(
                 new Error("EISDIR: illegal operation on a directory"),
             );
 
@@ -474,16 +480,14 @@ describe("DeploymentVerificationService.verifyActive", () => {
                 auth: new BasicAuth("admin", "pw"),
                 envValues: [],
             });
-            expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
-                refOutsideConnectionTarget,
+            expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledExactlyOnceWith(
+                "dev",
                 "/work",
-                expect.objectContaining({ origins: ["http://localhost:8080"] }),
             );
-            expect(c.notifier.showError).not.toHaveBeenCalled();
-            expect(c.notifier.notifyError).not.toHaveBeenCalled();
-            expect(c.deploymentTargetService.locateTargetsFile).not.toHaveBeenCalled();
-            expect(c.workspace.isSymbolicLink).not.toHaveBeenCalled();
-            expect(c.workspace.readFile).not.toHaveBeenCalled();
+            expect(credentialApprovalPrompts(c)).toHaveLength(1);
+            await expect(approvedOrigins(c)).resolves.toEqual(["http://localhost:8080"]);
+            expect(c.host.notifier.errors).toEqual([]);
+            expectNoDotEnvIo(c);
             expect(c.deploymentStatusService.adoptRevision).toHaveBeenCalledWith(
                 FILE_PATH,
                 identity,
@@ -503,7 +507,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
             "",
             "",
         );
-        const c = createService(dotEnv);
+        const c = createService({ dotEnv });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(refTarget);
         c.deploymentTargetService.getCredentials.mockResolvedValue(
             new BasicAuth("admin", "${env:MIRAGON_PW}"),
@@ -525,7 +529,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
     it("reads and adopts the ledger row under the fingerprinted identity of a resolved endpoint", async () => {
         const dotEnv = { MIRAGON_STAGE: "prod" };
         const refTarget = c7TargetWith("https://camunda.${env:MIRAGON_STAGE}/rest");
-        const c = createService(dotEnv);
+        const c = createService({ dotEnv });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(refTarget);
 
         await c.service.verifyActive("/work");
@@ -543,7 +547,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
     it("forgets a missing process under the fingerprinted identity of a resolved endpoint", async () => {
         const dotEnv = { MIRAGON_URL: "https://camunda.prod/rest" };
         const refTarget = c7TargetWith("${env:MIRAGON_URL}");
-        const c = createService(dotEnv);
+        const c = createService({ dotEnv });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(refTarget);
         c.inspection.fetchLatestDefinition.mockResolvedValue(undefined);
 
@@ -557,7 +561,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
     });
 
     it("resolves an env ref in the tenant id before the lookup", async () => {
-        const c = createService({ MIRAGON_TENANT: "acme" });
+        const c = createService({ dotEnv: { MIRAGON_TENANT: "acme" } });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(
             c7TargetWith("http://localhost:8080/engine-rest", "${env:MIRAGON_TENANT}"),
         );
@@ -570,7 +574,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
     });
 
     it("reads .env when only the credentials hold a ref", async () => {
-        const c = createService({ MIRAGON_PW: "p@ss" });
+        const c = createService({ dotEnv: { MIRAGON_PW: "p@ss" } });
         c.deploymentTargetService.getCredentials.mockResolvedValue(
             new BasicAuth("admin", "${env:MIRAGON_PW}"),
         );
@@ -578,7 +582,7 @@ describe("DeploymentVerificationService.verifyActive", () => {
         await c.service.verifyActive("/work");
 
         expect(c.deploymentTargetService.locateTargetsFile).toHaveBeenCalledWith("/work");
-        expect(c.workspace.readFile).toHaveBeenCalledWith("/work/.env");
+        expect(c.dotEnvIo.readFile).toHaveBeenCalledWith(DOT_ENV_PATH);
         expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledWith(
             expect.objectContaining({
                 endpoint: c7Target.endpoint,
@@ -599,25 +603,24 @@ describe("DeploymentVerificationService.verifyActive", () => {
             error: new UnresolvedEnvVariableError(
                 "MIRAGON_MISSING_PW",
                 "auth.password",
-                "/work/.env",
+                DOT_ENV_PATH,
             ),
         },
         {
             failure: "an unset variable in the endpoint",
             target: c7TargetWith("${env:MIRAGON_MISSING_URL}"),
-            error: new UnresolvedEnvVariableError("MIRAGON_MISSING_URL", "endpoint", "/work/.env"),
+            error: new UnresolvedEnvVariableError("MIRAGON_MISSING_URL", "endpoint", DOT_ENV_PATH),
         },
         {
             failure: "an unset variable in the tenant id",
             target: c7TargetWith("http://localhost:8080/engine-rest", "${env:MIRAGON_MISSING_T}"),
-            error: new UnresolvedEnvVariableError("MIRAGON_MISSING_T", "tenantId", "/work/.env"),
+            error: new UnresolvedEnvVariableError("MIRAGON_MISSING_T", "tenantId", DOT_ENV_PATH),
         },
         {
             failure: "a missing .env",
             credentials: new BasicAuth("admin", "${env:MIRAGON_PW}"),
-            breakDotEnv: (workspace) =>
-                workspace.readFile.mockRejectedValue(new FileNotFound("/work/.env")),
-            error: new UnresolvedEnvVariableError("MIRAGON_PW", "auth.password", "/work/.env"),
+            breakDotEnv: (c) => c.host.workspace.deleteFile(DOT_ENV_PATH),
+            error: new UnresolvedEnvVariableError("MIRAGON_PW", "auth.password", DOT_ENV_PATH),
         },
         {
             failure: "a foreign variable",
@@ -627,28 +630,28 @@ describe("DeploymentVerificationService.verifyActive", () => {
         {
             failure: "a symlinked .env",
             credentials: new BasicAuth("admin", "${env:MIRAGON_PW}"),
-            breakDotEnv: (workspace) => workspace.isSymbolicLink.mockResolvedValue(true),
-            error: new UnreadableDotEnvError("/work/.env", "symbolic links are not followed"),
+            breakDotEnv: (c) => c.host.workspace.symbolicLinks.add(DOT_ENV_PATH),
+            error: new UnreadableDotEnvError(DOT_ENV_PATH, "symbolic links are not followed"),
         },
         {
             failure: "an unreadable .env",
             credentials: new BasicAuth("admin", "${env:MIRAGON_PW}"),
-            breakDotEnv: (workspace) =>
-                workspace.readFile.mockRejectedValue(new Error("EISDIR: illegal operation")),
-            error: new UnreadableDotEnvError("/work/.env", "EISDIR: illegal operation"),
+            breakDotEnv: (c) =>
+                c.dotEnvIo.readFile.mockRejectedValue(new Error("EISDIR: illegal operation")),
+            error: new UnreadableDotEnvError(DOT_ENV_PATH, "EISDIR: illegal operation"),
         },
     ])(
         "shows the env error for $failure and skips the lookup, leaving the ledger untouched",
         async ({ target, credentials, breakDotEnv, error }) => {
-            const c = createService({ MIRAGON_PW: "p@ss" });
+            const c = createService({ dotEnv: { MIRAGON_PW: "p@ss" } });
             c.deploymentTargetService.getActiveTarget.mockResolvedValue(target ?? c7Target);
             c.deploymentTargetService.getCredentials.mockResolvedValue(credentials ?? new NoAuth());
-            breakDotEnv?.(c.workspace);
+            breakDotEnv?.(c);
 
             await c.service.verifyActive("/work");
 
-            expect(c.notifier.showError).toHaveBeenCalledExactlyOnceWith(error.message);
-            expect(c.notifier.notifyError).not.toHaveBeenCalled();
+            expect(c.host.notifier.errors).toEqual([error.message]);
+            expect(c.host.notifier.logged("error")).toEqual([]);
             expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
             expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
             expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
@@ -659,20 +662,25 @@ describe("DeploymentVerificationService.verifyActive", () => {
 describe("DeploymentVerificationService.verifyActive credential approval", () => {
     it("asks to approve the origin the target's endpoint resolves to before the lookup", async () => {
         const envTarget = c7TargetWith("${env:MIRAGON_URL}");
-        const c = createService({ MIRAGON_URL: "https://camunda.prod:8443/engine-rest" });
+        const c = createService({
+            dotEnv: { MIRAGON_URL: "https://camunda.prod:8443/engine-rest" },
+        });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(envTarget);
         c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
+        let approvedAtLookup: string[] | undefined;
+        c.inspection.fetchLatestDefinition.mockImplementation(async () => {
+            approvedAtLookup = await approvedOrigins(c);
+            return snapshot();
+        });
 
         await c.service.verifyActive("/work");
 
-        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
-            envTarget,
+        expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledExactlyOnceWith(
+            "dev",
             "/work",
-            expect.objectContaining({ origins: ["https://camunda.prod:8443"] }),
         );
-        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledBefore(
-            c.inspection.fetchLatestDefinition,
-        );
+        expect(credentialApprovalPrompts(c)).toHaveLength(1);
+        expect(approvedAtLookup).toEqual(["https://camunda.prod:8443"]);
     });
 
     it("asks to approve the endpoint origin for a target without credentials whose tenant comes from .env", async () => {
@@ -680,31 +688,34 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
             "https://camunda.prod/engine-rest",
             "${env:MIRAGON_TENANT}",
         );
-        const c = createService({ MIRAGON_TENANT: "acme" });
+        const c = createService({ dotEnv: { MIRAGON_TENANT: "acme" } });
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(tenantTarget);
 
         await c.service.verifyActive("/work");
 
-        expect(c.credentialApproval.ensureApproved).toHaveBeenCalledExactlyOnceWith(
-            tenantTarget,
+        expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledExactlyOnceWith(
+            "dev",
             "/work",
-            expect.objectContaining({ origins: ["https://camunda.prod"] }),
         );
+        expect(credentialApprovalPrompts(c)).toHaveLength(1);
+        await expect(approvedOrigins(c)).resolves.toEqual(["https://camunda.prod"]);
         expect(c.inspection.fetchLatestDefinition).toHaveBeenCalledWith(
             expect.objectContaining({ tenantId: "acme", envValues: ["acme"] }),
         );
     });
 
     it("shows the decline without a lookup, leaving the ledger untouched", async () => {
-        const declined = new CredentialDestinationNotApprovedError("dev");
-        const c = createService();
+        const c = createService({ approveCredentialDestinations: false });
         c.deploymentTargetService.getCredentials.mockResolvedValue(new BasicAuth("admin", "pw"));
-        c.credentialApproval.ensureApproved.mockRejectedValue(declined);
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledExactlyOnceWith(declined.message);
-        expect(c.notifier.notifyError).not.toHaveBeenCalled();
+        expect(credentialApprovalPrompts(c)).toHaveLength(1);
+        expect(c.host.notifier.errors).toEqual([
+            new CredentialDestinationNotApprovedError("dev").message,
+        ]);
+        expect(c.host.notifier.logged("error")).toEqual([]);
+        await expect(approvedOrigins(c)).resolves.toEqual([]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
@@ -720,10 +731,8 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
 
         await c.service.verifyActive("/work");
 
-        expect(c.notifier.showError).toHaveBeenCalledExactlyOnceWith(
-            new InvalidCredentialDestinationError().message,
-        );
-        expect(c.credentialApproval.ensureApproved).not.toHaveBeenCalled();
+        expect(c.host.notifier.errors).toEqual([new InvalidCredentialDestinationError().message]);
+        expect(credentialApprovalPrompts(c)).toEqual([]);
         expect(c.inspection.fetchLatestDefinition).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.adoptRevision).not.toHaveBeenCalled();
         expect(c.deploymentStatusService.forgetRevision).not.toHaveBeenCalled();
@@ -733,7 +742,11 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
         const apiKey = "key-5c4b3a";
         const literalPassword = "lit-pa55word";
         const fetchStub = failQuotingRequest();
-        const c = createService({ MIRAGON_KEY: apiKey }, createRealRestClient());
+        const c = createService({
+            dotEnv: { MIRAGON_KEY: apiKey },
+            inspectionClient: createRealRestClient(),
+        });
+        const notifications = spyOnNotifications(c.host.notifier);
         c.deploymentTargetService.getActiveTarget.mockResolvedValue(
             c7TargetWith("https://gw.example/keys/${env:MIRAGON_KEY}/engine-rest"),
         );
@@ -747,12 +760,11 @@ describe("DeploymentVerificationService.verifyActive credential approval", () =>
             `https://gw.example/keys/${apiKey}/engine-rest/process-definition/key/order`,
             expect.anything(),
         );
-        const [, reported] = c.notifier.notifyError.mock.calls[0] as [string, Error];
-        expect(reported.message).toBe(
+        expect(c.host.notifier.logged("error")).toEqual([
             "Deployment verification failed with HTTP 500: Lookup of https://gw.example/keys/***/engine-rest/process-definition/key/order as ***:*** failed",
-        );
+        ]);
         for (const secret of [apiKey, literalPassword]) {
-            expect(everythingNotified(c.notifier)).not.toContain(secret);
+            expect(everythingNotified(notifications)).not.toContain(secret);
         }
     });
 });

@@ -9,6 +9,7 @@ const LEGACY_SLOT = Symbol("legacy unnamed slot");
 
 export class InMemorySecretStore implements SecretStorePort {
     private readonly slots = new Map<string | typeof LEGACY_SLOT, SlotCredentials>();
+    private readonly approvedDestinations = new Map<string, string[]>();
 
     async saveBasicAuth(username: string, password: string, slot?: string): Promise<void> {
         this.credentials(slot).basicAuth = { username, password };
@@ -28,8 +29,17 @@ export class InMemorySecretStore implements SecretStorePort {
         return this.slots.get(slot ?? LEGACY_SLOT)?.oauth2;
     }
 
+    async getApprovedDestinations(slot: string): Promise<string[]> {
+        return [...(this.approvedDestinations.get(slot) ?? [])];
+    }
+
+    async saveApprovedDestinations(slot: string, origins: string[]): Promise<void> {
+        this.approvedDestinations.set(slot, [...origins]);
+    }
+
     async delete(slot: string): Promise<void> {
         this.slots.delete(slot);
+        this.approvedDestinations.delete(slot);
     }
 
     private credentials(slot: string | undefined): SlotCredentials {

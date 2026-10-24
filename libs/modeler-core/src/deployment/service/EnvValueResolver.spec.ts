@@ -1,12 +1,9 @@
 import { posix } from "path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-    FileNotFound,
-    UnreadableDotEnvError,
-    UnresolvedEnvVariableError,
-} from "../../shared/domain/errors";
+import { UnreadableDotEnvError, UnresolvedEnvVariableError } from "../../shared/domain/errors";
+import { createTestHost } from "../../testing";
 import { EnvLookup, envRefsIn, expandEnvRefs, NO_ENV_VARIABLES } from "../domain/envRef";
 import { TargetsLocation } from "./DeploymentTargetService";
 import { EnvScope, EnvValueResolver } from "./EnvValueResolver";
@@ -31,10 +28,6 @@ function dotEnvContent(variables: Record<string, string>): string {
         .join("\n");
 }
 
-function isInsideFolder(document: string, folder: string): boolean {
-    return document === folder || document.startsWith(`${folder}/`);
-}
-
 function setup(
     options: {
         dotEnvFiles?: Record<string, Record<string, string>>;
@@ -43,31 +36,33 @@ function setup(
         workspaceFolders?: string[];
     } = {},
 ) {
-    const workspaceFolders = options.workspaceFolders ?? [WORKSPACE_ROOT];
     const targetsLocator = {
         locateTargetsFile: vi
             .fn<(documentDir?: string) => Promise<TargetsLocation | undefined>>()
             .mockResolvedValue(options.targetsLocation ?? targetsLocationIn(WORKSPACE_ROOT)),
     };
+    const { workspace: inMemoryWorkspace } = createTestHost({
+        folders: options.workspaceFolders ?? [WORKSPACE_ROOT],
+        files: Object.fromEntries(
+            Object.entries(options.dotEnvFiles ?? {}).map(([path, variables]) => [
+                path,
+                dotEnvContent(variables),
+            ]),
+        ),
+    });
+    for (const path of options.symbolicLinks ?? []) {
+        inMemoryWorkspace.symbolicLinks.add(path);
+    }
     const workspace = {
-        getWorkspaceFolderPaths: vi.fn<() => string[]>().mockReturnValue(workspaceFolders),
-        findWorkspaceFolderForDocument: vi
-            .fn<(document: string) => string | undefined>()
-            .mockImplementation((document) =>
-                workspaceFolders.find((folder) => isInsideFolder(document, folder)),
-            ),
-        isSymbolicLink: vi
-            .fn<(path: string) => Promise<boolean>>()
-            .mockImplementation(async (path) => options.symbolicLinks?.includes(path) ?? false),
-        readFile: vi.fn<(path: string) => Promise<string>>().mockImplementation(async (path) => {
-            const variables = options.dotEnvFiles?.[path];
-            if (variables === undefined) {
-                throw new FileNotFound(path);
-            }
-            return dotEnvContent(variables);
-        }),
+        getWorkspaceFolderPaths: vi.spyOn(inMemoryWorkspace, "getWorkspaceFolderPaths"),
+        findWorkspaceFolderForDocument: vi.spyOn(
+            inMemoryWorkspace,
+            "findWorkspaceFolderForDocument",
+        ),
+        isSymbolicLink: vi.spyOn(inMemoryWorkspace, "isSymbolicLink"),
+        readFile: vi.spyOn(inMemoryWorkspace, "readFile"),
     };
-    const resolver = new EnvValueResolver(targetsLocator, workspace as never);
+    const resolver = new EnvValueResolver(targetsLocator, inMemoryWorkspace);
     return { resolver, targetsLocator, workspace };
 }
 
@@ -88,8 +83,6 @@ function expansionErrorOf(lookup: EnvLookup, field: string): unknown {
 function errnoError(code: string, message: string): Error {
     return Object.assign(new Error(`${code}: ${message}`), { code });
 }
-
-beforeEach(() => vi.clearAllMocks());
 
 afterEach(() => vi.unstubAllEnvs());
 

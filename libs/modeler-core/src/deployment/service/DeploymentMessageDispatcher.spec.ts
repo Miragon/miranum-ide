@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     AdditionalFilesQuery,
@@ -37,25 +37,18 @@ import {
 } from "../domain/deployment";
 import { StartInstanceResult } from "../domain/startInstance";
 import { InvalidDeploymentConfigError } from "../../shared/domain/errors";
+import { createTestHost } from "../../testing";
 import { DeploymentMessageDispatcher } from "./DeploymentMessageDispatcher";
 
-/**
- * Assembles the dispatcher with structural port doubles. Each collaborator is a
- * bare `vi.fn()` record cast to its interface — the dispatcher only calls these
- * methods, so structural doubles keep the test free of any host surface. The
- * injected `post` is a spy that captures every query the dispatcher sends back.
- */
+// Deliberately distinct from the payload's `mainFilePath` so a regression
+// that trusts the webview payload instead of the document path is caught.
+const TRUSTED_PATH = "/work/trusted/order-process.bpmn";
+
 const noEnv = () => undefined;
 
-function createDispatcher() {
-    const editorStore = {
-        getActiveEditorId: vi.fn().mockReturnValue("editor-1"),
-    };
-    // Deliberately distinct from the payload's `mainFilePath` so a regression
-    // that trusts the webview payload instead of the document path is caught.
-    const documentPort = {
-        getFilePath: vi.fn().mockReturnValue("/work/trusted/order-process.bpmn"),
-    };
+function createDispatcher({ openDiagram = true } = {}) {
+    const host = createTestHost();
+    if (openDiagram) host.openEditor(TRUSTED_PATH);
     const deploymentService = {
         deploy: vi.fn(),
         getFormDefaults: vi.fn(),
@@ -79,15 +72,6 @@ function createDispatcher() {
         resolveSlot: vi.fn().mockResolvedValue(undefined),
         openTargetsFile: vi.fn().mockResolvedValue(undefined),
     };
-    const notifier = {
-        showInfo: vi.fn(),
-        showError: vi.fn(),
-        notifyError: vi.fn(),
-        logDebug: vi.fn(),
-        logInfo: vi.fn(),
-        logWarning: vi.fn(),
-        logError: vi.fn(),
-    };
     const deploymentStatusService = {
         refreshActive: vi.fn().mockResolvedValue(undefined),
         recordDeployment: vi.fn().mockResolvedValue(undefined),
@@ -100,25 +84,23 @@ function createDispatcher() {
     const post = vi.fn();
 
     const dispatcher = new DeploymentMessageDispatcher(
-        editorStore as never,
-        documentPort as never,
+        host.store,
+        host.documents,
         deploymentService as never,
         startInstanceService as never,
         deploymentTargetService as never,
         deploymentStatusService as never,
-        notifier as never,
+        host.notifier,
         post,
     );
 
     return {
         dispatcher,
-        editorStore,
-        documentPort,
+        host,
         deploymentService,
         startInstanceService,
         deploymentTargetService,
         deploymentStatusService,
-        notifier,
         post,
     };
 }
@@ -160,10 +142,6 @@ const startInstance = (c: ReturnType<typeof createDispatcher>, auth: AuthConfigP
         type: "StartInstanceCommand",
         config: startPayload(auth),
     } as StartInstanceCommand);
-
-beforeEach(() => {
-    vi.clearAllMocks();
-});
 
 describe("DeploymentMessageDispatcher deploy auth construction", () => {
     it("builds a BasicAuth from a basic payload", async () => {
@@ -213,8 +191,7 @@ describe("DeploymentMessageDispatcher deploy auth construction", () => {
         await deploy(c, { authType: "none" });
 
         const config = c.deploymentService.deploy.mock.calls[0][0];
-        expect(c.documentPort.getFilePath).toHaveBeenCalledWith("editor-1");
-        expect(config.mainFilePath).toBe("/work/trusted/order-process.bpmn");
+        expect(config.mainFilePath).toBe(TRUSTED_PATH);
         expect(config.mainFilePath).not.toBe("/work/order-process.bpmn");
     });
 });
@@ -228,8 +205,8 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith("deployed");
-        expect(c.notifier.showError).not.toHaveBeenCalled();
+        expect(c.host.notifier.infos).toEqual(["deployed"]);
+        expect(c.host.notifier.errors).toEqual([]);
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(true);
         expect(query.message).toBe("deployed");
@@ -242,8 +219,8 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.notifier.showError).toHaveBeenCalledWith("rejected");
-        expect(c.notifier.showInfo).not.toHaveBeenCalled();
+        expect(c.host.notifier.errors).toEqual(["rejected"]);
+        expect(c.host.notifier.infos).toEqual([]);
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe("rejected");
@@ -256,7 +233,7 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.notifier.showError).toHaveBeenCalledWith(error.message);
+        expect(c.host.notifier.errors).toEqual([error.message]);
         expect(postedQuery(c.post, DeploymentResultQuery).message).toBe(error.message);
     });
 
@@ -267,7 +244,7 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
         await deploy(c, { authType: "none" });
 
         const fallback = "An unexpected error occurred during deployment.";
-        expect(c.notifier.showError).toHaveBeenCalledWith(fallback);
+        expect(c.host.notifier.errors).toEqual([fallback]);
         const query = postedQuery(c.post, DeploymentResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe(fallback);
@@ -275,16 +252,8 @@ describe("DeploymentMessageDispatcher deploy result handling", () => {
 });
 
 describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
-    /** Every string passed to any notifier log method across the whole call. */
     function allLoggedText(c: ReturnType<typeof createDispatcher>): string {
-        return [
-            ...c.notifier.logDebug.mock.calls,
-            ...c.notifier.logInfo.mock.calls,
-            ...c.notifier.logWarning.mock.calls,
-            ...c.notifier.logError.mock.calls,
-        ]
-            .map((args) => String(args[0]))
-            .join("\n");
+        return c.host.notifier.logs.map((entry) => entry.message).join("\n");
     }
 
     it("leaves the start breadcrumbs to the services, which log the resolved host", async () => {
@@ -305,7 +274,7 @@ describe("DeploymentMessageDispatcher deploy breadcrumbs", () => {
 
         await deploy(c, { authType: "none" });
 
-        expect(c.notifier.logWarning).toHaveBeenCalledWith("Deployment failed: rejected");
+        expect(c.host.notifier.logged("warning")).toEqual(["Deployment failed: rejected"]);
     });
 
     it("never writes the basic-auth password to any log line", async () => {
@@ -426,7 +395,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
 
         await startInstance(c, { authType: "none" });
 
-        expect(c.notifier.showInfo).toHaveBeenCalledWith("started");
+        expect(c.host.notifier.infos).toEqual(["started"]);
         const query = postedQuery(c.post, StartInstanceResultQuery);
         expect(query.success).toBe(true);
         expect(query.processInstanceId).toBe("pi-1");
@@ -440,7 +409,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
 
         await startInstance(c, { authType: "none" });
 
-        expect(c.notifier.showError).toHaveBeenCalledWith("no instance");
+        expect(c.host.notifier.errors).toEqual(["no instance"]);
         expect(postedQuery(c.post, StartInstanceResultQuery).success).toBe(false);
     });
 
@@ -451,7 +420,7 @@ describe("DeploymentMessageDispatcher start-instance result handling", () => {
         await startInstance(c, { authType: "none" });
 
         const fallback = "An unexpected error occurred while starting the process instance.";
-        expect(c.notifier.showError).toHaveBeenCalledWith(fallback);
+        expect(c.host.notifier.errors).toEqual([fallback]);
         const query = postedQuery(c.post, StartInstanceResultQuery);
         expect(query.success).toBe(false);
         expect(query.message).toBe(fallback);
@@ -496,24 +465,21 @@ describe("DeploymentMessageDispatcher.sendFormDefaults", () => {
 
         expect(postedQuery(c.post, ProcessDefinitionKeyQuery).processDefinitionKey).toBe("");
         // A parseable diagram whose key can't be read is a degradation → warn.
-        expect(c.notifier.logWarning).toHaveBeenCalledWith(
+        expect(c.host.notifier.logged("warning")).toEqual([
             expect.stringContaining("Process-definition key extraction failed"),
-        );
+        ]);
     });
 
     it("falls back to empty defaults (and only debug-logs) when there is no active editor", () => {
-        const c = createDispatcher();
-        c.editorStore.getActiveEditorId.mockImplementation(() => {
-            throw new Error("no active editor");
-        });
+        const c = createDispatcher({ openDiagram: false });
 
         c.dispatcher.sendFormDefaults();
 
         // No active editor is the expected steady state — debug, not warn.
-        expect(c.notifier.logDebug).toHaveBeenCalledWith(
+        expect(c.host.notifier.logged("debug")).toContainEqual(
             expect.stringContaining("No active editor for deployment form defaults"),
         );
-        expect(c.notifier.logWarning).not.toHaveBeenCalled();
+        expect(c.host.notifier.logged("warning")).toEqual([]);
         const defaults = postedQuery(c.post, FormDefaultsQuery).defaults;
         expect(defaults.deploymentName).toBe("");
         expect(defaults.engine).toBe("c7");
@@ -770,7 +736,7 @@ describe("DeploymentMessageDispatcher target commands", () => {
             "",
         );
         c.deploymentTargetService.getTarget.mockImplementation(async () => {
-            c.documentPort.getFilePath.mockReturnValue("/another/diagram.bpmn");
+            c.host.openEditor("/another/diagram.bpmn");
             return submittedTarget;
         });
         await c.dispatcher.handle({
@@ -780,7 +746,7 @@ describe("DeploymentMessageDispatcher target commands", () => {
         expect(c.deploymentTargetService.getTarget).toHaveBeenCalledWith("dev", "/work/trusted");
         expect(c.deploymentTargetService.resolveSlot).toHaveBeenCalledWith("dev", "/work/trusted");
         const [config, , target] = c.deploymentService.deploy.mock.calls[0];
-        expect(config.mainFilePath).toBe("/work/trusted/order-process.bpmn");
+        expect(config.mainFilePath).toBe(TRUSTED_PATH);
         expect(target).toBe(submittedTarget);
     });
 
@@ -910,7 +876,9 @@ describe("DeploymentMessageDispatcher target commands", () => {
 
         await c.dispatcher.handle({ type: "OpenTargetsFileCommand" } as Command);
 
-        expect(c.notifier.notifyError).toHaveBeenCalledOnce();
+        expect(c.host.notifier.errors).toEqual([
+            "Could not open deployment targets file\nno workspace",
+        ]);
     });
 
     it("creates a target and posts a success TargetSavedQuery", async () => {
@@ -1189,7 +1157,7 @@ describe.each(namedTargetRequests)(
             expect(c.deploymentTargetService.resolveSlot).not.toHaveBeenCalled();
             expect(c.deploymentTargetService.saveTarget).not.toHaveBeenCalled();
             expect(c.deploymentTargetService.createTarget).not.toHaveBeenCalled();
-            expect(c.notifier.showError).toHaveBeenCalledWith(CREDENTIAL_REFS_CHANGED_MESSAGE);
+            expect(c.host.notifier.errors).toEqual([CREDENTIAL_REFS_CHANGED_MESSAGE]);
             expect(result(c)).toMatchObject({
                 success: false,
                 message: CREDENTIAL_REFS_CHANGED_MESSAGE,
@@ -1286,7 +1254,7 @@ describe.each(namedTargetRequests)(
             await submit(c, basicAuth("ops", PASSWORD_REF));
 
             expect(runner(c)).toHaveBeenCalledOnce();
-            expect(c.notifier.showError).not.toHaveBeenCalled();
+            expect(c.host.notifier.errors).toEqual([]);
         });
 
         it("proceeds with literal credentials against a target without refs", async () => {
@@ -1351,9 +1319,9 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
         await c.dispatcher.handle(new LogWarningCommand("w"));
         await c.dispatcher.handle(new LogErrorCommand("boom", "at foo"));
 
-        expect(c.notifier.logInfo).toHaveBeenCalledWith("[webview:deployment] i");
-        expect(c.notifier.logWarning).toHaveBeenCalledWith("[webview:deployment] w");
-        expect(c.notifier.logError).toHaveBeenCalledWith("[webview:deployment] boom\nat foo");
+        expect(c.host.notifier.logged("info")).toContain("[webview:deployment] i");
+        expect(c.host.notifier.logged("warning")).toContain("[webview:deployment] w");
+        expect(c.host.notifier.logged("error")).toContain("[webview:deployment] boom\nat foo");
     });
 
     it("does not enter the command switch for a Log* command", async () => {
@@ -1363,7 +1331,7 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
 
         // The switch's per-message debug breadcrumb is skipped for log traffic
         // so forwarded lines aren't double-logged.
-        expect(c.notifier.logDebug).not.toHaveBeenCalledWith(
+        expect(c.host.notifier.logged("debug")).not.toContain(
             "Deployment message received -> LogInfoCommand",
         );
         expect(c.deploymentService.getFormDefaults).not.toHaveBeenCalled();
@@ -1375,7 +1343,7 @@ describe("DeploymentMessageDispatcher.handle webview-log routing", () => {
         await c.dispatcher.handle({ type: "TotallyUnknownCommand" } as Command);
 
         expect(c.post).not.toHaveBeenCalled();
-        expect(c.notifier.logDebug).toHaveBeenCalledWith(
+        expect(c.host.notifier.logged("debug")).toContain(
             "Deployment message received -> TotallyUnknownCommand",
         );
     });
