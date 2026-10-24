@@ -1,6 +1,6 @@
 ---
 name: vscode-ux-guidelines
-description: VS Code UX guidelines for this project — how to choose between notifications, status bar, quick picks, and output channels; how clipboard access works between sandboxed webviews and the extension host; webview theming; accessibility; and setContext for keybinding visibility. Use this skill whenever you are adding user-facing feedback (messages, errors, progress), wiring clipboard in webviews, implementing copy/paste, choosing how to surface information to the user, adding keyboard shortcuts or when-clause visibility, working on theming, or considering accessibility. Also use when deciding between notification types or between notifications vs. status bar vs. output channel.
+description: Project UX rules for VS Code — choosing notifications, status bar, quick picks or the output channel, webview clipboard, theming, accessibility and when-clause context keys. Use when adding user-facing feedback, shortcuts or clipboard handling.
 ---
 
 # VS Code UX Guidelines
@@ -115,7 +115,7 @@ async readClipboard(): Promise<string>   // vscode.env.clipboard.readText()
 async writeClipboard(text: string): Promise<void>  // vscode.env.clipboard.writeText()
 ```
 
-The BPMN `WebviewMessageRouter` dispatches incoming `GetClipboardCommand` / `SetClipboardCommand` to the clipboard handlers in `bpmnMessageHandlers.ts`, which call `BpmnClipboardMediator` → `VsCodeClipboard`.
+The BPMN `WebviewMessageRouter` dispatches incoming `GetClipboardCommand` / `SetClipboardCommand` to the clipboard handlers in `libs/modeler-core/src/modeler/bpmn/infrastructure/bpmnMessageHandlers.ts`, which call `BpmnClipboardMediator` → `VsCodeClipboard`.
 
 ### Webview Side — Two DI Modules
 

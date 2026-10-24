@@ -6,6 +6,8 @@ import {
     OpenScriptEditorsCommand,
 } from "@miragon/bpmn-modeler-shared";
 import {
+    EditorSessionContext,
+    EditorSessionParticipant,
     materializeScriptBatch,
     NO_INLINE_SCRIPTS_MESSAGE,
     scriptBatchSummary,
@@ -22,19 +24,18 @@ import {
     ScriptDidOpenExternalParams,
 } from "../protocol/types";
 import { BridgeSharedDeps } from "./sharedDeps";
-import { RegisterParams, SessionHooks } from "./sessionHooks";
 
 /**
  * The inline-script-editor feature owns the {@link BridgeScriptEditor}
- * orchestrator. It returns a session hook so the editor-session feature closes
- * this editor's open script tabs on dispose — without importing script types.
+ * orchestrator. Its session participant loads the variable manifest and closes
+ * the editor's open script tabs on dispose.
  *
  * Webview messages: OpenScriptEditorCommand, UpdateScriptVariablesCommand,
  * OpenScriptEditorsCommand (bulk "generate script files" reply).
  * RPC (Host → Core): script/didChange, script/didClose, script/openAll,
  * script/didOpenExternal.
  */
-export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks } {
+export function register(deps: BridgeSharedDeps): { participants: EditorSessionParticipant[] } {
     // "Edit Script" orchestrator. Unlike the other features this one has no
     // in-core service — the VS Code original was never extracted (its guts are
     // VS Code-specific accidental complexity) — so the portable slice lives here
@@ -54,10 +55,6 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         deps.nodeWorkspace,
         deps.artifactSvc,
     );
-
-    // Manifest watchers are armed per session and disposed when that editor
-    // closes, mirroring the template-watcher lifecycle in templatesSettingsFeature.
-    const manifestWatchers = new Map<string, { dispose(): void }>();
 
     deps.router
         .on("OpenScriptEditorCommand", (message, editorId) => {
@@ -165,32 +162,37 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         });
     });
 
-    const refreshManifest = async (params: RegisterParams): Promise<void> => {
-        if (params.scheme !== "file") return;
-        manifestWatchers.get(params.editorId)?.dispose();
-        manifestWatchers.delete(params.editorId);
-        await scriptEditor.loadManifest(params.editorId, params.fsPath);
-        manifestWatchers.set(
-            params.editorId,
-            await scriptEditor.watchManifest(params.editorId, params.fsPath),
-        );
-    };
-
-    return {
-        sessionHooks: {
-            // Load the manifest and arm its watcher so authored variables merge
-            // into completion and refresh live. Guard non-file editors (a diff
-            // pane has no manifest on disk); the manifest service speaks fs paths,
-            // so pass the host-provided `fsPath`.
-            onSessionRegistered: refreshManifest,
-            onSessionReseeded: refreshManifest,
-            // Close any script tabs this editor opened before its handle is
-            // dropped, and stop watching its manifest.
-            onSessionDisposed: (editorId) => {
-                manifestWatchers.get(editorId)?.dispose();
-                manifestWatchers.delete(editorId);
-                scriptEditor.disposeEditor(editorId);
-            },
+    // Load the manifest and arm its watcher so authored variables merge into
+    // completion and refresh live. A diff pane has no manifest on disk; the
+    // manifest service speaks fs paths.
+    const scriptSession: EditorSessionParticipant = {
+        async onResolve(session: EditorSessionContext) {
+            const handle = deps.store.requireHandle(session.editorId);
+            let manifestWatcher: { dispose(): void } | undefined;
+            const refreshManifest = async (): Promise<void> => {
+                if (handle.documentScheme() !== "file") return;
+                manifestWatcher?.dispose();
+                manifestWatcher = undefined;
+                await scriptEditor.loadManifest(session.editorId, handle.documentFsPath());
+                const watcher = await scriptEditor.watchManifest(
+                    session.editorId,
+                    handle.documentFsPath(),
+                );
+                if (!session.isCurrent()) {
+                    watcher.dispose();
+                    return;
+                }
+                manifestWatcher = watcher;
+            };
+            // Close any script tabs this editor opened and stop watching its manifest.
+            session.onDispose(() => {
+                manifestWatcher?.dispose();
+                scriptEditor.disposeEditor(session.editorId);
+            });
+            session.onReseed(refreshManifest);
+            await refreshManifest();
         },
     };
+
+    return { participants: [scriptSession] };
 }

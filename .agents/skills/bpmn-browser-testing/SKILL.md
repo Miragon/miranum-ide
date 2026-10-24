@@ -1,12 +1,6 @@
 ---
 name: bpmn-browser-testing
-description: >
-  Test and inspect the BPMN modeler in a real browser through the IDE webview
-  previews and the package's Vitest browser specs. Use when opening the modeler,
-  creating or connecting elements, checking properties, View/Design/Implement
-  modes, themes, diff rendering, clipboard, linting, or multiple modeler
-  instances. Guides browser tool discovery, selecting the right preview, SVG
-  interactions, and verification limits.
+description: Tests and inspects the BPMN modeler in a real browser through the webview previews and the Vitest browser specs. Use when verifying modeler interactions, modes, themes, diff, clipboard or linting.
 ---
 
 # BPMN Browser Testing

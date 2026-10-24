@@ -1,9 +1,6 @@
 import { DmnModelerService } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
-import {
-    EditorSessionContext,
-    EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+import { NotifierPort } from "@miragon/bpmn-modeler-core";
+import { EditorSessionContext, EditorSessionParticipant } from "@miragon/bpmn-modeler-core";
 
 /**
  * Owns the DMN render lifecycle: registers the modeler session, re-renders on
@@ -13,7 +10,7 @@ import {
 export class DmnRenderParticipant implements EditorSessionParticipant {
     constructor(
         private readonly dmnService: DmnModelerService,
-        private readonly notifier: VsCodeNotifier,
+        private readonly notifier: NotifierPort,
     ) {}
 
     onResolve(session: EditorSessionContext): void {

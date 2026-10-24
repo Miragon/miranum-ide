@@ -134,7 +134,52 @@ describe("RpcEditorHandle", () => {
         expect(handle.documentPath()).toBe(META.path);
         expect(handle.documentFsPath()).toBe(META.fsPath);
         expect(handle.documentScheme()).toBe(META.scheme);
-        expect(handle.isActive()).toBe(true);
+    });
+
+    it("reports focus changes the store drives through setActive", () => {
+        const handle = new RpcEditorHandle(
+            META,
+            new DocumentMirror(),
+            new Rpc(() => {}),
+            new BridgeSettings(),
+        );
+        const focus: boolean[] = [];
+        handle.onDidChangeActive((active) => focus.push(active));
+
+        handle.setActive(true);
+        handle.setActive(true);
+        handle.setActive(false);
+
+        expect(focus).toEqual([true, false]);
+        expect(handle.isActive()).toBe(false);
+    });
+
+    it("reports mirrored content changes of its own document only", () => {
+        const mirror = new DocumentMirror();
+        const handle = new RpcEditorHandle(META, mirror, new Rpc(() => {}), new BridgeSettings());
+        const changed: string[] = [];
+        handle.onDidChangeDocument((event) => changed.push(event.documentUriString()));
+
+        mirror.setContent(META.editorId, "<edited/>");
+        mirror.setContent("file:///other.bpmn", "<other/>");
+
+        expect(changed).toEqual([META.uriString]);
+    });
+
+    it("runs its dispose callbacks once", () => {
+        const handle = new RpcEditorHandle(
+            META,
+            new DocumentMirror(),
+            new Rpc(() => {}),
+            new BridgeSettings(),
+        );
+        const disposed = vi.fn();
+        handle.onDidDispose(disposed);
+
+        handle.dispose();
+        handle.dispose();
+
+        expect(disposed).toHaveBeenCalledOnce();
     });
 
     it("postMessage forwards an editor/postMessage notification", async () => {

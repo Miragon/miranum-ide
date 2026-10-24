@@ -1,11 +1,14 @@
 import {
+    EditorSessionParticipant,
+    FormReferenceStatusParticipant,
     FormReferenceStatusService,
+    getFormReferenceStatusHandler,
     ModelNavigationService,
+    navigateToReferencedModelHandler,
     ReferencedModelLocator,
 } from "@miragon/bpmn-modeler-core";
 
 import { BridgeSharedDeps } from "./sharedDeps";
-import { SessionHooks } from "./sessionHooks";
 
 /**
  * The navigation feature owns referenced-model resolution: the
@@ -14,7 +17,7 @@ import { SessionHooks } from "./sessionHooks";
  *
  * Webview messages: NavigateToReferencedModelCommand, GetFormReferenceStatusCommand.
  */
-export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks } {
+export function register(deps: BridgeSharedDeps): { participants: EditorSessionParticipant[] } {
     // The model-navigation brain is `vscode`-free, so it runs unmodified here:
     // the locator searches via NodeWorkspace's findFiles/readFile/readDirectory,
     // and the service surfaces results through the same notifier/picker the host
@@ -33,34 +36,15 @@ export function register(deps: BridgeSharedDeps): { sessionHooks: SessionHooks }
         deps.notifier,
     );
 
-    // Mirrors `navigateToReferencedModelHandler` on the VS Code host: an
-    // unknown discriminant is rejected with a warning rather than falling
-    // through to "decision" by default — defence in depth against a
-    // malformed webview message ever opening the wrong kind of file.
     deps.router
-        .on("NavigateToReferencedModelCommand", async (cmd, editorId) => {
-            if (
-                cmd.referenceKind !== "process" &&
-                cmd.referenceKind !== "decision" &&
-                cmd.referenceKind !== "form"
-            ) {
-                deps.notifier.logWarning(
-                    `Ignoring NavigateToReferencedModelCommand with unknown kind: ${String(
-                        cmd.referenceKind,
-                    )}`,
-                );
-                return;
-            }
-            const sourceFsPath = deps.store.requireHandle(editorId).documentFsPath();
-            await modelNavigationService.navigate(cmd.referenceId, cmd.referenceKind, sourceFsPath);
-        })
-        .on("GetFormReferenceStatusCommand", async (_message, editorId) => {
-            await formReferenceStatusService.requestStatus(editorId);
-        });
+        .on(
+            "NavigateToReferencedModelCommand",
+            navigateToReferencedModelHandler(deps.store, modelNavigationService, deps.notifier),
+        )
+        .on(
+            "GetFormReferenceStatusCommand",
+            getFormReferenceStatusHandler(formReferenceStatusService),
+        );
 
-    return {
-        sessionHooks: {
-            onSessionDisposed: (editorId) => formReferenceStatusService.disposeEditor(editorId),
-        },
-    };
+    return { participants: [new FormReferenceStatusParticipant(formReferenceStatusService)] };
 }

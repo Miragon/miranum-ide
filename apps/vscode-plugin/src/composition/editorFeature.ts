@@ -27,13 +27,18 @@ import {
     FocusLintElementController,
     FOCUS_LINT_ELEMENT_CMD,
 } from "../modeler/bpmn/controller/FocusLintElementController";
-import { NodeBpmnLinter } from "@miragon/bpmn-modeler-core";
+import {
+    BpmnlintParticipant,
+    BpmnSettingsParticipant,
+    DefinitionSearchParticipant,
+    DeploymentStatusParticipant,
+    ElementTemplatesParticipant,
+    EngineVersionStatusBarParticipant,
+    FormReferenceStatusParticipant,
+    NodeBpmnLinter,
+} from "@miragon/bpmn-modeler-core";
 import { VsCodeDiagnostics } from "../shared/infrastructure/VsCodeDiagnostics";
 import { BpmnRenderParticipant } from "../modeler/bpmn/controller/editor-participants/BpmnRenderParticipant";
-import { ElementTemplatesParticipant } from "../modeler/bpmn/controller/editor-participants/ElementTemplatesParticipant";
-import { BpmnlintParticipant } from "../modeler/bpmn/controller/editor-participants/BpmnlintParticipant";
-import { SettingsParticipant } from "../modeler/bpmn/controller/editor-participants/SettingsParticipant";
-import { EngineVersionStatusBarParticipant } from "../modeler/bpmn/controller/editor-participants/EngineVersionStatusBarParticipant";
 import { ScriptTaskTeardownParticipant } from "../modeler/bpmn/controller/editor-participants/ScriptTaskTeardownParticipant";
 import { ScriptManifestParticipant } from "../modeler/bpmn/controller/editor-participants/ScriptManifestParticipant";
 import { DmnRenderParticipant } from "../modeler/dmn/controller/editor-participants/DmnRenderParticipant";
@@ -42,31 +47,33 @@ import { FormRenderParticipant } from "../modeler/form/controller/editor-partici
 import { FormValuesParticipant } from "../modeler/form/controller/editor-participants/FormValuesParticipant";
 import { FormValuesController } from "../modeler/form/controller/FormValuesController";
 import {
-    getBpmnFileHandler,
-    getElementTemplatesHandler,
-    getBpmnlintConfigHandler,
-    getBpmnModelerSettingHandler,
-    resyncScriptTasksHandler,
-    getPropertiesPanelStateHandler,
-    setPropertiesPanelStateHandler,
-    setLintingEnabledHandler,
-    updateLintResultsHandler,
-    getClipboardHandler,
-    setClipboardHandler,
-    getTextClipboardHandler,
-    setTextClipboardHandler,
-    syncDocumentHandler,
-    openScriptEditorHandler,
     cleanupReportHandler,
     diagramFormattedHandler,
+    getBpmnFileHandler,
+    getBpmnlintConfigHandler,
+    getBpmnModelerSettingHandler,
+    getClipboardHandler,
+    getElementTemplatesHandler,
+    getFormReferenceStatusHandler,
+    getPropertiesPanelStateHandler,
+    getTextClipboardHandler,
+    navigateToImplementationHandler,
+    navigateToReferencedModelHandler,
+    searchWorkspaceDefinitionsHandler,
+    setClipboardHandler,
+    setPropertiesPanelStateHandler,
+    setTextClipboardHandler,
+    syncActivitiesHandler,
+    syncDocumentHandler,
+    updateLintResultsHandler,
+} from "@miragon/bpmn-modeler-core";
+import {
+    openScriptEditorHandler,
     openScriptEditorsHandler,
+    resyncScriptTasksHandler,
+    setLintingEnabledHandler,
     updateScriptSourceHandler,
     updateScriptVariablesHandler,
-    navigateToReferencedModelHandler,
-    navigateToImplementationHandler,
-    syncActivitiesHandler,
-    getFormReferenceStatusHandler,
-    searchWorkspaceDefinitionsHandler,
 } from "../modeler/bpmn/controller/webview-handlers/bpmnMessageHandlers";
 import {
     getDmnFileHandler,
@@ -89,12 +96,9 @@ import {
 } from "@miragon/bpmn-modeler-core";
 import { TemplateMarketplaceService } from "@miragon/bpmn-modeler-core";
 import { CodeLinkHandles } from "./codeLinkFeature";
-import { DeploymentStatusParticipant } from "../deployment/controller/editor-participants/DeploymentStatusParticipant";
 import { SharedDeps } from "./sharedDeps";
 import { FormReferenceStatusService } from "../navigation";
 import { DefinitionSearchService, WorkspaceDefinitionIndex } from "../definitionSearch";
-import { FormReferenceStatusParticipant } from "../navigation/controller/editor-participants/FormReferenceStatusParticipant";
-import { DefinitionSearchParticipant } from "../definitionSearch/controller/editor-participants/DefinitionSearchParticipant";
 
 /**
  * Lifecycle-bearing collaborators owned by sibling features that the editor
@@ -348,7 +352,7 @@ export function register(
                 deps.statusBar,
                 deps.notifier,
             ),
-            new SettingsParticipant(settingsBroadcaster),
+            new BpmnSettingsParticipant(settingsBroadcaster),
             new EngineVersionStatusBarParticipant(deps.statusBar, deps.vsDocument),
             deploymentStatusParticipant,
             new ScriptTaskTeardownParticipant(scriptTaskSvc, scriptVariableStore),

@@ -288,11 +288,11 @@ describe("VsCodeEditorHandle.dispose", () => {
     });
 });
 
-describe("VsCodeEditorHandle.onDidBecomeActive", () => {
-    it("fires only for view-state changes that leave the panel active", () => {
+describe("VsCodeEditorHandle.onDidChangeActive", () => {
+    it("reports the panel's focus state on every view-state change", () => {
         const panel = makePanel();
-        const becameActive = vi.fn();
-        createHandle(panel, makeDocument()).onDidBecomeActive(becameActive);
+        const activeChanged = vi.fn();
+        createHandle(panel, makeDocument()).onDidChangeActive(activeChanged);
         const viewStateChanged = panel.onDidChangeViewState.mock.calls[0][0] as () => void;
 
         panel.active = false;
@@ -300,7 +300,7 @@ describe("VsCodeEditorHandle.onDidBecomeActive", () => {
         panel.active = true;
         viewStateChanged();
 
-        expect(becameActive).toHaveBeenCalledOnce();
+        expect(activeChanged.mock.calls).toEqual([[false], [true]]);
     });
 });
 

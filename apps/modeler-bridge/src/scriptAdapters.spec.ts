@@ -35,7 +35,6 @@ function createEditor() {
     const host = createTestHost({ files: { [SCRIPT_FILE]: "a" } });
     const modelerEditor = host.openEditor(EDITOR_PATH);
     const rpc = { notify: vi.fn(), request: vi.fn(), on: vi.fn() };
-    const settings = {};
     const manifestSvc = {};
     const artifactSvc = {};
 
@@ -44,7 +43,7 @@ function createEditor() {
         host.picker,
         rpc as never,
         host.notifier,
-        settings as never,
+        host.settings,
         manifestSvc as never,
         host.workspace,
         artifactSvc as never,
@@ -196,20 +195,16 @@ describe("BridgeScriptEditor materialise + adopt-on-open", () => {
     }
 
     function createFullEditor(files: Record<string, string> = {}) {
-        const host = createTestHost({ files });
+        const host = createTestHost({ files, settings: { scriptingSpin: false } });
         const modelerEditor = host.openEditor(FULL_EDITOR_PATH);
         const rpc = { notify: vi.fn(), request: vi.fn(), on: vi.fn() };
-        const settings = {
-            getConfigFolder: vi.fn(() => ".camunda"),
-            getScriptingSpin: vi.fn(() => false),
-        };
 
         const editor = new BridgeScriptEditor(
             host.store,
             host.picker,
             rpc as never,
             host.notifier,
-            settings as never,
+            host.settings,
             {} as never,
             host.workspace,
             {} as never,

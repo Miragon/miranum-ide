@@ -23,10 +23,9 @@ import {
     FORM_VIEW_TYPE,
     UserCancelledError,
 } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../shared/infrastructure/VsCodeNotifier";
 import { VsCodeTextEditor } from "../../../shared/infrastructure/VsCodeTextEditor";
-import { VsCodePicker } from "../../../shared/infrastructure/VsCodePicker";
 import { BpmnLayoutService, BpmnModelerService } from "@miragon/bpmn-modeler-core";
+import { NotifierPort, PickerPort } from "@miragon/bpmn-modeler-core";
 import { BpmnMigrationService } from "../../../migration/index";
 import type { EditorFlushResult } from "../../editor-session/DocumentSaveFlushController";
 
@@ -62,11 +61,11 @@ export class CommandController {
     constructor(
         private readonly editorStore: EditorSessionStore,
         private readonly vsDocument: EditorSessionDocuments,
-        private readonly notifier: VsCodeNotifier,
+        private readonly notifier: NotifierPort,
         private readonly textEditor: VsCodeTextEditor,
         private readonly bpmnService: BpmnModelerService,
         private readonly migrationSvc: BpmnMigrationService,
-        private readonly picker: VsCodePicker,
+        private readonly picker: PickerPort,
         private readonly documentFlush: DocumentFlusher,
         private readonly layoutSvc: BpmnLayoutService,
     ) {}

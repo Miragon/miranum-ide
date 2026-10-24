@@ -1,8 +1,8 @@
-import { DefinitionSearchService } from "../../index";
 import {
     EditorSessionContext,
     EditorSessionParticipant,
-} from "../../../modeler/editor-session/EditorSessionParticipant";
+} from "../../shared/domain/EditorSessionParticipant";
+import { DefinitionSearchService } from "../service/DefinitionSearchService";
 
 /** Releases the definition index's watchers when their BPMN editor session closes. */
 export class DefinitionSearchParticipant implements EditorSessionParticipant {

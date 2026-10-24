@@ -72,8 +72,8 @@ describe("bridge script editor (real core over a fake transport)", () => {
         const root = await fs.mkdtemp(join(tmpdir(), "modeler-bridge-script-"));
         const sourcePath = join(root, "source.bpmn");
         await fs.writeFile(sourcePath, C7_XML, "utf8");
-        // Written before session/register so the script feature's onSessionRegistered
-        // hook reads it into the editor's manifest source. The manifest now lives
+        // Written before session/register so the script feature's session
+        // participant reads it into the editor's manifest source. The manifest now lives
         // under `<configFolder>/vars/<relBpmn>.vars.json`, not beside the diagram.
         if (options?.manifest !== undefined) {
             const varsDir = join(root, ".camunda", "vars");

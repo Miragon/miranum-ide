@@ -1,6 +1,6 @@
 ---
 name: vscode-webviews
-description: VS Code webview internals — HTML serving, CSP, postMessage protocol, state persistence, theming. Use when working on webview HTML, postMessage, CSP, theme handling, vscode.getState/setState, acquireVsCodeApi, webview.asWebviewUri, retainContextWhenHidden, nonce generation, content security policy, or the Query/Command message protocol between extension host and webview.
+description: VS Code webview internals — HTML serving, CSP and nonces, the Query/Command postMessage protocol, state persistence and theming. Use when changing webview HTML, messaging or getState/setState.
 ---
 
 # VS Code Webviews
@@ -108,9 +108,9 @@ host.postMessage(command);
 
 ### Receiving Messages
 
-**Host receives Commands** — the host side uses an open/closed `WebviewMessageRouter` (one per editor) instead of a `switch`. The generic `ModelerEditorController` forwards every message into the router; handlers are small factories registered in `composition/editorFeature.ts`:
+**Host receives Commands** — the host side uses an open/closed `WebviewMessageRouter` (one per editor) instead of a `switch`. The core `EditorSessionLifecycle` (run by `ModelerEditorController` in VS Code and by the IntelliJ bridge) forwards every message into the router; handlers are small factories, host-agnostic ones in `libs/modeler-core`, registered in `composition/editorFeature.ts`:
 ```typescript
-// handler factory (modeler/bpmn/controller/webview-handlers/bpmnMessageHandlers.ts)
+// handler factory (libs/modeler-core/src/modeler/bpmn/infrastructure/bpmnDocumentHandlers.ts)
 export function syncDocumentHandler(bpmnService: BpmnModelerService): MessageHandler {
   return async (message, editorId) =>
     bpmnService.sync(editorId, (message as SyncDocumentCommand).content);
@@ -122,7 +122,7 @@ const router = new WebviewMessageRouter()
   .on('GetClipboardCommand', getClipboardHandler(clipboardMediator))
   .on('SetClipboardCommand', setClipboardHandler(clipboardMediator));
 
-// dispatch (ModelerEditorController) — bracketed by received/processed log lines
+// dispatch (EditorSessionLifecycle) — bracketed by received/processed log lines
 editorStore.subscribeToMessageEvent(editorId, (message, id) => router.dispatch(message, id));
 ```
 Adding a webview command is "register one more handler" — no shared `switch` to edit. Multiple handlers can register for the same type and run in registration order.

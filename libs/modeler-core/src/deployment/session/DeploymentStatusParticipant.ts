@@ -1,9 +1,8 @@
-import { DeploymentStatusService } from "@miragon/bpmn-modeler-core";
-
 import {
     EditorSessionContext,
     EditorSessionParticipant,
-} from "../../../modeler/editor-session/EditorSessionParticipant";
+} from "../../shared/domain/EditorSessionParticipant";
+import { DeploymentStatusService } from "../service/DeploymentStatusService";
 
 /**
  * Coalescing window for re-rendering the deployment freshness dot on diagram
@@ -14,9 +13,8 @@ const REFRESH_DEBOUNCE_MS = 300;
 
 /**
  * Drives the deployment status-bar dot for a BPMN session: refreshes freshness
- * while the panel is focused, re-evaluates it (debounced) on document edits, and
- * hides the item when the editor loses focus or is disposed. Mirrors the focus
- * lifecycle of the engine-version and bpmnlint participants.
+ * while the editor is focused, re-evaluates it (debounced) on document edits,
+ * and hides the item when the editor loses focus or is disposed.
  *
  * A single instance serves every editor, so the debounce timers are keyed by
  * editorId.
@@ -28,8 +26,8 @@ export class DeploymentStatusParticipant implements EditorSessionParticipant {
     constructor(private readonly statusService: DeploymentStatusService) {}
 
     onResolve(session: EditorSessionContext): void {
-        const subscription = session.panel.onDidChangeViewState(() => {
-            if (session.panel.active) {
+        session.onFocusChange((focused) => {
+            if (focused) {
                 this.focusedEditorId = session.editorId;
                 void this.statusService.refresh(session.editorId);
             } else {
@@ -37,11 +35,10 @@ export class DeploymentStatusParticipant implements EditorSessionParticipant {
                 this.hideFor(session.editorId);
             }
         });
-        session.addDisposable(subscription);
 
         session.onDocumentChange((event) => {
             if (
-                session.panel.active &&
+                session.isFocused() &&
                 event.hasContentChanges() &&
                 event.documentUriString() === session.editorId
             ) {
@@ -53,7 +50,7 @@ export class DeploymentStatusParticipant implements EditorSessionParticipant {
             this.cancelRefresh(session.editorId);
             this.hideFor(session.editorId);
         });
-        if (session.panel.active) {
+        if (session.isFocused()) {
             this.focusedEditorId = session.editorId;
             void this.statusService.refresh(session.editorId);
         }
@@ -79,7 +76,7 @@ export class DeploymentStatusParticipant implements EditorSessionParticipant {
             session.editorId,
             setTimeout(() => {
                 this.refreshTimers.delete(session.editorId);
-                if (session.panel.active) void this.statusService.refresh(session.editorId);
+                if (session.isFocused()) void this.statusService.refresh(session.editorId);
             }, REFRESH_DEBOUNCE_MS),
         );
     }

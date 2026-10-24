@@ -64,8 +64,12 @@ const vscodeMocks = vi.hoisted(() => {
         TestEventEmitter,
         TestTabInputText,
         executeCommand: vi.fn(),
-        registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
-        registerFileSystemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+        registerCommand: vi.fn((..._args: unknown[]) => ({ dispose: vi.fn() })),
+        registerFileSystemProvider: vi.fn(
+            (_scheme: string, _provider: RegisteredFileSystemProvider, _options: object) => ({
+                dispose: vi.fn(),
+            }),
+        ),
         openTextDocument: vi.fn(),
         onDidChangeTextDocument: vi.fn(),
         onDidChangeTabs: vi.fn(),
@@ -91,6 +95,16 @@ interface TestDocument {
     uri: TestUri;
     getText(): string;
     save(): Promise<boolean>;
+}
+
+interface RegisteredFileSystemProvider {
+    readFile(uri: TestUri): Uint8Array;
+    writeFile(
+        uri: TestUri,
+        content: Uint8Array,
+        options: { create: boolean; overwrite: boolean },
+    ): void;
+    onDidChangeFile(listener: (events: { type: number; uri: TestUri }[]) => void): unknown;
 }
 
 vi.mock("vscode", () => ({
@@ -137,8 +151,9 @@ vi.mock("vscode", () => ({
         get textDocuments() {
             return vscodeMocks.textDocuments;
         },
-        registerFileSystemProvider: (...args: unknown[]) =>
-            vscodeMocks.registerFileSystemProvider(...args),
+        registerFileSystemProvider: (
+            ...args: Parameters<typeof vscodeMocks.registerFileSystemProvider>
+        ) => vscodeMocks.registerFileSystemProvider(...args),
         openTextDocument: (...args: unknown[]) => vscodeMocks.openTextDocument(...args),
         onDidChangeTextDocument: (listener: typeof vscodeMocks.documentChangeListener) => {
             vscodeMocks.documentChangeListener = listener;
@@ -164,23 +179,14 @@ const EDITOR_ID = `file://${EDITOR_PATH}`;
 function setup() {
     const host = createTestHost();
     const editor = host.openEditor(EDITOR_PATH);
-    const notifier = { logError: vi.fn() };
-    const controller = new FormValuesController(host.store, notifier as never);
+    const controller = new FormValuesController(host.store, host.notifier);
     const context = { subscriptions: [] as { dispose(): unknown }[] };
     controller.register(context as never);
     controller.registerSession(EDITOR_ID);
-    return { controller, host, editor, notifier, context };
+    return { controller, host, editor, context };
 }
 
-function registeredProvider(call: number): {
-    readFile(uri: TestUri): Uint8Array;
-    writeFile(
-        uri: TestUri,
-        content: Uint8Array,
-        options: { create: boolean; overwrite: boolean },
-    ): void;
-    onDidChangeFile(listener: (events: { type: number; uri: TestUri }[]) => void): unknown;
-} {
+function registeredProvider(call: number): RegisteredFileSystemProvider {
     return vscodeMocks.registerFileSystemProvider.mock.calls[call][1];
 }
 
@@ -398,9 +404,8 @@ describe("FormValuesController", () => {
         });
         const tab = { input: new TabInputText(uri as never) };
         vscodeMocks.openTabGroups = [{ tabs: [tab] }];
-        const controller = new FormValuesController(createTestHost().store, {
-            logError: vi.fn(),
-        } as never);
+        const host = createTestHost();
+        const controller = new FormValuesController(host.store, host.notifier);
 
         controller.register({ subscriptions: [] } as never);
         await Promise.resolve();

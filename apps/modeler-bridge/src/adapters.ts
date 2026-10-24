@@ -23,6 +23,7 @@ import {
     DeployedRevision,
     DeploymentFreshness,
     DeploymentStatePort,
+    DocumentChangeEvent,
     DocumentPort,
     EditorHandle,
     EditorSubscription,
@@ -153,7 +154,10 @@ export class RpcEditorHandle implements EditorHandle {
 
     private receiveCallback?: (message: Command) => void;
     private readonly disposeCallbacks: Array<() => void> = [];
+    private readonly activeCallbacks = new Set<(active: boolean) => void>();
     private readonly subscriptions: EditorSubscription[] = [];
+    private active = false;
+    private disposed = false;
 
     constructor(
         private readonly meta: SessionMeta,
@@ -218,7 +222,14 @@ export class RpcEditorHandle implements EditorHandle {
     }
 
     isActive(): boolean {
-        return true;
+        return this.active;
+    }
+
+    /** The host reports tab focus through the store's active editor, which drives this. */
+    setActive(active: boolean): void {
+        if (active === this.active) return;
+        this.active = active;
+        [...this.activeCallbacks].forEach((callback) => callback(active));
     }
 
     addSubscription(subscription: EditorSubscription): void {
@@ -226,6 +237,8 @@ export class RpcEditorHandle implements EditorHandle {
     }
 
     dispose(): void {
+        if (this.disposed) return;
+        this.disposed = true;
         this.disposeCallbacks.forEach((callback) => callback());
         this.subscriptions.forEach((subscription) => subscription.dispose());
     }
@@ -246,14 +259,25 @@ export class RpcEditorHandle implements EditorHandle {
         return { dispose: () => {} };
     }
 
-    // The host owns the editor and re-registers on its own state changes, so
-    // these lifecycle events have nothing to fire here.
-    onDidBecomeActive(): EditorSubscription {
-        return { dispose: () => {} };
+    onDidChangeActive(callback: (active: boolean) => void): EditorSubscription {
+        this.activeCallbacks.add(callback);
+        return { dispose: () => this.activeCallbacks.delete(callback) };
     }
 
-    onDidChangeDocument(): EditorSubscription {
-        return { dispose: () => {} };
+    /**
+     * Fires for every mirrored content change of this document — an external
+     * `document/didChange` and the acknowledged core write alike, as VS Code's
+     * text-document event does.
+     */
+    onDidChangeDocument(callback: (event: DocumentChangeEvent) => void): EditorSubscription {
+        return this.mirror.onDidChangeContent((editorId) => {
+            if (editorId !== this.id) return;
+            callback({
+                hasContentChanges: () => true,
+                documentUriString: () => this.meta.uriString,
+                documentPath: () => this.meta.path,
+            });
+        });
     }
 
     /**

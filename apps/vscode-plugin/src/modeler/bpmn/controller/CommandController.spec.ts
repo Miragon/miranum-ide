@@ -75,7 +75,6 @@ import { supportedModelerLanguages } from "@miragon/bpmn-modeler-i18n-extras";
 import { getLatestVersion } from "@miragon/bpmn-modeler-core";
 import { createTestHost, PickerAnswers } from "@miragon/bpmn-modeler-core/testing";
 
-import { VsCodePicker } from "../../../shared/infrastructure/VsCodePicker";
 import { CommandController } from "./CommandController";
 
 /**
@@ -86,7 +85,6 @@ import { CommandController } from "./CommandController";
 function createController(answers: PickerAnswers = {}) {
     const host = createTestHost({ answers });
     const editor = host.openEditor("/work/diagram.bpmn");
-    const notifier = { openLoggingConsole: vi.fn(), logError: vi.fn(), logInfo: vi.fn() };
     const textEditor = { toggle: vi.fn().mockResolvedValue(true) };
     const bpmnService = { changeEngineVersion: vi.fn().mockResolvedValue(true) };
     const migrationSvc = { migrateAllDiagrams: vi.fn().mockResolvedValue(true) };
@@ -94,23 +92,25 @@ function createController(answers: PickerAnswers = {}) {
         flush: vi.fn().mockResolvedValue({ status: "safe" as const, session: editor }),
         release: vi.fn(),
     };
+    const layoutSvc = { format: vi.fn(), inspectCleanup: vi.fn() };
 
     const controller = new CommandController(
         host.store,
         host.documents,
-        notifier as never,
+        host.notifier,
         textEditor as never,
         bpmnService as never,
         migrationSvc as never,
-        host.picker as unknown as VsCodePicker,
+        host.picker,
         documentFlush as never,
+        layoutSvc as never,
     );
 
     return {
         controller,
         host,
         editor,
-        notifier,
+        notifier: host.notifier,
         textEditor,
         bpmnService,
         migrationSvc,
@@ -201,7 +201,7 @@ describe("CommandController.showLogging", () => {
 
         controller.showLogging();
 
-        expect(notifier.openLoggingConsole).toHaveBeenCalledOnce();
+        expect(notifier.loggingConsoleOpened).toBe(true);
     });
 });
 
@@ -284,9 +284,7 @@ describe("CommandController SVG request lifecycle", () => {
         controller.writeToClipboard();
         await Promise.resolve();
 
-        expect(notifier.logError).toHaveBeenCalledWith(
-            expect.objectContaining({ message: "The active editor is hidden." }),
-        );
+        expect(notifier.logged("error")).toEqual(["The active editor is hidden."]);
     });
 
     it("disposes the prior subscription before re-subscribing", () => {
@@ -352,7 +350,7 @@ describe("CommandController.writeToFile", () => {
         expect((uriArg as { path: string }).path).toBe("/work/diagram.svg");
         expect(Buffer.isBuffer(bufferArg)).toBe(true);
         expect((bufferArg as Buffer).toString()).toBe("<svg/>");
-        expect(notifier.logInfo).toHaveBeenCalledWith("Diagram SVG exported to /work/diagram.svg");
+        expect(notifier.logged("info")).toEqual(["Diagram SVG exported to /work/diagram.svg"]);
     });
 
     it("logs an error when the file write rejects", async () => {
@@ -365,8 +363,8 @@ describe("CommandController.writeToFile", () => {
         await Promise.resolve();
         await Promise.resolve();
 
-        expect(notifier.logError).toHaveBeenCalledWith(failure);
-        expect(notifier.logInfo).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual(["EACCES"]);
+        expect(notifier.logged("info")).toEqual([]);
     });
 
     it("does not write a file when the svg payload is empty", () => {
@@ -387,7 +385,7 @@ describe("CommandController command error surfacing", () => {
         configUpdateMock.mockRejectedValueOnce(failure);
 
         await expect(controller.changeLanguage()).rejects.toThrow(failure);
-        expect(notifier.logError).toHaveBeenCalledWith(failure);
+        expect(notifier.logged("error")).toEqual(["update denied"]);
     });
 
     it("logs and rethrows when changeEngineVersion rejects", async () => {
@@ -396,7 +394,7 @@ describe("CommandController command error surfacing", () => {
         bpmnService.changeEngineVersion.mockRejectedValueOnce(failure);
 
         await expect(controller.changeEngineVersion()).rejects.toThrow(failure);
-        expect(notifier.logError).toHaveBeenCalledWith(failure);
+        expect(notifier.logged("error")).toEqual(["engine change failed"]);
     });
 });
 

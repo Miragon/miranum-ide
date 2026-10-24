@@ -1,33 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("vscode", () => ({
-    Uri: { file: (path: string) => ({ scheme: "file", path, fsPath: path }) },
-}));
-
 import {
     GetFormReferenceStatusCommand,
     NavigateToReferencedModelCommand,
 } from "@miragon/bpmn-modeler-shared";
-import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
+import { createTestHost } from "../../testing";
 
 import {
     getFormReferenceStatusHandler,
     navigateToReferencedModelHandler,
-} from "./bpmnMessageHandlers";
+} from "./navigationMessageHandlers";
 
 function createHandler() {
     const host = createTestHost();
     const editor = host.openEditor("/src/a.bpmn");
     host.openEditor("/src/b.bpmn");
     const modelNavigationService = { navigate: vi.fn().mockResolvedValue(undefined) };
-    const notifier = { logWarning: vi.fn() };
 
     const handler = navigateToReferencedModelHandler(
         host.store,
         modelNavigationService as never,
-        notifier as never,
+        host.notifier,
     );
-    return { handler, editor, modelNavigationService, notifier };
+    return { handler, editor, modelNavigationService, notifier: host.notifier };
 }
 
 beforeEach(() => {
@@ -83,9 +78,9 @@ describe("navigateToReferencedModelHandler", () => {
 
         await handler(malformed as never, editor.id);
 
-        expect(notifier.logWarning).toHaveBeenCalledWith(
-            expect.stringContaining("unknown kind: anything"),
-        );
+        expect(notifier.logged("warning")).toEqual([
+            "Ignoring NavigateToReferencedModelCommand with unknown kind: anything",
+        ]);
         expect(modelNavigationService.navigate).not.toHaveBeenCalled();
     });
 });

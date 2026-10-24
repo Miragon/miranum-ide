@@ -1,27 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("vscode", () => ({
-    Uri: { file: (path: string) => ({ scheme: "file", path, fsPath: path }) },
-}));
-
 import { NavigateToImplementationCommand } from "@miragon/bpmn-modeler-shared";
-import { createTestHost } from "@miragon/bpmn-modeler-core/testing";
+import { createTestHost } from "../../testing";
 
-import { navigateToImplementationHandler } from "./bpmnMessageHandlers";
+import { navigateToImplementationHandler } from "./codeLinkMessageHandlers";
 
 function createHandler() {
     const host = createTestHost();
     const editor = host.openEditor("/src/a.bpmn");
     host.openEditor("/src/b.bpmn");
     const implementationNavigationService = { navigate: vi.fn().mockResolvedValue(undefined) };
-    const notifier = { logWarning: vi.fn() };
 
     const handler = navigateToImplementationHandler(
         host.store,
         implementationNavigationService as never,
-        notifier as never,
+        host.notifier,
     );
-    return { handler, editor, implementationNavigationService, notifier };
+    return { handler, editor, implementationNavigationService, notifier: host.notifier };
 }
 
 beforeEach(() => {
@@ -68,9 +63,9 @@ describe("navigateToImplementationHandler", () => {
 
         await handler(malformed as never, editor.id);
 
-        expect(notifier.logWarning).toHaveBeenCalledWith(
-            expect.stringContaining("unknown kind: anything"),
-        );
+        expect(notifier.logged("warning")).toEqual([
+            "Ignoring NavigateToImplementationCommand with unknown kind: anything",
+        ]);
         expect(implementationNavigationService.navigate).not.toHaveBeenCalled();
     });
 });

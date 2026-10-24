@@ -1,8 +1,5 @@
 import { DmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
-import {
-    EditorSessionContext,
-    EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+import { EditorSessionContext, EditorSessionParticipant } from "@miragon/bpmn-modeler-core";
 
 /**
  * Wires the DMN settings + language broadcast for a session, so the webview

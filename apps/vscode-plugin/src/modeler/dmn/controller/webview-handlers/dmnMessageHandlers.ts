@@ -1,9 +1,9 @@
 import { Command, SyncDocumentCommand } from "@miragon/bpmn-modeler-shared";
 
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
 import { MessageHandler } from "@miragon/bpmn-modeler-core";
 import { DmnModelerService } from "@miragon/bpmn-modeler-core";
 import { DmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
+import { NotifierPort } from "@miragon/bpmn-modeler-core";
 
 /**
  * Factories that translate DMN webview commands into {@link DmnModelerService}
@@ -14,7 +14,7 @@ import { DmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
 /** `GetDmnFileCommand` → render the diagram, logging readiness on success. */
 export function getDmnFileHandler(
     dmnService: DmnModelerService,
-    notifier: VsCodeNotifier,
+    notifier: NotifierPort,
 ): MessageHandler {
     return async (_message: Command, editorId: string) => {
         if (await dmnService.display(editorId)) {

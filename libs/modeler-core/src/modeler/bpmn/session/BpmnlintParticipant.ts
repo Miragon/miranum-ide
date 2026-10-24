@@ -1,14 +1,13 @@
 import {
-    BpmnLintConfigLocator,
-    BpmnLintConfigService,
-    BpmnlintChangeTarget,
-} from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
-import { VsCodeStatusBar } from "../../../../shared/infrastructure/VsCodeStatusBar";
-import {
     EditorSessionContext,
     EditorSessionParticipant,
-} from "../../../editor-session/EditorSessionParticipant";
+} from "../../../shared/domain/EditorSessionParticipant";
+import { NotifierPort, StatusBarPort } from "../../../shared/domain/hostPorts";
+import {
+    BpmnLintConfigLocator,
+    BpmnlintChangeTarget,
+} from "../../../shared/service/BpmnLintConfigLocator";
+import { BpmnLintConfigService } from "../service/BpmnLintConfigService";
 
 /**
  * Coalescing window for re-linting on diagram edits. Linting runs in the host
@@ -19,11 +18,11 @@ const RELINT_DEBOUNCE_MS = 400;
 
 /**
  * Drives host-side bpmnlint for a BPMN session: re-lints on document change
- * (debounced), on `configFolder` setting changes, and whenever the `.bpmnlintrc`
- * changes on disk; the initial lint is triggered by the webview's
- * `GetBpmnlintConfigCommand` on load. The status item tracks editor focus and is
- * cleared — along with the published diagnostics — on dispose so neither lingers
- * for a closed editor (mirrors {@link EngineVersionStatusBarParticipant}).
+ * (debounced), on `configFolder` / `linting.enabled` setting changes, and
+ * whenever the `.bpmnlintrc` changes on disk; the initial lint is triggered by
+ * the webview's `GetBpmnlintConfigCommand` on load. The status item tracks editor
+ * focus and is cleared — along with the published diagnostics — on dispose so
+ * neither lingers for a closed editor.
  *
  * A single instance serves every editor, so the debounce timers are keyed by
  * editorId.
@@ -34,8 +33,8 @@ export class BpmnlintParticipant implements EditorSessionParticipant {
     constructor(
         private readonly lintSvc: BpmnLintConfigService,
         private readonly locator: BpmnLintConfigLocator,
-        private readonly statusBar: VsCodeStatusBar,
-        private readonly notifier: VsCodeNotifier,
+        private readonly statusBar: StatusBarPort,
+        private readonly notifier: NotifierPort,
     ) {}
 
     async onResolve(session: EditorSessionContext): Promise<void> {
@@ -44,16 +43,15 @@ export class BpmnlintParticipant implements EditorSessionParticipant {
                 event.affectsConfiguration("miragon.bpmnModeler.configFolder") ||
                 event.affectsConfiguration("miragon.bpmnModeler.linting.enabled")
             ) {
-                this.lintSvc.setBpmnlintConfig(editorId, session.panel.active);
+                this.lintSvc.setBpmnlintConfig(editorId, session.isFocused());
             }
         });
 
-        // Re-lint on edits: the custom text editor syncs webview edits into the
-        // TextDocument, so the host always lints the current XML. Filter to this
-        // session's `.bpmn` document so an edit elsewhere never re-lints it.
-        // In-page sessions (no workspace config) lint in the
-        // webview on every diagram change already, so a host re-lint would be
-        // pure churn — skip it and let the webview's own push drive the chrome.
+        // Re-lint on edits so the host always lints the current XML. Filter to
+        // this session's `.bpmn` document so an edit elsewhere never re-lints it.
+        // In-page sessions (no workspace config) lint in the webview on every
+        // diagram change already, so a host re-lint would be pure churn — skip it
+        // and let the webview's own push drive the chrome.
         session.onDocumentChange((event) => {
             if (
                 event.hasContentChanges() &&
@@ -65,44 +63,53 @@ export class BpmnlintParticipant implements EditorSessionParticipant {
             }
         });
 
-        const subscription = session.panel.onDidChangeViewState(() => {
-            if (session.panel.active) {
+        session.onFocusChange((focused) => {
+            if (focused) {
                 this.lintSvc.setBpmnlintConfig(session.editorId);
             } else {
                 this.statusBar.hideBpmnlintStatus();
             }
         });
-        session.addDisposable(subscription);
 
+        let watchers: { dispose(): void }[] = [];
         session.onDispose(() => {
             const timer = this.relintTimers.get(session.editorId);
             if (timer) {
                 clearTimeout(timer);
                 this.relintTimers.delete(session.editorId);
             }
+            watchers.forEach((watcher) => watcher.dispose());
             this.statusBar.hideBpmnlintStatus();
             this.lintSvc.clearDiagnostics(session.editorId);
         });
 
         const watcherTarget: BpmnlintChangeTarget = {
             setBpmnlintConfig: (editorId) =>
-                this.lintSvc.setBpmnlintConfig(editorId, session.panel.active),
+                this.lintSvc.setBpmnlintConfig(editorId, session.isFocused()),
         };
-        const { disposables, errors } = await this.locator.createWatcher(
-            session.editorId,
-            watcherTarget,
-        );
-        if (!session.isCurrent()) {
-            disposables.forEach((disposable) => disposable.dispose());
-            return;
-        }
-        for (const disposable of disposables) {
-            session.addDisposable(disposable);
-        }
-        for (const error of errors) {
-            this.notifier.showError(error.message);
-            this.notifier.logError(error);
-        }
+        const armWatchers = async (): Promise<void> => {
+            const { disposables, errors } = await this.locator.createWatcher(
+                session.editorId,
+                watcherTarget,
+            );
+            if (!session.isCurrent()) {
+                disposables.forEach((disposable) => disposable.dispose());
+                return;
+            }
+            watchers.forEach((watcher) => watcher.dispose());
+            watchers = disposables;
+            for (const error of errors) {
+                this.notifier.showError(error.message);
+                this.notifier.logError(error);
+            }
+        };
+
+        session.onReseed(async () => {
+            await armWatchers();
+            await this.lintSvc.setBpmnlintConfig(session.editorId, session.isFocused());
+        });
+
+        await armWatchers();
     }
 
     private scheduleRelint(session: EditorSessionContext): void {
@@ -114,7 +121,7 @@ export class BpmnlintParticipant implements EditorSessionParticipant {
             session.editorId,
             setTimeout(() => {
                 this.relintTimers.delete(session.editorId);
-                this.lintSvc.setBpmnlintConfig(session.editorId, session.panel.active);
+                this.lintSvc.setBpmnlintConfig(session.editorId, session.isFocused());
             }, RELINT_DEBOUNCE_MS),
         );
     }

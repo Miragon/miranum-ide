@@ -3,7 +3,9 @@ import { basename } from "node:path";
 import { Query } from "@miragon/bpmn-modeler-shared";
 import {
     BpmnModelerService,
-    dispatchInDocumentOrder,
+    EditorSessionLifecycle,
+    EditorSessionParticipant,
+    EngineVersionStatusBarParticipant,
     getBpmnFileHandler,
     registerWebviewLogHandlers,
     registerWebviewNotificationHandlers,
@@ -19,7 +21,6 @@ import {
     WebviewMessageParams,
 } from "../protocol/types";
 import { BridgeSharedDeps } from "./sharedDeps";
-import { SessionHooks } from "./sessionHooks";
 
 /** Builds a typed-but-stub host reply. The webview only reads `.type`, so a plain object is enough. */
 function query(type: string, fields: Record<string, unknown>): Query {
@@ -30,9 +31,9 @@ function query(type: string, fields: Record<string, unknown>): Query {
  * The editor-session feature is the bridge's lifecycle hub: it owns
  * {@link BpmnModelerService}, the per-editor handle registry, document sync, and
  * the register/dispose RPC. Sibling features contribute their per-session state
- * through {@link SessionHooks} (template watchers, script tabs, code-link maps),
- * so this module drives the lifecycle without importing any of them — hooks flow
- * backward, handles flow forward.
+ * as core {@link EditorSessionParticipant}s, run by the same
+ * {@link EditorSessionLifecycle} as in VS Code, so this module drives the
+ * lifecycle without importing any of them.
  *
  * Webview messages: GetBpmnFileCommand, SyncDocumentCommand,
  * GetPropertiesPanelStateCommand.
@@ -41,7 +42,7 @@ function query(type: string, fields: Record<string, unknown>): Query {
  */
 export function register(
     deps: BridgeSharedDeps,
-    sessionHooks: SessionHooks[],
+    participants: EditorSessionParticipant[],
 ): { bpmnService: BpmnModelerService } {
     const bpmnService = new BpmnModelerService(
         deps.store,
@@ -51,6 +52,20 @@ export function register(
         deps.notifier,
         deps.settings,
     );
+    // Rendering on document change stays in `document/didChange` below: the host
+    // owns the document revision here, so the render participant only scopes the
+    // modeler session.
+    const renderSession: EditorSessionParticipant = {
+        onResolve(session) {
+            bpmnService.registerSession(session.editorId);
+            session.onDispose(() => bpmnService.disposeSession(session.editorId));
+        },
+    };
+    const lifecycle = new EditorSessionLifecycle(deps.store, deps.notifier, deps.router, [
+        renderSession,
+        ...participants,
+        new EngineVersionStatusBarParticipant(deps.statusBar, deps.documentPort),
+    ]);
 
     type RegisteredHandle = { handle: RpcEditorHandle; sessionId?: number };
     const handles = new Map<string, RegisteredHandle>();
@@ -81,14 +96,17 @@ export function register(
     registerWebviewLogHandlers(deps.router, deps.notifier, resolveSource);
     registerWebviewNotificationHandlers(deps.router, deps.notifier);
 
+    // The store's active editor is the bridge's focus: the host reports the
+    // focused tab through `session/setActive`.
+    deps.store.onDidChangeActiveEditor((activeId) => {
+        for (const { handle } of handles.values()) handle.setActive(handle.id === activeId);
+    });
+
+    // Unregistering disposes the handle, which runs every participant's teardown.
     const disposeRegisteredSession = (editorId: string, entry: RegisteredHandle): void => {
-        bpmnService.disposeSession(editorId);
-        for (const hooks of sessionHooks) {
-            hooks.onSessionDisposed?.(editorId);
-        }
         const workspaceRoot = deps.mirror.peek(editorId)?.workspaceRoot;
-        if (workspaceRoot) deps.nodeWorkspace.unregisterRoot(workspaceRoot);
         deps.store.unregister(editorId, entry.handle);
+        if (workspaceRoot) deps.nodeWorkspace.unregisterRoot(workspaceRoot);
         if (handles.get(editorId) === entry) handles.delete(editorId);
         deps.mirror.remove(editorId);
     };
@@ -99,7 +117,7 @@ export function register(
         // Seed settings before any discovery so `getConfigFolder()` is correct on
         // the first template scan/watcher. Snapshots are host-global; applying the
         // same one on each register is idempotent. Kept inline (settings is a
-        // shared seam) so it precedes every hook.
+        // shared seam) so it precedes every participant.
         if (params.settings) {
             deps.settings.apply(params.settings);
         }
@@ -107,9 +125,7 @@ export function register(
         if (existing && params.sessionId !== undefined && existing.sessionId === params.sessionId) {
             deps.mirror.register(params, params.content);
             deps.store.setHostDocumentRevision(params.editorId, params.documentRevision ?? 0);
-            for (const hooks of sessionHooks) {
-                await hooks.onSessionReseeded?.(params);
-            }
+            await lifecycle.reseed(params.editorId);
             deps.log(`session re-seeded: ${params.editorId}`);
             return;
         }
@@ -120,39 +136,20 @@ export function register(
         const handle = new RpcEditorHandle(params, deps.mirror, deps.rpc, deps.settings);
         handles.set(params.editorId, { handle, sessionId: params.sessionId });
 
-        // Same wiring the VS Code controller does: route incoming webview
-        // messages through the store into the router, and arm the echo-prevention
-        // session.
         deps.store.register(handle);
+        // Registering makes the session the active editor, even when its id already was.
+        handle.setActive(true);
         deps.store.setHostDocumentRevision(params.editorId, params.documentRevision ?? 0);
-        // A rejected handler would otherwise surface as a Node unhandled rejection.
-        deps.store.subscribeToMessageEvent(params.editorId, async (message, editorId) => {
-            const session = deps.store.captureEditorSession(editorId);
-            if (!session) return;
-            const dispatch = () => deps.router.dispatch(message, editorId);
-            await dispatchInDocumentOrder(deps.store, editorId, session, message, dispatch).catch(
-                (error) => {
-                    deps.notifier.logError(
-                        error instanceof Error ? error : new Error(String(error)),
-                    );
-                },
-            );
-        });
-        bpmnService.registerSession(params.editorId);
 
-        // Seed discovery with the host's authoritative root before the hooks run.
-        // Hoisted above the hook loop is safe: the hooks it now precedes only
-        // register callbacks (broadcaster subscribe + configFolder listener) or
-        // arm the watcher, none of which read the root synchronously.
+        // Seed discovery with the host's authoritative root before the
+        // participants arm their watchers.
         if (params.workspaceRoot) {
             deps.nodeWorkspace.registerRoot(params.workspaceRoot);
         }
 
-        // Hooks run last and are awaited to preserve the promise chain
-        // `rpc.handleLine` sees (e.g. the template watcher's async creation).
-        for (const hooks of sessionHooks) {
-            await hooks.onSessionRegistered?.(params);
-        }
+        // Awaited to preserve the promise chain `rpc.handleLine` sees (e.g. the
+        // template watcher's async creation).
+        await lifecycle.open(params.editorId);
 
         deps.log(`session registered: ${params.editorId}`);
     });

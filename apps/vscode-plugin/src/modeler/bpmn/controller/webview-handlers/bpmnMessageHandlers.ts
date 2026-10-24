@@ -1,18 +1,8 @@
 import {
-    CleanupReportCommand,
     Command,
-    DiagramFormattedCommand,
-    NavigateToImplementationCommand,
-    NavigateToReferencedModelCommand,
     OpenScriptEditorCommand,
     OpenScriptEditorsCommand,
-    SearchWorkspaceDefinitionsCommand,
-    SetClipboardCommand,
     SetLintingEnabledCommand,
-    SetPropertiesPanelStateCommand,
-    SetTextClipboardCommand,
-    SyncActivitiesCommand,
-    UpdateLintResultsCommand,
     UpdateScriptSourceCommand,
     UpdateScriptVariablesCommand,
 } from "@miragon/bpmn-modeler-shared";
@@ -22,77 +12,22 @@ import { ConfigurationTarget, workspace } from "vscode";
 import { posix } from "path";
 
 import {
-    EditorSessionStore,
     materializeScriptBatch,
+    MessageHandler,
     NO_INLINE_SCRIPTS_MESSAGE,
+    NotifierPort,
     scriptBatchSummary,
     ScriptVariableStore,
     SettingsPort,
     TMP_SCRIPTING_SEGMENT,
 } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../../../shared/infrastructure/VsCodeNotifier";
-import { MessageHandler } from "@miragon/bpmn-modeler-core";
-import { BpmnClipboardMediator } from "@miragon/bpmn-modeler-core";
-import { BpmnElementTemplatesService } from "@miragon/bpmn-modeler-core";
-import { BpmnLayoutService } from "@miragon/bpmn-modeler-core";
-import { BpmnLintConfigService } from "@miragon/bpmn-modeler-core";
-import { BpmnPropertiesPanelService } from "@miragon/bpmn-modeler-core";
-import { BpmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
-import { FormReferenceStatusService, ModelNavigationService } from "../../../../navigation/index";
-import { DefinitionSearchService } from "../../../../definitionSearch/index";
-import { CodeLinkMapService, ImplementationNavigationService } from "../../../../codeLink/index";
 import { ScriptTaskService } from "../../../../scriptTask/index";
 
 /**
- * Factories that turn a transport-level webview {@link Command} into a call on
- * the owning service. Each takes only the service(s) it needs so handlers can
- * be unit-tested without constructing the whole editor controller; they are
- * registered against a {@link WebviewMessageRouter} in `main.ts`.
- *
- * Grouped by feature so they move together when features become folders.
+ * The BPMN webview handlers only VS Code has: the inline script-task editor and
+ * the linting switch, which writes the user's VS Code settings. The host-agnostic
+ * handlers live in `@miragon/bpmn-modeler-core`.
  */
-
-export { getBpmnFileHandler, syncDocumentHandler } from "@miragon/bpmn-modeler-core";
-
-/** `GetElementTemplatesCommand` → push the configured element templates. */
-export function getElementTemplatesHandler(
-    templatesSvc: BpmnElementTemplatesService,
-): MessageHandler {
-    // Await (not fire-and-forget) so a rejection propagates to the router's
-    // dispatch catch (ModelerEditorController) instead of floating off unlogged.
-    return async (_message: Command, editorId: string) => {
-        await templatesSvc.setElementTemplates(editorId);
-    };
-}
-
-/**
- * `GetBpmnlintConfigCommand` → discover and push the nearest `.bpmnlintrc`.
- */
-export function getBpmnlintConfigHandler(lintSvc: BpmnLintConfigService): MessageHandler {
-    return async (_message: Command, editorId: string) => {
-        await lintSvc.setBpmnlintConfig(editorId);
-    };
-}
-
-/**
- * `GetBpmnModelerSettingCommand` → broadcast settings and language.
- *
- * Paired in registration order with {@link resyncScriptTasksHandler}: the
- * webview re-requests settings on (re)load, which is also the moment to reload
- * inline scripts that changed while it was hidden.
- */
-export function getBpmnModelerSettingHandler(
-    settingsBroadcaster: BpmnSettingsBroadcaster,
-): MessageHandler {
-    // Preserve the original settings-then-language post order (settingsPromise is
-    // started first), but await settings so its rejection reaches the router's
-    // dispatch catch. setLanguage owns its own error handling and stays floating.
-    return async (_message: Command, editorId: string) => {
-        const settingsPromise = settingsBroadcaster.setSettings(editorId);
-        settingsBroadcaster.setLanguage(editorId);
-        await settingsPromise;
-    };
-}
 
 /**
  * Second handler for `GetBpmnModelerSettingCommand`, run on every (re)load:
@@ -104,29 +39,6 @@ export function resyncScriptTasksHandler(scriptTaskSvc: ScriptTaskService): Mess
     return async (_message: Command, editorId: string) => {
         await scriptTaskSvc.resyncOpenDocuments(editorId);
         scriptTaskSvc.syncLockState(editorId);
-    };
-}
-
-/** `GetPropertiesPanelStateCommand` → send the persisted panel visibility. */
-export function getPropertiesPanelStateHandler(
-    panelSvc: BpmnPropertiesPanelService,
-): MessageHandler {
-    return (_message: Command, editorId: string) => {
-        panelSvc.sendPropertiesPanelState(editorId);
-    };
-}
-
-/**
- * `UpdateLintResultsCommand` → feed the host's Problems panel + status bar from
- * findings the webview computed in its in-page default run. The
- * service ignores the push when the editor is no longer on the in-page path (a
- * workspace-config takeover) or when linting is disabled.
- */
-export function updateLintResultsHandler(
-    lintSvc: BpmnLintConfigService,
-): MessageHandler<UpdateLintResultsCommand> {
-    return (cmd, editorId) => {
-        lintSvc.applyWebviewLintResults(editorId, cmd.results, cmd.unresolved, cmd.configToken);
     };
 }
 
@@ -144,65 +56,6 @@ export function setLintingEnabledHandler(): MessageHandler<SetLintingEnabledComm
         await workspace
             .getConfiguration("miragon.bpmnModeler")
             .update("linting.enabled", message.enabled, ConfigurationTarget.Global);
-    };
-}
-
-/** `SetPropertiesPanelStateCommand` → persist the panel visibility. */
-export function setPropertiesPanelStateHandler(
-    panelSvc: BpmnPropertiesPanelService,
-): MessageHandler<SetPropertiesPanelStateCommand> {
-    return (message) => {
-        panelSvc.setPropertiesPanelVisibility(message.visible);
-    };
-}
-
-/** `GetClipboardCommand` → read the structured clipboard back to the webview. */
-export function getClipboardHandler(clipboardMediator: BpmnClipboardMediator): MessageHandler {
-    return (_message: Command, editorId: string) => {
-        clipboardMediator.readClipboard(editorId);
-    };
-}
-
-/** `SetClipboardCommand` → write the structured clipboard payload. */
-export function setClipboardHandler(
-    clipboardMediator: BpmnClipboardMediator,
-): MessageHandler<SetClipboardCommand> {
-    return (message) => {
-        clipboardMediator.writeClipboard(message.text);
-    };
-}
-
-/** `GetTextClipboardCommand` → read the OS text clipboard back to the webview. */
-export function getTextClipboardHandler(clipboardMediator: BpmnClipboardMediator): MessageHandler {
-    return (_message: Command, editorId: string) => {
-        clipboardMediator.readTextClipboard(editorId);
-    };
-}
-
-/** `SetTextClipboardCommand` → write the OS text clipboard. */
-export function setTextClipboardHandler(
-    clipboardMediator: BpmnClipboardMediator,
-): MessageHandler<SetTextClipboardCommand> {
-    return (message) => {
-        clipboardMediator.writeClipboard(message.text);
-    };
-}
-
-/** `DiagramFormattedCommand` → surface the outcome of a format attempt. */
-export function diagramFormattedHandler(
-    layoutSvc: BpmnLayoutService,
-): MessageHandler<DiagramFormattedCommand> {
-    return (message) => {
-        layoutSvc.reportFormatted(message);
-    };
-}
-
-/** `CleanupReportCommand` → confirm the findings, then ask for them to be applied. */
-export function cleanupReportHandler(
-    layoutSvc: BpmnLayoutService,
-): MessageHandler<CleanupReportCommand> {
-    return async (message, editorId) => {
-        await layoutSvc.reportCleanup(message, editorId);
     };
 }
 
@@ -246,7 +99,7 @@ export function openScriptEditorsHandler(
     scriptTaskSvc: ScriptTaskService,
     variableStore: ScriptVariableStore,
     settings: SettingsPort,
-    notifier: VsCodeNotifier,
+    notifier: NotifierPort,
 ): MessageHandler<OpenScriptEditorsCommand> {
     return async (cmd, editorId) => {
         if (cmd.scripts.length === 0) {
@@ -296,103 +149,5 @@ export function updateScriptSourceHandler(
             cmd.listenerIndex,
             cmd.content,
         );
-    };
-}
-
-/**
- * `NavigateToReferencedModelCommand` → jump to the referenced process/decision.
- *
- * Defence-in-depth: an unknown discriminant is rejected with a warning rather
- * than falling through, so a malformed/hostile message can't be treated as a
- * decision navigation by default.
- */
-export function navigateToReferencedModelHandler(
-    editorStore: EditorSessionStore,
-    modelNavigationService: ModelNavigationService,
-    notifier: VsCodeNotifier,
-): MessageHandler<NavigateToReferencedModelCommand> {
-    return async (cmd, editorId) => {
-        if (
-            cmd.referenceKind !== "process" &&
-            cmd.referenceKind !== "decision" &&
-            cmd.referenceKind !== "form"
-        ) {
-            notifier.logWarning(
-                `Ignoring NavigateToReferencedModelCommand with unknown kind: ${String(
-                    cmd.referenceKind,
-                )}`,
-            );
-            return;
-        }
-        const sourceFsPath = editorStore.requireHandle(editorId).documentFsPath();
-        await modelNavigationService.navigate(cmd.referenceId, cmd.referenceKind, sourceFsPath);
-    };
-}
-
-/** `GetFormReferenceStatusCommand` → push resolvable form ids to the BPMN webview. */
-export function getFormReferenceStatusHandler(
-    statusService: FormReferenceStatusService,
-): MessageHandler {
-    return async (_message: Command, editorId: string) => {
-        await statusService.requestStatus(editorId);
-    };
-}
-
-/** `SearchWorkspaceDefinitionsCommand` → answer with matching definitions of other models. */
-export function searchWorkspaceDefinitionsHandler(
-    searchService: DefinitionSearchService,
-): MessageHandler<SearchWorkspaceDefinitionsCommand> {
-    return async (message, editorId) => {
-        await searchService.search(editorId, message);
-    };
-}
-
-// The implementation kinds the host knows how to resolve. Used as a runtime
-// guard so a malformed/hostile message can't reach the locator with a bogus kind.
-const KNOWN_IMPLEMENTATION_KINDS = new Set([
-    "javaClass",
-    "delegateExpression",
-    "expression",
-    "externalTopic",
-    "jobType",
-]);
-
-/**
- * `NavigateToImplementationCommand` → jump to the task's source implementation.
- *
- * Defence-in-depth: an unknown/empty `kind` is rejected with a warning rather
- * than falling through, so a malformed message can't be resolved as an
- * arbitrary kind by default.
- */
-export function navigateToImplementationHandler(
-    editorStore: EditorSessionStore,
-    implementationNavigationService: ImplementationNavigationService,
-    notifier: VsCodeNotifier,
-): MessageHandler<NavigateToImplementationCommand> {
-    return async (cmd, editorId) => {
-        if (!KNOWN_IMPLEMENTATION_KINDS.has(cmd.kind)) {
-            notifier.logWarning(
-                `Ignoring NavigateToImplementationCommand with unknown kind: ${String(cmd.kind)}`,
-            );
-            return;
-        }
-        const sourceFsPath = editorStore.requireHandle(editorId).documentFsPath();
-        await implementationNavigationService.navigate(cmd.reference, cmd.kind, sourceFsPath);
-    };
-}
-
-/**
- * `SyncActivitiesCommand` → reconcile the editor's activity→code map.
- *
- * The map service diffs the pushed references against what it holds, does
- * filesystem work only for the delta, and pushes resolution status back to the
- * webview for context-pad visibility. Invalid entries are filtered inside the
- * service, so the handler stays a thin pass-through.
- */
-export function syncActivitiesHandler(
-    mapService: CodeLinkMapService,
-): MessageHandler<SyncActivitiesCommand> {
-    return async (message, editorId) => {
-        await mapService.syncActivities(editorId, message.entries);
     };
 }

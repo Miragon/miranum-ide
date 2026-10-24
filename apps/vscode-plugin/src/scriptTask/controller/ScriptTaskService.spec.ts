@@ -94,7 +94,6 @@ import {
     FakeEditorHandle,
     PickerAnswers,
 } from "@miragon/bpmn-modeler-core/testing";
-import { VsCodePicker } from "../../shared/infrastructure/VsCodePicker";
 
 const EDITOR_PATH = "/repo/process.bpmn";
 const EDITOR_ID = `file://${EDITOR_PATH}`;
@@ -169,7 +168,6 @@ function createService(answers: PickerAnswers = {}) {
         deleteDir: vi.fn().mockResolvedValue(undefined),
         ensureGitignore: vi.fn().mockResolvedValue(undefined),
     };
-    const notifier = { logError: vi.fn() };
     // Default: nothing diverged, so the dispose-time write-back is a no-op.
     const scriptXml = { applyScriptContents: vi.fn().mockResolvedValue(undefined) };
 
@@ -190,8 +188,8 @@ function createService(answers: PickerAnswers = {}) {
         host.store,
         scriptFiles as never,
         host.settings,
-        notifier as never,
-        host.picker as unknown as VsCodePicker,
+        host.notifier,
+        host.picker,
         scriptXml as never,
     );
     service.register({ subscriptions: [] } as never);
@@ -207,7 +205,7 @@ function createService(answers: PickerAnswers = {}) {
         host,
         editor,
         scriptFiles,
-        notifier,
+        notifier: host.notifier,
         scriptXml,
         fireDocChange,
         fireSave,
@@ -513,7 +511,7 @@ describe("ScriptTaskService.onScriptDocumentChanged", () => {
 
         await typeInScript(fireDocChange, scriptPath("groovy"), "buffered");
 
-        expect(notifier.logError).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual([]);
 
         // The editor is now armed: a resync replays the buffered edit.
         editor.hidden = false;
@@ -532,7 +530,7 @@ describe("ScriptTaskService.onScriptDocumentChanged", () => {
 
         await typeInScript(fireDocChange, scriptPath("groovy"), "next");
 
-        expect(notifier.logError).toHaveBeenCalledWith(failure);
+        expect(notifier.logged("error")).toEqual(["boom"]);
         expect(
             (service as never as { pendingResync: Set<string> }).pendingResync.has(EDITOR_ID),
         ).toBe(false);
@@ -638,7 +636,7 @@ describe("ScriptTaskService.resyncOpenDocuments", () => {
         await service.resyncOpenDocuments(EDITOR_ID);
 
         expect(contentQueries(editor)).toHaveLength(1);
-        expect(notifier.logError).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual([]);
     });
 
     it("finishes a deferred cleanup when the replayed tab is no longer open anywhere", async () => {
@@ -911,7 +909,7 @@ describe("ScriptTaskService lock broadcast", () => {
         // Let the fire-and-forget broadcast's rejection settle.
         await Promise.resolve();
 
-        expect(notifier.logError).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual([]);
     });
 });
 
@@ -1059,7 +1057,7 @@ describe("ScriptTaskService keystroke debounce", () => {
         await vi.advanceTimersByTimeAsync(STREAM_DEBOUNCE_MS);
 
         expect(contentQueries(editor)).toHaveLength(0);
-        expect(notifier.logError).not.toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual([]);
     });
 });
 
@@ -1146,7 +1144,7 @@ describe("ScriptTaskService dispose write-back", () => {
         service.disposeForEditor(EDITOR_ID);
         await flushAsync();
 
-        expect(notifier.logError).toHaveBeenCalled();
+        expect(notifier.logged("error")).toEqual(["boom"]);
         expect(scriptFiles.deleteDir).toHaveBeenCalled();
     });
 

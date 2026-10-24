@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { DmnSettingsBroadcaster } from "@miragon/bpmn-modeler-core";
-import { EditorSessionContext } from "../../../editor-session/EditorSessionParticipant";
+import { EditorSessionContext } from "@miragon/bpmn-modeler-core";
 import { DmnSettingsParticipant } from "./DmnSettingsParticipant";
 
 const EDITOR_ID = "file:///decision.dmn";
 
 const context: EditorSessionContext = {
     editorId: EDITOR_ID,
-    panel: {} as never,
     isCurrent: () => true,
+    isFocused: () => true,
+    onFocusChange: vi.fn(),
+    onReseed: vi.fn(),
     onDocumentChange: vi.fn(),
     onSettingChange: vi.fn(),
     onDispose: vi.fn(),

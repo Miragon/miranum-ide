@@ -19,9 +19,9 @@ import {
 } from "@miragon/bpmn-modeler-core";
 import { bootstrapWebview } from "../../shared/infrastructure/bootstrapWebview";
 import { DiffPaneStore } from "@miragon/bpmn-modeler-core";
-import { VsCodeNotifier } from "../../shared/infrastructure/VsCodeNotifier";
 import { WebviewPaneHandle } from "../infrastructure/WebviewPaneHandle";
 import { BpmnDiffService } from "@miragon/bpmn-modeler-core";
+import { NotifierPort } from "@miragon/bpmn-modeler-core";
 
 // VS Code view-type identifier for the BPMN custom editor.
 const BPMN_VIEW_TYPE = "bpmn-modeler.bpmn";
@@ -59,7 +59,7 @@ export class BpmnDiffController {
     constructor(
         private readonly store: DiffPaneStore,
         private readonly diffService: BpmnDiffService,
-        private readonly notifier: VsCodeNotifier,
+        private readonly notifier: NotifierPort,
     ) {}
 
     /**
