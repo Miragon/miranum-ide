@@ -1,31 +1,7 @@
-import {
-    Command,
-    SyncDocumentCommand,
-    UpdateFormOutputValuesCommand,
-} from "@miragon/bpmn-modeler-shared";
+import { Command, UpdateFormOutputValuesCommand } from "@miragon/bpmn-modeler-shared";
 
-import { FormModelerService, MessageHandler } from "@miragon/bpmn-modeler-core";
-import { NotifierPort } from "@miragon/bpmn-modeler-core";
+import { MessageHandler } from "@miragon/bpmn-modeler-core";
 import { FormValuesController } from "../FormValuesController";
-
-export function getFormFileHandler(
-    formService: FormModelerService,
-    notifier: NotifierPort,
-): MessageHandler {
-    return async (_message: Command, editorId: string) => {
-        if (await formService.display(editorId)) {
-            notifier.logDebug("Form editor is ready");
-        }
-    };
-}
-
-export function syncFormDocumentHandler(
-    formService: FormModelerService,
-): MessageHandler<SyncDocumentCommand> {
-    return async (sync, editorId) => {
-        await formService.sync(editorId, sync.content, sync.documentRevision);
-    };
-}
 
 export function getFormInputValuesHandler(formValues: FormValuesController): MessageHandler {
     return async (_message: Command, editorId: string) => formValues.sendInputValues(editorId);

@@ -129,6 +129,13 @@ on concrete adapters, so the in-memory test kit fits every one of them; the VS
 Code architecture test lets only the composition root and infrastructure
 import a class that implements a port.
 
+The BPMN, DMN and Form editors synchronize their document through one core
+module, `EditorDocumentSync`: own-write echo suppression, revision-checked
+syncs, and a single, snapshot-checked initialization of an empty file that a
+webview reload or a host edit cannot race. Each modeler service adds only its
+document type (the empty content, BPMN's engine prompt, the query it posts),
+and one `DocumentRenderParticipant` re-renders any of them on a host change.
+
 The BPMN webview ships an `index.js` entry, one `index.css` and lazily loaded
 `chunks/**` that resolve relative to the entry (`base: "./"`), so every host
 serves the whole bundle directory. VS Code and the standalone app copy it into

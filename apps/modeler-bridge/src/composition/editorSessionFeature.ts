@@ -6,7 +6,7 @@ import {
     EditorSessionLifecycle,
     EditorSessionParticipant,
     EngineVersionStatusBarParticipant,
-    getBpmnFileHandler,
+    displayDocumentHandler,
     registerWebviewLogHandlers,
     registerWebviewNotificationHandlers,
     syncDocumentHandler,
@@ -73,7 +73,10 @@ export function register(
         entry !== undefined && (sessionId === undefined || entry.sessionId === sessionId);
 
     deps.router
-        .on("GetBpmnFileCommand", getBpmnFileHandler(bpmnService, deps.notifier))
+        .on(
+            "GetBpmnFileCommand",
+            displayDocumentHandler(bpmnService, deps.notifier, "Bpmn modeler is ready"),
+        )
         .on("SyncDocumentCommand", syncDocumentHandler(bpmnService))
         // The remaining handshake reply is a bridge-level stub because its real
         // service (properties panel) is not wired on this host path. It must still

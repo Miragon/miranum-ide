@@ -25,6 +25,9 @@ export * from "./shared/service/BpmnLintConfigLocator";
 export * from "./shared/service/DocumentFlushService";
 export * from "./shared/infrastructure/EditorSessionDocuments";
 export * from "./shared/infrastructure/EditorSessionLifecycle";
+export * from "./shared/infrastructure/EditorDocumentSync";
+export * from "./shared/infrastructure/documentMessageHandlers";
+export * from "./shared/session/DocumentRenderParticipant";
 export * from "./shared/infrastructure/EditorSessionStore";
 export * from "./shared/infrastructure/WebviewMessageRouter";
 export * from "./shared/infrastructure/webviewLogHandlers";
@@ -36,7 +39,6 @@ export * from "./shared/infrastructure/helpers";
 // ── modeler ─────────────────────────────────────────────────────────────────
 export * from "./modeler/bpmn/domain/model";
 export * from "./modeler/bpmn/service/BpmnModelerService";
-export * from "./modeler/bpmn/infrastructure/bpmnDocumentHandlers";
 export * from "./modeler/bpmn/infrastructure/bpmnMessageHandlers";
 export * from "./modeler/bpmn/service/BpmnElementTemplatesService";
 export * from "./modeler/bpmn/service/BpmnLintConfigService";
@@ -54,6 +56,8 @@ export * from "./modeler/bpmn/session/EngineVersionStatusBarParticipant";
 export * from "./modeler/dmn/domain/emptyDmn";
 export * from "./modeler/dmn/service/DmnModelerService";
 export * from "./modeler/dmn/service/DmnSettingsBroadcaster";
+export * from "./modeler/dmn/session/DmnSettingsParticipant";
+export * from "./modeler/dmn/infrastructure/dmnMessageHandlers";
 export * from "./modeler/form/domain/emptyForm";
 export * from "./modeler/form/service/FormModelerService";
 

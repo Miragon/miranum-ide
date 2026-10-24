@@ -55,7 +55,7 @@ describe("FormModelerService", () => {
         expect(editor.saveCount).toBe(0);
         expect(editor.posted).toEqual([]);
         expect(host.notifier.errors).toEqual([
-            "A problem occurred while trying to display the Form Editor.\nThe empty form could not be initialized.",
+            "A problem occurred while trying to display the Form Editor.\nThe empty document could not be initialized.",
         ]);
     });
 
