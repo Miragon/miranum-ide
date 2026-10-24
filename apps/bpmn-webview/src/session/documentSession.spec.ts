@@ -5,7 +5,9 @@ import {
     type Command,
     createInertLockGroup,
     FlushDocumentQuery,
+    FocusElementQuery,
     isMessageOfType,
+    LanguageQuery,
     type MessageOfType,
     type ProtocolMessageType,
     type Query,
@@ -51,15 +53,27 @@ function makePage(): PageFake {
     };
 }
 
+// Like the real translator, setLanguage falls back to "en" for a code it does not know.
+function makeTranslator() {
+    let locale = "en";
+    return {
+        getLocale: vi.fn(() => locale),
+        setLanguage: vi.fn((requested: string) => {
+            locale = requested === "xx" ? "en" : requested;
+        }),
+    };
+}
+
 function setup(surfaceOverrides: Partial<SurfaceFake> = {}) {
     const posted: (Command | Query)[] = [];
     const surface = makeSurface(surfaceOverrides);
     const page = makePage();
+    const translator = makeTranslator();
     const session = new BpmnDocumentSession(
         { postMessage: (m) => posted.push(m) },
-        { surface, page, pageInertLocks: createInertLockGroup(document.body) },
+        { surface, page, translator, pageInertLocks: createInertLockGroup(document.body) },
     );
-    return { session, surface, page, posted };
+    return { session, surface, page, translator, posted };
 }
 
 const hostFile = (content: string, revision: number, engine: "c7" | "c8" | undefined = "c7") =>
@@ -672,7 +686,7 @@ describe("BpmnDocumentSession", () => {
         it("answers a flush before the session is ready as unavailable", async () => {
             const context = setup();
 
-            await context.session.respondToFlush(new FlushDocumentQuery(1));
+            await context.session.handlers.FlushDocumentQuery(new FlushDocumentQuery(1));
 
             expect(flushReplies(context.posted)).toEqual([
                 expect.objectContaining({ token: 1, status: "unavailable" }),
@@ -684,7 +698,7 @@ describe("BpmnDocumentSession", () => {
             await openSession(context, 6);
 
             context.session.scheduleSync();
-            await context.session.respondToFlush(new FlushDocumentQuery(2));
+            await context.session.handlers.FlushDocumentQuery(new FlushDocumentQuery(2));
 
             expect(flushReplies(context.posted)).toEqual([
                 expect.objectContaining({
@@ -702,7 +716,7 @@ describe("BpmnDocumentSession", () => {
 
             void context.session.receiveHostFile(hostFile("<pushed />", 2));
             context.session.scheduleSync();
-            await context.session.respondToFlush(new FlushDocumentQuery(4));
+            await context.session.handlers.FlushDocumentQuery(new FlushDocumentQuery(4));
 
             expect(flushReplies(context.posted)).toEqual([
                 expect.objectContaining({ token: 4, status: "host-updated" }),
@@ -713,10 +727,12 @@ describe("BpmnDocumentSession", () => {
             const context = setup();
             await openSession(context);
 
-            await context.session.respondToFlush(new FlushDocumentQuery(3, true));
+            await context.session.handlers.FlushDocumentQuery(new FlushDocumentQuery(3, true));
             expect(document.body.inert).toBe(true);
 
-            await context.session.respondToFlush(new ReleaseDocumentFlushQuery(3));
+            await context.session.handlers.ReleaseDocumentFlushQuery(
+                new ReleaseDocumentFlushQuery(3),
+            );
             expect(document.body.inert).toBe(false);
         });
 
@@ -847,6 +863,75 @@ describe("BpmnDocumentSession", () => {
             await context.session.focusElement("Task_1");
 
             expect(context.surface.centerOnElement).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("language changes", () => {
+        it("switches the translator and refreshes the diagram once the locale changes", async () => {
+            const context = setup();
+            await openSession(context);
+
+            await context.session.applyLanguage("de");
+
+            expect(context.translator.getLocale()).toBe("de");
+            expect(context.surface.refreshDiagram).toHaveBeenCalledOnce();
+        });
+
+        it.each([
+            ["the same locale", "en"],
+            ["an unknown locale that resolves to the current one", "xx"],
+        ])("does not refresh for %s", async (_case, locale) => {
+            const context = setup();
+            await openSession(context);
+
+            await context.session.applyLanguage(locale);
+
+            expect(context.translator.setLanguage).toHaveBeenCalledExactlyOnceWith(locale);
+            expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
+        });
+
+        it("holds the refresh for a changed locale until the session is initialized", async () => {
+            const context = setup();
+            await importInitialFile(context);
+
+            await context.session.applyLanguage("de");
+            expect(context.translator.getLocale()).toBe("de");
+            expect(context.surface.refreshDiagram).not.toHaveBeenCalled();
+
+            context.session.markInitialized();
+            await context.session.drainPendingActions();
+
+            expect(context.surface.refreshDiagram).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("host message handlers", () => {
+        it("hands a host file to the boot", async () => {
+            const context = setup();
+            const file = hostFile("<initial />", 1);
+
+            await context.session.handlers.BpmnFileQuery(file);
+
+            await expect(context.session.waitForInitialHostFile()).resolves.toBe(file);
+        });
+
+        it("applies the host language", async () => {
+            const context = setup();
+            await openSession(context);
+
+            await context.session.handlers.LanguageQuery(new LanguageQuery("de"));
+
+            expect(context.translator.getLocale()).toBe("de");
+            expect(context.surface.refreshDiagram).toHaveBeenCalledOnce();
+        });
+
+        it("centres the element the host focuses", async () => {
+            const context = setup();
+            await openSession(context);
+
+            await context.session.handlers.FocusElementQuery(new FocusElementQuery("Task_1"));
+
+            expect(context.surface.centerOnElement).toHaveBeenCalledExactlyOnceWith("Task_1");
         });
     });
 

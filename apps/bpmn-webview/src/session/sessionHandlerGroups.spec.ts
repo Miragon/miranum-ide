@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { createInertLockGroup } from "@miragon/bpmn-modeler-shared";
+
 import type { SurfaceHandle } from "../surface";
+import { BpmnDocumentSession } from "./documentSession";
 import { createLintBridge } from "./lintBridge";
 import { createProtocolCapabilities } from "./protocolCapabilities";
 import { resolveClipboard } from "./protocolClipboard";
@@ -14,6 +17,23 @@ function sessionHandlerGroups(): Record<string, object> {
         throw new Error("no surface in a key-set spec");
     };
     return {
+        documentSession: new BpmnDocumentSession(host, {
+            surface: {
+                importHostDocument: vi.fn(),
+                exportDocument: vi.fn(),
+                afterSync: vi.fn(),
+                refreshDiagram: vi.fn(),
+                centerOnElement: vi.fn(),
+            },
+            page: {
+                cancelPendingSurfaceWork: vi.fn(),
+                flushViewport: vi.fn(),
+                destroySurface: vi.fn(),
+                reloadPage: vi.fn(),
+            },
+            translator: { getLocale: vi.fn(), setLanguage: vi.fn() },
+            pageInertLocks: createInertLockGroup(document.body),
+        }).handlers,
         surfaceRequests: createSurfaceRequests(host, getSurface, {
             hostModelerState: { rememberSettings: vi.fn(), rememberOpenScripts: vi.fn() },
             theme: { setMode: vi.fn() },

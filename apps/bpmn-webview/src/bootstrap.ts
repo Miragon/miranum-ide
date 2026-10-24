@@ -16,7 +16,6 @@ import {
     SetPropertiesPanelStateCommand,
     UpdateScriptVariablesCommand,
     HOST_REPLY_TIMEOUT_MS,
-    type LanguageQuery,
     createInertLockGroup,
     createResolver,
     extractProcessVariables,
@@ -61,7 +60,7 @@ import type { LayoutOutcome } from "@miragon/bpmn-modeler-layout";
 import type { WebviewState } from "./webviewState";
 import { installHostEditorActions } from "./hostEditorActions";
 import { HostModelerState } from "./hostModelerState";
-import { BpmnDocumentSession } from "./session/documentSession";
+import { BpmnDocumentSession, type Translator } from "./session/documentSession";
 import { createLintBridge } from "./session/lintBridge";
 import {
     createHostMessageRouter,
@@ -157,6 +156,10 @@ function startSession(
     let strip!: ModeStrip;
     let modeSession: ModeSession | undefined;
     const focusCanvas = (): void => surface.getService<{ focus(): void }>("canvas").focus();
+    const translator: Translator = {
+        getLocale: () => i18n.getLocale(),
+        setLanguage: (locale) => i18n.setLanguage(locale as SupportedLocale),
+    };
 
     // Theme is host policy: drive the page-level scope (host chrome + the
     // viewer/diff branch, which has no modeler) and the modeler instance's
@@ -219,6 +222,7 @@ function startSession(
             destroySurface: () => surface.destroy(),
             reloadPage: () => (injectedReload ?? (() => window.location.reload()))(),
         },
+        translator,
         pageInertLocks: createInertLockGroup(document.body),
     });
 
@@ -226,13 +230,9 @@ function startSession(
         host,
         {
             // Before the spreads, so tsc rejects a group that also handles one of these.
-            BpmnFileQuery: (query) => session.receiveHostFile(query),
             PropertiesPanelStateQuery: (query) => panelStateResolver.done(query),
-            LanguageQuery: applyHostLanguage,
-            FocusElementQuery: (query) => session.focusElement(query.elementId),
             TakeFocusQuery: () => takeFocus(focusCanvas),
-            FlushDocumentQuery: session.respondToFlush,
-            ReleaseDocumentFlushQuery: session.respondToFlush,
+            ...session.handlers,
             ...surfaceRequests.handlers,
             ...lintBridge.handlers,
             ...clipboard.handlers,
@@ -290,7 +290,7 @@ function startSession(
 
         // Before any surface exists, so the matching LanguageQuery later skips the re-import.
         if (bpmnFileQuery?.locale) {
-            i18n.setLanguage(bpmnFileQuery.locale as SupportedLocale);
+            translator.setLanguage(bpmnFileQuery.locale);
         }
 
         /**
@@ -302,9 +302,7 @@ function startSession(
             // message; it only follows language changes.
             sessionMessages.discardImportBound();
             routeHostMessage = createHostMessageRouter<DiffPaneHostMessages>(host, {
-                LanguageQuery: (query) => {
-                    i18n.setLanguage(query.locale as SupportedLocale);
-                },
+                LanguageQuery: (query) => translator.setLanguage(query.locale),
             });
             document.body.classList.add("viewer-mode");
             const canvas = document.getElementById("js-canvas");
@@ -731,17 +729,6 @@ function startSession(
 
         // Phase 3: begin persisting changes
         stateManager.startPersisting();
-    }
-
-    async function applyHostLanguage(query: LanguageQuery): Promise<void> {
-        // The host pushes the language on every (re)load, and setLanguage falls
-        // back to "en" for an unknown code, so only a changed resolved locale
-        // pays for the re-import bpmn-js needs to re-translate rendered elements.
-        const localeBefore = i18n.getLocale();
-        i18n.setLanguage(query.locale as SupportedLocale);
-        if (i18n.getLocale() !== localeBefore) {
-            await session.requestDiagramRefresh();
-        }
     }
 
     // Best-effort flush of the outbound sync debounce when the webview is hidden
